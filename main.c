@@ -81,16 +81,28 @@ void run_game(void)
 	tcam.mzy = 0.0f;
 	tcam.mzz = 1.0f;
 	
-	SDL_LockSurface(screen);
-	memset(screen->pixels, 0x51, screen->h*screen->pitch);
-	render_vxl_redraw(&tcam, map);
-	render_cubemap(screen->pixels,
-		screen->w, screen->h, screen->pitch/4,
-		&tcam, map);
-	SDL_UnlockSurface(screen);
-	SDL_Flip(screen);
+	int i;
 	
-	SDL_Delay(1000);
+	render_vxl_redraw(&tcam, map);
+	for(i = 0; i < 300; i++)
+	{
+		float ang = i*M_PI*2.0f/300.0f;
+		float sa = sinf(ang);
+		float ca = cosf(ang);
+		cam_point_dir(&tcam, sa, 0.0f, ca);
+		//cam_point_dir(&tcam, 0.0f, 0.0f, 1.0f);
+		
+		//printf("%.2f",);
+		SDL_LockSurface(screen);
+		//memset(screen->pixels, 0x51, screen->h*screen->pitch);
+		render_cubemap(screen->pixels,
+			screen->w, screen->h, screen->pitch/4,
+			&tcam, map);
+		SDL_UnlockSurface(screen);
+		SDL_Flip(screen);
+		
+		//SDL_Delay(10);
+	}
 	map_free(map);
 }
 

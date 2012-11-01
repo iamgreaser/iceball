@@ -21,6 +21,8 @@
 #include <stdio.h>
 #include <errno.h>
 
+#include <math.h>
+
 #include <SDL.h>
 
 typedef struct model
@@ -62,7 +64,8 @@ In other words, VOXLAP vxl with a length header and different 4th data byte,
   and you can actually store crap in the invisible sections.
 (Trust me. This format packs incredibly well.)
 
-If you're keen to store interesting stuff,
+If you're keen to store interesting stuff that's not visible,
+feel free to store it in the "invisible" parts.
 
 *Yes*, you can get away with this! We're not using a static 16MB heap.
 
@@ -99,3 +102,6 @@ void render_vxl_redraw(model_t *camera, map_t *map);
 void render_cubemap(uint32_t *pixels, int width, int height, int pitch, model_t *camera, map_t *map);
 int render_init(int width, int height);
 void render_deinit(void);
+
+// vecmath.c
+void cam_point_dir(model_t *model, float dx, float dy, float dz);

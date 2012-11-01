@@ -2,13 +2,20 @@
 
 CFLAGS = -g `sdl-config --cflags`
 LDFLAGS = -g
-LIBS = `sdl-config --libs`
+LIBS = -lm `sdl-config --libs`
 BINNAME = bts
 
 INCLUDES = common.h
-OBJS = main.o map.o model.o render.o
+OBJS = \
+	main.o \
+	vecmath.o \
+	map.o model.o \
+	render.o
 
 all: $(BINNAME)
+
+clean:
+	rm -f $(OBJS)
 
 $(BINNAME): $(OBJS)
 	$(CC) -o $(BINNAME) $(LDFLAGS) $(OBJS) $(LIBS)

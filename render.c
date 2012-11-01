@@ -82,6 +82,7 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 	for(sx = 0; sx < cubemap_size; sx++)
 	{
 		ccolor[((sy)<<cubemap_shift)+sx] = 0x00000000+sx+(sy<<cubemap_shift);
+		ccolor[((sy)<<cubemap_shift)+sx] += ((face+1)<<(24-3));
 		cdepth[((sy)<<cubemap_shift)+sx] = FOG_DISTANCE;
 	}
 	
@@ -169,6 +170,7 @@ void render_vxl_face_horiz(int blkx, int blky, int blkz,
 	for(sx = 0; sx < cubemap_size; sx++)
 	{
 		ccolor[((sy)<<cubemap_shift)+sx] = 0x00000000+sx+(sy<<cubemap_shift);
+		ccolor[((sy)<<cubemap_shift)+sx] += ((face+1)<<(24-3));
 		cdepth[((sy)<<cubemap_shift)+sx] = FOG_DISTANCE;
 	}
 	
@@ -269,18 +271,89 @@ void render_cubemap(uint32_t *pixels, int width, int height, int pitch, model_t 
 	rtmp_camera = camera;
 	rtmp_map = map;
 	
-	// get centre trace
-	float ctrx = camera->mzx;
-	float ctry = camera->mzy;
-	float ctrz = camera->mzz;
+	// get corner traces
+	float tracemul = cubemap_size/2;
+	float traceadd = tracemul;
+	float ctrx1 = (camera->mzx-camera->mxx+camera->myx);
+	float ctry1 = (camera->mzy-camera->mxy+camera->myy);
+	float ctrz1 = (camera->mzz-camera->mxz+camera->myz);
+	float ctrx2 = (camera->mzx+camera->mxx+camera->myx);
+	float ctry2 = (camera->mzy+camera->mxy+camera->myy);
+	float ctrz2 = (camera->mzz+camera->mxz+camera->myz);
+	float ctrx3 = (camera->mzx-camera->mxx-camera->myx);
+	float ctry3 = (camera->mzy-camera->mxy-camera->myy);
+	float ctrz3 = (camera->mzz-camera->mxz-camera->myz);
+	float ctrx4 = (camera->mzx+camera->mxx-camera->myx);
+	float ctry4 = (camera->mzy+camera->mxy-camera->myy);
+	float ctrz4 = (camera->mzz+camera->mxz-camera->myz);
 	
+	// TODO: scale this PROPERLY.
+	
+	// calculate deltas
+	float fbx = ctrx1, fby = ctry1, fbz = ctrz1; // base
+	float fex = ctrx2, fey = ctry2, fez = ctrz2; // end
+	float flx = ctrx3-fbx, fly = ctry3-fby, flz = ctrz3-fbz; // left side
+	float frx = ctrx4-fex, fry = ctry4-fey, frz = ctrz4-fez; // right side
+	flx /= (float)height; fly /= (float)height; flz /= (float)height;
+	frx /= (float)height; fry /= (float)height; frz /= (float)height;
+	
+	// raytrace it
+	// TODO: find some faster method
+	uint32_t *p = pixels;
+	int hwidth = width/2;
+	int hheight = height/2;
+	for(y = -hheight; y < hheight; y++)
+	{
+		float fx = fbx;
+		float fy = fby;
+		float fz = fbz;
+		
+		float fdx = (fex-fbx)/(float)width;
+		float fdy = (fey-fby)/(float)width;
+		float fdz = (fez-fbz)/(float)width;
+		
+		for(x = -hwidth; x < hwidth; x++)
+		{
+			// get correct cube map and draw
+			if(fabsf(fx) > fabsf(fy) && fabsf(fx) > fabsf(fz))
+			{
+				*p++ = cubemap_color[fx >= 0.0f ? CM_PX : CM_NX][
+					((cubemap_size-1)&(int)(fz*tracemul/fx+traceadd))
+					|(((cubemap_size-1)&(int)(fy*tracemul/fx+traceadd))<<cubemap_shift)];
+			} else if(fabsf(fz) > fabsf(fy) && fabsf(fz) > fabsf(fx)) {
+				*p++ = cubemap_color[fz >= 0.0f ? CM_PZ : CM_NZ][
+					((cubemap_size-1)&(int)(fx*tracemul/fz+traceadd))
+					|(((cubemap_size-1)&(int)(fy*tracemul/fz+traceadd))<<cubemap_shift)];
+			} else {
+				*p++ = cubemap_color[fy >= 0.0f ? CM_PY : CM_NY][
+					((cubemap_size-1)&(int)(fz*tracemul/fy+traceadd))
+					|(((cubemap_size-1)&(int)(fx*tracemul/fy+traceadd))<<cubemap_shift)];
+			}
+			
+			fx += fdx;
+			fy += fdy;
+			fz += fdz;
+		}
+		
+		p += pitch-width;
+		
+		fbx += flx;
+		fby += fly;
+		fbz += flz;
+		
+		fex += frx;
+		fey += fry;
+		fez += frz;
+	}
+	
+	/*
 	// TEST: draw something
 	for(x = 0; x < 512; x++)
 	for(y = 0; y < 512; y++)
 	{
 		pixels[y*pitch+x] = *(uint32_t *)&(map->pillars[y*map->xlen+x][8]);
 		//pixels[y*pitch+x] = cubemap_color[CM_PZ][y*cubemap_size+x];
-	}
+	}*/
 }
 
 int render_init(int width, int height)
