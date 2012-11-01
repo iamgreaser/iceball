@@ -61,9 +61,9 @@ map_t *map_load_aos(char *fname)
 			
 			for(i = 0; i < xlen; i++)
 			{
-				uint8_t r = fgetc(fp);
-				uint8_t g = fgetc(fp);
 				uint8_t b = fgetc(fp);
+				uint8_t g = fgetc(fp);
+				uint8_t r = fgetc(fp);
 				fgetc(fp); // skip lighting
 				
 				pillar_temp[ti++] = b;

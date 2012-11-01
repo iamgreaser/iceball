@@ -69,7 +69,7 @@ void run_game(void)
 	
 	model_t tcam;
 	tcam.mpx = 256.5f;
-	tcam.mpy = 256.5f;
+	tcam.mpy = 56.5f;
 	tcam.mpz = 256.5f;
 	tcam.mxx = 1.0f;
 	tcam.mxy = 0.0f;
@@ -83,7 +83,8 @@ void run_game(void)
 	
 	SDL_LockSurface(screen);
 	memset(screen->pixels, 0x51, screen->h*screen->pitch);
-	render_vxl(screen->pixels,
+	render_vxl_redraw(&tcam, map);
+	render_cubemap(screen->pixels,
 		screen->w, screen->h, screen->pitch/4,
 		&tcam, map);
 	SDL_UnlockSurface(screen);
@@ -97,8 +98,10 @@ int main(int argc, char *argv[])
 {
 	if(!init_platform()) {
 	if(!init_video()) {
+	if(!render_init(screen->w, screen->h)) {
 		run_game();
-		deinit_video();
+		render_deinit();
+	} deinit_video();
 	} deinit_sdl();
 	}
 	

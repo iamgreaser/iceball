@@ -59,8 +59,7 @@ B G R T:
   T = type of block.
 
 In other words, VOXLAP vxl with a length header and different 4th data byte,
-  using BGR instead of RGB,
-    and you can actually store crap in the invisible sections.
+  and you can actually store crap in the invisible sections.
 (Trust me. This format packs incredibly well.)
 
 If you're keen to store interesting stuff,
@@ -96,4 +95,7 @@ void map_free(map_t *map);
 // model.c
 
 // render.c
-void render_vxl(uint32_t *pixels, int width, int height, int pitch, model_t *camera, map_t *map);
+void render_vxl_redraw(model_t *camera, map_t *map);
+void render_cubemap(uint32_t *pixels, int width, int height, int pitch, model_t *camera, map_t *map);
+int render_init(int width, int height);
+void render_deinit(void);
