@@ -54,6 +54,59 @@ map_t *rtmp_map;
  * 
  */
 
+void render_vxl_rect(uint32_t *ccolor, float *cdepth, int x1, int y1, int x2, int y2, uint32_t color, float depth)
+{
+	int x,y;
+	
+	// arrange *1 <= *2
+	if(x1 > x2)
+	{
+		int t = x1;
+		x1 = x2;
+		x2 = t;
+	}
+	
+	if(y1 > y2)
+	{
+		int t = y1;
+		y1 = y2;
+		y2 = t;
+	}
+	
+	// clip
+	if(x1 < 0)
+		x1 = 0;
+	if(y1 < 0)
+		y1 = 0;
+	if(x2 > cubemap_size)
+		x2 = cubemap_size;
+	if(y2 > cubemap_size)
+		y2 = cubemap_size;
+	
+	// render
+	uint32_t *cstart = &ccolor[(y1<<cubemap_shift)+x1];
+	float *dstart = &cdepth[(y1<<cubemap_shift)+x1];
+	for(y = y1; y < y2; y++)
+	{
+		uint32_t *cptr = cstart;
+		float *dptr = dstart;
+		
+		for(x = x1; x < x2; x++)
+		{
+			if(*cptr == 0)
+			{
+				*cptr = color;
+				*dptr = depth;
+			}
+			cptr++;
+			dptr++;
+		}
+		
+		cstart += cubemap_size;
+		dstart += cubemap_size;
+	}
+}
+
 void render_vxl_face_vert(int blkx, int blky, int blkz,
 	float subx, float suby, float subz,
 	int face,
@@ -69,6 +122,9 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 	int cx2 = cubemap_size-1;
 	int cy2 = cubemap_size-1;
 	
+	float tracemul = cubemap_size/2;
+	float traceadd = tracemul;
+	
 	// get cubemaps
 	uint32_t *ccolor = cubemap_color[face];
 	float *cdepth = cubemap_depth[face];
@@ -81,8 +137,9 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 	for(sy = 0; sy < cubemap_size; sy++)
 	for(sx = 0; sx < cubemap_size; sx++)
 	{
-		ccolor[((sy)<<cubemap_shift)+sx] = 0x00000000+sx+(sy<<cubemap_shift);
-		ccolor[((sy)<<cubemap_shift)+sx] += ((face+1)<<(24-3));
+		//ccolor[((sy)<<cubemap_shift)+sx] = 0x00000000+sx+(sy<<cubemap_shift);
+		//ccolor[((sy)<<cubemap_shift)+sx] += ((face+1)<<(24-3));
+		ccolor[((sy)<<cubemap_shift)+sx] = 0x00000000;
 		cdepth[((sy)<<cubemap_shift)+sx] = FOG_DISTANCE;
 	}
 	
@@ -96,13 +153,18 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 	int ygy = gx+gz;
 	int ygz = gy;
 	
+	// get cubemap offset
+	float cmoffsx = -(xgx*subx+xgy*suby+xgz*subz);
+	float cmoffsy = -(ygx*subx+ygy*suby+ygz*subz);
+	
 	// get distance to wall
 	float dist = -(subx*gx+suby*gy+subz*gz);
 	if(dist < 0.0f)
 		dist += 1.0f;
 	
+	int coz = blky;
 	// now loop and follow through
-	while(dist < FOG_DISTANCE)
+	while(dist < FOG_DISTANCE && coz >= 0 && coz < rtmp_map->ylen)
 	{
 		// calculate frustrum
 		int frustrum = (int)(dist*cubemap_size);
@@ -130,14 +192,55 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 		by2 /= cubemap_size;
 		
 		// go through loop
-		int cox,coy;
+		int cox,coy,coz;
 		
-		for(cox = bx1; cox <= bx2; cox++)
-		for(coy = by1; coy <= by2; coy++)
+		//printf("%.3f %i %i %i %i\n ", dist, bx1, by1, bx2, by2);
+		if(dist > 0.001f)
 		{
-			// TODO!
+			if(gy >= 0)
+			{
+				float boxsize = tracemul/dist;
+				for(cox = bx1; cox <= bx2; cox++)
+				for(coy = by1; coy <= by2; coy++)
+				{
+					uint8_t *pillar = rtmp_map->pillars[
+						((cox+blkx)&(rtmp_map->xlen-1))
+						+(((coy+blky)&(rtmp_map->zlen-1))*rtmp_map->xlen)]+4;
+					
+					//printf("%4i %4i %4i - %i %i %i %i\n",cox,coy,coz,
+					//	pillar[0],pillar[1],pillar[2],pillar[3]);
+					// get correct height
+					for(;;)
+					{
+						if(coz == pillar[1])
+						{
+							float px1 = (cox+cmoffsx)*boxsize+traceadd;
+							float py1 = (coy+cmoffsy)*boxsize+traceadd;
+							float px2 = px1+boxsize;
+							float py2 = py1+boxsize;
+							//printf("%i %i %i %i\n",(int)px1,(int)py1,(int)px2,(int)py2);
+							
+							render_vxl_rect(ccolor, cdepth,
+								(int)px1, (int)py1, (int)px2, (int)py2,
+								*(uint32_t *)(&pillar[4]), dist);
+							break;
+						} else if(coz >= pillar[1] && coz <= pillar[2]) {
+							// TODO: sides
+							break;
+						} else if(pillar[0] == 0 || (coz >= pillar[3])) {
+							break;
+						} else {
+							pillar += pillar[0]*4;
+						}
+					}
+					
+				}
+			} else {
+				// TODO!
+			}
 		}
 		
+		coz += gy;
 		dist += 1.0f;
 	}
 }
@@ -156,6 +259,9 @@ void render_vxl_face_horiz(int blkx, int blky, int blkz,
 	int cy1 = 0;
 	int cx2 = cubemap_size-1;
 	int cy2 = cubemap_size-1;
+	
+	float tracemul = cubemap_size/2;
+	float traceadd = tracemul;
 	
 	// get cubemaps
 	uint32_t *ccolor = cubemap_color[face];

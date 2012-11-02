@@ -1,6 +1,9 @@
 # I personally don't care if you steal this makefile. --GM
 
-CFLAGS = -g `sdl-config --cflags` -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter
+CFLAGS = -g `sdl-config --cflags` -Wall -Wextra \
+	-Wno-unused-variable -Wno-unused-parameter \
+	-Wno-unused-but-set-variable
+
 LDFLAGS = -g
 LIBS = -lm `sdl-config --libs`
 BINNAME = bts

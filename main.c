@@ -69,7 +69,7 @@ void run_game(void)
 	
 	model_t tcam;
 	tcam.mpx = 256.5f;
-	tcam.mpy = 56.5f;
+	tcam.mpy = 0.5f;
 	tcam.mpz = 256.5f;
 	tcam.mxx = 1.0f;
 	tcam.mxy = 0.0f;
