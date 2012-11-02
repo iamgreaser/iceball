@@ -274,18 +274,18 @@ void render_cubemap(uint32_t *pixels, int width, int height, int pitch, model_t 
 	// get corner traces
 	float tracemul = cubemap_size/2;
 	float traceadd = tracemul;
-	float ctrx1 = (camera->mzx-camera->mxx+camera->myx);
-	float ctry1 = (camera->mzy-camera->mxy+camera->myy);
-	float ctrz1 = (camera->mzz-camera->mxz+camera->myz);
-	float ctrx2 = (camera->mzx+camera->mxx+camera->myx);
-	float ctry2 = (camera->mzy+camera->mxy+camera->myy);
-	float ctrz2 = (camera->mzz+camera->mxz+camera->myz);
-	float ctrx3 = (camera->mzx-camera->mxx-camera->myx);
-	float ctry3 = (camera->mzy-camera->mxy-camera->myy);
-	float ctrz3 = (camera->mzz-camera->mxz-camera->myz);
-	float ctrx4 = (camera->mzx+camera->mxx-camera->myx);
-	float ctry4 = (camera->mzy+camera->mxy-camera->myy);
-	float ctrz4 = (camera->mzz+camera->mxz-camera->myz);
+	float ctrx1 = (camera->mzx-camera->mxx-camera->myx);
+	float ctry1 = (camera->mzy-camera->mxy-camera->myy);
+	float ctrz1 = (camera->mzz-camera->mxz-camera->myz);
+	float ctrx2 = (camera->mzx+camera->mxx-camera->myx);
+	float ctry2 = (camera->mzy+camera->mxy-camera->myy);
+	float ctrz2 = (camera->mzz+camera->mxz-camera->myz);
+	float ctrx3 = (camera->mzx-camera->mxx+camera->myx);
+	float ctry3 = (camera->mzy-camera->mxy+camera->myy);
+	float ctrz3 = (camera->mzz-camera->mxz+camera->myz);
+	float ctrx4 = (camera->mzx+camera->mxx+camera->myx);
+	float ctry4 = (camera->mzy+camera->mxy+camera->myy);
+	float ctrz4 = (camera->mzz+camera->mxz+camera->myz);
 	
 	// TODO: scale this PROPERLY.
 	

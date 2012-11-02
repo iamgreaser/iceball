@@ -89,7 +89,7 @@ void run_game(void)
 		float ang = i*M_PI*2.0f/300.0f;
 		float sa = sinf(ang);
 		float ca = cosf(ang);
-		cam_point_dir(&tcam, sa, 0.0f, ca);
+		cam_point_dir(&tcam, sa, 3.5f, ca);
 		//cam_point_dir(&tcam, 0.0f, 0.0f, 1.0f);
 		
 		//printf("%.2f",);

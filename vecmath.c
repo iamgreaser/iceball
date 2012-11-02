@@ -20,26 +20,30 @@ void cam_point_dir(model_t *model, float dx, float dy, float dz)
 	d2 = sqrtf(d2);
 	d3 = sqrtf(d3);
 	
+	// Get the normalised distances.
+	float nx = dx/d3;
+	float ny = dy/d3;
+	float nz = dz/d3;
 	
 	// Now build that matrix!
 	
 	// Front vector (Z): Well, duh.
-	model->mzx = dx/d3;
-	model->mzy = dy/d3;
-	model->mzz = dz/d3;
+	model->mzx = nx;
+	model->mzy = ny;
+	model->mzz = nz;
 	
 	// Left (TODO: confirm) vector (X): Simple 2D 90deg rotation.
 	// Can be derived from a bit of trial and error.
-	model->mxx = dz/d3;
-	model->mxy = dy/d3;
-	model->mxz = -dx/d3;
+	model->mxx = dz/d2;
+	model->mxy = 0.0f;
+	model->mxz = -dx/d2;
 	
 	// Down vector (Y): STUPID GIMBAL LOCK GRR >:(
 	// But really, this one's the hardest of them all.
 	//
 	// I decided to cheat and look at my aimbot anyway.
-	// Still doesn't quite solve my problem :(
-	model->myx = dx*dy/(d2*d3);
-	model->myy = sqrtf(1.0f - dy*dy/d3*d3);
-	model->myz = dz*dy/(d2*d3);
+	// Still didn't *quite* solve my problem.
+	model->myx = -dx*ny/d2;
+	model->myy = sqrtf(1.0f - ny*ny);
+	model->myz = -dz*ny/d2;
 }
