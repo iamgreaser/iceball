@@ -160,7 +160,7 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 	// get distance to wall
 	float dist = -(subx*gx+suby*gy+subz*gz);
 	if(dist < 0.0f)
-		dist += 1.0f;
+		dist = 1.0f+dist;
 	
 	int coz = blky;
 	// now loop and follow through
@@ -200,9 +200,9 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 		//printf("%.3f %i %i %i %i\n ", dist, bx1, by1, bx2, by2);
 		if(dist > 0.001f)
 		{
+			float boxsize = tracemul/dist;
 			if(gy >= 0)
 			{
-				float boxsize = tracemul/dist;
 				for(cox = bx1; cox <= bx2; cox++)
 				for(coy = by1; coy <= by2; coy++)
 				{
@@ -239,7 +239,43 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 					
 				}
 			} else {
-				// TODO!
+				int ln = 0;
+				for(cox = bx1; cox <= bx2; cox++)
+				for(coy = by1; coy <= by2; coy++)
+				{
+					uint8_t *pillar = rtmp_map->pillars[
+						((cox+blkx)&(rtmp_map->xlen-1))
+						+(((coy+blkz)&(rtmp_map->zlen-1))*rtmp_map->xlen)]+4;
+					
+					//printf("%4i %4i %4i - %i %i %i %i\n",cox,coy,coz,
+					//	pillar[0],pillar[1],pillar[2],pillar[3]);
+					// get correct height
+					for(;;)
+					{
+						if(coz == pillar[3]-1)
+						{
+							float px1 = (-cox+cmoffsx)*boxsize+traceadd;
+							float py1 = (-coy+cmoffsy)*boxsize+traceadd;
+							float px2 = px1+boxsize;
+							float py2 = py1+boxsize;
+							//printf("%i %i %i %i\n",(int)px1,(int)py1,(int)px2,(int)py2);
+							
+							render_vxl_rect(ccolor, cdepth,
+								(int)px1, (int)py1, (int)px2, (int)py2,
+								*(uint32_t *)(&pillar[-4]), dist);
+							break;
+						} else if(coz >= pillar[1] && coz <= pillar[2]) {
+							// TODO: sides
+							// wait, how the hell am i going to do these here?!
+							break;
+						} else if(pillar[0] == 0 || (coz < pillar[3])) {
+							break;
+						} else {
+							pillar += pillar[0]*4;
+						}
+					}
+					
+				}
 			}
 		}
 		
