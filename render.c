@@ -277,6 +277,7 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 							render_vxl_rect(ccolor, cdepth,
 								(int)px1, (int)py1, (int)px2, (int)py2,
 								*(uint32_t *)(&pillar[-4]), dist);
+							// TODO: sides
 							break;
 						} else if(coz >= pillar[1] && coz <= pillar[2]) {
 							// TODO: sides
@@ -402,6 +403,7 @@ void render_vxl_face_horiz(int blkx, int blky, int blkz,
 		if(dist > 0.001f)
 		{
 			float boxsize = tracemul/dist;
+			float nboxsize = tracemul/(dist+0.5f);
 			for(cox = bx1; cox <= bx2; cox++)
 			{
 				coz = 0;
@@ -427,11 +429,33 @@ void render_vxl_face_horiz(int blkx, int blky, int blkz,
 							float py1 = (coz+cmoffsy-blky)*boxsize+traceadd;
 							float px2 = px1+boxsize;
 							float py2 = py1+boxsize;
+							float px3 = (cox+cmoffsx)*nboxsize+traceadd;
+							float py3 = (coz+cmoffsy-blky)*nboxsize+traceadd;
+							float px4 = px3+nboxsize;
+							float py4 = py3+nboxsize;
 							
 							render_vxl_rect(ccolor, cdepth,
 								(int)px1, (int)py1, (int)px2, (int)py2,
 								*((uint32_t *)pcol), dist);
-							// TODO: sides
+							
+							// TODO: replace these with trapezium drawing routines
+							if(px3 < px1)
+								render_vxl_rect(ccolor, cdepth,
+									(int)px3, (int)py3, (int)px1, (int)py4,
+									*((uint32_t *)pcol), dist);
+							else if(px2 < px4)
+								render_vxl_rect(ccolor, cdepth,
+									(int)px2, (int)py3, (int)px4, (int)py4,
+									*((uint32_t *)pcol), dist);
+							
+							if(py3 < py1)
+								render_vxl_rect(ccolor, cdepth,
+									(int)px3, (int)py3, (int)px4, (int)py1,
+									*((uint32_t *)pcol), dist);
+							else if(py2 < py4)
+								render_vxl_rect(ccolor, cdepth,
+									(int)px3, (int)py2, (int)px4, (int)py4,
+									*((uint32_t *)pcol), dist);
 						}
 						pcol+=4;
 					}
@@ -456,11 +480,33 @@ void render_vxl_face_horiz(int blkx, int blky, int blkz,
 							float py1 = (coz+cmoffsy-blky)*boxsize+traceadd;
 							float px2 = px1+boxsize;
 							float py2 = py1+boxsize;
+							float px3 = (cox+cmoffsx)*nboxsize+traceadd;
+							float py3 = (coz+cmoffsy-blky)*nboxsize+traceadd;
+							float px4 = px3+nboxsize;
+							float py4 = py3+nboxsize;
 							
 							render_vxl_rect(ccolor, cdepth,
 								(int)px1, (int)py1, (int)px2, (int)py2,
 								*((uint32_t *)pcol), dist);
-							// TODO: sides
+							
+							// TODO: replace these with trapezium drawing routines
+							if(px3 < px1)
+								render_vxl_rect(ccolor, cdepth,
+									(int)px3, (int)py3, (int)px1, (int)py4,
+									*((uint32_t *)pcol), dist);
+							else if(px2 < px4)
+								render_vxl_rect(ccolor, cdepth,
+									(int)px2, (int)py3, (int)px4, (int)py4,
+									*((uint32_t *)pcol), dist);
+							
+							if(py3 < py1)
+								render_vxl_rect(ccolor, cdepth,
+									(int)px3, (int)py3, (int)px4, (int)py1,
+									*((uint32_t *)pcol), dist);
+							else if(py2 < py4)
+								render_vxl_rect(ccolor, cdepth,
+									(int)px3, (int)py2, (int)px4, (int)py4,
+									*((uint32_t *)pcol), dist);
 						}
 						pcol+=4;
 					}
