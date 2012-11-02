@@ -18,7 +18,7 @@
 #include "common.h"
 
 // TODO: bump up to 127.5f
-#define FOG_DISTANCE 40.0f
+#define FOG_DISTANCE 30.0f
 
 #define DF_NX 0x01
 #define DF_NY 0x02
@@ -191,8 +191,11 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 		bx2 /= cubemap_size;
 		by2 /= cubemap_size;
 		
+		bx1--;by1--;
+		bx2++;by2++;
+		
 		// go through loop
-		int cox,coy,coz;
+		int cox,coy;
 		
 		//printf("%.3f %i %i %i %i\n ", dist, bx1, by1, bx2, by2);
 		if(dist > 0.001f)
@@ -205,7 +208,7 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 				{
 					uint8_t *pillar = rtmp_map->pillars[
 						((cox+blkx)&(rtmp_map->xlen-1))
-						+(((coy+blky)&(rtmp_map->zlen-1))*rtmp_map->xlen)]+4;
+						+(((coy+blkz)&(rtmp_map->zlen-1))*rtmp_map->xlen)]+4;
 					
 					//printf("%4i %4i %4i - %i %i %i %i\n",cox,coy,coz,
 					//	pillar[0],pillar[1],pillar[2],pillar[3]);
@@ -227,7 +230,7 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 						} else if(coz >= pillar[1] && coz <= pillar[2]) {
 							// TODO: sides
 							break;
-						} else if(pillar[0] == 0 || (coz >= pillar[3])) {
+						} else if(pillar[0] == 0 || (coz < pillar[3])) {
 							break;
 						} else {
 							pillar += pillar[0]*4;
@@ -438,8 +441,8 @@ void render_cubemap(uint32_t *pixels, int width, int height, int pitch, model_t 
 					|(((cubemap_size-1)&(int)(fy*tracemul/fz+traceadd))<<cubemap_shift)];
 			} else {
 				*p++ = cubemap_color[fy >= 0.0f ? CM_PY : CM_NY][
-					((cubemap_size-1)&(int)(fz*tracemul/fy+traceadd))
-					|(((cubemap_size-1)&(int)(fx*tracemul/fy+traceadd))<<cubemap_shift)];
+					((cubemap_size-1)&(int)(fx*tracemul/fy+traceadd))
+					|(((cubemap_size-1)&(int)(fz*tracemul/fy+traceadd))<<cubemap_shift)];
 			}
 			
 			fx += fdx;

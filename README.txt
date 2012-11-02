@@ -4,9 +4,11 @@ mesa.vxl is by Triplefox, and is currently being used to test load/render.
 
 CURRENT STATUS:
 - The cubemap renders!
+- Some parts of the scene are partially rendered to the cubemap!
 
 STUFF TO DO:
-- Actually render the scene to the cubemap.
+- Render the rest of the scene to the cubemap.
+- Speed up the render a bit.
 - Take input from user. Yep, I hate this part.
 - From there, get a flying camera working.
 - From there, get physics working.

@@ -85,15 +85,22 @@ void run_game(void)
 	
 	float angy = 0.0f;
 	float angx = 0.0f;
+	
 	int key_left = 0;
 	int key_right = 0;
 	int key_up = 0;
 	int key_down = 0;
-	render_vxl_redraw(&tcam, map);
+	
+	int key_w = 0;
+	int key_s = 0;
+	int key_a = 0;
+	int key_d = 0;
 	
 	int quitflag = 0;
 	while(!quitflag)
 	{
+		render_vxl_redraw(&tcam, map);
+		
 		// update angles
 		if(key_left)
 			angy += 0.02f;
@@ -110,12 +117,33 @@ void run_game(void)
 		if(angx < -M_PI*0.499f)
 			angx = -M_PI*0.499f;
 		
+		// set camera direction
 		float sya = sinf(angy);
 		float cya = cosf(angy);
 		float sxa = sinf(angx);
 		float cxa = cosf(angx);
 		cam_point_dir(&tcam, sya*cxa, sxa, cya*cxa);
-		//cam_point_dir(&tcam, 0.0f, 0.0f, 1.0f);
+		
+		// move along
+		float mvx = 0.0f;
+		float mvz = 0.0f;
+		
+		if(key_w)
+			mvz += 1.0f;
+		if(key_s)
+			mvz -= 1.0f;
+		if(key_a)
+			mvx += 1.0f;
+		if(key_d)
+			mvx -= 1.0f;
+		
+		float mvspd = 0.2f;
+		mvx *= mvspd;
+		mvz *= mvspd;
+		
+		tcam.mpx += mvx*tcam.mxx+mvz*tcam.mzx;
+		tcam.mpy += mvx*tcam.mxy+mvz*tcam.mzy;
+		tcam.mpz += mvx*tcam.mxz+mvz*tcam.mzz;
 		
 		//printf("%.2f",);
 		SDL_LockSurface(screen);
@@ -147,6 +175,18 @@ void run_game(void)
 					break;
 				case SDLK_RIGHT:
 					key_right = (ev.type == SDL_KEYDOWN);
+					break;
+				case SDLK_w:
+					key_w = (ev.type == SDL_KEYDOWN);
+					break;
+				case SDLK_s:
+					key_s = (ev.type == SDL_KEYDOWN);
+					break;
+				case SDLK_a:
+					key_a = (ev.type == SDL_KEYDOWN);
+					break;
+				case SDLK_d:
+					key_d = (ev.type == SDL_KEYDOWN);
 					break;
 				default:
 					// -Wswitch: SHUT. UP.
