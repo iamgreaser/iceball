@@ -18,7 +18,7 @@
 #include "common.h"
 
 // TODO: bump up to 127.5f
-#define FOG_DISTANCE 30.0f
+#define FOG_DISTANCE 40.0f
 
 #define DF_NX 0x01
 #define DF_NY 0x02
@@ -349,11 +349,17 @@ void render_vxl_face_horiz(int blkx, int blky, int blkz,
 	float cmoffsy = -(ygx*subx+ygy*suby+ygz*subz);
 	if(cmoffsy >= 0.0f)
 		cmoffsy = -cmoffsy;
+	if(cmoffsx >= 0.0f)
+		cmoffsx -= 1.0f;
+	//else
+	//	blky--;
+	
 	
 	// get distance to wall
 	float dist = -(subx*gx+suby*gy+subz*gz);
 	if(dist < 0.0f)
 		dist = 1.0f+dist;
+	dist -= 1.0f;
 	
 	int coz = blky;
 	
@@ -384,6 +390,9 @@ void render_vxl_face_horiz(int blkx, int blky, int blkz,
 		by1 /= cubemap_size;
 		bx2 /= cubemap_size;
 		by2 /= cubemap_size;
+		
+		bx1-=2;by1--;
+		bx2+=2;by2++;
 		
 		// go through loop
 		int cox,coy;
