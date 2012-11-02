@@ -347,6 +347,8 @@ void render_vxl_face_horiz(int blkx, int blky, int blkz,
 	// get cubemap offset
 	float cmoffsx = -(xgx*subx+xgy*suby+xgz*subz);
 	float cmoffsy = -(ygx*subx+ygy*suby+ygz*subz);
+	if(cmoffsy >= 0.0f)
+		cmoffsy = -cmoffsy;
 	
 	// get distance to wall
 	float dist = -(subx*gx+suby*gy+subz*gz);
@@ -412,8 +414,8 @@ void render_vxl_face_horiz(int blkx, int blky, int blkz,
 					{
 						if(coz-blky >= by1 && coz-blky <= by2)
 						{
-							float px1 = -(cox+cmoffsx)*boxsize+traceadd;
-							float py1 = -(coz+cmoffsy)*boxsize+traceadd;
+							float px1 = (cox+cmoffsx)*boxsize+traceadd;
+							float py1 = (coz+cmoffsy-blky)*boxsize+traceadd;
 							float px2 = px1+boxsize;
 							float py2 = py1+boxsize;
 							
@@ -442,7 +444,7 @@ void render_vxl_face_horiz(int blkx, int blky, int blkz,
 						if(coz-blky >= by1 && coz-blky <= by2)
 						{
 							float px1 = (cox+cmoffsx)*boxsize+traceadd;
-							float py1 = (coz-blky)*boxsize+traceadd;
+							float py1 = (coz+cmoffsy-blky)*boxsize+traceadd;
 							float px2 = px1+boxsize;
 							float py2 = py1+boxsize;
 							
@@ -557,12 +559,12 @@ void render_cubemap(uint32_t *pixels, int width, int height, int pitch, model_t 
 			if(fabsf(fx) > fabsf(fy) && fabsf(fx) > fabsf(fz))
 			{
 				*p++ = cubemap_color[fx >= 0.0f ? CM_PX : CM_NX][
-					((cubemap_size-1)&(int)(fz*tracemul/fx+traceadd))
-					|(((cubemap_size-1)&(int)(fy*tracemul/fx+traceadd))<<cubemap_shift)];
+					((cubemap_size-1)&(int)(-fz*tracemul/fx+traceadd))
+					|(((cubemap_size-1)&(int)(fy*tracemul/fabsf(fx)+traceadd))<<cubemap_shift)];
 			} else if(fabsf(fz) > fabsf(fy) && fabsf(fz) > fabsf(fx)) {
 				*p++ = cubemap_color[fz >= 0.0f ? CM_PZ : CM_NZ][
 					((cubemap_size-1)&(int)(fx*tracemul/fz+traceadd))
-					|(((cubemap_size-1)&(int)(fy*tracemul/fz+traceadd))<<cubemap_shift)];
+					|(((cubemap_size-1)&(int)(fy*tracemul/fabsf(fz)+traceadd))<<cubemap_shift)];
 			} else {
 				*p++ = cubemap_color[fy >= 0.0f ? CM_PY : CM_NY][
 					((cubemap_size-1)&(int)(fx*tracemul/fy+traceadd))
