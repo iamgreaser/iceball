@@ -274,28 +274,34 @@ void render_cubemap(uint32_t *pixels, int width, int height, int pitch, model_t 
 	// get corner traces
 	float tracemul = cubemap_size/2;
 	float traceadd = tracemul;
-	float ctrx1 = (camera->mzx-camera->mxx-camera->myx);
-	float ctry1 = (camera->mzy-camera->mxy-camera->myy);
-	float ctrz1 = (camera->mzz-camera->mxz-camera->myz);
-	float ctrx2 = (camera->mzx+camera->mxx-camera->myx);
-	float ctry2 = (camera->mzy+camera->mxy-camera->myy);
-	float ctrz2 = (camera->mzz+camera->mxz-camera->myz);
-	float ctrx3 = (camera->mzx-camera->mxx+camera->myx);
-	float ctry3 = (camera->mzy-camera->mxy+camera->myy);
-	float ctrz3 = (camera->mzz-camera->mxz+camera->myz);
-	float ctrx4 = (camera->mzx+camera->mxx+camera->myx);
-	float ctry4 = (camera->mzy+camera->mxy+camera->myy);
-	float ctrz4 = (camera->mzz+camera->mxz+camera->myz);
-	
-	// TODO: scale this PROPERLY.
+	float ctrx1 = (camera->mzx+camera->mxx-camera->myx);
+	float ctry1 = (camera->mzy+camera->mxy-camera->myy);
+	float ctrz1 = (camera->mzz+camera->mxz-camera->myz);
+	float ctrx2 = (camera->mzx-camera->mxx-camera->myx);
+	float ctry2 = (camera->mzy-camera->mxy-camera->myy);
+	float ctrz2 = (camera->mzz-camera->mxz-camera->myz);
+	float ctrx3 = (camera->mzx+camera->mxx+camera->myx);
+	float ctry3 = (camera->mzy+camera->mxy+camera->myy);
+	float ctrz3 = (camera->mzz+camera->mxz+camera->myz);
+	float ctrx4 = (camera->mzx-camera->mxx+camera->myx);
+	float ctry4 = (camera->mzy-camera->mxy+camera->myy);
+	float ctrz4 = (camera->mzz-camera->mxz+camera->myz);
 	
 	// calculate deltas
 	float fbx = ctrx1, fby = ctry1, fbz = ctrz1; // base
 	float fex = ctrx2, fey = ctry2, fez = ctrz2; // end
 	float flx = ctrx3-fbx, fly = ctry3-fby, flz = ctrz3-fbz; // left side
 	float frx = ctrx4-fex, fry = ctry4-fey, frz = ctrz4-fez; // right side
-	flx /= (float)height; fly /= (float)height; flz /= (float)height;
-	frx /= (float)height; fry /= (float)height; frz /= (float)height;
+	flx /= (float)width; fly /= (float)width; flz /= (float)width;
+	frx /= (float)width; fry /= (float)width; frz /= (float)width;
+	
+	// scale cubemap correctly
+	fbx += flx*((float)(width-height))/2.0f;
+	fby += fly*((float)(width-height))/2.0f;
+	fbz += flz*((float)(width-height))/2.0f;
+	fex += frx*((float)(width-height))/2.0f;
+	fey += fry*((float)(width-height))/2.0f;
+	fez += frz*((float)(width-height))/2.0f;
 	
 	// raytrace it
 	// TODO: find some faster method

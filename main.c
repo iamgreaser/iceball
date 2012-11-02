@@ -83,13 +83,38 @@ void run_game(void)
 	
 	int i;
 	
+	float angy = 0.0f;
+	float angx = 0.0f;
+	int key_left = 0;
+	int key_right = 0;
+	int key_up = 0;
+	int key_down = 0;
 	render_vxl_redraw(&tcam, map);
-	for(i = 0; i < 300; i++)
+	
+	int quitflag = 0;
+	while(!quitflag)
 	{
-		float ang = i*M_PI*2.0f/300.0f;
-		float sa = sinf(ang);
-		float ca = cosf(ang);
-		cam_point_dir(&tcam, sa, 3.5f, ca);
+		// update angles
+		if(key_left)
+			angy += 0.02f;
+		if(key_right)
+			angy -= 0.02f;
+		if(key_up)
+			angx -= 0.02f;
+		if(key_down)
+			angx += 0.02f;
+		
+		// clamp angle, YOU MUST NOT LOOK DIRECTLY UP OR DOWN!
+		if(angx > M_PI*0.499f)
+			angx = M_PI*0.499f;
+		if(angx < -M_PI*0.499f)
+			angx = -M_PI*0.499f;
+		
+		float sya = sinf(angy);
+		float cya = cosf(angy);
+		float sxa = sinf(angx);
+		float cxa = cosf(angx);
+		cam_point_dir(&tcam, sya*cxa, sxa, cya*cxa);
 		//cam_point_dir(&tcam, 0.0f, 0.0f, 1.0f);
 		
 		//printf("%.2f",);
@@ -102,6 +127,35 @@ void run_game(void)
 		SDL_Flip(screen);
 		
 		//SDL_Delay(10);
+		
+		SDL_Event ev;
+		while(SDL_PollEvent(&ev))
+		switch(ev.type)
+		{
+			case SDL_KEYUP:
+			case SDL_KEYDOWN:
+			switch(ev.key.keysym.sym)
+			{
+				case SDLK_UP:
+					key_up = (ev.type == SDL_KEYDOWN);
+					break;
+				case SDLK_DOWN:
+					key_down = (ev.type == SDL_KEYDOWN);
+					break;
+				case SDLK_LEFT:
+					key_left = (ev.type == SDL_KEYDOWN);
+					break;
+				case SDLK_RIGHT:
+					key_right = (ev.type == SDL_KEYDOWN);
+					break;
+				default:
+					// -Wswitch: SHUT. UP.
+					break;
+			} break;
+			case SDL_QUIT:
+				quitflag = 1;
+				break;
+		}
 	}
 	map_free(map);
 }
