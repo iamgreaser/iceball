@@ -96,10 +96,11 @@ void run_game(void)
 	int key_a = 0;
 	int key_d = 0;
 	
+	render_vxl_redraw(&tcam, map);
+	
 	int quitflag = 0;
 	while(!quitflag)
 	{
-		render_vxl_redraw(&tcam, map);
 		
 		// update angles
 		if(key_left)
@@ -144,6 +145,9 @@ void run_game(void)
 		tcam.mpx += mvx*tcam.mxx+mvz*tcam.mzx;
 		tcam.mpy += mvx*tcam.mxy+mvz*tcam.mzy;
 		tcam.mpz += mvx*tcam.mxz+mvz*tcam.mzz;
+		
+		if(mvx != 0.0f || mvz != 0.0f)
+			render_vxl_redraw(&tcam, map);
 		
 		//printf("%.2f",);
 		SDL_LockSurface(screen);

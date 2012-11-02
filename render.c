@@ -56,6 +56,12 @@ map_t *rtmp_map;
 
 void render_vxl_rect(uint32_t *ccolor, float *cdepth, int x1, int y1, int x2, int y2, uint32_t color, float depth)
 {
+	// TODO: one of these:
+	// - a proper front-to-back renderer with the linked lists and stuff
+	// - a back-to-front renderer
+	//
+	// because this is a tad slow for my liking.
+	
 	int x,y;
 	
 	// arrange *1 <= *2
@@ -161,28 +167,30 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 	float dist = -(subx*gx+suby*gy+subz*gz);
 	if(dist < 0.0f)
 		dist = 1.0f+dist;
+	dist -= 1.0f;
 	
 	int coz = blky;
+	
 	// now loop and follow through
 	while(dist < FOG_DISTANCE && coz >= 0 && coz < rtmp_map->ylen)
 	{
-		// calculate frustrum
-		int frustrum = (int)(dist*cubemap_size);
+		// calculate frustum
+		int frustum = (int)(dist*cubemap_size);
 		
 		// prep boundaries
 		int bx1 = 0;
 		int by1 = 0;
-		int bx2 = frustrum*2;
-		int by2 = frustrum*2;
+		int bx2 = frustum*2;
+		int by2 = frustum*2;
 		
 		// clamp wrt pixel counts
 		// TODO!
 		
 		// relocate
-		bx1 -= frustrum;
-		by1 -= frustrum;
-		bx2 -= frustrum;
-		by2 -= frustrum;
+		bx1 -= frustum;
+		by1 -= frustum;
+		bx2 -= frustum;
+		by2 -= frustum;
 		
 		// need to go towards 0, not -inf!
 		// (can be done as shifts, just looks nicer this way)
@@ -203,6 +211,7 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 			float boxsize = tracemul/dist;
 			if(gy >= 0)
 			{
+				// bottom cubemap face
 				for(cox = bx1; cox <= bx2; cox++)
 				for(coy = by1; coy <= by2; coy++)
 				{
@@ -239,6 +248,7 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 					
 				}
 			} else {
+				// top cubemap face
 				int ln = 0;
 				for(cox = bx1; cox <= bx2; cox++)
 				for(coy = by1; coy <= by2; coy++)
@@ -247,6 +257,10 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 						((cox+blkx)&(rtmp_map->xlen-1))
 						+(((coy+blkz)&(rtmp_map->zlen-1))*rtmp_map->xlen)]+4;
 					
+					if(pillar[0] == 0)
+						continue;
+					
+					pillar += pillar[0]*4;
 					//printf("%4i %4i %4i - %i %i %i %i\n",cox,coy,coz,
 					//	pillar[0],pillar[1],pillar[2],pillar[3]);
 					// get correct height
@@ -314,8 +328,9 @@ void render_vxl_face_horiz(int blkx, int blky, int blkz,
 	for(sy = 0; sy < cubemap_size; sy++)
 	for(sx = 0; sx < cubemap_size; sx++)
 	{
-		ccolor[((sy)<<cubemap_shift)+sx] = 0x00000000+sx+(sy<<cubemap_shift);
-		ccolor[((sy)<<cubemap_shift)+sx] += ((face+1)<<(24-3));
+		//ccolor[((sy)<<cubemap_shift)+sx] = 0x00000000+sx+(sy<<cubemap_shift);
+		//ccolor[((sy)<<cubemap_shift)+sx] += ((face+1)<<(24-3));
+		ccolor[((sy)<<cubemap_shift)+sx] = 0x00000000;
 		cdepth[((sy)<<cubemap_shift)+sx] = FOG_DISTANCE;
 	}
 	
@@ -329,31 +344,37 @@ void render_vxl_face_horiz(int blkx, int blky, int blkz,
 	int ygy = gx+gz;
 	int ygz = gy;
 	
+	// get cubemap offset
+	float cmoffsx = -(xgx*subx+xgy*suby+xgz*subz);
+	float cmoffsy = -(ygx*subx+ygy*suby+ygz*subz);
+	
 	// get distance to wall
 	float dist = -(subx*gx+suby*gy+subz*gz);
 	if(dist < 0.0f)
-		dist += 1.0f;
+		dist = 1.0f+dist;
+	
+	int coz = blky;
 	
 	// now loop and follow through
 	while(dist < FOG_DISTANCE)
 	{
-		// calculate frustrum
-		int frustrum = (int)(dist*cubemap_size);
+		// calculate frustum
+		int frustum = (int)(dist*cubemap_size);
 		
 		// prep boundaries
 		int bx1 = 0;
 		int by1 = 0;
-		int bx2 = frustrum*2;
-		int by2 = frustrum*2;
+		int bx2 = frustum*2;
+		int by2 = frustum*2;
 		
 		// clamp wrt pixel counts
 		// TODO!
 		
 		// relocate
-		bx1 -= frustrum;
-		by1 -= frustrum;
-		bx2 -= frustrum;
-		by2 -= frustrum;
+		bx1 -= frustum;
+		by1 -= frustum;
+		bx2 -= frustum;
+		by2 -= frustum;
 		
 		// need to go towards 0, not -inf!
 		// (can be done as shifts, just looks nicer this way)
@@ -364,14 +385,81 @@ void render_vxl_face_horiz(int blkx, int blky, int blkz,
 		
 		// go through loop
 		int cox,coy;
+		cox = 0;
+		coy = 0;
 		
-		for(cox = bx1; cox <= bx2; cox++)
+		if(dist > 0.001f)
 		{
-			// TODO!
-			// TODO: sides as opposed to just fronts
+			float boxsize = tracemul/dist;
+			for(cox = bx1; cox <= bx2; cox++)
+			{
+				coz = 0;
+				
+				uint8_t *pillar = rtmp_map->pillars[
+					((cox*gz+blkx)&(rtmp_map->xlen-1))
+					+(((-cox*gx+blkz)&(rtmp_map->zlen-1))*rtmp_map->xlen)]+4;
+				
+				//printf("%4i %4i %4i - %i %i %i %i\n",cox,coy,coz,
+				//	pillar[0],pillar[1],pillar[2],pillar[3]);
+				
+				for(;;)
+				{
+					uint8_t *pcol = pillar+4;
+					
+					// render top
+					if(pillar[2]-blky >= by1 && pillar[1]-blky <= by2)
+					for(coz = pillar[1]; coz <= pillar[2]; coz++)
+					{
+						if(coz-blky >= by1 && coz-blky <= by2)
+						{
+							float px1 = -(cox+cmoffsx)*boxsize+traceadd;
+							float py1 = -(coz+cmoffsy)*boxsize+traceadd;
+							float px2 = px1+boxsize;
+							float py2 = py1+boxsize;
+							
+							render_vxl_rect(ccolor, cdepth,
+								(int)px1, (int)py1, (int)px2, (int)py2,
+								*((uint32_t *)pcol), dist);
+							// TODO: sides
+						}
+						pcol+=4;
+					}
+					
+					// advance where sensible
+					if(pillar[2]-blky > by2)
+						break;
+					
+					if(pillar[0] == 0)
+						break;
+					
+					pillar += pillar[0]*4;
+					
+					// render bottom
+					int diff = (pillar-pcol)>>2;
+					
+					for(coz = pillar[3]-diff; coz < pillar[3]; coz++)
+					{
+						if(coz-blky >= by1 && coz-blky <= by2)
+						{
+							float px1 = (cox+cmoffsx)*boxsize+traceadd;
+							float py1 = (coz-blky)*boxsize+traceadd;
+							float px2 = px1+boxsize;
+							float py2 = py1+boxsize;
+							
+							render_vxl_rect(ccolor, cdepth,
+								(int)px1, (int)py1, (int)px2, (int)py2,
+								*((uint32_t *)pcol), dist);
+							// TODO: sides
+						}
+						pcol+=4;
+					}
+				}
+			}
 		}
 		
 		dist += 1.0f;
+		blkx += gx;
+		blkz += gz;
 	}
 }
 
