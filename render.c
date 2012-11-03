@@ -18,7 +18,7 @@
 #include "common.h"
 
 // TODO: bump up to 127.5f
-#define FOG_DISTANCE 30.0f
+#define FOG_DISTANCE 40.0f
 
 #define DF_NX 0x01
 #define DF_NY 0x02
@@ -136,13 +136,6 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 	int sx,sy;
 	int i;
 	
-	int lcx[cubemap_size];
-	int lcy[cubemap_size];
-	int cx1 = 0;
-	int cy1 = 0;
-	int cx2 = cubemap_size-1;
-	int cy2 = cubemap_size-1;
-	
 	float tracemul = cubemap_size/2;
 	float traceadd = tracemul;
 	
@@ -150,18 +143,11 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 	uint32_t *ccolor = cubemap_color[face];
 	float *cdepth = cubemap_depth[face];
 	
-	// populate line pixel counts
-	for(i = 0; i < cubemap_size; i++)
-		lcx[i] = lcy[i] = cubemap_size;
-	
-	// TEST: clear cubemap
-	for(sy = 0; sy < cubemap_size; sy++)
-	for(sx = 0; sx < cubemap_size; sx++)
+	// clear cubemap
+	for(i = 0; i < cubemap_size*cubemap_size; i++)
 	{
-		//ccolor[((sy)<<cubemap_shift)+sx] = 0x00000000+sx+(sy<<cubemap_shift);
-		//ccolor[((sy)<<cubemap_shift)+sx] += ((face+1)<<(24-3));
-		ccolor[((sy)<<cubemap_shift)+sx] = 0x00000000;
-		cdepth[((sy)<<cubemap_shift)+sx] = FOG_DISTANCE;
+		ccolor[i] = 0x00000000;
+		cdepth[i] = FOG_DISTANCE;
 	}
 	
 	// get X cube direction
@@ -193,8 +179,19 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 	int coz = blky;
 	
 	// now loop and follow through
-	while(dist < FOG_DISTANCE && coz >= 0 && coz < rtmp_map->ylen)
+	while(dist < FOG_DISTANCE)
 	{
+		if(coz < 0 || coz >= rtmp_map->ylen)
+		{
+			coz += gy;
+			dist += 1.0f;
+			
+			if(gy*coz > 0)
+				break;
+			
+			continue;
+		}
+		
 		// calculate frustum
 		int frustum = (int)(dist*cubemap_size);
 		
@@ -345,13 +342,6 @@ void render_vxl_face_horiz(int blkx, int blky, int blkz,
 	int sx,sy;
 	int i;
 	
-	int lcx[cubemap_size];
-	int lcy[cubemap_size];
-	int cx1 = 0;
-	int cy1 = 0;
-	int cx2 = cubemap_size-1;
-	int cy2 = cubemap_size-1;
-	
 	float tracemul = cubemap_size/2;
 	float traceadd = tracemul;
 	
@@ -359,18 +349,11 @@ void render_vxl_face_horiz(int blkx, int blky, int blkz,
 	uint32_t *ccolor = cubemap_color[face];
 	float *cdepth = cubemap_depth[face];
 	
-	// populate line pixel counts
-	for(i = 0; i < cubemap_size; i++)
-		lcx[i] = lcy[i] = cubemap_size;
-	
-	// TEST: clear cubemap
-	for(sy = 0; sy < cubemap_size; sy++)
-	for(sx = 0; sx < cubemap_size; sx++)
+	// clear cubemap
+	for(i = 0; i < cubemap_size*cubemap_size; i++)
 	{
-		//ccolor[((sy)<<cubemap_shift)+sx] = 0x00000000+sx+(sy<<cubemap_shift);
-		//ccolor[((sy)<<cubemap_shift)+sx] += ((face+1)<<(24-3));
-		ccolor[((sy)<<cubemap_shift)+sx] = 0x00000000;
-		cdepth[((sy)<<cubemap_shift)+sx] = FOG_DISTANCE;
+		ccolor[i] = 0x00000000;
+		cdepth[i] = FOG_DISTANCE;
 	}
 	
 	// get X cube direction
@@ -568,14 +551,14 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 	rtmp_map = map;
 	
 	// get block pos
-	int blkx = ((int)(camera->mpx)) & (map->xlen-1);
-	int blky = ((int)(camera->mpy)) & (map->ylen-1);
-	int blkz = ((int)(camera->mpz)) & (map->zlen-1);
+	int blkx = ((int)floor(camera->mpx)) & (map->xlen-1);
+	int blky = ((int)floor(camera->mpy));// & (map->ylen-1);
+	int blkz = ((int)floor(camera->mpz)) & (map->zlen-1);
 	
 	// get block subpos
-	float subx = (camera->mpx - (float)(int)(camera->mpx));
-	float suby = (camera->mpy - (float)(int)(camera->mpy));
-	float subz = (camera->mpz - (float)(int)(camera->mpz));
+	float subx = (camera->mpx - floor(camera->mpx));
+	float suby = (camera->mpy - floor(camera->mpy));
+	float subz = (camera->mpz - floor(camera->mpz));
 	
 	// render each face
 	render_vxl_face_horiz(blkx, blky, blkz, subx, suby, subz, CM_NX, -1,  0,  0);
