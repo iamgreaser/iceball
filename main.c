@@ -67,7 +67,7 @@ void run_game(void)
 {
 	map_t *map = map_load_aos("mesa.vxl");
 	
-	model_t tcam;
+	camera_t tcam;
 	tcam.mpx = 256.5f;
 	tcam.mpy = 0.5f;
 	tcam.mpz = 256.5f;

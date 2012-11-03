@@ -1,6 +1,6 @@
 #include "common.h"
 
-void cam_point_dir(model_t *model, float dx, float dy, float dz)
+void cam_point_dir(camera_t *model, float dx, float dy, float dz)
 {
 	// Another case where I'd copy-paste code from my aimbot.
 	// Except the last time I did it, I redid it from scratch,

@@ -25,14 +25,15 @@
 
 #include <SDL.h>
 
-typedef struct model
+typedef struct camera
 {
 	// camera bollocks
 	float mxx,mxy,mxz,mxpad;
 	float myx,myy,myz,mypad;
 	float mzx,mzy,mzz,mzpad;
 	float mpx,mpy,mpz,mppad;
-} model_t;
+	
+} camera_t;
 
 /*
 
@@ -98,10 +99,10 @@ void map_free(map_t *map);
 // model.c
 
 // render.c
-void render_vxl_redraw(model_t *camera, map_t *map);
-void render_cubemap(uint32_t *pixels, int width, int height, int pitch, model_t *camera, map_t *map);
+void render_vxl_redraw(camera_t *camera, map_t *map);
+void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t *camera, map_t *map);
 int render_init(int width, int height);
 void render_deinit(void);
 
 // vecmath.c
-void cam_point_dir(model_t *model, float dx, float dy, float dz);
+void cam_point_dir(camera_t *model, float dx, float dy, float dz);

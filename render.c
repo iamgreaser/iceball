@@ -46,7 +46,7 @@ int cubemap_shift;
 
 uint32_t *rtmp_pixels;
 int rtmp_width, rtmp_height, rtmp_pitch;
-model_t *rtmp_camera;
+camera_t *rtmp_camera;
 map_t *rtmp_map;
 
 /*
@@ -184,6 +184,8 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 		dist = 1.0f+dist;
 	else {
 		blky--;
+		
+		blkx--;
 		blkz--;
 	}
 	dist -= 1.0f;
@@ -556,7 +558,7 @@ void render_vxl_face_horiz(int blkx, int blky, int blkz,
 	}
 }
 
-void render_vxl_redraw(model_t *camera, map_t *map)
+void render_vxl_redraw(camera_t *camera, map_t *map)
 {
 	int x,y,z;
 	
@@ -584,7 +586,7 @@ void render_vxl_redraw(model_t *camera, map_t *map)
 	render_vxl_face_horiz(blkx, blky, blkz, subx, suby, subz, CM_PZ,  0,  0,  1);
 }
 
-void render_cubemap(uint32_t *pixels, int width, int height, int pitch, model_t *camera, map_t *map)
+void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t *camera, map_t *map)
 {
 	int x,y,z;
 	
