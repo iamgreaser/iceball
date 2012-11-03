@@ -105,7 +105,12 @@ void run_game(void)
 	render_vxl_redraw(&tcam, map);
 	
 	int quitflag = 0;
-	while(!quitflag)
+
+    int frame_prev = 0;
+    int frame_now = 0;
+    int fps = 0;
+	
+    while(!quitflag)
 	{
 		
 		// update angles
@@ -160,6 +165,18 @@ void run_game(void)
 		
 		if(mvx != 0.0f || mvy != 0.0f || mvz != 0.0f)
 			render_vxl_redraw(&tcam, map);
+
+        frame_now = SDL_GetTicks();
+        fps++;
+
+        if(frame_now - frame_prev > 1000)
+        {
+            char buf[16];
+            sprintf(buf, "buldthensnip | FPS: %d", fps);
+            SDL_WM_SetCaption(buf, 0);
+            fps = 0;
+            frame_prev = SDL_GetTicks();
+        }
 		
 		//printf("%.2f",);
 		SDL_LockSurface(screen);
