@@ -62,6 +62,21 @@ void render_vxl_rect(uint32_t *ccolor, float *cdepth, int x1, int y1, int x2, in
 	//
 	// because this is a tad slow for my liking.
 	
+	int b = color&255;
+	int g = (color>>8)&255;
+	int r = (color>>16)&255;
+	int t = (color>>24)&255;
+	
+	float fog = (FOG_DISTANCE-(depth < 0.001f ? 0.001f : depth))/FOG_DISTANCE;
+	if(fog > 1.0f)
+		fog = 1.0f;
+	
+	r = (r*fog+0.5f);
+	g = (g*fog+0.5f);
+	b = (b*fog+0.5f);
+	
+	color = b|(g<<8)|(r<<16)|(t<<24);
+	
 	int x,y;
 	
 	// arrange *1 <= *2
@@ -167,6 +182,10 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 	float dist = -(subx*gx+suby*gy+subz*gz);
 	if(dist < 0.0f)
 		dist = 1.0f+dist;
+	else {
+		blky--;
+		blkz--;
+	}
 	dist -= 1.0f;
 	
 	int coz = blky;
@@ -200,7 +219,7 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 		by2 /= cubemap_size;
 		
 		bx1--;by1--;
-		bx2++;by2++;
+		bx2+=2;by2+=2;
 		
 		// go through loop
 		int cox,coy;
@@ -236,8 +255,17 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 								(int)px1, (int)py1, (int)px2, (int)py2,
 								*(uint32_t *)(&pillar[4]), dist);
 							break;
+							// TODO: sides
 						} else if(coz >= pillar[1] && coz <= pillar[2]) {
 							// TODO: sides
+							float px1 = (cox+cmoffsx)*boxsize+traceadd;
+							float py1 = (coy+cmoffsy)*boxsize+traceadd;
+							float px2 = px1+boxsize;
+							float py2 = py1+boxsize;
+							
+							render_vxl_rect(ccolor, cdepth,
+								(int)px1, (int)py1, (int)px2, (int)py2,
+								*(uint32_t *)(&pillar[4*(coz-pillar[1]+1)]), dist);
 							break;
 						} else if(pillar[0] == 0 || (coz < pillar[3])) {
 							break;
@@ -257,17 +285,28 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 						((cox+blkx)&(rtmp_map->xlen-1))
 						+(((coy+blkz)&(rtmp_map->zlen-1))*rtmp_map->xlen)]+4;
 					
-					if(pillar[0] == 0)
-						continue;
+					//if(pillar[0] == 0)
+					//	continue;
 					
-					pillar += pillar[0]*4;
 					//printf("%4i %4i %4i - %i %i %i %i\n",cox,coy,coz,
 					//	pillar[0],pillar[1],pillar[2],pillar[3]);
 					// get correct height
 					for(;;)
 					{
-						if(coz == pillar[3]-1)
+						if(coz >= pillar[1] && coz <= pillar[2])
 						{
+							float px1 = (-cox+cmoffsx)*boxsize+traceadd;
+							float py1 = (-coy+cmoffsy)*boxsize+traceadd;
+							float px2 = px1+boxsize;
+							float py2 = py1+boxsize;
+							
+							render_vxl_rect(ccolor, cdepth,
+								(int)px1, (int)py1, (int)px2, (int)py2,
+								*(uint32_t *)(&pillar[4*(coz-pillar[1]+1)]), dist);
+							// TODO: sides
+							// wait, how the hell am i going to do these here?!
+							break;
+						} else if(ln != 0 && (coz < pillar[3] && coz > pillar[3]-ln)) {
 							float px1 = (-cox+cmoffsx)*boxsize+traceadd;
 							float py1 = (-coy+cmoffsy)*boxsize+traceadd;
 							float px2 = px1+boxsize;
@@ -276,16 +315,13 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 							
 							render_vxl_rect(ccolor, cdepth,
 								(int)px1, (int)py1, (int)px2, (int)py2,
-								*(uint32_t *)(&pillar[-4]), dist);
+								*(uint32_t *)(&pillar[4*(coz-pillar[3])]), dist);
 							// TODO: sides
 							break;
-						} else if(coz >= pillar[1] && coz <= pillar[2]) {
-							// TODO: sides
-							// wait, how the hell am i going to do these here?!
-							break;
-						} else if(pillar[0] == 0 || (coz < pillar[3])) {
+						} else if(pillar[0] == 0 || (coz < pillar[1])) {
 							break;
 						} else {
+							ln = pillar[0]-(pillar[2]-pillar[1]+1);
 							pillar += pillar[0]*4;
 						}
 					}
