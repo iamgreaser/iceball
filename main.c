@@ -21,6 +21,8 @@ SDL_Surface *screen = NULL;
 int screen_width = 800;
 int screen_height = 600;
 
+char *fnmap = "mesa.vxl";
+
 int error_sdl(char *msg)
 {
 	fprintf(stderr, "%s: %s\n", msg, SDL_GetError());
@@ -65,12 +67,13 @@ void deinit_sdl(void)
 
 void run_game(void)
 {
-	map_t *map = map_load_aos("mesa.vxl");
+	map_t *map = map_load_aos(fnmap);
 	
 	camera_t tcam;
 	tcam.mpx = 256.5f;
-	tcam.mpy = 0.5f;
 	tcam.mpz = 256.5f;
+	tcam.mpy = map->pillars[((int)tcam.mpz)*map->xlen+((int)tcam.mpy)][4+1]-2.0f;
+	
 	tcam.mxx = 1.0f;
 	tcam.mxy = 0.0f;
 	tcam.mxz = 0.0f;
@@ -95,6 +98,8 @@ void run_game(void)
 	int key_s = 0;
 	int key_a = 0;
 	int key_d = 0;
+	int key_space = 0;
+	int key_ctrl = 0;
 	
 	render_vxl_redraw(&tcam, map);
 	
@@ -127,6 +132,7 @@ void run_game(void)
 		
 		// move along
 		float mvx = 0.0f;
+		float mvy = 0.0f;
 		float mvz = 0.0f;
 		
 		if(key_w)
@@ -137,16 +143,21 @@ void run_game(void)
 			mvx += 1.0f;
 		if(key_d)
 			mvx -= 1.0f;
+		if(key_ctrl)
+			mvy += 1.0f;
+		if(key_space)
+			mvy -= 1.0f;
 		
 		float mvspd = 0.2f;
 		mvx *= mvspd;
+		mvy *= mvspd;
 		mvz *= mvspd;
 		
-		tcam.mpx += mvx*tcam.mxx+mvz*tcam.mzx;
-		tcam.mpy += mvx*tcam.mxy+mvz*tcam.mzy;
-		tcam.mpz += mvx*tcam.mxz+mvz*tcam.mzz;
+		tcam.mpx += mvx*tcam.mxx+mvy*tcam.myx+mvz*tcam.mzx;
+		tcam.mpy += mvx*tcam.mxy+mvy*tcam.myy+mvz*tcam.mzy;
+		tcam.mpz += mvx*tcam.mxz+mvy*tcam.myz+mvz*tcam.mzz;
 		
-		if(mvx != 0.0f || mvz != 0.0f)
+		if(mvx != 0.0f || mvy != 0.0f || mvz != 0.0f)
 			render_vxl_redraw(&tcam, map);
 		
 		//printf("%.2f",);
@@ -192,6 +203,12 @@ void run_game(void)
 				case SDLK_d:
 					key_d = (ev.type == SDL_KEYDOWN);
 					break;
+				case SDLK_LCTRL:
+					key_ctrl = (ev.type == SDL_KEYDOWN);
+					break;
+				case SDLK_SPACE:
+					key_space = (ev.type == SDL_KEYDOWN);
+					break;
 				default:
 					// -Wswitch: SHUT. UP.
 					break;
@@ -209,6 +226,9 @@ int main(int argc, char *argv[])
 	if(!init_platform()) {
 	if(!init_video()) {
 	if(!render_init(screen->w, screen->h)) {
+		if(argc > 1)
+			fnmap = argv[1];
+		
 		run_game();
 		render_deinit();
 	} deinit_video();

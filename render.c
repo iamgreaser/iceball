@@ -18,7 +18,7 @@
 #include "common.h"
 
 // TODO: bump up to 127.5f
-#define FOG_DISTANCE 40.0f
+#define FOG_DISTANCE 30.0f
 
 #define DF_NX 0x01
 #define DF_NY 0x02
