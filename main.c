@@ -16,6 +16,7 @@
 */
 
 #include "common.h"
+#include "config.h"
 
 SDL_Surface *screen = NULL;
 int screen_width = 800;
@@ -179,34 +180,34 @@ void run_game(void)
 			case SDL_KEYDOWN:
 			switch(ev.key.keysym.sym)
 			{
-				case SDLK_UP:
+				case BTSK_LOOKUP:
 					key_up = (ev.type == SDL_KEYDOWN);
 					break;
-				case SDLK_DOWN:
+				case BTSK_LOOKDOWN:
 					key_down = (ev.type == SDL_KEYDOWN);
 					break;
-				case SDLK_LEFT:
+				case BTSK_LOOKLEFT:
 					key_left = (ev.type == SDL_KEYDOWN);
 					break;
-				case SDLK_RIGHT:
+				case BTSK_LOOKRIGHT:
 					key_right = (ev.type == SDL_KEYDOWN);
 					break;
-				case SDLK_w:
+				case BTSK_FORWARD:
 					key_w = (ev.type == SDL_KEYDOWN);
 					break;
-				case SDLK_s:
+				case BTSK_BACK:
 					key_s = (ev.type == SDL_KEYDOWN);
 					break;
-				case SDLK_a:
+				case BTSK_LEFT:
 					key_a = (ev.type == SDL_KEYDOWN);
 					break;
-				case SDLK_d:
+				case BTSK_RIGHT:
 					key_d = (ev.type == SDL_KEYDOWN);
 					break;
-				case SDLK_LCTRL:
+				case BTSK_CROUCH:
 					key_ctrl = (ev.type == SDL_KEYDOWN);
 					break;
-				case SDLK_SPACE:
+				case BTSK_JUMP:
 					key_space = (ev.type == SDL_KEYDOWN);
 					break;
 				default:
