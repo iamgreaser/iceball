@@ -4,26 +4,30 @@ libraries are "client" and "server"
 stuff in both is also put in "common"
 note, behaviour might be subtly different
 
-all scripts must use "/" as a path separator (Unix Master Race)
+all files must use "/" as a path separator (Unix Master Race)
 valid characters are listed here (ignoring the path separator):
 -.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ[]_abcdefghijklmnopqrstuvwxyz
 anything else is invalid and will just be outright rejected
+
+maximum path length is 128
 
 stuff that's actually implemented will be marked with an @
 
 lua base library stuff:
 	math.*
 	string.*
-	pcall
-	error
+	pcall @
+	error @
+	print @
 	
 	nothing else yet
 	
 	check http://www.lua.org/manual/5.1/ for more info on these
 
-time_delta = common.tick(sec = 0.0)
-	forces a sleep for "sec" seconds (floating point),
-	then tells you how much time actually elapsed
+common.hook_tick(fn(sec_curtime, sec_delta)->sec_wait)
+	sets a hook called every "tick"
+	returns a number telling it how long it wants to wait for
+	
 
 success = server.stream_new_map(fname, fmt = "auto")
 	loads a map, either .vxl or some format we might invent

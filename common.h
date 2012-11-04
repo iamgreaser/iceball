@@ -36,8 +36,27 @@ typedef struct camera
 	float myx,myy,myz,mypad;
 	float mzx,mzy,mzz,mzpad;
 	float mpx,mpy,mpz,mppad;
-	
 } camera_t;
+
+// well yeah, a model is just a 0-radius-terminated array of this
+typedef struct model
+{
+	uint16_t radius;
+	int16_t x,y,z;
+	uint8_t b,g,r,resv1;
+} model_t;
+
+#define EF_VISIBLE  0x00000001
+
+typedef struct entity entity_t;
+struct entity
+{
+	model_t *model;
+	entity_t *ent_next;
+	int flags;
+	float x,y,z;
+	float mod_scale;
+};
 
 /*
 

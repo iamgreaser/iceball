@@ -1,0 +1,20 @@
+pretty simple really
+
+start with the header of "PMF",0x1A,1,0,0,0
+
+then there's a whole bunch of this:
+
+uint16_t radius;
+int16_t x,y,z;
+uint8_t b,g,r,reserved;
+
+rinse, lather, repeat
+until you hit a radius of 0
+that's when you *stop*
+
+units are 8:8 fixed point in terms of the vxl grid by default
+
+"reserved" needs to be 0 or else you suck
+NO SIDECHANNELING YOUR NAME IN THERE
+i'm going to enforce this in the renderer
+and will outright reject files which don't have 0 in ALL of these slots

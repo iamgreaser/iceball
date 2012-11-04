@@ -17,8 +17,23 @@
 
 #include "common.h"
 
-model_t *pmf_load(void)
+SDL_Surface *screen = NULL;
+
+void editloop(void)
 {
-	// TODO!
-	return NULL;
+	SDL_Delay(1000);
+};
+
+int main(int argc, char *argv[])
+{
+	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE);
+	
+	SDL_WM_SetCaption("pmfedit for Point Model Format v1", NULL);
+	screen = SDL_SetVideoMode(800, 600, 32, 0);
+	
+	editloop();
+	
+	SDL_Quit();
+	
+	return 0;
 }
