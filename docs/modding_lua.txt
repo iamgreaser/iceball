@@ -1,0 +1,54 @@
+work in progress
+
+libraries are "client" and "server"
+stuff in both is also put in "common"
+note, behaviour might be subtly different
+
+all scripts must use "/" as a path separator (Unix Master Race)
+valid characters are listed here (ignoring the path separator):
+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ[]_abcdefghijklmnopqrstuvwxyz
+anything else is invalid and will just be outright rejected
+
+stuff that's actually implemented will be marked with an @
+
+lua base library stuff:
+	math.*
+	string.*
+	pcall
+	error
+	
+	nothing else yet
+	
+	check http://www.lua.org/manual/5.1/ for more info on these
+
+time_delta = common.tick(sec = 0.0)
+	forces a sleep for "sec" seconds (floating point),
+	then tells you how much time actually elapsed
+
+success = server.stream_new_map(fname, fmt = "auto")
+	loads a map, either .vxl or some format we might invent
+	which will probably be .vxl with our own header
+	+ changed meaning for the 4th colour byte
+	
+	this will also send the map to the other clients
+
+success = server.create_new_map(lx, ly, lz)
+	creates a new map
+	
+	note, ly is the *height* of the new map
+
+success = common.save_map(fname, fmt = "bsm")
+	saves a map to a file
+
+client.camera_point(dx, dy, dz, zoom = 1.0, pitch = 0.0)
+	points the camera in a direction with zoom factor "zoom"
+	and pitch "pitch" (in radians, sorry)
+
+client.camera_move_local(dx, dy, dz)
+	moves the camera in the camera-local direction (dx,dy,dz)
+
+client.camera_move_global(dx, dy, dz)
+	moves the camera in the world direction (dx,dy,dz)
+
+client.camera_move_to(px, py, pz)
+	moves the camera to the world position (px,py,pz)

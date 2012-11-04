@@ -36,7 +36,7 @@ int error_perror(char *msg)
 	return 1;
 }
 
-int init_platform(void)
+int platform_init(void)
 {
 	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_NOPARACHUTE))
 		return error_sdl("SDL_Init");
@@ -44,7 +44,7 @@ int init_platform(void)
 	return 0;
 }
 
-int init_video(void)
+int video_init(void)
 {
 	SDL_WM_SetCaption("buld then snip",NULL);
 	
@@ -56,12 +56,12 @@ int init_video(void)
 	return 0;
 }
 
-void deinit_video(void)
+void video_deinit(void)
 {
 	// don't do anything
 }
 
-void deinit_sdl(void)
+void platform_deinit(void)
 {
 	SDL_Quit();
 }
@@ -241,16 +241,20 @@ void run_game(void)
 
 int main(int argc, char *argv[])
 {
-	if(!init_platform()) {
-	if(!init_video()) {
+	if(!platform_init()) {
+	if(!btslua_init()) {
+	if(!net_init()) {
+	if(!video_init()) {
 	if(!render_init(screen->w, screen->h)) {
 		if(argc > 1)
 			fnmap = argv[1];
 		
 		run_game();
 		render_deinit();
-	} deinit_video();
-	} deinit_sdl();
+	} video_deinit();
+	} net_deinit();
+	} btslua_deinit();
+	} platform_deinit();
 	}
 	
 	return 0;

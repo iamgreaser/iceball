@@ -23,6 +23,10 @@
 
 #include <math.h>
 
+#include <lua.h>
+#include <lualib.h>
+#include <lauxlib.h>
+
 #include <SDL.h>
 
 typedef struct camera
@@ -87,6 +91,10 @@ enum
 	BT_MAX
 };
 
+// lua.c
+int btslua_init(void);
+void btslua_deinit(void);
+
 // main.c
 int error_sdl(char *msg);
 int error_perror(char *msg);
@@ -97,6 +105,10 @@ map_t *map_load_bts(char *fname);
 void map_free(map_t *map);
 
 // model.c
+
+// network.c
+int net_init(void);
+void net_deinit(void);
 
 // render.c
 void render_vxl_redraw(camera_t *camera, map_t *map);

@@ -20,6 +20,8 @@
 // TODO: bump up to 127.5f
 #define FOG_DISTANCE 40.0f
 
+#define FTB_MAX_PERSPAN 50
+
 #define DF_NX 0x01
 #define DF_NY 0x02
 #define DF_NZ 0x04
@@ -49,69 +51,270 @@ int rtmp_width, rtmp_height, rtmp_pitch;
 camera_t *rtmp_camera;
 map_t *rtmp_map;
 
+int *ftb_first;
+
 /*
  * REFERENCE IMPLEMENTATION
  * 
  */
 
-void render_vxl_rect(uint32_t *ccolor, float *cdepth, int x1, int y1, int x2, int y2, uint32_t color, float depth)
+void render_rect_clip(uint32_t *color, int *x1, int *y1, int *x2, int *y2, float depth)
 {
-	// TODO: one of these:
-	// - a proper front-to-back renderer with the linked lists and stuff
-	// - a back-to-front renderer
-	//
-	// because this is a tad slow for my liking.
-	
-	int b = color&255;
-	int g = (color>>8)&255;
-	int r = (color>>16)&255;
-	int t = (color>>24)&255;
+	int b = *color&255;
+	int g = (*color>>8)&255;
+	int r = (*color>>16)&255;
+	int t = (*color>>24)&255;
 	
 	float fog = (FOG_DISTANCE-(depth < 0.001f ? 0.001f : depth))/FOG_DISTANCE;
 	if(fog > 1.0f)
 		fog = 1.0f;
+	if(fog < 0.0f)
+		fog = 0.0f;
 	
 	r = (r*fog+0.5f);
 	g = (g*fog+0.5f);
 	b = (b*fog+0.5f);
 	
-	color = b|(g<<8)|(r<<16)|(t<<24);
-	
-	int x,y;
+	*color = b|(g<<8)|(r<<16)|(t<<24);
 	
 	// arrange *1 <= *2
-	if(x1 > x2)
+	if(*x1 > *x2)
 	{
-		int t = x1;
-		x1 = x2;
-		x2 = t;
+		int t = *x1;
+		*x1 = *x2;
+		*x2 = t;
 	}
 	
-	if(y1 > y2)
+	if(*y1 > *y2)
 	{
-		int t = y1;
-		y1 = y2;
-		y2 = t;
+		int t = *y1;
+		*y1 = *y2;
+		*y2 = t;
 	}
 	
 	// clip
-	if(x1 < 0)
-		x1 = 0;
-	if(y1 < 0)
-		y1 = 0;
-	if(x2 > cubemap_size)
-		x2 = cubemap_size;
-	if(y2 > cubemap_size)
-		y2 = cubemap_size;
+	if(*x1 < 0)
+		*x1 = 0;
+	if(*y1 < 0)
+		*y1 = 0;
+	if(*x2 > cubemap_size)
+		*x2 = cubemap_size;
+	if(*y2 > cubemap_size)
+		*y2 = cubemap_size;
+}
+ 
+void render_vxl_rect_btf(uint32_t *ccolor, float *cdepth, int x1, int y1, int x2, int y2, uint32_t color, float depth)
+{
+	int x,y;
+	
+	// clip
+	render_rect_clip(&color, &x1, &y1, &x2, &y2, depth);
+	
+	if(x2 <= 0)
+		return;
+	if(x1 >= cubemap_size)
+		return;
+	if(y2 <= 0)
+		return;
+	if(y1 >= cubemap_size)
+		return;
+	if(x1 == x2)
+		return;
+	if(y1 == y2)
+		return;
 	
 	// render
-	uint32_t *cstart = &ccolor[(y1<<cubemap_shift)+x1];
-	float *dstart = &cdepth[(y1<<cubemap_shift)+x1];
+	uint32_t *cptr = &ccolor[(y1<<cubemap_shift)+x1];
+	float *dptr = &cdepth[(y1<<cubemap_shift)+x1];
+	int stride = x2-x1;
+	int pitch = cubemap_size - stride;
+	
+	// split it into two, it's more cache/register-friendly (i think)
+	
+	// FIXME: the depth loop causes a crash! don't use this yet!
+//if defined(USE_ASM) && (defined(__i386__) || defined(__amd64__))
+#if 0
+	int ylen = y2-y1;
+	//stride <<= 2;
+	pitch <<= 2;
+	//printf("%i %i %i %i\n",x1,x2,y1,y2);
+	// AT%T SYNTAX SUCKS
+	__asm__ (
+		"render_vxl_rect_btf_lp_color_y:\n\t"
+#if defined(__amd64__)
+		"movq %0, %%rcx\n\t"
+#else
+		"movl %0, %%ecx\n\t"
+#endif
+		"cld\n\trep\n\tstosl\n\t" // IT'S REP STOSD YOU *IDIOTS*!
+#if defined(__amd64__)
+		"add %1, %%rdi\n\t"
+#else
+		"add %1, %%edi\n\t"
+#endif
+		"dec %2\n\t"
+		"jnz render_vxl_rect_btf_lp_color_y\n\t"
+		: /* no outputs */
+#if defined(__amd64__)
+		: "g"((uint64_t)stride), "g"((uint64_t)pitch), "g"((uint64_t)ylen),
+			"D"(cptr), "a"(color)
+#else
+		: "g"(stride), "g"(pitch), "g"(ylen), 
+			"D"(cptr), "a"(color)
+#endif
+		: "ecx", "%1", "%2"
+	);
+	
+	//printf("%i %i %i\n",y1,y2,ylen);
+	
+	// FIXME: depth causes a crash, probably because i suck at inline asm
+	/*
+	uint32_t idepth = *(uint32_t *)(float *)&depth;
+	
+	__asm__ __volatile__ (
+		"render_vxl_rect_btf_lp_depth_y:\n\t"
+#if defined(__amd64__)
+		"movq %0, %%rcx\n\t"
+#else
+		"movl %0, %%ecx\n\t"
+#endif
+		"cld\n\trep\n\tstosl\n\t" // IT'S REP STOSD YOU *IDIOTS*!
+#if defined(__amd64__)
+		"add %1, %%rdi\n\t"
+#else
+		"add %1, %%edi\n\t"
+#endif
+		"dec %2\n\t"
+		"jnz render_vxl_rect_btf_lp_depth_y\n\t"
+		: // no outputs
+#if defined(__amd64__)
+		: "g"((uint64_t)stride), "g"((uint64_t)pitch), "g"((uint64_t)ylen),
+			"D"(dptr), "a"(idepth)
+#else
+		: "g"(stride), "g"(pitch), "g"(ylen), 
+			"D"(dptr), "a"(idepth)
+#endif
+		: "ecx", "%1", "%2", "memory"
+	);
+	*/
+	
+#else
 	for(y = y1; y < y2; y++)
 	{
-		uint32_t *cptr = cstart;
-		float *dptr = dstart;
+		for(x = x1; x < x2; x++)
+			*(cptr++) = color;
 		
+		cptr += pitch;
+	}
+	
+	for(y = y1; y < y2; y++)
+	{
+		for(x = x1; x < x2; x++)
+			*(dptr++) = depth;
+		
+		dptr += pitch;
+	}
+#endif
+}
+
+// TODO: get my head around this.
+void todo_render_vxl_rect_ftb_fast(uint32_t *ccolor, float *cdepth, int x1, int y1, int x2, int y2, uint32_t color, float depth)
+{
+	int x,y;
+	
+	// clip
+	render_rect_clip(&color, &x1, &y1, &x2, &y2, depth);
+	
+	if(x2 <= 0)
+		return;
+	if(x1 >= cubemap_size)
+		return;
+	if(y2 <= 0)
+		return;
+	if(y1 >= cubemap_size)
+		return;
+	if(x1 == x2)
+		return;
+	if(y1 == y2)
+		return;
+	
+	// render
+	uint32_t *cptr = &ccolor[(y1<<cubemap_shift)+x1];
+	uint32_t *cstarty = &ccolor[(y1<<cubemap_shift)];
+	float *dptr = &cdepth[(y1<<cubemap_shift)+x1];
+	int pitch = cubemap_size - (x2-x1);
+	
+	for(y = y1; y < y2; y++)
+	{
+		// read from FTB buffer
+		int *lf = &(ftb_first[y]);
+		int f = *lf;
+		
+		// UPPER = next
+		// LOWER = length
+		
+		while(f < x2)
+		{
+			// read value
+			uint32_t *pv = &(ccolor[f]);
+			uint32_t v = *pv;
+			
+			// check if we're in the right sort of area
+			if(f >= x1)
+			{
+				// plot it
+				for(x = x1; x < x2; x++)
+					*(cptr++) = color;
+				
+				for(x = x1; x < x2; x++)
+					*(dptr++) = depth;
+				
+			} else if(x1 < f+(int)(v&0xFFFF)) {
+				
+			}
+			
+			lf = (int *)&ccolor[f];
+		}
+		
+		cptr += pitch;
+		dptr += pitch;
+		cstarty += cubemap_size;
+	}
+}
+
+void render_vxl_rect_ftb_fast(uint32_t *ccolor, float *cdepth, int x1, int y1, int x2, int y2, uint32_t color, float depth)
+//void render_vxl_rect_ftb_slow(uint32_t *ccolor, float *cdepth, int x1, int y1, int x2, int y2, uint32_t color, float depth)
+{
+	int x,y;
+	
+	// TODO: stop using this bloody function
+	// (alternatively, switch to the fast FTB as used in Doom and Quake)
+	//
+	// NOTE: this approach seems to be faster than render_vxl_rect_btf.
+	
+	// clip
+	render_rect_clip(&color, &x1, &y1, &x2, &y2, depth);
+	
+	if(x2 <= 0)
+		return;
+	if(x1 >= cubemap_size)
+		return;
+	if(y2 <= 0)
+		return;
+	if(y1 >= cubemap_size)
+		return;
+	if(x1 == x2)
+		return;
+	if(y1 == y2)
+		return;
+	
+	// render
+	uint32_t *cptr = &ccolor[(y1<<cubemap_shift)+x1];
+	float *dptr = &cdepth[(y1<<cubemap_shift)+x1];
+	int pitch = cubemap_size - (x2-x1);
+	
+	for(y = y1; y < y2; y++)
+	{
 		for(x = x1; x < x2; x++)
 		{
 			if(*cptr == 0)
@@ -123,8 +326,8 @@ void render_vxl_rect(uint32_t *ccolor, float *cdepth, int x1, int y1, int x2, in
 			dptr++;
 		}
 		
-		cstart += cubemap_size;
-		dstart += cubemap_size;
+		cptr += pitch;
+		dptr += pitch;
 	}
 }
 
@@ -133,6 +336,7 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 	int face,
 	int gx, int gy, int gz)
 {
+	// TODO: this function sucks, speed it up a bit
 	int sx,sy;
 	int i;
 	
@@ -148,6 +352,13 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 	{
 		ccolor[i] = 0x00000000;
 		cdepth[i] = FOG_DISTANCE;
+	}
+	
+	// clear FTB buffers
+	for(i = 0; i < cubemap_size; i++)
+	{
+		ftb_first[i] = 0;
+		//ccolor[i<<cubemap_shift] = cubemap_size|(cubemap_size<<16);
 	}
 	
 	// get X cube direction
@@ -224,7 +435,8 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 		int cox,coy;
 		
 		//printf("%.3f %i %i %i %i\n ", dist, bx1, by1, bx2, by2);
-		if(dist > 0.001f)
+		
+		if(dist >= 0.001f)
 		{
 			float boxsize = tracemul/dist;
 			if(gy >= 0)
@@ -250,7 +462,7 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 							float py2 = py1+boxsize;
 							//printf("%i %i %i %i\n",(int)px1,(int)py1,(int)px2,(int)py2);
 							
-							render_vxl_rect(ccolor, cdepth,
+							render_vxl_rect_ftb_fast(ccolor, cdepth,
 								(int)px1, (int)py1, (int)px2, (int)py2,
 								*(uint32_t *)(&pillar[4]), dist);
 							break;
@@ -262,7 +474,7 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 							float px2 = px1+boxsize;
 							float py2 = py1+boxsize;
 							
-							render_vxl_rect(ccolor, cdepth,
+							render_vxl_rect_ftb_fast(ccolor, cdepth,
 								(int)px1, (int)py1, (int)px2, (int)py2,
 								*(uint32_t *)(&pillar[4*(coz-pillar[1]+1)]), dist);
 							break;
@@ -299,7 +511,7 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 							float px2 = px1+boxsize;
 							float py2 = py1+boxsize;
 							
-							render_vxl_rect(ccolor, cdepth,
+							render_vxl_rect_ftb_fast(ccolor, cdepth,
 								(int)px1, (int)py1, (int)px2, (int)py2,
 								*(uint32_t *)(&pillar[4*(coz-pillar[1]+1)]), dist);
 							// TODO: sides
@@ -312,7 +524,7 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 							float py2 = py1+boxsize;
 							//printf("%i %i %i %i\n",(int)px1,(int)py1,(int)px2,(int)py2);
 							
-							render_vxl_rect(ccolor, cdepth,
+							render_vxl_rect_ftb_fast(ccolor, cdepth,
 								(int)px1, (int)py1, (int)px2, (int)py2,
 								*(uint32_t *)(&pillar[4*(coz-pillar[3])]), dist);
 							// TODO: sides
@@ -354,6 +566,13 @@ void render_vxl_face_horiz(int blkx, int blky, int blkz,
 	{
 		ccolor[i] = 0x00000000;
 		cdepth[i] = FOG_DISTANCE;
+	}
+	
+	// clear FTB buffers
+	for(i = 0; i < cubemap_size; i++)
+	{
+		ftb_first[i] = 0;
+		//ccolor[i<<cubemap_shift] = cubemap_size|(cubemap_size<<16);
 	}
 	
 	// get X cube direction
@@ -421,7 +640,7 @@ void render_vxl_face_horiz(int blkx, int blky, int blkz,
 		cox = 0;
 		coy = 0;
 		
-		if(dist > 0.001f)
+		if(dist >= 0.001f)
 		{
 			float boxsize = tracemul/dist;
 			float nboxsize = tracemul/(dist+0.5f);
@@ -455,26 +674,26 @@ void render_vxl_face_horiz(int blkx, int blky, int blkz,
 							float px4 = px3+nboxsize;
 							float py4 = py3+nboxsize;
 							
-							render_vxl_rect(ccolor, cdepth,
+							render_vxl_rect_ftb_fast(ccolor, cdepth,
 								(int)px1, (int)py1, (int)px2, (int)py2,
 								*((uint32_t *)pcol), dist);
 							
 							// TODO: replace these with trapezium drawing routines
 							if(px3 < px1)
-								render_vxl_rect(ccolor, cdepth,
+								render_vxl_rect_ftb_fast(ccolor, cdepth,
 									(int)px3, (int)py3, (int)px1, (int)py4,
 									*((uint32_t *)pcol), dist);
 							else if(px2 < px4)
-								render_vxl_rect(ccolor, cdepth,
+								render_vxl_rect_ftb_fast(ccolor, cdepth,
 									(int)px2, (int)py3, (int)px4, (int)py4,
 									*((uint32_t *)pcol), dist);
 							
 							if(py3 < py1)
-								render_vxl_rect(ccolor, cdepth,
+								render_vxl_rect_ftb_fast(ccolor, cdepth,
 									(int)px3, (int)py3, (int)px4, (int)py1,
 									*((uint32_t *)pcol), dist);
 							else if(py2 < py4)
-								render_vxl_rect(ccolor, cdepth,
+								render_vxl_rect_ftb_fast(ccolor, cdepth,
 									(int)px3, (int)py2, (int)px4, (int)py4,
 									*((uint32_t *)pcol), dist);
 						}
@@ -506,26 +725,26 @@ void render_vxl_face_horiz(int blkx, int blky, int blkz,
 							float px4 = px3+nboxsize;
 							float py4 = py3+nboxsize;
 							
-							render_vxl_rect(ccolor, cdepth,
+							render_vxl_rect_ftb_fast(ccolor, cdepth,
 								(int)px1, (int)py1, (int)px2, (int)py2,
 								*((uint32_t *)pcol), dist);
 							
 							// TODO: replace these with trapezium drawing routines
 							if(px3 < px1)
-								render_vxl_rect(ccolor, cdepth,
+								render_vxl_rect_ftb_fast(ccolor, cdepth,
 									(int)px3, (int)py3, (int)px1, (int)py4,
 									*((uint32_t *)pcol), dist);
 							else if(px2 < px4)
-								render_vxl_rect(ccolor, cdepth,
+								render_vxl_rect_ftb_fast(ccolor, cdepth,
 									(int)px2, (int)py3, (int)px4, (int)py4,
 									*((uint32_t *)pcol), dist);
 							
 							if(py3 < py1)
-								render_vxl_rect(ccolor, cdepth,
+								render_vxl_rect_ftb_fast(ccolor, cdepth,
 									(int)px3, (int)py3, (int)px4, (int)py1,
 									*((uint32_t *)pcol), dist);
 							else if(py2 < py4)
-								render_vxl_rect(ccolor, cdepth,
+								render_vxl_rect_ftb_fast(ccolor, cdepth,
 									(int)px3, (int)py2, (int)px4, (int)py4,
 									*((uint32_t *)pcol), dist);
 						}
@@ -726,6 +945,10 @@ int render_init(int width, int height)
 		size >>= 1;
 	}
 	
+	// allocate space for FTB buffers
+	ftb_first = malloc(cubemap_size*sizeof(int));
+	// TODO: check if NULL
+	
 	return 0;
 }
 
@@ -748,4 +971,10 @@ void render_deinit(void)
 		}
 	}
 	
+	// deallocate FTB buffers
+	if(ftb_first != NULL)
+	{
+		free(ftb_first);
+		ftb_first = NULL;
+	}
 }
