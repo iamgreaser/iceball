@@ -4,6 +4,8 @@
 # final binaries
 bts
 bts.exe
+pmfedit
+pmfedit.exe
 
 # backups, just in case you can't configure your editor properly
 *.bak
@@ -11,4 +13,7 @@ bts.exe
 
 # gprof
 gmon.out
+
+# kate
+*.kate-swp
 
