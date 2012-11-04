@@ -172,7 +172,7 @@ void run_game(void)
         if(frame_now - frame_prev > 1000)
         {
             char buf[16];
-            sprintf(buf, "buldthensnip | FPS: %d", fps);
+            sprintf(buf, "buld then snip | FPS: %d", fps);
             SDL_WM_SetCaption(buf, 0);
             fps = 0;
             frame_prev = SDL_GetTicks();
