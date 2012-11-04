@@ -117,4 +117,4 @@ int render_init(int width, int height);
 void render_deinit(void);
 
 // vecmath.c
-void cam_point_dir(camera_t *model, float dx, float dy, float dz);
+void cam_point_dir(camera_t *model, float dx, float dy, float dz, float zoom, float roll);

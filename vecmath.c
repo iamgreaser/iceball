@@ -1,6 +1,6 @@
 #include "common.h"
 
-void cam_point_dir(camera_t *model, float dx, float dy, float dz)
+void cam_point_dir(camera_t *model, float dx, float dy, float dz, float zoom, float roll)
 {
 	// Another case where I'd copy-paste code from my aimbot.
 	// Except the last time I did it, I redid it from scratch,
@@ -28,9 +28,9 @@ void cam_point_dir(camera_t *model, float dx, float dy, float dz)
 	// Now build that matrix!
 	
 	// Front vector (Z): Well, duh.
-	model->mzx = nx;
-	model->mzy = ny;
-	model->mzz = nz;
+	model->mzx = nx*zoom;
+	model->mzy = ny*zoom;
+	model->mzz = nz*zoom;
 	
 	// Left (TODO: confirm) vector (X): Simple 2D 90deg rotation.
 	// Can be derived from a bit of trial and error.

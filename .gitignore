@@ -8,3 +8,7 @@ bts.exe
 # backups, just in case you can't configure your editor properly
 *.bak
 *~
+
+# gprof
+gmon.out
+

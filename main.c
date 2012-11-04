@@ -105,23 +105,24 @@ void run_game(void)
 	render_vxl_redraw(&tcam, map);
 	
 	int quitflag = 0;
-
-    int frame_prev = 0;
-    int frame_now = 0;
-    int fps = 0;
 	
-    while(!quitflag)
+	int frame_prev = 0;
+	int frame_now = 0;
+	int fps = 0;
+	
+	while(!quitflag)
 	{
+		float zoom = 1.0f;
 		
 		// update angles
 		if(key_left)
-			angy += 0.02f;
+			angy += 0.02f/zoom;
 		if(key_right)
-			angy -= 0.02f;
+			angy -= 0.02f/zoom;
 		if(key_up)
-			angx -= 0.02f;
+			angx -= 0.02f/zoom;
 		if(key_down)
-			angx += 0.02f;
+			angx += 0.02f/zoom;
 		
 		// clamp angle, YOU MUST NOT LOOK DIRECTLY UP OR DOWN!
 		if(angx > M_PI*0.499f)
@@ -134,7 +135,7 @@ void run_game(void)
 		float cya = cosf(angy);
 		float sxa = sinf(angx);
 		float cxa = cosf(angx);
-		cam_point_dir(&tcam, sya*cxa, sxa, cya*cxa);
+		cam_point_dir(&tcam, sya*cxa, sxa, cya*cxa, zoom, 0.0f);
 		
 		// move along
 		float mvx = 0.0f;
@@ -154,7 +155,7 @@ void run_game(void)
 		if(key_space)
 			mvy -= 1.0f;
 		
-		float mvspd = 0.2f;
+		float mvspd = 0.2f/zoom;
 		mvx *= mvspd;
 		mvy *= mvspd;
 		mvz *= mvspd;
@@ -165,18 +166,18 @@ void run_game(void)
 		
 		if(mvx != 0.0f || mvy != 0.0f || mvz != 0.0f)
 			render_vxl_redraw(&tcam, map);
-
-        frame_now = SDL_GetTicks();
-        fps++;
-
-        if(frame_now - frame_prev > 1000)
-        {
-            char buf[16];
-            sprintf(buf, "buld then snip | FPS: %d", fps);
-            SDL_WM_SetCaption(buf, 0);
-            fps = 0;
-            frame_prev = SDL_GetTicks();
-        }
+		
+		frame_now = SDL_GetTicks();
+		fps++;
+		
+		if(frame_now - frame_prev > 1000)
+		{
+			char buf[16];
+			sprintf(buf, "buld then snip | FPS: %d", fps);
+			SDL_WM_SetCaption(buf, 0);
+			fps = 0;
+			frame_prev = SDL_GetTicks();
+		}
 		
 		//printf("%.2f",);
 		SDL_LockSurface(screen);
