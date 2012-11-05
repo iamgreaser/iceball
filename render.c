@@ -528,7 +528,7 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 							
 							render_vxl_cube(ccolor, cdepth,
 								(int)px1, (int)py1, (int)px2, (int)py2,
-								*(uint32_t *)(&pillar[4]), dist);
+								*(uint32_t *)(&pillar[4*(coz-pillar[1]+1)]), dist);
 							break;
 							
 						} else if(ln != 0 && (coz < pillar[3] && coz > pillar[3]-ln)) {
