@@ -58,12 +58,12 @@ int *ftb_first;
  * 
  */
 
-void render_rect_clip(uint32_t *color, int *x1, int *y1, int *x2, int *y2, float depth)
+uint32_t render_fog_apply(uint32_t color, float depth)
 {
-	int b = *color&255;
-	int g = (*color>>8)&255;
-	int r = (*color>>16)&255;
-	int t = (*color>>24)&255;
+	int b = color&255;
+	int g = (color>>8)&255;
+	int r = (color>>16)&255;
+	int t = (color>>24)&255;
 	
 	float fog = (FOG_DISTANCE-(depth < 0.001f ? 0.001f : depth))/FOG_DISTANCE;
 	if(fog > 1.0f)
@@ -75,7 +75,12 @@ void render_rect_clip(uint32_t *color, int *x1, int *y1, int *x2, int *y2, float
 	g = (g*fog+0.5f);
 	b = (b*fog+0.5f);
 	
-	*color = b|(g<<8)|(r<<16)|(t<<24);
+	return b|(g<<8)|(r<<16)|(t<<24);
+}
+
+void render_rect_clip(uint32_t *color, int *x1, int *y1, int *x2, int *y2, float depth)
+{
+	*color = render_fog_apply(*color, depth);
 	
 	// arrange *1 <= *2
 	if(*x1 > *x2)
@@ -102,7 +107,7 @@ void render_rect_clip(uint32_t *color, int *x1, int *y1, int *x2, int *y2, float
 	if(*y2 > cubemap_size)
 		*y2 = cubemap_size;
 }
- 
+
 void render_vxl_rect_btf(uint32_t *ccolor, float *cdepth, int x1, int y1, int x2, int y2, uint32_t color, float depth)
 {
 	int x,y;
@@ -331,6 +336,61 @@ void render_vxl_rect_ftb_fast(uint32_t *ccolor, float *cdepth, int x1, int y1, i
 	}
 }
 
+void render_vxl_trap_ftb_fast(uint32_t *ccolor, float *cdepth,
+	int x1, int y1, int x2, int y2, int x3, int y3, int x4, int y4,
+	uint32_t color, float depth)
+//void render_vxl_trap_ftb_slow(uint32_t *ccolor, float *cdepth,
+//	int x1, int y1, int x2, int y2, int x3, int y3, int x4, int y4,
+//	uint32_t color, float depth)
+{
+	// TODO: fast FTB version
+	//render_fog_apply(&color, depth);
+	// TODO: clip
+	// TODO: form actual trapezia
+	int x12 = (x1+x2)>>1;
+	int x23 = (x2+x3)>>1;
+	int x34 = (x3+x4)>>1;
+	int x41 = (x4+x1)>>1;
+	
+	int y12 = (y1+y2)>>1;
+	int y23 = (y2+y3)>>1;
+	int y34 = (y3+y4)>>1;
+	int y41 = (y4+y1)>>1;
+	
+	//render_vxl_rect_ftb_fast(ccolor, cdepth, x1, y1, x2,);
+}
+
+void render_vxl_cube(uint32_t *ccolor, float *cdepth, int x1, int y1, int x2, int y2, uint32_t color, float depth)
+{
+	render_vxl_rect_ftb_fast(ccolor, cdepth, x1, y1, x2, y2, color, depth);
+	
+	int hsize = (cubemap_size>>1);
+	
+	int x3 = ((x1-hsize)*depth)/(depth+0.5f)+hsize;
+	int y3 = ((y1-hsize)*depth)/(depth+0.5f)+hsize;
+	int x4 = ((x2-hsize)*depth)/(depth+0.5f)+hsize;
+	int y4 = ((y2-hsize)*depth)/(depth+0.5f)+hsize;
+	
+	// TODO: replace these with trapezium drawing routines
+	if(x3 < x1)
+		render_vxl_rect_ftb_fast(ccolor, cdepth,
+			(int)x3, (int)y3, (int)x1, (int)y4,
+			color, depth);
+	else if(x2 < x4)
+		render_vxl_rect_ftb_fast(ccolor, cdepth,
+			(int)x2, (int)y3, (int)x4, (int)y4,
+			color, depth);
+	
+	if(y3 < y1)
+		render_vxl_rect_ftb_fast(ccolor, cdepth,
+			(int)x3, (int)y3, (int)x4, (int)y1,
+			color, depth);
+	else if(y2 < y4)
+		render_vxl_rect_ftb_fast(ccolor, cdepth,
+			(int)x3, (int)y2, (int)x4, (int)y4,
+			color, depth);
+}
+
 void render_vxl_face_vert(int blkx, int blky, int blkz,
 	float subx, float suby, float subz,
 	int face,
@@ -452,35 +512,41 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 					//printf("%4i %4i %4i - %i %i %i %i\n",cox,coy,coz,
 					//	pillar[0],pillar[1],pillar[2],pillar[3]);
 					// get correct height
+					
+					int ln = 0;
 					for(;;)
 					{
-						if(coz == pillar[1])
+						if(coz >= pillar[1] && coz <= pillar[2])
 						{
+							// TODO: distinguish between top and nontop faces
+							
 							float px1 = (cox+cmoffsx)*boxsize+traceadd;
 							float py1 = (coy+cmoffsy)*boxsize+traceadd;
 							float px2 = px1+boxsize;
 							float py2 = py1+boxsize;
 							//printf("%i %i %i %i\n",(int)px1,(int)py1,(int)px2,(int)py2);
 							
-							render_vxl_rect_ftb_fast(ccolor, cdepth,
+							render_vxl_cube(ccolor, cdepth,
 								(int)px1, (int)py1, (int)px2, (int)py2,
 								*(uint32_t *)(&pillar[4]), dist);
 							break;
-							// TODO: sides
-						} else if(coz >= pillar[1] && coz <= pillar[2]) {
-							// TODO: sides
+							
+						} else if(ln != 0 && (coz < pillar[3] && coz > pillar[3]-ln)) {
 							float px1 = (cox+cmoffsx)*boxsize+traceadd;
 							float py1 = (coy+cmoffsy)*boxsize+traceadd;
 							float px2 = px1+boxsize;
 							float py2 = py1+boxsize;
+							//printf("%i %i %i %i\n",(int)px1,(int)py1,(int)px2,(int)py2);
 							
-							render_vxl_rect_ftb_fast(ccolor, cdepth,
+							render_vxl_cube(ccolor, cdepth,
 								(int)px1, (int)py1, (int)px2, (int)py2,
-								*(uint32_t *)(&pillar[4*(coz-pillar[1]+1)]), dist);
+								*(uint32_t *)(&pillar[4*(coz-pillar[3])]), dist);
+							// TODO: sides
 							break;
-						} else if(pillar[0] == 0 || (coz < pillar[3])) {
+						} else if(pillar[0] == 0 || (coz < pillar[1])) {
 							break;
 						} else {
+							ln = pillar[0]-(pillar[2]-pillar[1]+1);
 							pillar += pillar[0]*4;
 						}
 					}
@@ -488,7 +554,6 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 				}
 			} else {
 				// top cubemap face
-				int ln = 0;
 				for(cox = bx1; cox <= bx2; cox++)
 				for(coy = by1; coy <= by2; coy++)
 				{
@@ -502,6 +567,7 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 					//printf("%4i %4i %4i - %i %i %i %i\n",cox,coy,coz,
 					//	pillar[0],pillar[1],pillar[2],pillar[3]);
 					// get correct height
+					int ln = 0;
 					for(;;)
 					{
 						if(coz >= pillar[1] && coz <= pillar[2])
@@ -511,7 +577,7 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 							float px2 = px1+boxsize;
 							float py2 = py1+boxsize;
 							
-							render_vxl_rect_ftb_fast(ccolor, cdepth,
+							render_vxl_cube(ccolor, cdepth,
 								(int)px1, (int)py1, (int)px2, (int)py2,
 								*(uint32_t *)(&pillar[4*(coz-pillar[1]+1)]), dist);
 							// TODO: sides
@@ -524,7 +590,7 @@ void render_vxl_face_vert(int blkx, int blky, int blkz,
 							float py2 = py1+boxsize;
 							//printf("%i %i %i %i\n",(int)px1,(int)py1,(int)px2,(int)py2);
 							
-							render_vxl_rect_ftb_fast(ccolor, cdepth,
+							render_vxl_cube(ccolor, cdepth,
 								(int)px1, (int)py1, (int)px2, (int)py2,
 								*(uint32_t *)(&pillar[4*(coz-pillar[3])]), dist);
 							// TODO: sides
@@ -669,33 +735,10 @@ void render_vxl_face_horiz(int blkx, int blky, int blkz,
 							float py1 = (coz+cmoffsy-blky)*boxsize+traceadd;
 							float px2 = px1+boxsize;
 							float py2 = py1+boxsize;
-							float px3 = (cox+cmoffsx)*nboxsize+traceadd;
-							float py3 = (coz+cmoffsy-blky)*nboxsize+traceadd;
-							float px4 = px3+nboxsize;
-							float py4 = py3+nboxsize;
 							
-							render_vxl_rect_ftb_fast(ccolor, cdepth,
+							render_vxl_cube(ccolor, cdepth,
 								(int)px1, (int)py1, (int)px2, (int)py2,
 								*((uint32_t *)pcol), dist);
-							
-							// TODO: replace these with trapezium drawing routines
-							if(px3 < px1)
-								render_vxl_rect_ftb_fast(ccolor, cdepth,
-									(int)px3, (int)py3, (int)px1, (int)py4,
-									*((uint32_t *)pcol), dist);
-							else if(px2 < px4)
-								render_vxl_rect_ftb_fast(ccolor, cdepth,
-									(int)px2, (int)py3, (int)px4, (int)py4,
-									*((uint32_t *)pcol), dist);
-							
-							if(py3 < py1)
-								render_vxl_rect_ftb_fast(ccolor, cdepth,
-									(int)px3, (int)py3, (int)px4, (int)py1,
-									*((uint32_t *)pcol), dist);
-							else if(py2 < py4)
-								render_vxl_rect_ftb_fast(ccolor, cdepth,
-									(int)px3, (int)py2, (int)px4, (int)py4,
-									*((uint32_t *)pcol), dist);
 						}
 						pcol+=4;
 					}
@@ -720,33 +763,10 @@ void render_vxl_face_horiz(int blkx, int blky, int blkz,
 							float py1 = (coz+cmoffsy-blky)*boxsize+traceadd;
 							float px2 = px1+boxsize;
 							float py2 = py1+boxsize;
-							float px3 = (cox+cmoffsx)*nboxsize+traceadd;
-							float py3 = (coz+cmoffsy-blky)*nboxsize+traceadd;
-							float px4 = px3+nboxsize;
-							float py4 = py3+nboxsize;
 							
-							render_vxl_rect_ftb_fast(ccolor, cdepth,
+							render_vxl_cube(ccolor, cdepth,
 								(int)px1, (int)py1, (int)px2, (int)py2,
 								*((uint32_t *)pcol), dist);
-							
-							// TODO: replace these with trapezium drawing routines
-							if(px3 < px1)
-								render_vxl_rect_ftb_fast(ccolor, cdepth,
-									(int)px3, (int)py3, (int)px1, (int)py4,
-									*((uint32_t *)pcol), dist);
-							else if(px2 < px4)
-								render_vxl_rect_ftb_fast(ccolor, cdepth,
-									(int)px2, (int)py3, (int)px4, (int)py4,
-									*((uint32_t *)pcol), dist);
-							
-							if(py3 < py1)
-								render_vxl_rect_ftb_fast(ccolor, cdepth,
-									(int)px3, (int)py3, (int)px4, (int)py1,
-									*((uint32_t *)pcol), dist);
-							else if(py2 < py4)
-								render_vxl_rect_ftb_fast(ccolor, cdepth,
-									(int)px3, (int)py2, (int)px4, (int)py4,
-									*((uint32_t *)pcol), dist);
 						}
 						pcol+=4;
 					}
