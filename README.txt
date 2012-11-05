@@ -1,11 +1,14 @@
 This isn't a game yet. But it works to some extent now.
 
+NOTE:
+By Stack's request, this project is now known as "Iceball".
+
 mesa.vxl is by Triplefox, and is currently being used to test load/render.
 
 LICENSING NOTES:
-Buld Then Snip is licensed under the regular GNU GPL version 3.
-BtS Lua Components is licensed under the LGPL version 3.
-BtS Lua Components contains some content from libSDL,
+Iceball is licensed under the regular GNU GPL version 3.
+Ice Lua Components is licensed under the LGPL version 3.
+Ice Lua Components contains some content from libSDL,
   which is licensed under the LGPL version 2.1.
 
 REQUIREMENTS:

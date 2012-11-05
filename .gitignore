@@ -2,10 +2,13 @@
 *.o
 
 # final binaries
-bts
-bts.exe
+iceball
+iceball.exe
 pmfedit
 pmfedit.exe
+
+# remnants
+bts
 
 # backups, just in case you can't configure your editor properly
 *.bak

@@ -1,18 +1,18 @@
 /*
-    This file is part of Buld Then Snip.
+    This file is part of Iceball.
 
-    Buld Then Snip is free software: you can redistribute it and/or modify
+    Iceball is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    Buld Then Snip is distributed in the hope that it will be useful,
+    Iceball is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with Buld Then Snip.  If not, see <http://www.gnu.org/licenses/>.
+    along with Iceball.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <string.h>
@@ -115,8 +115,8 @@ enum
 // lua.c
 extern lua_State *lstate_client;
 extern lua_State *lstate_server;
-int btslua_init(void);
-void btslua_deinit(void);
+int icelua_init(void);
+void icelua_deinit(void);
 
 // main.c
 extern camera_t tcam;

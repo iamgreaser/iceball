@@ -1,23 +1,23 @@
 /*
-    This file is part of Buld Then Snip.
+    This file is part of Iceball.
 
-    Buld Then Snip is free software: you can redistribute it and/or modify
+    Iceball is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    Buld Then Snip is distributed in the hope that it will be useful,
+    Iceball is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with Buld Then Snip.  If not, see <http://www.gnu.org/licenses/>.
+    along with Iceball.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "common.h"
 
-struct btslua_entry {
+struct icelua_entry {
 	int (*fn) (lua_State *L);
 	char *name;
 };
@@ -26,7 +26,7 @@ lua_State *lstate_client = NULL;
 lua_State *lstate_server = NULL;
 
 // helper functions
-int btslua_assert_stack(lua_State *L, int smin, int smax)
+int icelua_assert_stack(lua_State *L, int smin, int smax)
 {
 	int top = lua_gettop(L);
 	
@@ -39,9 +39,9 @@ int btslua_assert_stack(lua_State *L, int smin, int smax)
 }
 
 // common functions
-int btslua_fn_common_get_map_dims(lua_State *L)
+int icelua_fn_common_get_map_dims(lua_State *L)
 {
-	int top = btslua_assert_stack(L, 0, 0);
+	int top = icelua_assert_stack(L, 0, 0);
 	
 	map_t *map = (L == lstate_server ? svmap : clmap);
 	
@@ -57,9 +57,9 @@ int btslua_fn_common_get_map_dims(lua_State *L)
 	}
 }
 
-int btslua_fn_common_get_map_pillar(lua_State *L)
+int icelua_fn_common_get_map_pillar(lua_State *L)
 {
-	int top = btslua_assert_stack(L, 2, 2);
+	int top = icelua_assert_stack(L, 2, 2);
 	int px, pz;
 	int i;
 	
@@ -90,9 +90,9 @@ int btslua_fn_common_get_map_pillar(lua_State *L)
 	return 1;
 }
 // client functions
-int btslua_fn_client_camera_point(lua_State *L)
+int icelua_fn_client_camera_point(lua_State *L)
 {
-	int top = btslua_assert_stack(L, 3, 5);
+	int top = icelua_assert_stack(L, 3, 5);
 	float dx, dy, dz;
 	float zoom = 1.0f, roll = 0.0f;
 	
@@ -109,9 +109,9 @@ int btslua_fn_client_camera_point(lua_State *L)
 	return 0;
 }
 
-int btslua_fn_client_camera_move_local(lua_State *L)
+int icelua_fn_client_camera_move_local(lua_State *L)
 {
-	int top = btslua_assert_stack(L, 3, 3);
+	int top = icelua_assert_stack(L, 3, 3);
 	float dx, dy, dz;
 	
 	dx = lua_tonumber(L, 1);
@@ -125,9 +125,9 @@ int btslua_fn_client_camera_move_local(lua_State *L)
 	return 0;
 }
 
-int btslua_fn_client_camera_move_global(lua_State *L)
+int icelua_fn_client_camera_move_global(lua_State *L)
 {
-	int top = btslua_assert_stack(L, 3, 3);
+	int top = icelua_assert_stack(L, 3, 3);
 	float dx, dy, dz;
 	
 	dx = lua_tonumber(L, 1);
@@ -141,9 +141,9 @@ int btslua_fn_client_camera_move_global(lua_State *L)
 	return 0;
 }
 
-int btslua_fn_client_camera_move_to(lua_State *L)
+int icelua_fn_client_camera_move_to(lua_State *L)
 {
-	int top = btslua_assert_stack(L, 3, 3);
+	int top = icelua_assert_stack(L, 3, 3);
 	float px, py, pz;
 	
 	px = lua_tonumber(L, 1);
@@ -157,9 +157,9 @@ int btslua_fn_client_camera_move_to(lua_State *L)
 	return 0;
 }
 
-int btslua_fn_client_camera_get_pos(lua_State *L)
+int icelua_fn_client_camera_get_pos(lua_State *L)
 {
-	int top = btslua_assert_stack(L, 0, 0);
+	int top = icelua_assert_stack(L, 0, 0);
 	
 	lua_pushinteger(L, tcam.mpx);
 	lua_pushinteger(L, tcam.mpy);
@@ -168,9 +168,9 @@ int btslua_fn_client_camera_get_pos(lua_State *L)
 	return 3;
 }
 
-int btslua_fn_client_camera_get_forward(lua_State *L)
+int icelua_fn_client_camera_get_forward(lua_State *L)
 {
-	int top = btslua_assert_stack(L, 0, 0);
+	int top = icelua_assert_stack(L, 0, 0);
 	
 	lua_pushinteger(L, tcam.mzx);
 	lua_pushinteger(L, tcam.mzy);
@@ -181,34 +181,34 @@ int btslua_fn_client_camera_get_forward(lua_State *L)
 
 // server functions
 
-struct btslua_entry btslua_client[] = {
-	{btslua_fn_client_camera_point, "camera_point"},
-	{btslua_fn_client_camera_move_local, "camera_move_local"},
-	{btslua_fn_client_camera_move_global, "camera_move_global"},
-	{btslua_fn_client_camera_move_to, "camera_move_to"},
-	{btslua_fn_client_camera_get_pos, "camera_get_pos"},
-	{btslua_fn_client_camera_get_forward, "camera_get_forward"},
+struct icelua_entry icelua_client[] = {
+	{icelua_fn_client_camera_point, "camera_point"},
+	{icelua_fn_client_camera_move_local, "camera_move_local"},
+	{icelua_fn_client_camera_move_global, "camera_move_global"},
+	{icelua_fn_client_camera_move_to, "camera_move_to"},
+	{icelua_fn_client_camera_get_pos, "camera_get_pos"},
+	{icelua_fn_client_camera_get_forward, "camera_get_forward"},
 	{NULL, NULL}
 };
 
-struct btslua_entry btslua_server[] = {
+struct icelua_entry icelua_server[] = {
 	{NULL, NULL}
 };
-struct btslua_entry btslua_common[] = {
-	{btslua_fn_common_get_map_dims, "get_map_dims"},
-	{btslua_fn_common_get_map_pillar, "get_map_pillar"},
-	{NULL, NULL}
-};
-
-struct btslua_entry btslua_common_client[] = {
+struct icelua_entry icelua_common[] = {
+	{icelua_fn_common_get_map_dims, "get_map_dims"},
+	{icelua_fn_common_get_map_pillar, "get_map_pillar"},
 	{NULL, NULL}
 };
 
-struct btslua_entry btslua_common_server[] = {
+struct icelua_entry icelua_common_client[] = {
 	{NULL, NULL}
 };
 
-void btslua_loadfuncs(lua_State *L, char *table, struct btslua_entry *fnlist)
+struct icelua_entry icelua_common_server[] = {
+	{NULL, NULL}
+};
+
+void icelua_loadfuncs(lua_State *L, char *table, struct icelua_entry *fnlist)
 {
 	lua_getglobal(L, table);
 	
@@ -222,7 +222,7 @@ void btslua_loadfuncs(lua_State *L, char *table, struct btslua_entry *fnlist)
 	lua_pop(L, 1);
 }
 
-void btslua_loadbasefuncs(lua_State *L)
+void icelua_loadbasefuncs(lua_State *L)
 {
 	// load base library
 	// TODO: whitelist the functions by spawning a new environment.
@@ -237,7 +237,7 @@ void btslua_loadbasefuncs(lua_State *L)
 	lua_call(L, 0, 0);
 }
 
-int btslua_init(void)
+int icelua_init(void)
 {
 	// create states
 	lstate_client = luaL_newstate();
@@ -255,20 +255,20 @@ int btslua_init(void)
 	lua_setglobal(lstate_server, "common");
 	
 	// load stuff into them
-	btslua_loadfuncs(lstate_client, "client", btslua_client);
-	btslua_loadfuncs(lstate_server, "server", btslua_server);
-	btslua_loadfuncs(lstate_client, "client", btslua_common);
-	btslua_loadfuncs(lstate_server, "server", btslua_common);
-	btslua_loadfuncs(lstate_client, "common", btslua_common);
-	btslua_loadfuncs(lstate_server, "common", btslua_common);
-	btslua_loadfuncs(lstate_client, "client", btslua_common_client);
-	btslua_loadfuncs(lstate_server, "server", btslua_common_server);
-	btslua_loadfuncs(lstate_client, "common", btslua_common_client);
-	btslua_loadfuncs(lstate_server, "common", btslua_common_server);
+	icelua_loadfuncs(lstate_client, "client", icelua_client);
+	icelua_loadfuncs(lstate_server, "server", icelua_server);
+	icelua_loadfuncs(lstate_client, "client", icelua_common);
+	icelua_loadfuncs(lstate_server, "server", icelua_common);
+	icelua_loadfuncs(lstate_client, "common", icelua_common);
+	icelua_loadfuncs(lstate_server, "common", icelua_common);
+	icelua_loadfuncs(lstate_client, "client", icelua_common_client);
+	icelua_loadfuncs(lstate_server, "server", icelua_common_server);
+	icelua_loadfuncs(lstate_client, "common", icelua_common_client);
+	icelua_loadfuncs(lstate_server, "common", icelua_common_server);
 	
 	// load some lua base libraries
-	btslua_loadbasefuncs(lstate_client);
-	btslua_loadbasefuncs(lstate_server);
+	icelua_loadbasefuncs(lstate_client);
+	icelua_loadbasefuncs(lstate_server);
 	
 	/*
 	NOTE:
@@ -308,7 +308,7 @@ int btslua_init(void)
 	return 0;
 }
 
-void btslua_deinit(void)
+void icelua_deinit(void)
 {
 	// TODO!
 }

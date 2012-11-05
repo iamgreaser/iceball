@@ -14,9 +14,3 @@
     You should have received a copy of the GNU Lesser General Public License
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
-
-print("pkg/base/main_server.lua starting")
-
--- TODO!
-
-print("pkg/base/main_server.lua loaded.")

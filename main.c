@@ -1,18 +1,18 @@
 /*
-    This file is part of Buld Then Snip.
+    This file is part of Iceball.
 
-    Buld Then Snip is free software: you can redistribute it and/or modify
+    Iceball is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    Buld Then Snip is distributed in the hope that it will be useful,
+    Iceball is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with Buld Then Snip.  If not, see <http://www.gnu.org/licenses/>.
+    along with Iceball.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "common.h"
@@ -50,7 +50,7 @@ int platform_init(void)
 
 int video_init(void)
 {
-	SDL_WM_SetCaption("buld then snip",NULL);
+	SDL_WM_SetCaption("iceball",NULL);
 	
 	screen = SDL_SetVideoMode(screen_width, screen_height, 32, 0);
 	
@@ -162,7 +162,7 @@ void run_game(void)
 		if(frame_now - frame_prev > 1000)
 		{
 			char buf[64]; // topo how the hell did this not crash at 16 --GM
-			sprintf(buf, "buld then snip | FPS: %d", fps);
+			sprintf(buf, "iceball | FPS: %d", fps);
 			SDL_WM_SetCaption(buf, NULL);
 			fps = 0;
 			frame_prev = SDL_GetTicks();
@@ -224,7 +224,7 @@ void run_game(void)
 int main(int argc, char *argv[])
 {
 	if(!platform_init()) {
-	if(!btslua_init()) {
+	if(!icelua_init()) {
 	if(!net_init()) {
 	if(!video_init()) {
 	if(!render_init(screen->w, screen->h)) {
@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
 		render_deinit();
 	} video_deinit();
 	} net_deinit();
-	} btslua_deinit();
+	} icelua_deinit();
 	} platform_deinit();
 	}
 	
