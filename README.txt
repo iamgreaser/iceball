@@ -2,6 +2,10 @@ This isn't a game yet. But it works to some extent now.
 
 mesa.vxl is by Triplefox, and is currently being used to test load/render.
 
+LICENSING NOTES:
+Buld Then Snip is released under the regular GPL.
+BtS Lua Components (the base mod + libraries) is released under the LGPL.
+
 REQUIREMENTS:
 - a C compiler that isn't crap (read: not MSVC++)
   - specifically, GCC
@@ -20,6 +24,7 @@ CURRENT STATUS:
 - You can move around!
 
 STUFF TO DO:
+- Shift the camera control stuff to Lua.
 - Get physics working.
 - Models! Which means a z-buffer will most likely be needed.
   (We have those on the cubemaps at least! But they're not used yet.)

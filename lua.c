@@ -24,6 +24,7 @@ struct btslua_entry {
 
 lua_State *lstate_client = NULL;
 lua_State *lstate_server = NULL;
+int (*lhook_client_tick) (lua_State *L);
 
 // here's a quick test.
 int btslua_fn_test(lua_State *L)
@@ -124,11 +125,18 @@ int btslua_init(void)
 	
 	// quick test
 	// TODO: set up a "convert/filter file path" function
-	// TODO: spew error to stdout
+	// TODO: split the client/server inits
 	if(luaL_loadfile(lstate_server, "pkg/base/main_server.lua") != 0)
+	{
+		printf("ERROR loading server Lua: %s\n", lua_tostring(lstate_server, -1));
 		return 1;
+	}
+	
 	if(luaL_loadfile(lstate_client, "pkg/base/main_client.lua") != 0)
+	{
+		printf("ERROR loading client Lua: %s\n", lua_tostring(lstate_client, -1));
 		return 1;
+	}
 	
 	if(lua_pcall(lstate_server, 0, 0, 0) != 0)
 	{

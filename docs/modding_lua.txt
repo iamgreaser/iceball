@@ -14,20 +14,26 @@ maximum path length is 128
 stuff that's actually implemented will be marked with an @
 
 lua base library stuff:
-	math.*
-	string.*
+	math.* @
+	string.* @
 	pcall @
 	error @
 	print @
 	
 	nothing else yet
+	(TODO: stop leaking the whole base library)
 	
 	check http://www.lua.org/manual/5.1/ for more info on these
 
-common.hook_tick(fn(sec_curtime, sec_delta)->sec_wait)
+common.hook_tick = fn(sec_curtime, sec_delta)->sec_wait
 	sets a hook called every "tick"
 	returns a number telling it how long it wants to wait for
 	
+	"sec_curtime" is the current time elapsed from the start
+	"sec_delta" is the time elapsed from the start of the last
+	call to the hooked function
+	
+	setting this to nil will quit your game
 
 success = server.stream_new_map(fname, fmt = "auto")
 	loads a map, either .vxl or some format we might invent
