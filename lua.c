@@ -39,7 +39,56 @@ int btslua_assert_stack(lua_State *L, int smin, int smax)
 }
 
 // common functions
+int btslua_fn_common_get_map_dims(lua_State *L)
+{
+	int top = btslua_assert_stack(L, 0, 0);
+	
+	map_t *map = (L == lstate_server ? svmap : clmap);
+	
+	// if no map, just give off nils
+	if(map == NULL)
+	{
+		return 0;
+	} else {
+		lua_pushinteger(L, map->xlen);
+		lua_pushinteger(L, map->ylen);
+		lua_pushinteger(L, map->zlen);
+		return 3;
+	}
+}
 
+int btslua_fn_common_get_map_pillar(lua_State *L)
+{
+	int top = btslua_assert_stack(L, 2, 2);
+	int px, pz;
+	int i;
+	
+	px = lua_tointeger(L, 1);
+	pz = lua_tointeger(L, 2);
+	
+	map_t *map = (L == lstate_server ? svmap : clmap);
+	
+	// if no map, return nil
+	if(map == NULL)
+		return 0;
+	
+	// get a pillar
+	uint8_t *p = map->pillars[(pz&(map->zlen-1))*map->xlen+(px&(map->xlen-1))];
+	
+	// build the list
+	int llen = 4*(1+(int)*p);
+	lua_createtable(L, llen, 0);
+	p += 4;
+	
+	for(i = 1; i <= llen; i++)
+	{
+		lua_pushinteger(L, i);
+		lua_pushinteger(L, *(p++));
+		lua_settable(L, -3);
+	}
+	
+	return 1;
+}
 // client functions
 int btslua_fn_client_camera_point(lua_State *L)
 {
@@ -108,6 +157,28 @@ int btslua_fn_client_camera_move_to(lua_State *L)
 	return 0;
 }
 
+int btslua_fn_client_camera_get_pos(lua_State *L)
+{
+	int top = btslua_assert_stack(L, 0, 0);
+	
+	lua_pushinteger(L, tcam.mpx);
+	lua_pushinteger(L, tcam.mpy);
+	lua_pushinteger(L, tcam.mpz);
+	
+	return 3;
+}
+
+int btslua_fn_client_camera_get_forward(lua_State *L)
+{
+	int top = btslua_assert_stack(L, 0, 0);
+	
+	lua_pushinteger(L, tcam.mzx);
+	lua_pushinteger(L, tcam.mzy);
+	lua_pushinteger(L, tcam.mzz);
+	
+	return 3;
+}
+
 // server functions
 
 struct btslua_entry btslua_client[] = {
@@ -115,14 +186,17 @@ struct btslua_entry btslua_client[] = {
 	{btslua_fn_client_camera_move_local, "camera_move_local"},
 	{btslua_fn_client_camera_move_global, "camera_move_global"},
 	{btslua_fn_client_camera_move_to, "camera_move_to"},
+	{btslua_fn_client_camera_move_to, "camera_get_pos"},
+	{btslua_fn_client_camera_move_to, "camera_get_forward"},
 	{NULL, NULL}
 };
 
 struct btslua_entry btslua_server[] = {
 	{NULL, NULL}
 };
-
 struct btslua_entry btslua_common[] = {
+	{btslua_fn_common_get_map_dims, "get_map_dims"},
+	{btslua_fn_common_get_map_pillar, "get_map_pillar"},
 	{NULL, NULL}
 };
 

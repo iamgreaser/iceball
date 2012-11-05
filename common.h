@@ -120,6 +120,8 @@ void btslua_deinit(void);
 
 // main.c
 extern camera_t tcam;
+extern map_t *clmap;
+extern map_t *svmap;
 int error_sdl(char *msg);
 int error_perror(char *msg);
 

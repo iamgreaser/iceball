@@ -51,7 +51,7 @@ key_ctrl = false
 key_space = false
 
 -- set hooks
-function client.hook_tick(sec_current, sec_delta)
+function h_tick_camfly(sec_current, sec_delta)
 	-- update angles
 	if key_left then
 		angy = angy + math.pi*sec_delta/zoom;
@@ -114,6 +114,28 @@ function client.hook_tick(sec_current, sec_delta)
 	-- wait a bit
 	return 0.01
 end
+
+function h_tick_init(sec_current, sec_delta)
+	local xlen, ylen, zlen
+	xlen, ylen, zlen = common.get_map_dims()
+	print(xlen, ylen, zlen)
+	
+	local px, py, pz
+	px = math.floor(xlen/4+0.5)
+	pz = math.floor(zlen/4+0.5)
+	
+	local ptab = common.get_map_pillar(px, pz)
+	py = ptab[1+ 1] - 2.5
+	px = px + 0.5
+	pz = pz + 0.5
+	
+	client.camera_move_to(px, py, pz)
+	
+	client.hook_tick = h_tick_camfly
+	return client.hook_tick(sec_current, sec_delta)
+end
+
+client.hook_tick = h_tick_init
 
 function client.hook_key(key, state)
 	if key == BTSK_LOOKUP then

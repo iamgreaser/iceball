@@ -19,6 +19,8 @@
 #include "config.h"
 
 camera_t tcam;
+map_t *clmap = NULL;
+map_t *svmap = NULL;
 
 SDL_Surface *screen = NULL;
 int screen_width = 800;
@@ -86,11 +88,11 @@ int64_t platform_get_time_usec(void)
 
 void run_game(void)
 {
-	map_t *map = map_load_aos(fnmap);
+	clmap = map_load_aos(fnmap);
 	
 	tcam.mpx = 256.5f;
 	tcam.mpz = 256.5f;
-	tcam.mpy = map->pillars[((int)tcam.mpz)*map->xlen+((int)tcam.mpy)][4+1]-2.0f;
+	tcam.mpy = clmap->pillars[((int)tcam.mpz)*clmap->xlen+((int)tcam.mpy)][4+1]-2.0f;
 	
 	tcam.mxx = 1.0f;
 	tcam.mxy = 0.0f;
@@ -104,7 +106,7 @@ void run_game(void)
 	
 	int i;
 	
-	render_vxl_redraw(&tcam, map);
+	render_vxl_redraw(&tcam, clmap);
 	
 	int quitflag = 0;
 	
@@ -148,7 +150,7 @@ void run_game(void)
 		
 		if(tcam.mpx != ompx || tcam.mpy != ompy || tcam.mpz != ompz)
 		{
-			render_vxl_redraw(&tcam, map);
+			render_vxl_redraw(&tcam, clmap);
 			ompx = tcam.mpx;
 			ompy = tcam.mpy;
 			ompz = tcam.mpz;
@@ -171,7 +173,7 @@ void run_game(void)
 		//memset(screen->pixels, 0x51, screen->h*screen->pitch);
 		render_cubemap(screen->pixels,
 			screen->w, screen->h, screen->pitch/4,
-			&tcam, map);
+			&tcam, clmap);
 		SDL_UnlockSurface(screen);
 		SDL_Flip(screen);
 		
@@ -215,7 +217,8 @@ void run_game(void)
 				break;
 		}
 	}
-	map_free(map);
+	map_free(clmap);
+	clmap = NULL;
 }
 
 int main(int argc, char *argv[])

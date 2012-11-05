@@ -55,9 +55,24 @@ success = server.create_new_map(lx, ly, lz)
 	creates a new map
 	
 	note, ly is the *height* of the new map
+	
+	also all dimensions must be powers of two,
+	otherwise this will fail horribly!
 
 success = common.save_map(fname, fmt = "bsm")
 	saves a map to a file
+
+lx, ly, lz = common.get_map_dims() @
+	gets the map's dimensions
+	
+	these will be nil if there is no map loaded
+
+table = common.get_map_pillar(px, pz) @
+	returns a full pillar of data, skipping the total size header
+	
+	this will be nil if there is no map loaded
+	
+	note, the data wraps around here!
 
 client.camera_point(dx, dy, dz, zoom = 1.0, roll = 0.0) @
 	points the camera in a direction with zoom factor "zoom"
@@ -71,3 +86,9 @@ client.camera_move_global(dx, dy, dz) @
 
 client.camera_move_to(px, py, pz) @
 	moves the camera to the world position (px,py,pz)
+
+px, py, pz = client.camera_get_pos() @
+	gets the camera's position
+
+dx, dy, dz = client.camera_get_forward() @
+	gets the camera's forward vector
