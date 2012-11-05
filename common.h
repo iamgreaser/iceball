@@ -21,6 +21,8 @@
 #include <stdio.h>
 #include <errno.h>
 
+#include <sys/time.h>
+
 #include <math.h>
 
 #include <lua.h>
@@ -111,10 +113,13 @@ enum
 };
 
 // lua.c
+extern lua_State *lstate_client;
+extern lua_State *lstate_server;
 int btslua_init(void);
 void btslua_deinit(void);
 
 // main.c
+extern camera_t tcam;
 int error_sdl(char *msg);
 int error_perror(char *msg);
 

@@ -3,8 +3,10 @@ This isn't a game yet. But it works to some extent now.
 mesa.vxl is by Triplefox, and is currently being used to test load/render.
 
 LICENSING NOTES:
-Buld Then Snip is released under the regular GPL.
-BtS Lua Components (the base mod + libraries) is released under the LGPL.
+Buld Then Snip is licensed under the regular GNU GPL version 3.
+BtS Lua Components is licensed under the LGPL version 3.
+BtS Lua Components contains some content from libSDL,
+  which is licensed under the LGPL version 2.1.
 
 REQUIREMENTS:
 - a C compiler that isn't crap (read: not MSVC++)

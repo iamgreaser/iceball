@@ -18,23 +18,103 @@
 #include "common.h"
 
 struct btslua_entry {
-	char *name;
 	int (*fn) (lua_State *L);
+	char *name;
 };
 
 lua_State *lstate_client = NULL;
 lua_State *lstate_server = NULL;
-int (*lhook_client_tick) (lua_State *L);
 
-// here's a quick test.
-int btslua_fn_test(lua_State *L)
+// helper functions
+int btslua_assert_stack(lua_State *L, int smin, int smax)
 {
-	printf("TEST PASSED (provided it doesn't crash on close)\n");
+	int top = lua_gettop(L);
+	
+	if(smin != -1 && top < smin)
+		return luaL_error(L, "expected at least %i arguments, got %i\n", smin, top);
+	if(smax != -1 && top > smax)
+		return luaL_error(L, "expected at most %i arguments, got %i\n", smax, top);
+	
+	return top;
+}
+
+// common functions
+
+// client functions
+int btslua_fn_client_camera_point(lua_State *L)
+{
+	int top = btslua_assert_stack(L, 3, 5);
+	float dx, dy, dz;
+	float zoom = 1.0f, roll = 0.0f;
+	
+	dx = lua_tonumber(L, 1);
+	dy = lua_tonumber(L, 2);
+	dz = lua_tonumber(L, 3);
+	if(top <= 4)
+		zoom = lua_tonumber(L, 4);
+	if(top <= 5)
+		roll = lua_tonumber(L, 5);
+	
+	cam_point_dir(&tcam, dx, dy, dz, zoom, roll);
 	
 	return 0;
 }
 
+int btslua_fn_client_camera_move_local(lua_State *L)
+{
+	int top = btslua_assert_stack(L, 3, 3);
+	float dx, dy, dz;
+	
+	dx = lua_tonumber(L, 1);
+	dy = lua_tonumber(L, 2);
+	dz = lua_tonumber(L, 3);
+	
+	tcam.mpx += dx*tcam.mxx+dy*tcam.myx+dz*tcam.mzx;
+	tcam.mpy += dx*tcam.mxy+dy*tcam.myy+dz*tcam.mzy;
+	tcam.mpz += dx*tcam.mxz+dy*tcam.myz+dz*tcam.mzz;
+
+	return 0;
+}
+
+int btslua_fn_client_camera_move_global(lua_State *L)
+{
+	int top = btslua_assert_stack(L, 3, 3);
+	float dx, dy, dz;
+	
+	dx = lua_tonumber(L, 1);
+	dy = lua_tonumber(L, 2);
+	dz = lua_tonumber(L, 3);
+	
+	tcam.mpx += dx;
+	tcam.mpy += dy;
+	tcam.mpz += dz;
+
+	return 0;
+}
+
+int btslua_fn_client_camera_move_to(lua_State *L)
+{
+	int top = btslua_assert_stack(L, 3, 3);
+	float px, py, pz;
+	
+	px = lua_tonumber(L, 1);
+	py = lua_tonumber(L, 2);
+	pz = lua_tonumber(L, 3);
+	
+	tcam.mpx = px;
+	tcam.mpy = py;
+	tcam.mpz = pz;
+
+	return 0;
+}
+
+// server functions
+
 struct btslua_entry btslua_client[] = {
+	{btslua_fn_client_camera_point, "camera_point"},
+	{btslua_fn_client_camera_move_local, "camera_move_local"},
+	{btslua_fn_client_camera_move_global, "camera_move_global"},
+	{btslua_fn_client_camera_move_to, "camera_move_to"},
 	{NULL, NULL}
 };
 
@@ -43,7 +123,6 @@ struct btslua_entry btslua_server[] = {
 };
 
 struct btslua_entry btslua_common[] = {
-	{"test", btslua_fn_test},
 	{NULL, NULL}
 };
 

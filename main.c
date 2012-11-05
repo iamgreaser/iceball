@@ -18,6 +18,8 @@
 #include "common.h"
 #include "config.h"
 
+camera_t tcam;
+
 SDL_Surface *screen = NULL;
 int screen_width = 800;
 int screen_height = 600;
@@ -66,11 +68,26 @@ void platform_deinit(void)
 	SDL_Quit();
 }
 
+int64_t platform_get_time_usec(void)
+{
+	/*
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	
+	int64_t usec = tv.tv_usec;
+	int64_t sec = tv.tv_sec;
+	usec += sec;
+	
+	return usec;
+	*/
+	int64_t msec = SDL_GetTicks();
+	return msec*1000;
+}
+
 void run_game(void)
 {
 	map_t *map = map_load_aos(fnmap);
 	
-	camera_t tcam;
 	tcam.mpx = 256.5f;
 	tcam.mpz = 256.5f;
 	tcam.mpy = map->pillars[((int)tcam.mpz)*map->xlen+((int)tcam.mpy)][4+1]-2.0f;
@@ -87,21 +104,6 @@ void run_game(void)
 	
 	int i;
 	
-	float angy = 0.0f;
-	float angx = 0.0f;
-	
-	int key_left = 0;
-	int key_right = 0;
-	int key_up = 0;
-	int key_down = 0;
-	
-	int key_w = 0;
-	int key_s = 0;
-	int key_a = 0;
-	int key_d = 0;
-	int key_space = 0;
-	int key_ctrl = 0;
-	
 	render_vxl_redraw(&tcam, map);
 	
 	int quitflag = 0;
@@ -110,62 +112,47 @@ void run_game(void)
 	int frame_now = 0;
 	int fps = 0;
 	
+	float sec_curtime = 0.0f;
+	float sec_lasttime = 0.0f;
+	float sec_wait = 0.0f;
+	int64_t usec_basetime = platform_get_time_usec();
+	
+	float ompx = -M_PI, ompy = -M_PI, ompz = -M_PI;
+	
 	while(!quitflag)
 	{
-		float zoom = 1.0f;
+		// update Lua client
+		lua_getglobal(lstate_client, "client");
+		lua_getfield(lstate_client, -1, "hook_tick");
+		lua_remove(lstate_client, -2);
+		if(lua_isnil(lstate_client, -1))
+		{
+			lua_pop(lstate_client, 1);
+			quitflag = 1;
+			break;
+		}
+		sec_lasttime = sec_curtime;
+		int64_t usec_curtime = platform_get_time_usec() - usec_basetime;
+		sec_curtime = ((float)usec_curtime)/1000000.0f;
+		lua_pushnumber(lstate_client, sec_curtime);
+		lua_pushnumber(lstate_client, sec_curtime - sec_lasttime);
+		if(lua_pcall(lstate_client, 2, 1, 0) != 0)
+		{
+			printf("Lua Client Error (tick): %s\n", lua_tostring(lstate_client, -1));
+			lua_pop(lstate_client, 1);
+			quitflag = 1;
+			break;
+		}
+		sec_wait += lua_tonumber(lstate_client, -1);
+		lua_pop(lstate_client, 1);
 		
-		// update angles
-		if(key_left)
-			angy += 0.02f/zoom;
-		if(key_right)
-			angy -= 0.02f/zoom;
-		if(key_up)
-			angx -= 0.02f/zoom;
-		if(key_down)
-			angx += 0.02f/zoom;
-		
-		// clamp angle, YOU MUST NOT LOOK DIRECTLY UP OR DOWN!
-		if(angx > M_PI*0.499f)
-			angx = M_PI*0.499f;
-		if(angx < -M_PI*0.499f)
-			angx = -M_PI*0.499f;
-		
-		// set camera direction
-		float sya = sinf(angy);
-		float cya = cosf(angy);
-		float sxa = sinf(angx);
-		float cxa = cosf(angx);
-		cam_point_dir(&tcam, sya*cxa, sxa, cya*cxa, zoom, 0.0f);
-		
-		// move along
-		float mvx = 0.0f;
-		float mvy = 0.0f;
-		float mvz = 0.0f;
-		
-		if(key_w)
-			mvz += 1.0f;
-		if(key_s)
-			mvz -= 1.0f;
-		if(key_a)
-			mvx += 1.0f;
-		if(key_d)
-			mvx -= 1.0f;
-		if(key_ctrl)
-			mvy += 1.0f;
-		if(key_space)
-			mvy -= 1.0f;
-		
-		float mvspd = 0.2f/zoom;
-		mvx *= mvspd;
-		mvy *= mvspd;
-		mvz *= mvspd;
-		
-		tcam.mpx += mvx*tcam.mxx+mvy*tcam.myx+mvz*tcam.mzx;
-		tcam.mpy += mvx*tcam.mxy+mvy*tcam.myy+mvz*tcam.mzy;
-		tcam.mpz += mvx*tcam.mxz+mvy*tcam.myz+mvz*tcam.mzz;
-		
-		if(mvx != 0.0f || mvy != 0.0f || mvz != 0.0f)
+		if(tcam.mpx != ompx || tcam.mpy != ompy || tcam.mpz != ompz)
+		{
 			render_vxl_redraw(&tcam, map);
+			ompx = tcam.mpx;
+			ompy = tcam.mpy;
+			ompz = tcam.mpz;
+		}
 		
 		frame_now = SDL_GetTicks();
 		fps++;
@@ -188,7 +175,12 @@ void run_game(void)
 		SDL_UnlockSurface(screen);
 		SDL_Flip(screen);
 		
-		//SDL_Delay(10);
+		int msec_wait = 10*(int)(sec_wait*100.0f+0.5f);
+		if(msec_wait > 0)
+		{
+			sec_wait -= msec_wait;
+			SDL_Delay(msec_wait);
+		}
 		
 		SDL_Event ev;
 		while(SDL_PollEvent(&ev))
@@ -196,44 +188,30 @@ void run_game(void)
 		{
 			case SDL_KEYUP:
 			case SDL_KEYDOWN:
-			switch(ev.key.keysym.sym)
-			{
-				case BTSK_LOOKUP:
-					key_up = (ev.type == SDL_KEYDOWN);
+				// inform Lua client
+				lua_getglobal(lstate_client, "client");
+				lua_getfield(lstate_client, -1, "hook_key");
+				lua_remove(lstate_client, -2);
+				if(lua_isnil(lstate_client, -1))
+				{
+					// not hooked? ignore!
+					lua_pop(lstate_client, 1);
 					break;
-				case BTSK_LOOKDOWN:
-					key_down = (ev.type == SDL_KEYDOWN);
+				}
+				lua_pushinteger(lstate_client, ev.key.keysym.sym);
+				lua_pushboolean(lstate_client, (ev.type == SDL_KEYDOWN));
+				if(lua_pcall(lstate_client, 2, 0, 0) != 0)
+				{
+					printf("Lua Client Error (key): %s\n", lua_tostring(lstate_client, -1));
+					lua_pop(lstate_client, 1);
+					quitflag = 1;
 					break;
-				case BTSK_LOOKLEFT:
-					key_left = (ev.type == SDL_KEYDOWN);
-					break;
-				case BTSK_LOOKRIGHT:
-					key_right = (ev.type == SDL_KEYDOWN);
-					break;
-				case BTSK_FORWARD:
-					key_w = (ev.type == SDL_KEYDOWN);
-					break;
-				case BTSK_BACK:
-					key_s = (ev.type == SDL_KEYDOWN);
-					break;
-				case BTSK_LEFT:
-					key_a = (ev.type == SDL_KEYDOWN);
-					break;
-				case BTSK_RIGHT:
-					key_d = (ev.type == SDL_KEYDOWN);
-					break;
-				case BTSK_CROUCH:
-					key_ctrl = (ev.type == SDL_KEYDOWN);
-					break;
-				case BTSK_JUMP:
-					key_space = (ev.type == SDL_KEYDOWN);
-					break;
-				default:
-					// -Wswitch: SHUT. UP.
-					break;
-			} break;
+				}
+				break;
 			case SDL_QUIT:
 				quitflag = 1;
+				break;
+			default:
 				break;
 		}
 	}

@@ -19,13 +19,14 @@ lua base library stuff:
 	pcall @
 	error @
 	print @
+	loadstring @
 	
 	nothing else yet
 	(TODO: stop leaking the whole base library)
 	
 	check http://www.lua.org/manual/5.1/ for more info on these
 
-common.hook_tick = fn(sec_curtime, sec_delta)->sec_wait
+client/server.hook_tick = fn(sec_curtime, sec_delta)->sec_wait @
 	sets a hook called every "tick"
 	returns a number telling it how long it wants to wait for
 	
@@ -34,6 +35,14 @@ common.hook_tick = fn(sec_curtime, sec_delta)->sec_wait
 	call to the hooked function
 	
 	setting this to nil will quit your game
+	
+	NOTE: DO NOT USE COMMON FOR THIS HOOK!
+	(only client/server is accepted)
+
+client.hook_key = fn(key, state) @
+	sets a hook called every time a key changes
+	
+	state is either true or false
 
 success = server.stream_new_map(fname, fmt = "auto")
 	loads a map, either .vxl or some format we might invent
@@ -50,15 +59,15 @@ success = server.create_new_map(lx, ly, lz)
 success = common.save_map(fname, fmt = "bsm")
 	saves a map to a file
 
-client.camera_point(dx, dy, dz, zoom = 1.0, pitch = 0.0)
+client.camera_point(dx, dy, dz, zoom = 1.0, roll = 0.0) @
 	points the camera in a direction with zoom factor "zoom"
-	and pitch "pitch" (in radians, sorry)
+	and roll "roll" (in radians, sorry)
 
-client.camera_move_local(dx, dy, dz)
+client.camera_move_local(dx, dy, dz) @
 	moves the camera in the camera-local direction (dx,dy,dz)
 
-client.camera_move_global(dx, dy, dz)
+client.camera_move_global(dx, dy, dz) @
 	moves the camera in the world direction (dx,dy,dz)
 
-client.camera_move_to(px, py, pz)
+client.camera_move_to(px, py, pz) @
 	moves the camera to the world position (px,py,pz)
