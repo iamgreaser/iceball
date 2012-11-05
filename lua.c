@@ -31,9 +31,9 @@ int btslua_assert_stack(lua_State *L, int smin, int smax)
 	int top = lua_gettop(L);
 	
 	if(smin != -1 && top < smin)
-		return luaL_error(L, "expected at least %i arguments, got %i\n", smin, top);
+		return luaL_error(L, "expected at least %d arguments, got %d\n", smin, top);
 	if(smax != -1 && top > smax)
-		return luaL_error(L, "expected at most %i arguments, got %i\n", smax, top);
+		return luaL_error(L, "expected at most %d arguments, got %d\n", smax, top);
 	
 	return top;
 }
@@ -186,8 +186,8 @@ struct btslua_entry btslua_client[] = {
 	{btslua_fn_client_camera_move_local, "camera_move_local"},
 	{btslua_fn_client_camera_move_global, "camera_move_global"},
 	{btslua_fn_client_camera_move_to, "camera_move_to"},
-	{btslua_fn_client_camera_move_to, "camera_get_pos"},
-	{btslua_fn_client_camera_move_to, "camera_get_forward"},
+	{btslua_fn_client_camera_get_pos, "camera_get_pos"},
+	{btslua_fn_client_camera_get_forward, "camera_get_forward"},
 	{NULL, NULL}
 };
 

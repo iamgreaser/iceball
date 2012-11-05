@@ -33,6 +33,48 @@ BTSK_LOOKDOWN  = SDLK_DOWN
 BTSK_LOOKLEFT  = SDLK_LEFT
 BTSK_LOOKRIGHT = SDLK_RIGHT
 
+-- useful stuff
+-- TODO: ship this off to a different file
+function trace_map(x1,y1,z1, x2,y2,z2, bx1,by1,bz1, bx2,by2,bz2)
+	-- delta
+	local dx,dy,dz
+	dx = x2-x1
+	dy = y2-y1
+	dz = z2-z1
+	
+	-- offsets
+	local fx,fy,fz
+	if dx < 0 then fx = bx1 else fx = bx2 end
+	if dy < 0 then fy = by1 else fy = by2 end
+	if dz < 0 then fz = bz1 else fz = bz2 end
+	
+	-- direction
+	local gx,gy,gz
+	if dx < 0 then gx = -1 else gx = 1 end
+	if dy < 0 then gy = -1 else gy = 1 end
+	if dz < 0 then gz = -1 else gz = 1 end
+	dx = dx * gx
+	dy = dy * gy
+	dz = dz * gz
+	
+	-- apply offset
+	x1 = x1 + fx
+	y1 = y1 + fy
+	z1 = z1 + fz
+	x2 = x2 + fx
+	y2 = y2 + fy
+	z2 = z2 + fz
+	
+	-- cell
+	local cx,cy,cz
+	cx = x1
+	cy = y1
+	cz = z1
+	
+	-- TODO!
+	return nil
+end
+
 -- set stuff
 zoom = 1.0
 angx = 0.0
@@ -109,7 +151,21 @@ function h_tick_camfly(sec_current, sec_delta)
 	mvy = mvy * mvspd
 	mvz = mvz * mvspd
 	
+	local ox, oy, oz
+	local nx, ny, nz
+	ox, oy, oz = client.camera_get_pos()
 	client.camera_move_local(mvx, mvy, mvz)
+	nx, ny, nz = client.camera_get_pos()
+	
+	nx, ny, nz = trace_map(
+		ox, oy, oz,
+		nx, ny, nz,
+		-0.4, -0.3, -0.4,
+		 0.4,  1.5,  0.4)
+	
+	if nx then
+		client.camera_move_to(nx, ny, nz)
+	end
 	
 	-- wait a bit
 	return 0.01
