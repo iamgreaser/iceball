@@ -1,10 +1,10 @@
 # I personally don't care if you steal this makefile. --GM
 
-CFLAGS = -O2 -fno-strict-aliasing -g `sdl-config --cflags` -Wall -Wextra \
+CFLAGS = -pg -O2 -fno-strict-aliasing -g `sdl-config --cflags` -Wall -Wextra \
 	-Wno-unused-variable -Wno-unused-parameter \
 	-Wno-unused-but-set-variable
 
-LDFLAGS = -g
+LDFLAGS = -pg -g
 LIBS_SDL = `sdl-config --libs`
 LIBS_LUA = -llua-5.1
 LIBS = -lm $(LIBS_LUA) $(LIBS_SDL) 
