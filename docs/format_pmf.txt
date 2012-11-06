@@ -2,8 +2,12 @@ pretty simple really
 
 start with the header of "PMF",0x1A,1,0,0,0
 
+then there's a uint32_t denoting how many body parts there are
+
 then, for each body part,
 there's a null-terminated 16-byte string (max 15 chars) denoting the part
+
+then there's a uint32_t denoting how many points there are in this body part
 
 then there's a whole bunch of this:
 
@@ -12,11 +16,6 @@ int16_t x,y,z;
 uint8_t b,g,r,reserved;
 
 rinse, lather, repeat
-until you hit a block with radius of 0
-that's when you *stop* and read the next part
-
-once you hit a next part with a name which is all 0x00 bytes,
-that's when you're finished
 
 units are 8:8 fixed point in terms of the vxl grid by default
 
@@ -24,6 +23,3 @@ units are 8:8 fixed point in terms of the vxl grid by default
 NO SIDECHANNELING YOUR NAME IN THERE
 i'm going to enforce this in the renderer
 and will outright reject files which don't have 0 in ALL of these slots
-
-if the radius is 0, EVERYTHING ELSE SHOULD BE
-same deal, going to check the whole thing

@@ -15,6 +15,9 @@
     along with Iceball.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+// note, this'll probably get removed when i get around to it
+// it'll be much easier to do in lua --GM
+
 #include "common.h"
 
 SDL_Surface *screen = NULL;

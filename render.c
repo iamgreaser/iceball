@@ -53,6 +53,8 @@ map_t *rtmp_map;
 
 int *ftb_first;
 
+float *dbuf;
+
 /*
  * REFERENCE IMPLEMENTATION
  * 
@@ -106,6 +108,43 @@ void render_rect_clip(uint32_t *color, int *x1, int *y1, int *x2, int *y2, float
 		*x2 = cubemap_size;
 	if(*y2 > cubemap_size)
 		*y2 = cubemap_size;
+}
+
+void render_rect_zbuf(uint32_t *ccolor, float *cdepth, int x1, int y1, int x2, int y2, uint32_t color, float depth)
+{
+	int x,y;
+	
+	// clip
+	render_rect_clip(&color, &x1, &y1, &x2, &y2, depth);
+	
+	if(x2 <= 0)
+		return;
+	if(x1 >= cubemap_size)
+		return;
+	if(y2 <= 0)
+		return;
+	if(y1 >= cubemap_size)
+		return;
+	if(x1 == x2)
+		return;
+	if(y1 == y2)
+		return;
+	
+	// render
+	uint32_t *cptr = &ccolor[y1*rtmp_pitch+x1];
+	float *dptr = &dbuf[y1*rtmp_width+x1];
+	int stride = x2-x1;
+	int pitch = rtmp_pitch - stride;
+	int dpitch = rtmp_width - stride;
+	
+	// TODO: care about the depth buffer
+	for(y = y1; y < y2; y++)
+	{
+		for(x = x1; x < x2; x++)
+			*(cptr++) = color;
+		
+		cptr += pitch;
+	}
 }
 
 void render_vxl_rect_btf(uint32_t *ccolor, float *cdepth, int x1, int y1, int x2, int y2, uint32_t color, float depth)
@@ -870,6 +909,7 @@ void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t
 	// raytrace it
 	// TODO: find some faster method
 	uint32_t *p = pixels;
+	float *d = dbuf;
 	int hwidth = width/2;
 	int hheight = height/2;
 	for(y = -hheight; y < hheight; y++)
@@ -884,21 +924,25 @@ void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t
 		
 		for(x = -hwidth; x < hwidth; x++)
 		{
-			// get correct cube map and draw
+			int pidx, pmap;
+			// get correct cube map + pos
 			if(fabsf(fx) > fabsf(fy) && fabsf(fx) > fabsf(fz))
 			{
-				*p++ = cubemap_color[fx >= 0.0f ? CM_PX : CM_NX][
-					((cubemap_size-1)&(int)(-fz*tracemul/fx+traceadd))
-					|(((cubemap_size-1)&(int)(fy*tracemul/fabsf(fx)+traceadd))<<cubemap_shift)];
+				pidx = ((cubemap_size-1)&(int)(-fz*tracemul/fx+traceadd))
+					|(((cubemap_size-1)&(int)(fy*tracemul/fabsf(fx)+traceadd))<<cubemap_shift);
+				pmap = fx >= 0.0f ? CM_PX : CM_NX;
 			} else if(fabsf(fz) > fabsf(fy) && fabsf(fz) > fabsf(fx)) {
-				*p++ = cubemap_color[fz >= 0.0f ? CM_PZ : CM_NZ][
-					((cubemap_size-1)&(int)(fx*tracemul/fz+traceadd))
-					|(((cubemap_size-1)&(int)(fy*tracemul/fabsf(fz)+traceadd))<<cubemap_shift)];
+				pidx = ((cubemap_size-1)&(int)(fx*tracemul/fz+traceadd))
+					|(((cubemap_size-1)&(int)(fy*tracemul/fabsf(fz)+traceadd))<<cubemap_shift);
+				pmap = fz >= 0.0f ? CM_PZ : CM_NZ;
 			} else {
-				*p++ = cubemap_color[fy >= 0.0f ? CM_PY : CM_NY][
-					((cubemap_size-1)&(int)(fx*tracemul/fy+traceadd))
-					|(((cubemap_size-1)&(int)(fz*tracemul/fy+traceadd))<<cubemap_shift)];
+				pidx = ((cubemap_size-1)&(int)(fx*tracemul/fy+traceadd))
+					|(((cubemap_size-1)&(int)(fz*tracemul/fy+traceadd))<<cubemap_shift);
+				pmap = fy >= 0.0f ? CM_PY : CM_NY;
 			}
+			
+			*(p++) = cubemap_color[pmap][pidx];
+			*(d++) = cubemap_depth[pmap][pidx];//*sqrtf(fx*fx+fy*fy+fz*fz);
 			
 			fx += fdx;
 			fy += fdy;
@@ -926,6 +970,59 @@ void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t
 	}*/
 }
 
+void render_pmf_box(float x, float y, float z, float r, uint32_t color)
+{
+	// TODO: care about the depth buffer
+}
+
+void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_t *cam_base,
+	model_bone_t *bone,
+	float cx, float cy, float cz, float ry, float rx, float scale)
+{
+	// stash stuff in globals to prevent spamming the stack too much
+	// (and in turn thrashing the cache)
+	rtmp_pixels = pixels;
+	rtmp_width = width;
+	rtmp_height = height;
+	rtmp_pitch = pitch;
+	rtmp_camera = cam_base;
+	
+	int i;
+	for(i = 0; i < bone->ptlen; i++)
+	{
+		model_point_t *pt = &(bone->pts[i]);
+		
+		// get color
+		uint32_t color = (pt->b)|(pt->g<<8)|(pt->r<<16)|(1<<24);
+		
+		// get position
+		float x = pt->x;
+		float y = pt->y;
+		float z = pt->z;
+		
+		// rotate
+		// TODO!
+		
+		// scalinate
+		x *= scale;
+		y *= scale;
+		z *= scale;
+		
+		// offsettate
+		x += cx;
+		y += cy;
+		z += cz;
+		
+		// cameranananinate
+		float nx = x*cam_base->mxx+y*cam_base->myx+z*cam_base->mzx-cam_base->mpx;
+		float ny = x*cam_base->mxy+y*cam_base->myy+z*cam_base->mzy-cam_base->mpy;
+		float nz = x*cam_base->mxz+y*cam_base->myz+z*cam_base->mzz-cam_base->mpz;
+		
+		// plotinate
+		render_pmf_box(nx, ny, nz, pt->radius*scale, color);
+	}
+}
+
 int render_init(int width, int height)
 {
 	int i;
@@ -938,6 +1035,8 @@ int render_init(int width, int height)
 	size |= size>>4;
 	size |= size>>8;
 	size++;
+	
+	int msize = size;
 	
 	// reduce quality a little bit
 	// 800x600 -> 1024^2 -> 512^2 ends up as 1MB x 6 textures = 6MB
@@ -983,6 +1082,10 @@ int render_init(int width, int height)
 	ftb_first = malloc(cubemap_size*sizeof(int));
 	// TODO: check if NULL
 	
+	// allocate space for depth buffer
+	dbuf = malloc(width*height*sizeof(float));
+	// TODO: check if NULL
+	
 	return 0;
 }
 
@@ -1010,5 +1113,12 @@ void render_deinit(void)
 	{
 		free(ftb_first);
 		ftb_first = NULL;
+	}
+	
+	// deallocate depth buffer
+	if(dbuf != NULL)
+	{
+		free(dbuf);
+		dbuf = NULL;
 	}
 }

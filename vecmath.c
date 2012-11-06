@@ -17,6 +17,32 @@
 
 #include "common.h"
 
+vec4f_t mtx_apply_vec(matrix_t *mtx, vec4f_t *vec)
+{
+	int i,j;
+	vec4f_t ret;
+	
+	// TODO: SIMD versions
+	
+	for(i = 0; i < 4; i++)
+	{
+		ret.a[i] = 0.0f;
+		for(j = 0; j < 4; j++)
+			ret.a[i] += vec->a[j] * mtx->r[i].a[j];
+	}
+	
+	return ret;
+}
+
+void mtx_identity(matrix_t *mtx)
+{
+	int i,j;
+	
+	for(i = 0; i < 4; i++)
+		for(j = 0; j < 4; j++)
+			mtx->r[i].a[j] = (i==j ? 1 : 0);
+}
+
 void cam_point_dir(camera_t *model, float dx, float dy, float dz, float zoom, float roll)
 {
 	// Another case where I'd copy-paste code from my aimbot.

@@ -24,7 +24,7 @@ OBJS = \
 all: $(BINNAME) $(TOOLS)
 
 clean:
-	rm -f $(OBJS)
+	rm -f $(OBJS) $(TOOL_PMFEDIT_OBJS)
 
 $(TOOL_PMFEDIT): $(TOOL_PMFEDIT_OBJS)
 	$(CC) -o $(TOOL_PMFEDIT) $(LDFLAGS) $(TOOL_PMFEDIT_OBJS) $(LIBS_SDL)

@@ -15,6 +15,8 @@
     along with Iceball.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <immintrin.h>
+
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -31,6 +33,20 @@
 
 #include <SDL.h>
 
+typedef union vec4f
+{
+	struct { float x,y,z,w; } __attribute__((__packed__)) p;
+	float a[4];
+#ifdef __SSE__
+	__m128 m;
+#endif
+} __attribute__((__packed__)) vec4f_t;
+
+typedef struct matrix
+{
+	vec4f_t r[4];
+} __attribute__((__packed__)) matrix_t;
+
 typedef struct camera
 {
 	// camera bollocks
@@ -40,24 +56,27 @@ typedef struct camera
 	float mpx,mpy,mpz,mppad;
 } camera_t;
 
-// well yeah, a model is just a 0-radius-terminated array of this
-typedef struct model
+typedef struct model_point
 {
 	uint16_t radius;
 	int16_t x,y,z;
 	uint8_t b,g,r,resv1;
-} model_t;
+} __attribute__((__packed__)) model_point_t;
 
-#define EF_VISIBLE  0x00000001
-
-typedef struct entity entity_t;
-struct entity
+typedef struct model model_t;
+typedef struct model_bone
 {
-	model_t *model;
-	entity_t *ent_next;
-	int flags;
-	float x,y,z;
-	float mod_scale;
+	char name[16];
+	model_t *parent;
+	int parent_idx;
+	int ptlen, ptmax;
+	model_point_t pts[];
+} model_bone_t;
+
+struct model
+{
+	int bonelen, bonemax;
+	model_bone_t *bones[];
 };
 
 /*
@@ -131,6 +150,13 @@ map_t *map_load_bts(char *fname);
 void map_free(map_t *map);
 
 // model.c
+void model_bone_new(model_t *pmf, int ptmax);
+model_bone_t *model_bone_extend(model_bone_t *bone, int ptmax);
+void model_bone_free(model_bone_t *bone);
+model_t *model_new(int bonemax);
+model_t *model_extend(model_t *pmf, int bonemax);
+void model_free(model_t *pmf);
+model_t *model_load_pmf(void);
 
 // network.c
 int net_init(void);
@@ -143,4 +169,6 @@ int render_init(int width, int height);
 void render_deinit(void);
 
 // vecmath.c
+vec4f_t mtx_apply_vec(matrix_t *mtx, vec4f_t *vec);
+void mtx_identity(matrix_t *mtx);
 void cam_point_dir(camera_t *model, float dx, float dy, float dz, float zoom, float roll);
