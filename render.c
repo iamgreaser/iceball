@@ -1016,6 +1016,7 @@ void render_pmf_box(float x, float y, float z, float r, uint32_t color)
 	
 	// get correct centre depth
 	// TODO!
+	// depth = z * len(x,y,z)/max(x,y,z)
 	
 	// render
 	render_rect_zbuf(rtmp_pixels, dbuf, x1, y1, x2, y2, color, z);
@@ -1056,13 +1057,13 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 		z *= scale;
 		
 		// offsettate
-		x += px - cam_base->mpx;
-		y += py - cam_base->mpy;
-		z += pz - cam_base->mpz;
+		x += (px - cam_base->mpx);
+		y += (py - cam_base->mpy);
+		z += (pz - cam_base->mpz);
 		
 		// cameranananinate
 		float nx = x*cam_base->mxx+y*cam_base->myx+z*cam_base->mzx;
-		float ny = x*cam_base->mxy+y*cam_base->myy+z*cam_base->mzy;
+		float ny = x*cam_base->myz+y*cam_base->myy+z*cam_base->mzy;
 		float nz = x*cam_base->mxz+y*cam_base->myz+z*cam_base->mzz;
 		
 		// plotinate

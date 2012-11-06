@@ -9,9 +9,7 @@ LIBS_SDL = `sdl-config --libs`
 LIBS_LUA = -llua-5.1
 LIBS = -lm $(LIBS_LUA) $(LIBS_SDL) 
 BINNAME = iceball
-TOOL_PMFEDIT = pmfedit
-TOOL_PMFEDIT_OBJS = tool_pmfedit.o model.o
-TOOLS = $(TOOL_PMFEDIT)
+TOOLS = 
 
 INCLUDES = common.h
 OBJS = \
@@ -24,10 +22,7 @@ OBJS = \
 all: $(BINNAME) $(TOOLS)
 
 clean:
-	rm -f $(OBJS) $(TOOL_PMFEDIT_OBJS)
-
-$(TOOL_PMFEDIT): $(TOOL_PMFEDIT_OBJS)
-	$(CC) -o $(TOOL_PMFEDIT) $(LDFLAGS) $(TOOL_PMFEDIT_OBJS) $(LIBS_SDL)
+	rm -f $(OBJS)
 
 $(BINNAME): $(OBJS)
 	$(CC) -o $(BINNAME) $(LDFLAGS) $(OBJS) $(LIBS)
