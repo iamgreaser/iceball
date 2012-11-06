@@ -144,6 +144,7 @@ void icelua_deinit(void);
 extern camera_t tcam;
 extern map_t *clmap;
 extern map_t *svmap;
+extern SDL_Surface *screen;
 int error_sdl(char *msg);
 int error_perror(char *msg);
 
@@ -168,6 +169,9 @@ void net_deinit(void);
 // render.c
 void render_vxl_redraw(camera_t *camera, map_t *map);
 void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t *camera, map_t *map);
+void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_t *cam_base,
+	model_bone_t *bone,
+	float px, float py, float pz, float ry, float rx, float scale);
 int render_init(int width, int height);
 void render_deinit(void);
 

@@ -110,20 +110,52 @@ void render_rect_clip(uint32_t *color, int *x1, int *y1, int *x2, int *y2, float
 		*y2 = cubemap_size;
 }
 
+void render_rect_clip_screen(uint32_t *color, int *x1, int *y1, int *x2, int *y2, float depth)
+{
+	*color = render_fog_apply(*color, depth);
+	
+	// arrange *1 <= *2
+	if(*x1 > *x2)
+	{
+		int t = *x1;
+		*x1 = *x2;
+		*x2 = t;
+	}
+	
+	if(*y1 > *y2)
+	{
+		int t = *y1;
+		*y1 = *y2;
+		*y2 = t;
+	}
+	
+	// clip
+	if(*x1 < 0)
+		*x1 = 0;
+	if(*y1 < 0)
+		*y1 = 0;
+	if(*x2 > rtmp_width)
+		*x2 = rtmp_width;
+	if(*y2 > rtmp_height)
+		*y2 = rtmp_height;
+}
+
 void render_rect_zbuf(uint32_t *ccolor, float *cdepth, int x1, int y1, int x2, int y2, uint32_t color, float depth)
 {
 	int x,y;
 	
 	// clip
-	render_rect_clip(&color, &x1, &y1, &x2, &y2, depth);
+	//render_rect_clip_screen(&color, &x1, &y1, &x2, &y2, depth);
+	uint32_t dummy;
+	render_rect_clip_screen(&dummy, &x1, &y1, &x2, &y2, depth);
 	
 	if(x2 <= 0)
 		return;
-	if(x1 >= cubemap_size)
+	if(x1 >= rtmp_width)
 		return;
 	if(y2 <= 0)
 		return;
-	if(y1 >= cubemap_size)
+	if(y1 >= rtmp_height)
 		return;
 	if(x1 == x2)
 		return;
@@ -132,7 +164,7 @@ void render_rect_zbuf(uint32_t *ccolor, float *cdepth, int x1, int y1, int x2, i
 	
 	// render
 	uint32_t *cptr = &ccolor[y1*rtmp_pitch+x1];
-	float *dptr = &dbuf[y1*rtmp_width+x1];
+	float *dptr = &cdepth[y1*rtmp_width+x1];
 	int stride = x2-x1;
 	int pitch = rtmp_pitch - stride;
 	int dpitch = rtmp_width - stride;
@@ -972,14 +1004,26 @@ void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t
 
 void render_pmf_box(float x, float y, float z, float r, uint32_t color)
 {
-	// TODO: care about the depth buffer
+	// check Z straight away
+	if(z < 0.001f)
+		return;
 	
-	// TODO: ACTUALLY RENDER THIS
+	// get box
+	int x1 = (( x-r)/z)*rtmp_width/2+rtmp_width/2;
+	int y1 = (( y-r)/z)*rtmp_width/2+rtmp_height/2;
+	int x2 = (( x+r)/z)*rtmp_width/2+rtmp_width/2;
+	int y2 = (( y+r)/z)*rtmp_width/2+rtmp_height/2;
+	
+	// get correct centre depth
+	// TODO!
+	
+	// render
+	render_rect_zbuf(rtmp_pixels, dbuf, x1, y1, x2, y2, color, z);
 }
 
 void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_t *cam_base,
 	model_bone_t *bone,
-	float cx, float cy, float cz, float ry, float rx, float scale)
+	float px, float py, float pz, float ry, float rx, float scale)
 {
 	// stash stuff in globals to prevent spamming the stack too much
 	// (and in turn thrashing the cache)
@@ -989,6 +1033,7 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 	rtmp_pitch = pitch;
 	rtmp_camera = cam_base;
 	
+	scale /= 256.0f;
 	int i;
 	for(i = 0; i < bone->ptlen; i++)
 	{
@@ -1011,14 +1056,14 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 		z *= scale;
 		
 		// offsettate
-		x += cx;
-		y += cy;
-		z += cz;
+		x += px - cam_base->mpx;
+		y += py - cam_base->mpy;
+		z += pz - cam_base->mpz;
 		
 		// cameranananinate
-		float nx = x*cam_base->mxx+y*cam_base->myx+z*cam_base->mzx-cam_base->mpx;
-		float ny = x*cam_base->mxy+y*cam_base->myy+z*cam_base->mzy-cam_base->mpy;
-		float nz = x*cam_base->mxz+y*cam_base->myz+z*cam_base->mzz-cam_base->mpz;
+		float nx = x*cam_base->mxx+y*cam_base->myx+z*cam_base->mzx;
+		float ny = x*cam_base->mxy+y*cam_base->myy+z*cam_base->mzy;
+		float nz = x*cam_base->mxz+y*cam_base->myz+z*cam_base->mzz;
 		
 		// plotinate
 		render_pmf_box(nx, ny, nz, pt->radius*scale, color);

@@ -39,6 +39,12 @@ client/server.hook_tick = fn(sec_curtime, sec_delta)->sec_wait @
 	NOTE: DO NOT USE COMMON FOR THIS HOOK!
 	(only client/server is accepted)
 
+client.hook_render = fn() @
+	sets a hook called every frame
+	
+	this is the only place where it is safe to render stuff
+	such as models and HUDs and whatnot
+
 client.hook_key = fn(key, state) @
 	sets a hook called every time a key changes
 	
@@ -166,4 +172,19 @@ boneidx = common.model_bone_find(pmf, name)
 	note, this is case sensitive
 	
 	if it cannot be found, this returns nil
+
+client.model_render_bone_global(pmf, boneidx, px, py, pz, ry, rx, scale) @
+	renders a bone at world position (px,py,pz),
+	
+	rotated around Y by "ry" radians,
+	then around X by "rx" radians,
+	and scaled "scale" times
+
+client.model_render_bone_local(pmf, boneidx, px, py, pz, ry, rx, scale)
+	renders a bone at camera-local position (px,py,pz),
+	
+	rotated around Y by "ry" radians,
+	then around X by "rx" radians,
+	and scaled "scale" times
+
 #

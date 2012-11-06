@@ -148,6 +148,7 @@ void run_game(void)
 		sec_wait += lua_tonumber(lstate_client, -1);
 		lua_pop(lstate_client, 1);
 		
+		// redraw scene if necessary
 		if(tcam.mpx != ompx || tcam.mpy != ompy || tcam.mpz != ompz)
 		{
 			render_vxl_redraw(&tcam, clmap);
@@ -156,6 +157,7 @@ void run_game(void)
 			ompz = tcam.mpz;
 		}
 		
+		// update FPS counter
 		frame_now = SDL_GetTicks();
 		fps++;
 		
@@ -169,11 +171,29 @@ void run_game(void)
 		}
 		
 		//printf("%.2f",);
+		// draw scene to cubemap
 		SDL_LockSurface(screen);
 		//memset(screen->pixels, 0x51, screen->h*screen->pitch);
 		render_cubemap(screen->pixels,
 			screen->w, screen->h, screen->pitch/4,
 			&tcam, clmap);
+		
+		// apply Lua HUD / model stuff
+		lua_getglobal(lstate_client, "client");
+		lua_getfield(lstate_client, -1, "hook_render");
+		lua_remove(lstate_client, -2);
+		if(!lua_isnil(lstate_client, -1))
+		{
+			if(lua_pcall(lstate_client, 0, 0, 0) != 0)
+			{
+				SDL_UnlockSurface(screen);
+				printf("Lua Client Error (render): %s\n", lua_tostring(lstate_client, -1));
+				lua_pop(lstate_client, 1);
+				quitflag = 1;
+				break;
+			}
+		}
+		
 		SDL_UnlockSurface(screen);
 		SDL_Flip(screen);
 		
