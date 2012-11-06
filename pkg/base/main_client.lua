@@ -55,13 +55,13 @@ key_space = false
 mdl_test = client.model_new(1)
 print(client.model_len(mdl_test))
 mdl_test_bone_data = {
-	{radius=128, x= 0  ,y= 0  ,z= 0  , r=255,g=170,b=0  },
-	{radius=64 , x= 256,y= 0  ,z= 0  , r=255,g=0  ,b=0  },
-	{radius=64 , x= 0  ,y= 256,z= 0  , r=0  ,g=255,b=0  },
-	{radius=64 , x= 0  ,y= 0  ,z= 256, r=0  ,g=0  ,b=255},
-	{radius=64 , x=-256,y= 0  ,z= 0  , r=0  ,g=255,b=255},
-	{radius=64 , x= 0  ,y=-256,z= 0  , r=255,g=0  ,b=255},
-	{radius=64 , x= 0  ,y= 0  ,z=-256, r=255,g=255,b=0  },
+	{radius=192, x= 0  ,y= 0  ,z= 0  , r=255,g=170,b=0  },
+	{radius=96 , x= 256,y= 0  ,z= 0  , r=255,g=0  ,b=0  },
+	{radius=96 , x= 0  ,y= 256,z= 0  , r=0  ,g=255,b=0  },
+	{radius=96 , x= 0  ,y= 0  ,z= 256, r=0  ,g=0  ,b=255},
+	{radius=96 , x=-256,y= 0  ,z= 0  , r=0  ,g=255,b=255},
+	{radius=96 , x= 0  ,y=-256,z= 0  , r=255,g=0  ,b=255},
+	{radius=96 , x= 0  ,y= 0  ,z=-256, r=255,g=255,b=0  },
 }
 mdl_test, mdl_test_bone = client.model_bone_new(mdl_test, #mdl_test_bone_data)
 print(mdl_test, mdl_test_bone)
@@ -201,7 +201,7 @@ end
 
 function client.hook_render()
 	client.model_render_bone_global(mdl_test, mdl_test_bone,
-		120.5, 30.5, 130.5,
+		120.5, 50.5, 150.5,
 		0.0, 0.0, 1.0)
 end
 

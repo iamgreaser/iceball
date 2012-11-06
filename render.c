@@ -145,9 +145,9 @@ void render_rect_zbuf(uint32_t *ccolor, float *cdepth, int x1, int y1, int x2, i
 	int x,y;
 	
 	// clip
-	//render_rect_clip_screen(&color, &x1, &y1, &x2, &y2, depth);
-	uint32_t dummy;
-	render_rect_clip_screen(&dummy, &x1, &y1, &x2, &y2, depth);
+	render_rect_clip_screen(&color, &x1, &y1, &x2, &y2, depth);
+	//uint32_t dummy;
+	//render_rect_clip_screen(&dummy, &x1, &y1, &x2, &y2, depth);
 	
 	if(x2 <= 0)
 		return;
@@ -169,12 +169,19 @@ void render_rect_zbuf(uint32_t *ccolor, float *cdepth, int x1, int y1, int x2, i
 	int pitch = rtmp_pitch - stride;
 	int dpitch = rtmp_width - stride;
 	
-	// TODO: care about the depth buffer
 	for(y = y1; y < y2; y++)
 	{
 		for(x = x1; x < x2; x++)
-			*(cptr++) = color;
+		{
+			if(*dptr > depth)
+			{
+				*dptr = depth;
+				*cptr = color;
+			}
+			cptr++; dptr++;
+		}
 		
+		dptr += dpitch;
 		cptr += pitch;
 	}
 }
@@ -396,14 +403,14 @@ void render_vxl_rect_ftb_fast(uint32_t *ccolor, float *cdepth, int x1, int y1, i
 			if(*cptr == 0)
 			{
 				*cptr = color;
-				//*dptr = depth;
+				*dptr = depth;
 			}
 			cptr++;
-			//dptr++;
+			dptr++;
 		}
 		
 		cptr += pitch;
-		//dptr += pitch;
+		dptr += pitch;
 	}
 }
 
@@ -1014,10 +1021,6 @@ void render_pmf_box(float x, float y, float z, float r, uint32_t color)
 	int x2 = (( x+r)/z)*rtmp_width/2+rtmp_width/2;
 	int y2 = (( y+r)/z)*rtmp_width/2+rtmp_height/2;
 	
-	// get correct centre depth
-	// TODO!
-	// depth = z * len(x,y,z)/max(x,y,z)
-	
 	// render
 	render_rect_zbuf(rtmp_pixels, dbuf, x1, y1, x2, y2, color, z);
 }
@@ -1061,10 +1064,22 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 		y += (py - cam_base->mpy);
 		z += (pz - cam_base->mpz);
 		
+		// get correct centre depth
+		// FIXME: this isn't working :(
+		float max_axis = fabsf(x);
+		if(max_axis < fabsf(y))
+			max_axis = fabsf(y);
+		if(max_axis < fabsf(z))
+			max_axis = fabsf(z);
+		float dlen = sqrtf(x*x+y*y+z*z);
+		float depth = max_axis/dlen;
+		
 		// cameranananinate
 		float nx = x*cam_base->mxx+y*cam_base->mxy+z*cam_base->mxz;
 		float ny = x*cam_base->myx+y*cam_base->myy+z*cam_base->myz;
 		float nz = x*cam_base->mzx+y*cam_base->mzy+z*cam_base->mzz;
+		
+		depth *= nz;
 		
 		// plotinate
 		render_pmf_box(-nx, ny, nz, pt->radius*scale, color);
