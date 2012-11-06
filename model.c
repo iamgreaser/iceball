@@ -67,6 +67,7 @@ model_bone_t *model_bone_extend(model_bone_t *bone, int ptmax)
 	bone = realloc(bone, sizeof(model_bone_t)+sizeof(model_point_t)*ptmax);
 	// TODO: check if NULL
 	
+	pmf->bones[bone->parent_idx] = bone;
 	bone->ptmax = ptmax;
 	
 	return bone;

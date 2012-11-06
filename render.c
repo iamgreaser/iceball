@@ -186,185 +186,7 @@ void render_rect_zbuf(uint32_t *ccolor, float *cdepth, int x1, int y1, int x2, i
 	}
 }
 
-void render_vxl_rect_btf(uint32_t *ccolor, float *cdepth, int x1, int y1, int x2, int y2, uint32_t color, float depth)
-{
-	int x,y;
-	
-	// clip
-	render_rect_clip(&color, &x1, &y1, &x2, &y2, depth);
-	
-	if(x2 <= 0)
-		return;
-	if(x1 >= cubemap_size)
-		return;
-	if(y2 <= 0)
-		return;
-	if(y1 >= cubemap_size)
-		return;
-	if(x1 == x2)
-		return;
-	if(y1 == y2)
-		return;
-	
-	// render
-	uint32_t *cptr = &ccolor[(y1<<cubemap_shift)+x1];
-	float *dptr = &cdepth[(y1<<cubemap_shift)+x1];
-	int stride = x2-x1;
-	int pitch = cubemap_size - stride;
-	
-	// split it into two, it's more cache/register-friendly (i think)
-	
-	// FIXME: the depth loop causes a crash! don't use this yet!
-//if defined(USE_ASM) && (defined(__i386__) || defined(__amd64__))
-#if 0
-	int ylen = y2-y1;
-	//stride <<= 2;
-	pitch <<= 2;
-	//printf("%i %i %i %i\n",x1,x2,y1,y2);
-	// AT%T SYNTAX SUCKS
-	__asm__ (
-		"render_vxl_rect_btf_lp_color_y:\n\t"
-#if defined(__amd64__)
-		"movq %0, %%rcx\n\t"
-#else
-		"movl %0, %%ecx\n\t"
-#endif
-		"cld\n\trep\n\tstosl\n\t" // IT'S REP STOSD YOU *IDIOTS*!
-#if defined(__amd64__)
-		"add %1, %%rdi\n\t"
-#else
-		"add %1, %%edi\n\t"
-#endif
-		"dec %2\n\t"
-		"jnz render_vxl_rect_btf_lp_color_y\n\t"
-		: /* no outputs */
-#if defined(__amd64__)
-		: "g"((uint64_t)stride), "g"((uint64_t)pitch), "g"((uint64_t)ylen),
-			"D"(cptr), "a"(color)
-#else
-		: "g"(stride), "g"(pitch), "g"(ylen), 
-			"D"(cptr), "a"(color)
-#endif
-		: "ecx", "%1", "%2"
-	);
-	
-	//printf("%i %i %i\n",y1,y2,ylen);
-	
-	// FIXME: depth causes a crash, probably because i suck at inline asm
-	/*
-	uint32_t idepth = *(uint32_t *)(float *)&depth;
-	
-	__asm__ __volatile__ (
-		"render_vxl_rect_btf_lp_depth_y:\n\t"
-#if defined(__amd64__)
-		"movq %0, %%rcx\n\t"
-#else
-		"movl %0, %%ecx\n\t"
-#endif
-		"cld\n\trep\n\tstosl\n\t" // IT'S REP STOSD YOU *IDIOTS*!
-#if defined(__amd64__)
-		"add %1, %%rdi\n\t"
-#else
-		"add %1, %%edi\n\t"
-#endif
-		"dec %2\n\t"
-		"jnz render_vxl_rect_btf_lp_depth_y\n\t"
-		: // no outputs
-#if defined(__amd64__)
-		: "g"((uint64_t)stride), "g"((uint64_t)pitch), "g"((uint64_t)ylen),
-			"D"(dptr), "a"(idepth)
-#else
-		: "g"(stride), "g"(pitch), "g"(ylen), 
-			"D"(dptr), "a"(idepth)
-#endif
-		: "ecx", "%1", "%2", "memory"
-	);
-	*/
-	
-#else
-	for(y = y1; y < y2; y++)
-	{
-		for(x = x1; x < x2; x++)
-			*(cptr++) = color;
-		
-		cptr += pitch;
-	}
-	
-	for(y = y1; y < y2; y++)
-	{
-		for(x = x1; x < x2; x++)
-			*(dptr++) = depth;
-		
-		dptr += pitch;
-	}
-#endif
-}
-
-// TODO: get my head around this.
-void todo_render_vxl_rect_ftb_fast(uint32_t *ccolor, float *cdepth, int x1, int y1, int x2, int y2, uint32_t color, float depth)
-{
-	int x,y;
-	
-	// clip
-	render_rect_clip(&color, &x1, &y1, &x2, &y2, depth);
-	
-	if(x2 <= 0)
-		return;
-	if(x1 >= cubemap_size)
-		return;
-	if(y2 <= 0)
-		return;
-	if(y1 >= cubemap_size)
-		return;
-	if(x1 == x2)
-		return;
-	if(y1 == y2)
-		return;
-	
-	// render
-	uint32_t *cptr = &ccolor[(y1<<cubemap_shift)+x1];
-	uint32_t *cstarty = &ccolor[(y1<<cubemap_shift)];
-	float *dptr = &cdepth[(y1<<cubemap_shift)+x1];
-	int pitch = cubemap_size - (x2-x1);
-	
-	for(y = y1; y < y2; y++)
-	{
-		// read from FTB buffer
-		int *lf = &(ftb_first[y]);
-		int f = *lf;
-		
-		// UPPER = next
-		// LOWER = length
-		
-		while(f < x2)
-		{
-			// read value
-			uint32_t *pv = &(ccolor[f]);
-			uint32_t v = *pv;
-			
-			// check if we're in the right sort of area
-			if(f >= x1)
-			{
-				// plot it
-				for(x = x1; x < x2; x++)
-					*(cptr++) = color;
-				
-				for(x = x1; x < x2; x++)
-					*(dptr++) = depth;
-				
-			} else if(x1 < f+(int)(v&0xFFFF)) {
-				
-			}
-			
-			lf = (int *)&ccolor[f];
-		}
-		
-		cptr += pitch;
-		dptr += pitch;
-		cstarty += cubemap_size;
-	}
-}
-
+// TODO: fast ver?
 void render_vxl_rect_ftb_fast(uint32_t *ccolor, float *cdepth, int x1, int y1, int x2, int y2, uint32_t color, float depth)
 //void render_vxl_rect_ftb_slow(uint32_t *ccolor, float *cdepth, int x1, int y1, int x2, int y2, uint32_t color, float depth)
 {
@@ -414,25 +236,9 @@ void render_vxl_rect_ftb_fast(uint32_t *ccolor, float *cdepth, int x1, int y1, i
 	}
 }
 
-void render_vxl_vtrap_ftb_fast(uint32_t *ccolor, float *cdepth,
-	int x1, int x2, int y1t, int y1b, int y2t, int y2b,
-	uint32_t color, float depth)
-//void render_vxl_vtrap_ftb_slow(uint32_t *ccolor, float *cdepth,
-//	int x1, int x2, int y1t, int y1b, int y2t, int y2b,
-//	uint32_t color, float depth)
-{
-	// TODO: fast FTB version
-	//render_fog_apply(&color, depth);
-	// TODO: clip
-	// TODO: form actual trapezia
-	
-	//render_vxl_rect_ftb_fast(ccolor, cdepth, x1, y1, x2,);
-}
-
 void render_vxl_cube_sides(uint32_t *ccolor, float *cdepth, int x1, int y1, int x2, int y2, uint32_t color, float depth)
 {
 	int hsize = (cubemap_size>>1);
-	
 	
 	int x3 = ((x1-hsize)*depth)/(depth+0.5f)+hsize;
 	int y3 = ((y1-hsize)*depth)/(depth+0.5f)+hsize;
@@ -1009,7 +815,7 @@ void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t
 	}*/
 }
 
-void render_pmf_box(float x, float y, float z, float r, uint32_t color)
+void render_pmf_box(float x, float y, float z, float depth, float r, uint32_t color)
 {
 	// check Z straight away
 	if(z < 0.001f)
@@ -1022,7 +828,7 @@ void render_pmf_box(float x, float y, float z, float r, uint32_t color)
 	int y2 = (( y+r)/z)*rtmp_width/2+rtmp_height/2;
 	
 	// render
-	render_rect_zbuf(rtmp_pixels, dbuf, x1, y1, x2, y2, color, z);
+	render_rect_zbuf(rtmp_pixels, dbuf, x1, y1, x2, y2, color, depth);
 }
 
 void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_t *cam_base,
@@ -1052,7 +858,18 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 		float z = pt->z;
 		
 		// rotate
-		// TODO!
+		float sry = sin(ry);
+		float cry = cos(ry);
+		float srx = sin(rx);
+		float crx = cos(rx);
+		
+		float tx = (x*cry+z*sry);
+		float ty = y;
+		float tz = (z*cry-x*sry);
+		
+		x = tx;
+		y = (ty*crx-tz*srx);
+		z = (tz*crx+ty*srx);
 		
 		// scalinate
 		x *= scale;
@@ -1065,7 +882,6 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 		z += (pz - cam_base->mpz);
 		
 		// get correct centre depth
-		// FIXME: this isn't working :(
 		float max_axis = fabsf(x);
 		if(max_axis < fabsf(y))
 			max_axis = fabsf(y);
@@ -1082,7 +898,7 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 		depth *= nz;
 		
 		// plotinate
-		render_pmf_box(-nx, ny, nz, pt->radius*scale, color);
+		render_pmf_box(-nx, ny, nz, depth, pt->radius*scale, color);
 	}
 }
 

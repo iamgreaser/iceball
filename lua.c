@@ -236,6 +236,7 @@ int icelua_fn_common_model_bone_set(lua_State *L)
 		if(csize < tsize)
 			csize = tsize;
 		
+		printf("bone extend %i %i %i\n", bone->ptmax, tsize, csize);
 		bone = model_bone_extend(bone, csize);
 	}
 	
@@ -406,8 +407,8 @@ int icelua_fn_client_model_render_bone_global(lua_State *L)
 	py = lua_tonumber(L, 4);
 	pz = lua_tonumber(L, 5);
 	
-	rx = lua_tonumber(L, 6);
-	ry = lua_tonumber(L, 7);
+	ry = lua_tonumber(L, 6);
+	rx = lua_tonumber(L, 7);
 	
 	scale = lua_tonumber(L, 8);
 	
