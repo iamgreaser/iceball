@@ -1062,12 +1062,12 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 		z += (pz - cam_base->mpz);
 		
 		// cameranananinate
-		float nx = x*cam_base->mxx+y*cam_base->myx+z*cam_base->mzx;
-		float ny = x*cam_base->myz+y*cam_base->myy+z*cam_base->mzy;
-		float nz = x*cam_base->mxz+y*cam_base->myz+z*cam_base->mzz;
+		float nx = x*cam_base->mxx+y*cam_base->mxy+z*cam_base->mxz;
+		float ny = x*cam_base->myx+y*cam_base->myy+z*cam_base->myz;
+		float nz = x*cam_base->mzx+y*cam_base->mzy+z*cam_base->mzz;
 		
 		// plotinate
-		render_pmf_box(nx, ny, nz, pt->radius*scale, color);
+		render_pmf_box(-nx, ny, nz, pt->radius*scale, color);
 	}
 }
 

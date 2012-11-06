@@ -201,7 +201,7 @@ end
 
 function client.hook_render()
 	client.model_render_bone_global(mdl_test, mdl_test_bone,
-		120.5, 25.5, 130.5,
+		120.5, 30.5, 130.5,
 		0.0, 0.0, 1.0)
 end
 
