@@ -17,37 +17,6 @@
 
 #include "common.h"
 
-void model_bone_new(model_t *pmf, int ptmax)
-{
-	model_bone_t *bone = malloc(sizeof(model_bone_t)+sizeof(model_point_t)*ptmax);
-	// TODO: check if NULL
-	
-	bone->ptlen = 0;
-	bone->ptmax = ptmax;
-}
-
-model_bone_t *model_bone_extend(model_bone_t *bone, int ptmax)
-{
-	model_t *pmf = bone->parent;
-	bone = realloc(bone, sizeof(model_bone_t)+sizeof(model_point_t)*ptmax);
-	// TODO: check if NULL
-	
-	bone->ptmax = ptmax;
-	
-	return bone;
-}
-
-void model_bone_free(model_bone_t *bone)
-{
-	int i = bone->parent_idx;
-	
-	bone->parent->bonelen--;
-	for(i = 0; i < bone->parent->bonelen; i++)
-		bone->parent->bones[i] = bone->parent->bones[i+1];
-	
-	free(bone);
-}
-
 model_t *model_new(int bonemax)
 {
 	model_t *pmf = malloc(sizeof(model_t)+sizeof(model_bone_t *)*bonemax);
@@ -75,6 +44,43 @@ void model_free(model_t *pmf)
 		model_bone_free(pmf->bones[pmf->bonelen-1]);
 	
 	free(pmf);
+}
+
+model_bone_t *model_bone_new(model_t *pmf, int ptmax)
+{
+	model_bone_t *bone = malloc(sizeof(model_bone_t)+sizeof(model_point_t)*ptmax);
+	// TODO: check if NULL
+	
+	bone->ptlen = 0;
+	bone->ptmax = ptmax;
+	
+	bone->parent = pmf;
+	bone->parent_idx = pmf->bonelen++;
+	pmf->bones[bone->parent_idx] = bone;
+	
+	return bone;
+}
+
+model_bone_t *model_bone_extend(model_bone_t *bone, int ptmax)
+{
+	model_t *pmf = bone->parent;
+	bone = realloc(bone, sizeof(model_bone_t)+sizeof(model_point_t)*ptmax);
+	// TODO: check if NULL
+	
+	bone->ptmax = ptmax;
+	
+	return bone;
+}
+
+void model_bone_free(model_bone_t *bone)
+{
+	int i = bone->parent_idx;
+	
+	bone->parent->bonelen--;
+	for(i = 0; i < bone->parent->bonelen; i++)
+		bone->parent->bones[i] = bone->parent->bones[i+1];
+	
+	free(bone);
 }
 
 model_t *model_load_pmf(void)

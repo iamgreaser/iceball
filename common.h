@@ -15,6 +15,9 @@
     along with Iceball.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#define MODEL_BONE_MAX  256
+#define MODEL_POINT_MAX 4096
+
 #include <immintrin.h>
 
 #include <string.h>
@@ -150,7 +153,7 @@ map_t *map_load_bts(char *fname);
 void map_free(map_t *map);
 
 // model.c
-void model_bone_new(model_t *pmf, int ptmax);
+model_bone_t *model_bone_new(model_t *pmf, int ptmax);
 model_bone_t *model_bone_extend(model_bone_t *bone, int ptmax);
 void model_bone_free(model_bone_t *bone);
 model_t *model_new(int bonemax);

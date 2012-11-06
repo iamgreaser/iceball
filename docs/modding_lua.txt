@@ -51,16 +51,20 @@ success = server.stream_new_map(fname, fmt = "auto")
 	
 	this will also send the map to the other clients
 
-success = server.create_new_map(lx, ly, lz)
+server.create_new_map(lx, ly, lz)
 	creates a new map
 	
 	note, ly is the *height* of the new map
 	
 	also all dimensions must be powers of two,
 	otherwise this will fail horribly!
+	
+	this will throw a lua error if it fails.
 
-success = common.save_map(fname, fmt = "bsm")
+common.save_map(fname, fmt = "bsm")
 	saves a map to a file
+	
+	this will throw a lua error if it fails.
 
 lx, ly, lz = common.get_map_dims() @
 	gets the map's dimensions
@@ -93,26 +97,45 @@ px, py, pz = client.camera_get_pos() @
 dx, dy, dz = client.camera_get_forward() @
 	gets the camera's forward vector
 
-pmf = common.model_new(bonemax = 5)
+pmf = common.model_new(bonemax = 5) @
 	creates a new model
 	remember to free it when you're done
 	as this is only a light userdata
 	
-	"bonemax" is the initial maximum number of "bones" this can have
+	"bonemax" is the initial maximum number of "bones"
+	this model can have initially
 	useful if you know exactly how many you'll need
+	
+	currently the number of bones is limited to 256
 
-common.model_free(pmf)
+common.model_free(pmf) @
 	free the given model
 	if you don't do this then it's memoryleaktopia
 	(plus i'm allowed to kill you)
+	
+	TODO: clean up all models on game kill
 
-len = common.model_len(pmf)
+len = common.model_len(pmf) @
 	get the number of bones in this model
 
-boneidx = common.model_bone_new(pmf)
+pmf, boneidx = common.model_bone_new(pmf, ptmax = 20) @
 	creates a new bone
+	
+	"ptmax" is the initial maximum number of "points"
+	this bone can have initially
+	useful if you know exactly how many you'll need
+	
+	currently the number of points is limited to 4096
+	
+	WARNING: YOU *MUST* TAKE THE pmf VALUE RETURNED
+	AND *NOT* USE THE OLD ONE ANY LONGER!
+	
+	this is because realloc() is called on this dynamic list
+	and it can seriously crash badly
+	
+	JUST SAYING
 
-common.model_bone_free(pmf, boneidx)
+common.model_bone_free(pmf, boneidx) @
 	removes a bone from the model
 
 name, table = common.model_bone_get(pmf, boneidx)
@@ -125,6 +148,22 @@ name, table = common.model_bone_get(pmf, boneidx)
 	
 	the reserved field of each point is inaccessible from this API
 
-success = common.model_bone_set(pmf, boneidx, table)
-	sets 
+common.model_bone_set(pmf, boneidx, name, table)
+	replaces the bone's contents with that in the table
+	
+	note, bones will be rejected if:
+	- name is > 15 chars long
+	- radius,x,y,z,r,g,b are missing
+	- 0 <= radius < 65536 fails
+	- -32768 <= x,y,z < 32768 fails
+	- 0 <= r,g,b < 256 fails
+	
+	these exceptions will throw a lua error
+
+boneidx = common.model_bone_find(pmf, name)
+	finds the first bone with the given name
+	
+	note, this is case sensitive
+	
+	if it cannot be found, this returns nil
 #

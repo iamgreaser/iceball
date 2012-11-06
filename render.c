@@ -973,6 +973,8 @@ void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t
 void render_pmf_box(float x, float y, float z, float r, uint32_t color)
 {
 	// TODO: care about the depth buffer
+	
+	// TODO: ACTUALLY RENDER THIS
 }
 
 void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_t *cam_base,

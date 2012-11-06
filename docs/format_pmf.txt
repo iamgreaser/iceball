@@ -21,5 +21,5 @@ units are 8:8 fixed point in terms of the vxl grid by default
 
 "reserved" needs to be 0 or else you suck
 NO SIDECHANNELING YOUR NAME IN THERE
-i'm going to enforce this in the renderer
+i'm going to enforce this in the loader
 and will outright reject files which don't have 0 in ALL of these slots

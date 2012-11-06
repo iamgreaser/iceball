@@ -51,6 +51,26 @@ key_d = false
 key_ctrl = false
 key_space = false
 
+-- create a test model
+mdl_test = client.model_new(1)
+print(client.model_len(mdl_test))
+mdl_test_bone_data = {
+	{radius=128, x= 0  ,y= 0  ,z= 0  , r=255,g=255,b=255},
+	{radius=64 , x= 256,y= 0  ,z= 0  , r=255,g=0  ,b=0  },
+	{radius=64 , x= 0  ,y= 256,z= 0  , r=0  ,g=255,b=0  },
+	{radius=64 , x= 0  ,y= 0  ,z= 256, r=0  ,g=0  ,b=255},
+	{radius=64 , x=-256,y= 0  ,z= 0  , r=0  ,g=255,b=255},
+	{radius=64 , x= 0  ,y=-256,z= 0  , r=255,g=0  ,b=255},
+	{radius=64 , x= 0  ,y= 0  ,z=-256, r=255,g=255,b=0  },
+}
+mdl_test, mdl_test_bone = client.model_bone_new(mdl_test, #mdl_test_bone_data)
+print(mdl_test, mdl_test_bone)
+client.model_bone_set(mdl_test, mdl_test_bone, "test", mdl_test_bone_data)
+--TODO!
+client.model_bone_free(mdl_test, mdl_test_bone)
+client.model_free(mdl_test)
+mdl_test = nil -- PLEASE DO THIS, GUYS!
+
 -- set hooks
 function h_tick_camfly(sec_current, sec_delta)
 	-- update angles
@@ -129,6 +149,7 @@ function h_tick_camfly(sec_current, sec_delta)
 	-- wait a bit
 	return 0.01
 end
+
 
 function h_tick_init(sec_current, sec_delta)
 	local xlen, ylen, zlen
