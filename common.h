@@ -36,8 +36,6 @@
 
 #include <SDL.h>
 
-#include "config.h"
-
 typedef union vec4f
 {
 	struct { float x,y,z,w; } __attribute__((__packed__)) p;

@@ -6,12 +6,12 @@ CFLAGS = -pg -O2 -fno-strict-aliasing -g `sdl-config --cflags` -Wall -Wextra \
 
 LDFLAGS = -pg -g
 LIBS_SDL = `sdl-config --libs`
-LIBS_LUA = -llua-5.1
+LIBS_LUA = -llua
 LIBS = -lm $(LIBS_LUA) $(LIBS_SDL) 
 BINNAME = iceball
 TOOLS = 
 
-INCLUDES = common.h config.h
+INCLUDES = common.h
 OBJS = \
 	main.o \
 	vecmath.o \
