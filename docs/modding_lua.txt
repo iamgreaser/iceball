@@ -52,7 +52,7 @@ client.hook_key = fn(key, state) @
 	
 	state is either true or false
 
-success = server.map_expose(fname, fmt = "auto")
+success = server.map_load(fname, fmt = "auto")
 	loads a map, either .vxl or some format we might invent
 	which will probably be .vxl with our own header
 	+ changed meaning for the 4th colour byte
@@ -206,15 +206,21 @@ img, width, height = client.img_load(fname)
 	loads an image with filename "fname"
 	remember to free it when you're done
 	as this is only a light userdata
+	
+	if this fails, img, width, height will all be nil
 
-client.img_free(pmf)
+client.img_free(img)
 	free the given image
 	if you don't do this then it's memoryleaktopia
 	(plus i'm allowed to kill you)
 
-width, height = img_get_dims()
-client.img_blit(img, dx, dy, width = iwidth, height = iheight, sx = 0, sy = 0)
+width, height = img_get_dims(img)
+	gets the image's dimensions
+
+client.img_blit(img, dx, dy, width = iwidth, height = iheight, sx = 0, sy = 0, color = 0xFFFFFFFF)
 	blits an image onto screen position dx, dy
+	
+	"color" indicates a base 0xAARRGGBB colour to use
 	
 	this is clipped to fit!
 

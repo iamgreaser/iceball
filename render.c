@@ -916,9 +916,95 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 }
 
 void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
-	img_t *src, int dx, int dy, int bw, int bh, int sx, int sy)
+	img_t *src, int dx, int dy, int bw, int bh, int sx, int sy, uint32_t color)
 {
+	int x,y;
 	
+	// clip blit width/height
+	if(bw > src->head.width)
+		bw = src->head.width;
+	if(bh > src->head.height)
+		bh = src->head.height;
+	
+	// drop if completely out of range
+	if(dx >= width || dy >= height)
+		return;
+	if(dx+bw <= 0 || dy+bh <= 0)
+		return;
+	
+	// top-left clip
+	if(dx < 0)
+	{
+		sx += -dx;
+		bw += -dx;
+		dx = 0;
+	}
+	if(dy < 0)
+	{
+		sy += -dy;
+		bh += -dy;
+		dy = 0;
+	}
+	
+	// bottom-right clip
+	if(dx+bw > width)
+		bw = width-dx;
+	if(dy+bh > height)
+		bh = height-dy;
+	
+	// drop if width/height sucks
+	if(bw <= 0 || bh <= 0)
+		return;
+	
+	// get pointers
+	uint32_t *ps = src->pixels;
+	ps = &ps[sx+sy*src->head.width];
+	uint32_t *pd = &(pixels[dx+dy*pitch]);
+	int spitch = src->head.width - bw;
+	int dpitch = pitch - bw;
+	
+	// now blit!
+	for(y = 0; y < bh; y++)
+	{
+		for(x = 0; x < bw; x++)
+		{
+			// TODO: MMX/SSE2 version
+			uint32_t s = *(ps++);
+			uint32_t d = *pd;
+			
+			// apply base color
+			// DANGER! BRACKETITIS!
+			s = (((s&0xFF)*((color&0xFF))>>8)
+				| ((((s>>8)&0xFF)*(((color>>8)&0xFF)+1))&0xFF00)
+				| ((((s>>8)&0xFF00)*(((color>>16)&0xFF)+1))&0xFF0000)
+				| ((((s>>8)&0xFF0000)*(((color>>24)&0xFF)+1))&0xFF000000)
+			);
+			
+			uint32_t alpha = (s >> 24);
+			if(alpha >= 0x80) alpha++;
+			uint32_t ialpha = 0x100 - alpha;
+			
+			uint32_t sa = s & 0x00FF00FF;
+			uint32_t sb = s & 0x0000FF00;
+			uint32_t da = d & 0x00FF00FF;
+			uint32_t db = d & 0x0000FF00;
+			
+			sa *= alpha;
+			sb *= alpha;
+			da *= ialpha;
+			db *= ialpha;
+			
+			//printf("%i %i\n", alpha, ialpha);
+			
+			uint32_t va = ((sa + da)>>8) & 0x00FF00FF;
+			uint32_t vb = ((sb + db)>>8) & 0x0000FF00;
+			
+			*(pd++) = va + vb;
+		}
+		
+		ps += spitch;
+		pd += dpitch;
+	}
 }
 
 int render_init(int width, int height)

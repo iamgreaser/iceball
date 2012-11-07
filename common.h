@@ -160,6 +160,8 @@ enum
 };
 
 // img.c
+void img_free(img_t *img);
+img_t *img_load_tga(const char *fname);
 
 // lua.c
 extern lua_State *lstate_client;
@@ -199,6 +201,8 @@ void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t
 void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_t *cam_base,
 	model_bone_t *bone, int islocal,
 	float px, float py, float pz, float ry, float rx, float scale);
+void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
+	img_t *src, int dx, int dy, int bw, int bh, int sx, int sy, uint32_t color);
 int render_init(int width, int height);
 void render_deinit(void);
 

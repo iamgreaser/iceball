@@ -36,7 +36,12 @@ uint32_t img_convert_color_to_32(uint32_t v, int bits)
 	}
 }
 
-img_t *img_load_tga(char *fname)
+void img_free(img_t *img)
+{
+	free(img);
+}
+
+img_t *img_load_tga(const char *fname)
 {
 	// TODO: make this routine safer
 	// it's possible to crash this in a whole bunch of ways
@@ -67,7 +72,7 @@ img_t *img_load_tga(char *fname)
 	{
 		// TODO check what happens when the offset is different
 		uint32_t tmp_col;
-		fread(&tmp_col, ((head.cmbpp-1)&~7)*8+1, 1, fp);
+		fread(&tmp_col, ((head.cmbpp-1)>>3)+1, 1, fp);
 		palette[i] = img_convert_color_to_32(tmp_col, head.cmbpp);
 	}
 	
@@ -84,6 +89,7 @@ img_t *img_load_tga(char *fname)
 		{
 			// RLE
 			x = 0;
+			uint32_t tmp_col;
 			while(x < head.width)
 			{
 				int rle = fgetc(fp);
@@ -91,8 +97,7 @@ img_t *img_load_tga(char *fname)
 				{
 					rle &= 0x7F;
 					
-					uint32_t tmp_col;
-					fread(&tmp_col, ((head.bpp-1)&~7)*8+1, 1, fp);
+					fread(&tmp_col, ((head.bpp-1)>>3)+1, 1, fp);
 					// TODO: clip at width
 					for(i = 0; i <= rle; i++, x++)
 						img->pixels[idx++] = tmp_col;
@@ -100,8 +105,7 @@ img_t *img_load_tga(char *fname)
 					// TODO: clip at width
 					for(i = 0; i <= rle; i++, x++)
 					{
-						uint32_t tmp_col;
-						fread(&tmp_col, ((head.bpp-1)&~7)*8+1, 1, fp);
+						fread(&tmp_col, ((head.bpp-1)>>3)+1, 1, fp);
 						img->pixels[idx++] = tmp_col;
 					}
 				}
@@ -111,7 +115,7 @@ img_t *img_load_tga(char *fname)
 			uint32_t tmp_col;
 			for(x = 0; x < head.width; x++)
 			{
-				fread(&tmp_col, ((head.bpp-1)&~7)*8+1, 1, fp);
+				fread(&tmp_col, ((head.bpp-1)>>3)+1, 1, fp);
 				img->pixels[idx++] = tmp_col;
 			}
 		}
@@ -124,11 +128,14 @@ img_t *img_load_tga(char *fname)
 	if((head.imgtype&7) == 0)
 	{
 		for(i = head.width*head.height-1; i >= 0; i--)
-			img->pixels[i] = palette[(img->pixels[i] % head.cmlen) + head.cmoffs];
+			img->pixels[i] = palette[(img->pixels[i] + head.cmoffs) % head.cmlen];
 	} else {
 		for(i = head.width*head.height-1; i >= 0; i--)
 			img->pixels[i] = img_convert_color_to_32(img->pixels[i], head.bpp);
 	}
+	
+	// free palette
+	free(palette);
 	
 	// close and return!
 	fclose(fp);

@@ -72,6 +72,14 @@ client.model_free(mdl_test)
 mdl_test = nil -- PLEASE DO THIS, GUYS!
 ]]
 
+-- load images
+img_font_numbers = client.img_load("pkg/base/gfx/font-numbers.tga")
+print(client.img_get_dims(img_font_numbers))
+--[[
+client.img_free(img_font_numbers)
+img_font_numbers = nil -- PLEASE DO THIS, GUYS!
+]]
+
 -- set hooks
 function h_tick_camfly(sec_current, sec_delta)
 	-- update angles
@@ -159,6 +167,10 @@ function h_tick_init(sec_current, sec_delta)
 	xlen, ylen, zlen = common.map_get_dims()
 	print(xlen, ylen, zlen)
 	
+	local width, height
+	width, height = client.screen_get_dims()
+	print(width, height)
+	
 	local px, py, pz
 	px = math.floor(xlen/4+0.5)
 	pz = math.floor(zlen/4+0.5)
@@ -200,6 +212,21 @@ function client.hook_key(key, state)
 	end
 end
 
+digit_map = {
+	[" "] = 0,
+	["0"] = 1,
+	["1"] = 2,
+	["2"] = 3,
+	["3"] = 4,
+	["4"] = 5,
+	["5"] = 6,
+	["6"] = 7,
+	["7"] = 8,
+	["8"] = 9,
+	["9"] = 10,
+	["-"] = 11,
+}
+
 function client.hook_render()
 	client.model_render_bone_global(mdl_test, mdl_test_bone,
 		120.5, 50.5, 150.5,
@@ -207,6 +234,29 @@ function client.hook_render()
 	client.model_render_bone_local(mdl_test, mdl_test_bone,
 		1-0.2, 600/800-0.2, 1.0,
 		rotpos*0.01, rotpos*0.004, 0.1)
+	
+	local w, h
+	w, h = client.screen_get_dims()
+	
+	-- TODO ship this off to a library
+	local function draw_digit(x, y, n, c)
+		client.img_blit(img_font_numbers, x, y, 32, 48, digit_map[n]*32, 0, c)
+	end
+	
+	local color = 0xFFA1FFA1
+	local health = 100
+	local ammo_clip = 10
+	local ammo_reserve = 50
+	local hstr = ""..health
+	local astr = ""..ammo_clip.."-"..ammo_reserve
+	
+	local i
+	for i=1,#hstr do
+		draw_digit((i-1)*32+(w-32*#hstr)/2, h-48, string.sub(hstr,i,i), color)
+	end
+	for i=1,#astr do
+		draw_digit((i-1)*32+w-32*#astr, h-48, string.sub(astr,i,i), 0xAA880000)
+	end
 end
 
 print("pkg/base/main_client.lua loaded.")
