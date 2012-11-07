@@ -170,7 +170,7 @@ void net_deinit(void);
 void render_vxl_redraw(camera_t *camera, map_t *map);
 void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t *camera, map_t *map);
 void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_t *cam_base,
-	model_bone_t *bone,
+	model_bone_t *bone, int islocal,
 	float px, float py, float pz, float ry, float rx, float scale);
 int render_init(int width, int height);
 void render_deinit(void);

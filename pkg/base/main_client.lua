@@ -38,6 +38,7 @@ BTSK_LOOKRIGHT = SDLK_RIGHT
 zoom = 1.0
 angx = 0.0
 angy = 0.0
+rotpos = 0.0
 
 key_left = false
 key_right = false
@@ -54,7 +55,6 @@ key_space = false
 -- create a test model
 mdl_test = client.model_new(1)
 print(client.model_len(mdl_test))
---[[
 mdl_test_bone_data = {
 	{radius=192, x= 0  ,y= 0  ,z= 0  , r=255,g=170,b=0  },
 	{radius=96 , x= 256,y= 0  ,z= 0  , r=255,g=0  ,b=0  },
@@ -64,41 +64,8 @@ mdl_test_bone_data = {
 	{radius=96 , x= 0  ,y=-256,z= 0  , r=255,g=0  ,b=255},
 	{radius=96 , x= 0  ,y= 0  ,z=-256, r=255,g=255,b=0  },
 }
-]]
-mdl_test_bone_data = {}
 mdl_test, mdl_test_bone = client.model_bone_new(mdl_test)
-function setzapper()
-	local i
-	mdl_test_bone_data[1] = {radius=100, x=0,y=0,z=0, r=96,g=255,b=48}
-	for i=2,4000 do
-		local t = math.floor(math.random()*(i-2))+1
-		t = i-1
-		local rd = mdl_test_bone_data[t].radius
-		mdl_test_bone_data[i] = {
-			radius=math.floor(math.random()*50+50),
-			x=mdl_test_bone_data[t].x+math.floor((math.random()*2-1)*rd),
-			y=mdl_test_bone_data[t].y+math.floor((math.random()*2-1)*rd),
-			z=mdl_test_bone_data[t].z+math.floor((math.random()*2-1)*rd),
-			r=96,g=255,b=48,
-		}
-		math.random()
-	end
-end
-print(mdl_test, mdl_test_bone)
-setzapper()
 client.model_bone_set(mdl_test, mdl_test_bone, "test", mdl_test_bone_data)
-do
-	local boneidx
-	boneidx = client.model_bone_find(mdl_test, "test")
-	print(boneidx)
-	boneidx = client.model_bone_find(mdl_test, "boner")
-	print(boneidx)
-	boneidx = client.model_bone_find(mdl_test, "abcdefghijklmnopqrstuvwxyz")
-	print(boneidx)
-	boneidx = client.model_bone_find(mdl_test, "")
-	print(boneidx)
-end
---TODO!
 --[[
 client.model_bone_free(mdl_test, mdl_test_bone)
 client.model_free(mdl_test)
@@ -180,14 +147,7 @@ function h_tick_camfly(sec_current, sec_delta)
 		client.camera_move_to(nx, ny, nz)
 	end
 	
-	
-	
-	--setzapper()
-	local i
-	for i=1,#mdl_test_bone_data do
-		mdl_test_bone_data[i].radius = 100+50*math.sin((sec_current*1000+i)*math.pi*2/500)
-	end
-	client.model_bone_set(mdl_test, mdl_test_bone, "test", mdl_test_bone_data)
+	rotpos = rotpos + sec_delta*120.0
 	
 	-- wait a bit
 	return 0.01
@@ -240,16 +200,13 @@ function client.hook_key(key, state)
 	end
 end
 
-rotpos1 = 0
-rotpos2 = 0
-rotpos3 = 0
 function client.hook_render()
 	client.model_render_bone_global(mdl_test, mdl_test_bone,
 		120.5, 50.5, 150.5,
-		rotpos1, rotpos2, 1.0+0.5*math.sin(rotpos3))
-	rotpos1 = rotpos1 + 0.01
-	rotpos2 = rotpos2 + 0.004
-	rotpos3 = rotpos3 + 0.071
+		rotpos*0.01, rotpos*0.004, 1.0+0.5*math.sin(rotpos*0.071))
+	client.model_render_bone_local(mdl_test, mdl_test_bone,
+		1-0.2, 600/800-0.2, 1.0,
+		rotpos*0.01, rotpos*0.004, 0.1)
 end
 
 print("pkg/base/main_client.lua loaded.")

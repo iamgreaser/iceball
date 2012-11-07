@@ -82,7 +82,17 @@ table = common.get_map_pillar(px, pz) @
 	
 	this will be nil if there is no map loaded
 	
-	note, the data wraps around here!
+	note, the data wraps around here (wrt px,pz)!
+
+common.set_map_pillar(px, pz, table)
+	sets a full pillar of data
+	
+	this will be nil if there is no map loaded
+	
+	the data is checked before setting,
+	and will throw a lua error if it fails.
+	
+	note, the data wraps around here (wrt px,pz)!
 
 client.camera_point(dx, dy, dz, zoom = 1.0, roll = 0.0) @
 	points the camera in a direction with zoom factor "zoom"
@@ -180,7 +190,7 @@ client.model_render_bone_global(pmf, boneidx, px, py, pz, ry, rx, scale) @
 	then around X by "rx" radians,
 	and scaled "scale" times
 
-client.model_render_bone_local(pmf, boneidx, px, py, pz, ry, rx, scale)
+client.model_render_bone_local(pmf, boneidx, px, py, pz, ry, rx, scale) @
 	renders a bone at camera-local position (px,py,pz),
 	
 	rotated around Y by "ry" radians,

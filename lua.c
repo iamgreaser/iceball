@@ -459,7 +459,6 @@ int icelua_fn_client_camera_get_forward(lua_State *L)
 	return 3;
 }
 
-// client.model_render_bone_global(pmf, boneidx, px, py, pz, ry, rx, scale)
 int icelua_fn_client_model_render_bone_global(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 8, 8);
@@ -486,7 +485,38 @@ int icelua_fn_client_model_render_bone_global(lua_State *L)
 	scale = lua_tonumber(L, 8);
 	
 	render_pmf_bone(screen->pixels, screen->w, screen->h, screen->pitch/4, &tcam,
-		bone, px, py, pz, ry, rx, scale);
+		bone, 0, px, py, pz, ry, rx, scale);
+	
+	return 0;
+}
+
+int icelua_fn_client_model_render_bone_local(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 8, 8);
+	float px, py, pz;
+	float rx, ry;
+	float scale;
+	
+	model_t *pmf = lua_touserdata(L, 1);
+	if(pmf == NULL)
+		return luaL_error(L, "not a model");
+	
+	int boneidx = lua_tointeger(L, 2);
+	if(boneidx < 0 || boneidx >= pmf->bonelen)
+		return luaL_error(L, "bone index %d out of range, len is %d", boneidx, pmf->bonelen);
+	model_bone_t *bone = pmf->bones[boneidx];
+	
+	px = lua_tonumber(L, 3);
+	py = lua_tonumber(L, 4);
+	pz = lua_tonumber(L, 5);
+	
+	ry = lua_tonumber(L, 6);
+	rx = lua_tonumber(L, 7);
+	
+	scale = lua_tonumber(L, 8);
+	
+	render_pmf_bone(screen->pixels, screen->w, screen->h, screen->pitch/4, &tcam,
+		bone, 1, px, py, pz, ry, rx, scale);
 	
 	return 0;
 }
@@ -518,6 +548,7 @@ struct icelua_entry icelua_common[] = {
 	{icelua_fn_common_model_bone_set, "model_bone_set"},
 	{icelua_fn_common_model_bone_find, "model_bone_find"},
 	{icelua_fn_client_model_render_bone_global, "model_render_bone_global"},
+	{icelua_fn_client_model_render_bone_local, "model_render_bone_local"},
 	
 	{NULL, NULL}
 };

@@ -832,7 +832,7 @@ void render_pmf_box(float x, float y, float z, float depth, float r, uint32_t co
 }
 
 void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_t *cam_base,
-	model_bone_t *bone,
+	model_bone_t *bone, int islocal,
 	float px, float py, float pz, float ry, float rx, float scale)
 {
 	// stash stuff in globals to prevent spamming the stack too much
@@ -877,9 +877,16 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 		z *= scale;
 		
 		// offsettate
-		x += (px - cam_base->mpx);
-		y += (py - cam_base->mpy);
-		z += (pz - cam_base->mpz);
+		x += px;
+		y += py;
+		z += pz;
+		
+		if(!islocal)
+		{
+			x -= cam_base->mpx;
+			y -= cam_base->mpy;
+			z -= cam_base->mpz;
+		}
 		
 		// get correct centre depth
 		float max_axis = fabsf(x);
@@ -891,14 +898,20 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 		float depth = max_axis/dlen;
 		
 		// cameranananinate
-		float nx = x*cam_base->mxx+y*cam_base->mxy+z*cam_base->mxz;
-		float ny = x*cam_base->myx+y*cam_base->myy+z*cam_base->myz;
-		float nz = x*cam_base->mzx+y*cam_base->mzy+z*cam_base->mzz;
-		
-		depth *= nz;
+		if(!islocal)
+		{
+			float nx = x*cam_base->mxx+y*cam_base->mxy+z*cam_base->mxz;
+			float ny = x*cam_base->myx+y*cam_base->myy+z*cam_base->myz;
+			float nz = x*cam_base->mzx+y*cam_base->mzy+z*cam_base->mzz;
+			
+			x = nx;
+			y = ny;
+			z = nz;
+		}
+		depth *= z;
 		
 		// plotinate
-		render_pmf_box(-nx, ny, nz, depth, pt->radius*scale, color);
+		render_pmf_box(-x, y, z, depth, pt->radius*scale, color);
 	}
 }
 
