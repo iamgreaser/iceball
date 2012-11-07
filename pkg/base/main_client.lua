@@ -87,6 +87,17 @@ end
 print(mdl_test, mdl_test_bone)
 setzapper()
 client.model_bone_set(mdl_test, mdl_test_bone, "test", mdl_test_bone_data)
+do
+	local boneidx
+	boneidx = client.model_bone_find(mdl_test, "test")
+	print(boneidx)
+	boneidx = client.model_bone_find(mdl_test, "boner")
+	print(boneidx)
+	boneidx = client.model_bone_find(mdl_test, "abcdefghijklmnopqrstuvwxyz")
+	print(boneidx)
+	boneidx = client.model_bone_find(mdl_test, "")
+	print(boneidx)
+end
 --TODO!
 --[[
 client.model_bone_free(mdl_test, mdl_test_bone)

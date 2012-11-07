@@ -144,7 +144,7 @@ pmf, boneidx = common.model_bone_new(pmf, ptmax = 20) @
 common.model_bone_free(pmf, boneidx) @
 	removes a bone from the model
 
-name, table = common.model_bone_get(pmf, boneidx)
+name, table = common.model_bone_get(pmf, boneidx) @
 	gets a table with every point in the given bone
 	
 	each entry in the table has the following keys:
@@ -154,7 +154,7 @@ name, table = common.model_bone_get(pmf, boneidx)
 	
 	the reserved field of each point is inaccessible from this API
 
-common.model_bone_set(pmf, boneidx, name, table)
+common.model_bone_set(pmf, boneidx, name, table) @
 	replaces the bone's contents with that in the table
 	
 	note, bones will be rejected if:
@@ -166,7 +166,7 @@ common.model_bone_set(pmf, boneidx, name, table)
 	
 	these exceptions will throw a lua error
 
-boneidx = common.model_bone_find(pmf, name)
+boneidx = common.model_bone_find(pmf, name) @
 	finds the first bone with the given name
 	
 	note, this is case sensitive

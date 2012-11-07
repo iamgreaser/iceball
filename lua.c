@@ -199,9 +199,54 @@ int icelua_fn_common_model_bone_free(lua_State *L)
 	return 0;
 }
 
-// TODO:
-//name, table = common.model_bone_get(pmf, boneidx)
-//boneidx = common.model_bone_find(pmf, name)
+int icelua_fn_common_model_bone_get(lua_State *L)
+{
+	int i;
+	int top = icelua_assert_stack(L, 2, 2);
+	
+	model_t *pmf = lua_touserdata(L, 1);
+	if(pmf == NULL)
+		return luaL_error(L, "not a model");
+	
+	int boneidx = lua_tointeger(L, 2);
+	if(boneidx < 0 || boneidx >= pmf->bonelen)
+		return luaL_error(L, "bone index %d out of range, len is %d", boneidx, pmf->bonelen);
+	model_bone_t *bone = pmf->bones[boneidx];
+	
+	// push args
+	lua_pushstring(L, bone->name);
+	lua_createtable(L, bone->ptlen, 0);
+	
+	// fill the table
+	for(i = 0; i < bone->ptlen; i++)
+	{
+		model_point_t *pt = &(bone->pts[i]);
+		
+		lua_pushinteger(L, i+1);
+		lua_createtable(L, 0, 7);
+		
+		lua_pushinteger(L, pt->radius);
+		lua_setfield(L, -2, "radius");
+		
+		lua_pushinteger(L, pt->x);
+		lua_setfield(L, -2, "x");
+		lua_pushinteger(L, pt->y);
+		lua_setfield(L, -2, "y");
+		lua_pushinteger(L, pt->z);
+		lua_setfield(L, -2, "z");
+		
+		lua_pushinteger(L, pt->r);
+		lua_setfield(L, -2, "r");
+		lua_pushinteger(L, pt->g);
+		lua_setfield(L, -2, "g");
+		lua_pushinteger(L, pt->b);
+		lua_setfield(L, -2, "b");
+		
+		lua_settable(L, -3);
+	}
+	
+	return 2;
+}
 
 int icelua_fn_common_model_bone_set(lua_State *L)
 {
@@ -294,6 +339,34 @@ int icelua_fn_common_model_bone_set(lua_State *L)
 	}
 	
 	return 0;
+}
+
+int icelua_fn_common_model_bone_find(lua_State *L)
+{
+	int i;
+	int top = icelua_assert_stack(L, 2, 2);
+	
+	model_t *pmf = lua_touserdata(L, 1);
+	if(pmf == NULL)
+		return luaL_error(L, "not a model");
+	
+	const char *name = lua_tostring(L, 2);
+	if(name == NULL)
+		return luaL_error(L, "name must be a string");
+	
+	for(i = 0; i < pmf->bonemax; i++)
+	{
+		model_bone_t *bone = pmf->bones[i];
+		
+		if(!strcmp(bone->name, name))
+		{
+			lua_pushinteger(L, i);
+			return 1;
+		}
+	}
+	
+	lua_pushnil(L);
+	return 1;
 }
 
 // client functions
@@ -441,9 +514,9 @@ struct icelua_entry icelua_common[] = {
 	{icelua_fn_common_model_len, "model_len"},
 	{icelua_fn_common_model_bone_new, "model_bone_new"},
 	{icelua_fn_common_model_bone_free, "model_bone_free"},
-	//{icelua_fn_common_model_bone_get, "model_bone_get"},
+	{icelua_fn_common_model_bone_get, "model_bone_get"},
 	{icelua_fn_common_model_bone_set, "model_bone_set"},
-	//{icelua_fn_common_model_bone_find, "model_bone_find"},
+	{icelua_fn_common_model_bone_find, "model_bone_find"},
 	{icelua_fn_client_model_render_bone_global, "model_render_bone_global"},
 	
 	{NULL, NULL}
