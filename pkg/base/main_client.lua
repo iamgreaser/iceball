@@ -91,7 +91,7 @@ img_font_numbers = nil -- PLEASE DO THIS, GUYS!
 function h_tick_camfly(sec_current, sec_delta)
 	-- debug things
 	if key_debug then
-		debug_enabled = (debug_enabled == false)
+		debug_enabled = not debug_enabled
 	end
 
 	-- update angles
