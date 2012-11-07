@@ -34,11 +34,14 @@ BTSK_LOOKDOWN  = SDLK_DOWN
 BTSK_LOOKLEFT  = SDLK_LEFT
 BTSK_LOOKRIGHT = SDLK_RIGHT
 
+BTSK_DEBUG = SDLK_F1
+
 -- set stuff
 zoom = 1.0
 angx = 0.0
 angy = 0.0
 rotpos = 0.0
+debug_enabled = false
 
 key_left = false
 key_right = false
@@ -51,6 +54,8 @@ key_a = false
 key_d = false
 key_ctrl = false
 key_space = false
+
+key_debug = false
 
 -- create a test model
 mdl_test = client.model_new(1)
@@ -84,6 +89,11 @@ img_font_numbers = nil -- PLEASE DO THIS, GUYS!
 
 -- set hooks
 function h_tick_camfly(sec_current, sec_delta)
+	-- debug things
+	if key_debug then
+		debug_enabled = (debug_enabled == false)
+	end
+
 	-- update angles
 	if key_left then
 		angy = angy + math.pi*sec_delta/zoom;
@@ -211,6 +221,8 @@ function client.hook_key(key, state)
 		key_ctrl = state
 	elseif key == BTSK_JUMP then
 		key_space = state
+	elseif key == BTSK_DEBUG then
+		key_debug = state
 	end
 end
 
@@ -268,8 +280,13 @@ function client.hook_render()
 		draw_digit((i-1)*32+w-32*#astr, h-48, string.sub(astr,i,i), 0xAA880000)
 	end
 	
-	print_mini(4, 4,0x80FFFFFF,"pack my box with five dozen liquor jugs")
-	print_mini(4,12,0x80FFFFFF,"PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS")
+	if debug_enabled then
+		local ox, oy, oz
+		ox, oy, oz = client.camera_get_pos()
+		local cam_pos_str = string.format("x: %f y: %f z: %f", ox, oy, oz)
+		
+		print_mini(4, 4, 0x80FFFFFF, cam_pos_str)
+	end
 end
 
 print("pkg/base/main_client.lua loaded.")
