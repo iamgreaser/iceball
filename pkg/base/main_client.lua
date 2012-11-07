@@ -75,6 +75,8 @@ mdl_test = nil -- PLEASE DO THIS, GUYS!
 -- load images
 img_font_numbers = client.img_load("pkg/base/gfx/font-numbers.tga")
 print(client.img_get_dims(img_font_numbers))
+img_font_mini = client.img_load("pkg/base/gfx/font-mini.tga")
+print(client.img_get_dims(img_font_mini))
 --[[
 client.img_free(img_font_numbers)
 img_font_numbers = nil -- PLEASE DO THIS, GUYS!
@@ -243,6 +245,14 @@ function client.hook_render()
 		client.img_blit(img_font_numbers, x, y, 32, 48, digit_map[n]*32, 0, c)
 	end
 	
+	local function print_mini(x, y, c, str)
+		local i
+		for i=1,#str do
+			client.img_blit(img_font_mini, x, y, 6, 8, (string.byte(str,i)-32)*6, 0, c)
+			x = x + 6
+		end
+	end
+	
 	local color = 0xFFA1FFA1
 	local health = 100
 	local ammo_clip = 10
@@ -257,6 +267,9 @@ function client.hook_render()
 	for i=1,#astr do
 		draw_digit((i-1)*32+w-32*#astr, h-48, string.sub(astr,i,i), 0xAA880000)
 	end
+	
+	print_mini(4, 4,0x80FFFFFF,"pack my box with five dozen liquor jugs")
+	print_mini(4,12,0x80FFFFFF,"PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS")
 end
 
 print("pkg/base/main_client.lua loaded.")

@@ -74,6 +74,7 @@ img_t *img_load_tga(const char *fname)
 		uint32_t tmp_col;
 		fread(&tmp_col, ((head.cmbpp-1)>>3)+1, 1, fp);
 		palette[i] = img_convert_color_to_32(tmp_col, head.cmbpp);
+		printf("%6i %08X\n", i, palette[i]);
 	}
 	
 	// allocate + stash
@@ -125,10 +126,11 @@ img_t *img_load_tga(const char *fname)
 	}
 	
 	// convert pixels
-	if((head.imgtype&7) == 0)
+	if((head.imgtype&7) == 1)
 	{
 		for(i = head.width*head.height-1; i >= 0; i--)
 			img->pixels[i] = palette[(img->pixels[i] + head.cmoffs) % head.cmlen];
+		printf("cm %i %i\n", head.cmoffs, head.cmlen);
 	} else {
 		for(i = head.width*head.height-1; i >= 0; i--)
 			img->pixels[i] = img_convert_color_to_32(img->pixels[i], head.bpp);
