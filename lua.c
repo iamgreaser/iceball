@@ -52,7 +52,7 @@ int icelua_force_get_integer(lua_State *L, int table, char *name)
 }
 
 // common functions
-int icelua_fn_common_get_map_dims(lua_State *L)
+int icelua_fn_common_map_get_dims(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 0, 0);
 	
@@ -70,7 +70,7 @@ int icelua_fn_common_get_map_dims(lua_State *L)
 	}
 }
 
-int icelua_fn_common_get_map_pillar(lua_State *L)
+int icelua_fn_common_map_pillar_get(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 2, 2);
 	int px, pz;
@@ -537,8 +537,8 @@ struct icelua_entry icelua_server[] = {
 	{NULL, NULL}
 };
 struct icelua_entry icelua_common[] = {
-	{icelua_fn_common_get_map_dims, "get_map_dims"},
-	{icelua_fn_common_get_map_pillar, "get_map_pillar"},
+	{icelua_fn_common_map_get_dims, "map_get_dims"},
+	{icelua_fn_common_map_pillar_get, "map_pillar_get"},
 	{icelua_fn_common_model_new, "model_new"},
 	{icelua_fn_common_model_free, "model_free"},
 	{icelua_fn_common_model_len, "model_len"},

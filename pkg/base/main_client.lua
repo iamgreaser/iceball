@@ -156,14 +156,14 @@ end
 
 function h_tick_init(sec_current, sec_delta)
 	local xlen, ylen, zlen
-	xlen, ylen, zlen = common.get_map_dims()
+	xlen, ylen, zlen = common.map_get_dims()
 	print(xlen, ylen, zlen)
 	
 	local px, py, pz
 	px = math.floor(xlen/4+0.5)
 	pz = math.floor(zlen/4+0.5)
 	
-	local ptab = common.get_map_pillar(px, pz)
+	local ptab = common.map_pillar_get(px, pz)
 	py = ptab[1+ 1] - 2.5
 	px = px + 0.5
 	pz = pz + 0.5

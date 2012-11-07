@@ -915,6 +915,12 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 	}
 }
 
+void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
+	img_t *src, int dx, int dy, int bw, int bh, int sx, int sy)
+{
+	
+}
+
 int render_init(int width, int height)
 {
 	int i;

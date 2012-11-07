@@ -52,14 +52,14 @@ client.hook_key = fn(key, state) @
 	
 	state is either true or false
 
-success = server.stream_new_map(fname, fmt = "auto")
+success = server.map_expose(fname, fmt = "auto")
 	loads a map, either .vxl or some format we might invent
 	which will probably be .vxl with our own header
 	+ changed meaning for the 4th colour byte
 	
 	this will also send the map to the other clients
 
-server.create_new_map(lx, ly, lz)
+server.map_new(lx, ly, lz)
 	creates a new map
 	
 	note, ly is the *height* of the new map
@@ -69,24 +69,24 @@ server.create_new_map(lx, ly, lz)
 	
 	this will throw a lua error if it fails.
 
-common.save_map(fname, fmt = "bsm")
+common.map_save(fname, fmt = "bsm")
 	saves a map to a file
 	
 	this will throw a lua error if it fails.
 
-lx, ly, lz = common.get_map_dims() @
+lx, ly, lz = common.map_get_dims() @
 	gets the map's dimensions
 	
 	these will be nil if there is no map loaded
 
-table = common.get_map_pillar(px, pz) @
+table = common.map_pillar_get(px, pz) @
 	returns a full pillar of data, skipping the total size header
 	
 	this will be nil if there is no map loaded
 	
 	note, the data wraps around here (wrt px,pz)!
 
-common.set_map_pillar(px, pz, table)
+common.map_pillar_set(px, pz, table)
 	sets a full pillar of data
 	
 	this will be nil if there is no map loaded
@@ -198,5 +198,24 @@ client.model_render_bone_local(pmf, boneidx, px, py, pz, ry, rx, scale) @
 	rotated around Y by "ry" radians,
 	then around X by "rx" radians,
 	and scaled "scale" times
+
+width, height = client.screen_get_dims()
+	gets the dimensions of the screen
+
+img, width, height = client.img_load(fname)
+	loads an image with filename "fname"
+	remember to free it when you're done
+	as this is only a light userdata
+
+client.img_free(pmf)
+	free the given image
+	if you don't do this then it's memoryleaktopia
+	(plus i'm allowed to kill you)
+
+width, height = img_get_dims()
+client.img_blit(img, dx, dy, width = iwidth, height = iheight, sx = 0, sy = 0)
+	blits an image onto screen position dx, dy
+	
+	this is clipped to fit!
 
 #
