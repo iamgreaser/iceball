@@ -11,12 +11,12 @@ LIBS = -lm $(LIBS_LUA) $(LIBS_SDL)
 BINNAME = iceball
 TOOLS = 
 
-INCLUDES = common.h
+INCLUDES = common.h config.h
 OBJS = \
 	main.o \
 	vecmath.o \
 	map.o model.o \
-	render.o \
+	img.o render.o \
 	lua.o network.o
 
 all: $(BINNAME) $(TOOLS)

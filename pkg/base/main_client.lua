@@ -137,7 +137,7 @@ function h_tick_camfly(sec_current, sec_delta)
 	client.camera_move_local(mvx, mvy, mvz)
 	nx, ny, nz = client.camera_get_pos()
 	
-	nx, ny, nz = trace_map(
+	nx, ny, nz = trace_map_box(
 		ox, oy, oz,
 		nx, ny, nz,
 		-0.4, -0.3, -0.4,

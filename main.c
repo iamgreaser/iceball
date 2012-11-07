@@ -16,7 +16,6 @@
 */
 
 #include "common.h"
-#include "config.h"
 
 camera_t tcam;
 map_t *clmap = NULL;

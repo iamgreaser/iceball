@@ -36,6 +36,8 @@
 
 #include <SDL.h>
 
+#include "config.h"
+
 typedef union vec4f
 {
 	struct { float x,y,z,w; } __attribute__((__packed__)) p;
@@ -133,6 +135,8 @@ enum
 	
 	BT_MAX
 };
+
+// img.c
 
 // lua.c
 extern lua_State *lstate_client;

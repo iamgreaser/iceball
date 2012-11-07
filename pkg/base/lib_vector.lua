@@ -15,7 +15,32 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
-function trace_map(x1,y1,z1, x2,y2,z2, bx1,by1,bz1, bx2,by2,bz2)
+function box_is_clear(x1,y1,z1,x2,y2,z2)
+	local x,z,i
+	
+	x1 = math.floor(x1)
+	y1 = math.floor(y1)
+	z1 = math.floor(z1)
+	x2 = math.ceil(x2)
+	y2 = math.ceil(y2)
+	z2 = math.ceil(z2)
+	
+	for z=z1,z2 do
+	for x=x1,x2 do
+		local l = common.get_map_pillar(x, z)
+		while true do
+			if y2 < l[i+2] then break end
+			if l[i] == 0 then return false end
+			i = i + l[i]*4
+			if y1 < l[i+3] then return false end
+		end
+	end
+	end
+	
+	return true
+end
+
+function trace_map_box(x1,y1,z1, x2,y2,z2, bx1,by1,bz1, bx2,by2,bz2)
 	-- delta
 	local dx,dy,dz
 	dx = x2-x1
@@ -51,6 +76,18 @@ function trace_map(x1,y1,z1, x2,y2,z2, bx1,by1,bz1, bx2,by2,bz2)
 	cy = y1
 	cz = z1
 	
+	-- sub deltas
+	local sx, sy, sz
+	sx = math.fmod(dx, 1.0)
+	sy = math.fmod(dy, 1.0)
+	sz = math.fmod(dz, 1.0)
+	if gx >= 0 then sx = 1-sx end
+	if gy >= 0 then sy = 1-sy end
+	if gz >= 0 then sz = 1-sz end
+	
+	
 	-- TODO!
 	return nil
+	
+	--return x1-fx, y1-fy, z1-fz
 end
