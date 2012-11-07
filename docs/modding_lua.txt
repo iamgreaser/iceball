@@ -20,6 +20,8 @@ lua base library stuff:
 	error @
 	print @
 	loadstring @
+	loadfile @ (TODO: filter the path)
+	dofile @ (TODO: filter the path)
 	
 	nothing else yet
 	(TODO: stop leaking the whole base library)

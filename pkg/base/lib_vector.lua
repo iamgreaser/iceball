@@ -21,9 +21,9 @@ function box_is_clear(x1,y1,z1,x2,y2,z2)
 	x1 = math.floor(x1)
 	y1 = math.floor(y1)
 	z1 = math.floor(z1)
-	x2 = math.ceil(x2)
-	y2 = math.ceil(y2)
-	z2 = math.ceil(z2)
+	x2 = math.ceil(x2)-1
+	y2 = math.ceil(y2)-1
+	z2 = math.ceil(z2)-1
 	
 	for z=z1,z2 do
 	for x=x1,x2 do

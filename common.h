@@ -84,6 +84,29 @@ struct model
 	model_bone_t *bones[];
 };
 
+// source: http://paulbourke.net/dataformats/tga/
+typedef struct img_tgahead
+{
+	uint8_t idlen;
+	uint8_t cmtype;
+	uint8_t imgtype;
+	uint16_t cmoffs;
+	uint16_t cmlen;
+	uint8_t cmbpp;
+	uint16_t xstart;
+	uint16_t ystart;
+	uint16_t width;
+	uint16_t height;
+	uint8_t bpp;
+	uint8_t flags;
+} __attribute__((__packed__)) img_tgahead_t;
+
+typedef struct img
+{
+	img_tgahead_t head;
+	uint32_t pixels[];
+} img_t;
+
 /*
 
 Pillar data:

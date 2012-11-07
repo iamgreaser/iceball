@@ -1,0 +1,98 @@
+Please read this before you attempt to make any mods or mod any existing mods.
+
+Yes, the whole lot.
+
+ ------------------------------------------------------------------------------
+
+Please use this format for stuff:
+pkg/<group name>/<mod name>/*
+We can get away with using "base", but you can't.
+
+The other directories of course are:
+clsave/<group name>/<mod name>/*
+svsave/<group name>/<mod name>/*
+
+You can use a common name for these if you want,
+but please stick to your group name.
+
+ ------------------------------------------------------------------------------
+
+There are libraries in the base mod!
+Use pkg/base/lib_*.lua for them.
+
+ ------------------------------------------------------------------------------
+
+For security reasons,
+you are only allowed to modify files in these directories:
+  Client only:
+    clsave/<group name>/*
+  Server only:
+    svsave/<group name>/*
+
+You ARE allowed to read these:
+  pkg/*
+  Client only:
+    clsave/*
+  Server only:
+    svsave/*
+
+(TODO: enforce this!)
+
+ ------------------------------------------------------------------------------
+
+Aside from maps, don't rip stuff from Ace of Spades,
+unless you're doing it as an optional pack and as a separate download.
+
+With that said, if someone sets up a good enough pack,
+I would encourage you to use that for AoS data instead.
+
+If you're taking on this task, please do the following:
+- Include models/sounds from all versions where possible
+- Denote stuff by the first version that uses it in this format:
+  pkg/<group name>/<pack name>/whatever/*
+-
+
+ ------------------------------------------------------------------------------
+
+Format support:
+
+Maps:
+- *.vxl: Ace of Spades headerless 512x512x64 VOXLAP map
+  - well, why *wouldn't* we support that?
+- Aiming to support a modified + headered map format, too.
+  Y'know, smaller maps and whatnot.
+
+Models:
+- None yet! Aiming for *.pmf and *.kv6.
+
+Graphics:
+- *.tga: Truevision Targa
+  - The loader is based on the assumption that RLE is line-by-line.
+    - The second version of the TGA spec asserts this.
+  - Greyscale images are NOT SUPPORTED.
+  - Interleaving is NOT SUPPORTED.
+  - Per-pixel attributes are NOT SUPPORTED.
+  - X/Y offsets are IGNORED.
+  - Extended TGA information is IGNORED.
+
+Sounds:
+- None yet! Aiming for *.wav.
+- Hoping to get ADPCM support in there too.
+- If someone can be bothered with libogg/libvorbis, *.ogg vorbis too.
+- Maybe even some form of DFPWM, but that'll be for voice chat only.
+
+Music:
+- None yet! Aiming for *.it, if it's even worth adding in music.
+  - WE ARE NOT USING SDL_MIXER FOR THIS
+  - We'll be using either sackit or libdumb instead,
+    probably the latter for now as sackit still needs lots of work...
+    If that happens, I'm enforcing *.it-only, or at least banning *.xm
+- Might possibly allow for *.ogg, too.
+
+Video:
+- Oh piss off.
+
+ ------------------------------------------------------------------------------
+
+
+TODO: more stuff
