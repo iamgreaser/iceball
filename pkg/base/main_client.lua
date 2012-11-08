@@ -55,8 +55,6 @@ key_d = false
 key_ctrl = false
 key_space = false
 
-key_debug = false
-
 -- create a test model
 mdl_test = client.model_new(1)
 print(client.model_len(mdl_test))
@@ -89,11 +87,6 @@ img_font_numbers = nil -- PLEASE DO THIS, GUYS!
 
 -- set hooks
 function h_tick_camfly(sec_current, sec_delta)
-	-- debug things
-	if key_debug then
-		debug_enabled = not debug_enabled
-	end
-
 	-- update angles
 	if key_left then
 		angy = angy + math.pi*sec_delta/zoom;
@@ -161,11 +154,9 @@ function h_tick_camfly(sec_current, sec_delta)
 		ox, oy, oz,
 		nx, ny, nz,
 		-0.4, -0.3, -0.4,
-		 0.4,  1.5,  0.4)
+		 0.4,  2.5,  0.4)
 	
-	if nx then
-		client.camera_move_to(nx, ny, nz)
-	end
+	client.camera_move_to(nx, ny, nz)
 	
 	rotpos = rotpos + sec_delta*120.0
 	
@@ -222,7 +213,9 @@ function client.hook_key(key, state)
 	elseif key == BTSK_JUMP then
 		key_space = state
 	elseif key == BTSK_DEBUG then
-		key_debug = state
+		if state then
+			debug_enabled = not debug_enabled
+		end
 	end
 end
 
@@ -244,7 +237,7 @@ digit_map = {
 function client.hook_render()
 	client.model_render_bone_global(mdl_test, mdl_test_bone,
 		120.5, 50.5, 150.5,
-		rotpos*0.01, rotpos*0.004, 1.0+0.5*math.sin(rotpos*0.071))
+		rotpos*0.01, rotpos*0.004, 1.0+0.1*math.sin(rotpos*0.071))
 	client.model_render_bone_local(mdl_test, mdl_test_bone,
 		1-0.2, 600/800-0.2, 1.0,
 		rotpos*0.01, rotpos*0.004, 0.1)

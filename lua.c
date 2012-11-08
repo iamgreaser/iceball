@@ -441,9 +441,9 @@ int icelua_fn_client_camera_get_pos(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 0, 0);
 	
-	lua_pushinteger(L, tcam.mpx);
-	lua_pushinteger(L, tcam.mpy);
-	lua_pushinteger(L, tcam.mpz);
+	lua_pushnumber(L, tcam.mpx);
+	lua_pushnumber(L, tcam.mpy);
+	lua_pushnumber(L, tcam.mpz);
 	
 	return 3;
 }
@@ -452,9 +452,9 @@ int icelua_fn_client_camera_get_forward(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 0, 0);
 	
-	lua_pushinteger(L, tcam.mzx);
-	lua_pushinteger(L, tcam.mzy);
-	lua_pushinteger(L, tcam.mzz);
+	lua_pushnumber(L, tcam.mzx);
+	lua_pushnumber(L, tcam.mzy);
+	lua_pushnumber(L, tcam.mzz);
 	
 	return 3;
 }
