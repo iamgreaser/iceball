@@ -71,9 +71,9 @@ function trace_map_box(x1,y1,z1, x2,y2,z2, bx1,by1,bz1, bx2,by2,bz2)
 	
 	-- top left offset (note, incorrect name!)
 	local tlx,tly,tlz
-	if gx >= 0 then tlx = 0.99999 else tlx = 0 end
-	if gy >= 0 then tly = 0.99999 else tly = 0 end
-	if gz >= 0 then tlz = 0.99999 else tlz = 0 end
+	if gx >= 0 then tlx = 0.9999 else tlx = 0.0001 end
+	if gy >= 0 then tly = 0.9999 else tly = 0.0001 end
+	if gz >= 0 then tlz = 0.9999 else tlz = 0.0001 end
 	
 	-- apply offset
 	x1 = x1 + fx
@@ -91,6 +91,12 @@ function trace_map_box(x1,y1,z1, x2,y2,z2, bx1,by1,bz1, bx2,by2,bz2)
 	cx = math.floor(x1)
 	cy = math.floor(y1)
 	cz = math.floor(z1)
+	
+	-- target cell
+	local tcx,tcy,tcz
+	tcx = math.floor(x2+fx+gx*0.001)
+	tcy = math.floor(y2+fy+gy*0.001)
+	tcz = math.floor(z2+fz+gz*0.001)
 	
 	-- sub deltas
 	local sx, sy, sz
@@ -111,16 +117,16 @@ function trace_map_box(x1,y1,z1, x2,y2,z2, bx1,by1,bz1, bx2,by2,bz2)
 	
 	local i
 	local iend = (
-		  math.abs(math.floor(x2+fx)-cx)
-		+ math.abs(math.floor(y2+fy)-cy)
-		+ math.abs(math.floor(z2+fz)-cz)
+		  math.abs(tcx-cx)
+		+ math.abs(tcy-cy)
+		+ math.abs(tcz-cz)
 	)
 	
 	for i=1,iend do
 		-- get the time it takes to hit the boundary
-		local tx = sx/math.max(dx,0.00001)
-		local ty = sy/math.max(dy,0.00001)
-		local tz = sz/math.max(dz,0.00001)
+		local tx = sx/math.max(dx,0.0000001)
+		local ty = sy/math.max(dy,0.0000001)
+		local tz = sz/math.max(dz,0.0000001)
 		
 		local t, d, ck
 		

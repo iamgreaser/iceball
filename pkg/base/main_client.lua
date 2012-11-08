@@ -43,6 +43,8 @@ angy = 0.0
 rotpos = 0.0
 debug_enabled = false
 
+pgravlev = 0.0
+
 key_left = false
 key_right = false
 key_up = false
@@ -74,6 +76,20 @@ client.model_bone_free(mdl_test, mdl_test_bone)
 client.model_free(mdl_test)
 mdl_test = nil -- PLEASE DO THIS, GUYS!
 ]]
+
+mdl_bbox = client.model_new(1)
+mdl_bbox_bone_data = {
+	{radius=10, x = -100, y = -70, z = -100, r = 255, g = 85, b = 85},
+	{radius=10, x =  100, y = -70, z = -100, r = 255, g = 85, b = 85},
+	{radius=10, x = -100, y = -70, z =  100, r = 255, g = 85, b = 85},
+	{radius=10, x =  100, y = -70, z =  100, r = 255, g = 85, b = 85},
+	{radius=10, x = -100, y = 600, z = -100, r = 255, g = 85, b = 85},
+	{radius=10, x =  100, y = 600, z = -100, r = 255, g = 85, b = 85},
+	{radius=10, x = -100, y = 600, z =  100, r = 255, g = 85, b = 85},
+	{radius=10, x =  100, y = 600, z =  100, r = 255, g = 85, b = 85},
+}
+mdl_bbox, mdl_bbox_bone = client.model_bone_new(mdl_bbox)
+client.model_bone_set(mdl_bbox, mdl_bbox_bone, "bbox", mdl_bbox_bone_data)
 
 -- load images
 img_font_numbers = client.img_load("pkg/base/gfx/font-numbers.tga")
@@ -133,30 +149,39 @@ function h_tick_camfly(sec_current, sec_delta)
 		mvx = mvx - 1.0
 	end
 	if key_ctrl then
-		mvy = mvy + 1.0
+		--mvy = mvy + 1.0
+		-- TODO: crouching
 	end
 	if key_space then
-		mvy = mvy - 1.0
+		pgravlev = -0.4
+		key_space = false
 	end
+	mvy = mvy + pgravlev
+	pgravlev = pgravlev + 1.5*sec_delta
 	
-	local mvspd = 12.0*sec_delta/zoom
+	local mvspd = 8.0*sec_delta/zoom
 	mvx = mvx * mvspd
-	mvy = mvy * mvspd
+	--mvy = mvy * mvspd
 	mvz = mvz * mvspd
 	
 	local ox, oy, oz
 	local nx, ny, nz
 	ox, oy, oz = client.camera_get_pos()
-	client.camera_move_local(mvx, mvy, mvz)
+	client.camera_move_local(mvx, 0, mvz)
+	client.camera_move_global(0, mvy, 0)
 	nx, ny, nz = client.camera_get_pos()
 	
-	nx, ny, nz = trace_map_box(
+	ox, oy, oz = trace_map_box(
 		ox, oy, oz,
 		nx, ny, nz,
 		-0.4, -0.3, -0.4,
 		 0.4,  2.5,  0.4)
 	
-	client.camera_move_to(nx, ny, nz)
+	if pgravlev > 0 and oy < ny then
+		pgravlev = 0
+	end
+	
+	client.camera_move_to(ox, oy, oz)
 	
 	rotpos = rotpos + sec_delta*120.0
 	
@@ -179,7 +204,7 @@ function h_tick_init(sec_current, sec_delta)
 	pz = math.floor(zlen/4+0.5)
 	
 	local ptab = common.map_pillar_get(px, pz)
-	py = ptab[1+ 1] - 2.5
+	py = ptab[1+ 1] - 3.5
 	px = px + 0.5
 	pz = pz + 0.5
 	
@@ -235,12 +260,16 @@ digit_map = {
 }
 
 function client.hook_render()
+	local x,y,z
+	x,y,z = client.camera_get_pos()
 	client.model_render_bone_global(mdl_test, mdl_test_bone,
 		120.5, 50.5, 150.5,
 		rotpos*0.01, rotpos*0.004, 1.0+0.1*math.sin(rotpos*0.071))
 	client.model_render_bone_local(mdl_test, mdl_test_bone,
 		1-0.2, 600/800-0.2, 1.0,
 		rotpos*0.01, rotpos*0.004, 0.1)
+	client.model_render_bone_global(mdl_bbox, mdl_bbox_bone,
+		x, y, z, 0, 0, 1)
 	
 	local w, h
 	w, h = client.screen_get_dims()
