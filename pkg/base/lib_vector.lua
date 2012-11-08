@@ -79,12 +79,12 @@ function trace_map_box(x1,y1,z1, x2,y2,z2, bx1,by1,bz1, bx2,by2,bz2)
 	x1 = x1 + fx
 	y1 = y1 + fy
 	z1 = z1 + fz
-	bx1 = bx1 + fx
-	by1 = by1 + fy
-	bz1 = bz1 + fz
-	bx2 = bx2 + fx
-	by2 = by2 + fy
-	bz2 = bz2 + fz
+	bx1 = bx1 - fx
+	by1 = by1 - fy
+	bz1 = bz1 - fz
+	bx2 = bx2 - fx
+	by2 = by2 - fy
+	bz2 = bz2 - fz
 	
 	-- cell
 	local cx,cy,cz
