@@ -30,7 +30,7 @@ function box_is_clear(x1,y1,z1,x2,y2,z2)
 		local l = common.map_pillar_get(x, z)
 		i = 1
 		while true do
-			if y2 < l[i+2] then break end
+			if y2 < l[i+1] then break end
 			if l[i] == 0 then return false end
 			i = i + l[i]*4
 			if y1 < l[i+3] then return false end
