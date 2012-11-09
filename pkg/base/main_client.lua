@@ -36,13 +36,24 @@ BTSK_LOOKRIGHT = SDLK_RIGHT
 
 BTSK_DEBUG = SDLK_F1
 
+-- mode stuff
+MODE_CHEAT_FLY = false
+
+MODE_AUTOCLIMB = true
+MODE_AIRJUMP = false
+MODE_TILT_SLOWDOWN = true
+MODE_SOFTCROUCH = true
+
 -- set stuff
 zoom = 1.0
 angx = 0.0
-angy = 0.0
+angy = math.pi/2
 rotpos = 0.0
 debug_enabled = false
+grounded = false
+crouching = false
 
+jerkoffs = 0 -- This variable has nothing to do with porn.
 pgravlev = 0.0
 
 key_left = false
@@ -149,39 +160,95 @@ function h_tick_camfly(sec_current, sec_delta)
 		mvx = mvx - 1.0
 	end
 	if key_ctrl then
-		--mvy = mvy + 1.0
-		-- TODO: crouching
+		if grounded and not crouching then
+			if MODE_SOFTCROUCH then
+				jerkoffs = jerkoffs - 1
+			else
+				client.camera_move_global(0, -1, 0)
+			end
+		end
+		crouching = true
 	end
-	if key_space then
-		pgravlev = -0.4
+	if key_space and (MODE_CHEAT_FLY or grounded) then
+		pgravlev = -0.15
 		key_space = false
 	end
 	mvy = mvy + pgravlev
-	pgravlev = pgravlev + 1.5*sec_delta
+	pgravlev = pgravlev + 0.5*sec_delta
 	
 	local mvspd = 8.0*sec_delta/zoom
 	mvx = mvx * mvspd
 	--mvy = mvy * mvspd
 	mvz = mvz * mvspd
 	
+	-- apply rotation
+	mvx, mvz = mvx*cya+mvz*sya, mvz*cya-mvx*sya
+	
 	local ox, oy, oz
 	local nx, ny, nz
+	local tx1,ty1,tz1
 	ox, oy, oz = client.camera_get_pos()
-	client.camera_move_local(mvx, 0, mvz)
-	client.camera_move_global(0, mvy, 0)
+	client.camera_move_global(mvx, mvy, mvz)
 	nx, ny, nz = client.camera_get_pos()
+	oy = oy - jerkoffs
+	ny = ny - jerkoffs
+	jerkoffs = jerkoffs * math.exp(-sec_delta*15.0)
 	
-	ox, oy, oz = trace_map_box(
+	local by1, by2
+	by1, by2 = -0.3, 2.5
+	if crouching then
+		if (not key_ctrl) and box_is_clear(
+				ox-0.39, oy-0.8, oz-0.39,
+				ox+0.39, oy-0.3, oz+0.39) then
+			crouching = false
+			oy = oy - 1
+			if grounded then
+				ny = ny - 1
+				if MODE_SOFTCROUCH then jerkoffs = jerkoffs + 1 end
+			end
+		end
+	end
+	if crouching or MODE_AUTOCLIMB then
+		by2 = by2 - 1
+	end
+	
+	
+	tx1,ty1,tz1 = trace_map_box(
 		ox, oy, oz,
 		nx, ny, nz,
-		-0.4, -0.3, -0.4,
-		 0.4,  2.5,  0.4)
+		-0.4,  by1, -0.4,
+		 0.4,  by2,  0.4,
+		false)
+	if MODE_AUTOCLIMB then
+		local jerky = ty1
+		if not crouching then
+			ty1 = ty1 - 1
+			by2 = by2 + 1
+		end
+		tx1,ty1,tz1 = trace_map_box(
+			tx1,ty1,tz1,
+			nx, ny, nz,
+			-0.4,  by1, -0.4,
+			0.4,  by2,  0.4,
+			false)
+		if ty1-jerky < -0.8 and not box_is_clear(
+				nx-0.4, ny-0.3-0.5, nz-0.4,
+				nx+0.4, ny-0.3, nz+0.4) then
+			crouching = true
+			ty1 = ty1 + 1
+		end
+		if MODE_SOFTCROUCH then jerkoffs = jerkoffs + jerky - ty1 end
+	end
 	
-	if pgravlev > 0 and oy < ny then
+	grounded = (MODE_AIRJUMP and grounded) or not box_is_clear(
+		tx1-0.39, ty1+by2, tz1-0.39,
+		tx1+0.39, ty1+by2+0.1, tz1+0.39)
+	
+	if pgravlev > 0 and grounded then
 		pgravlev = 0
 	end
 	
-	client.camera_move_to(ox, oy, oz)
+	client.camera_move_to(tx1,ty1+jerkoffs,tz1)
 	
 	rotpos = rotpos + sec_delta*120.0
 	
@@ -305,7 +372,7 @@ function client.hook_render()
 	if debug_enabled then
 		local ox, oy, oz
 		ox, oy, oz = client.camera_get_pos()
-		local cam_pos_str = string.format("x: %f y: %f z: %f", ox, oy, oz)
+		local cam_pos_str = string.format("x: %f y: %f z: %f c: %i", ox, oy, oz, (crouching and 1) or 0)
 		
 		print_mini(4, 4, 0x80FFFFFF, cam_pos_str)
 	end

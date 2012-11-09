@@ -15,7 +15,7 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
-function box_is_clear(x1,y1,z1,x2,y2,z2)
+function box_is_clear(x1,y1,z1,x2,y2,z2,canwrap)
 	local x,z,i
 	
 	x1 = math.floor(x1)
@@ -25,11 +25,23 @@ function box_is_clear(x1,y1,z1,x2,y2,z2)
 	y2 = math.floor(y2)
 	z2 = math.floor(z2)
 	
+	local xlen,ylen,zlen
+	xlen,ylen,zlen = common.map_get_dims()
+	
+	if not canwrap then
+		if x1 < 0 or z1 < 0 then
+			return false
+		elseif x2 >= xlen or z2 >= zlen then
+			return false
+		end
+	end
+	
 	for z=z1,z2 do
 	for x=x1,x2 do
 		local l = common.map_pillar_get(x, z)
 		i = 1
 		while true do
+			if l[i+1] == ylen-1 and y2 < ylen then break end
 			if y2 < l[i+1] then break end
 			if l[i] == 0 then return false end
 			i = i + l[i]*4
@@ -41,7 +53,7 @@ function box_is_clear(x1,y1,z1,x2,y2,z2)
 	return true
 end
 
-function trace_map_box(x1,y1,z1, x2,y2,z2, bx1,by1,bz1, bx2,by2,bz2)
+function trace_map_box(x1,y1,z1, x2,y2,z2, bx1,by1,bz1, bx2,by2,bz2, canwrap)
 	-- delta
 	local dx,dy,dz
 	dx = x2-x1
@@ -71,9 +83,9 @@ function trace_map_box(x1,y1,z1, x2,y2,z2, bx1,by1,bz1, bx2,by2,bz2)
 	
 	-- top left offset (note, incorrect name!)
 	local tlx,tly,tlz
-	if gx >= 0 then tlx = 0.9999 else tlx = 0.0001 end
-	if gy >= 0 then tly = 0.9999 else tly = 0.0001 end
-	if gz >= 0 then tlz = 0.9999 else tlz = 0.0001 end
+	if gx >= 0 then tlx = 0.999 else tlx = 0.001 end
+	if gy >= 0 then tly = 0.999 else tly = 0.001 end
+	if gz >= 0 then tlz = 0.999 else tlz = 0.001 end
 	
 	-- apply offset
 	x1 = x1 + fx
@@ -100,9 +112,9 @@ function trace_map_box(x1,y1,z1, x2,y2,z2, bx1,by1,bz1, bx2,by2,bz2)
 	
 	-- sub deltas
 	local sx, sy, sz
-	sx = math.fmod(x1, 1.0)
-	sy = math.fmod(y1, 1.0)
-	sz = math.fmod(z1, 1.0)
+	sx = math.fmod(x1, 1.0) - 0.001
+	sy = math.fmod(y1, 1.0) - 0.001
+	sz = math.fmod(z1, 1.0) - 0.001
 	if gx >= 0 then sx = 1-sx end
 	if gy >= 0 then sy = 1-sy end
 	if gz >= 0 then sz = 1-sz end
@@ -154,19 +166,19 @@ function trace_map_box(x1,y1,z1, x2,y2,z2, bx1,by1,bz1, bx2,by2,bz2)
 		if d == 0 then
 			-- X first
 			sx = 1.0
-			ck = rx or box_is_clear(cx+gx,y1+by1,z1+bz1,cx+gx,y1+by2,z1+bz2)
+			ck = rx or box_is_clear(cx+gx,y1+by1,z1+bz1,cx+gx,y1+by2,z1+bz2,canwrap)
 			if not ck then rx = cx + tlx end
 			if not rx then cx = cx + gx end
 		elseif d == 1 then
 			-- Y first
 			sy = 1.0
-			ck = ry or box_is_clear(x1+bx1,cy+gy,z1+bz1,x1+bx2,cy+gy,z1+bz2)
+			ck = ry or box_is_clear(x1+bx1,cy+gy,z1+bz1,x1+bx2,cy+gy,z1+bz2,canwrap)
 			if not ck then ry = cy + tly end
 			if not ry then cy = cy + gy end
 		else
 			-- Z first
 			sz = 1.0
-			ck = rz or box_is_clear(x1+bx1,y1+by1,cz+gz,x1+bx2,y1+by2,cz+gz)
+			ck = rz or box_is_clear(x1+bx1,y1+by1,cz+gz,x1+bx2,y1+by2,cz+gz,canwrap)
 			if not ck then rz = cz + tlz end
 			if not rz then cz = cz + gz end
 		end
