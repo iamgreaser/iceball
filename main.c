@@ -148,7 +148,7 @@ void run_game(void)
 		lua_pop(lstate_client, 1);
 		
 		// redraw scene if necessary
-		if(tcam.mpx != ompx || tcam.mpy != ompy || tcam.mpz != ompz)
+		if(fabsf(tcam.mpx-ompx) > 0.001f || fabsf(tcam.mpy-ompy) > 0.001f || fabsf(tcam.mpz-ompz) > 0.001f)
 		{
 			render_vxl_redraw(&tcam, clmap);
 			ompx = tcam.mpx;

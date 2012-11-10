@@ -187,7 +187,7 @@ void model_bone_free(model_bone_t *bone);
 model_t *model_new(int bonemax);
 model_t *model_extend(model_t *pmf, int bonemax);
 void model_free(model_t *pmf);
-model_t *model_load_pmf(void);
+model_t *model_load_pmf(const char *fname);
 
 // network.c
 int net_init(void);

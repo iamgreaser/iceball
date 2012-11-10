@@ -126,6 +126,16 @@ pmf = common.model_new(bonemax = 5) @
 	
 	currently the number of bones is limited to 256
 
+pmf = common.model_load_pmf(fname) @
+	loads a pmf from a file
+	remember to free it when you're done
+	as this is only a light userdata
+	
+	limits of bones / points still applies here;
+	files which exceed these WILL be rejected!
+	
+	returns nil on failure.
+
 common.model_free(pmf) @
 	free the given model
 	if you don't do this then it's memoryleaktopia
@@ -199,25 +209,25 @@ client.model_render_bone_local(pmf, boneidx, px, py, pz, ry, rx, scale) @
 	then around X by "rx" radians,
 	and scaled "scale" times
 
-width, height = client.screen_get_dims()
+width, height = client.screen_get_dims() @
 	gets the dimensions of the screen
 
-img, width, height = client.img_load(fname)
+img, width, height = client.img_load(fname) @
 	loads an image with filename "fname"
 	remember to free it when you're done
 	as this is only a light userdata
 	
 	if this fails, img, width, height will all be nil
 
-client.img_free(img)
+client.img_free(img) @
 	free the given image
 	if you don't do this then it's memoryleaktopia
 	(plus i'm allowed to kill you)
 
-width, height = img_get_dims(img)
+width, height = img_get_dims(img) @
 	gets the image's dimensions
 
-client.img_blit(img, dx, dy, width = iwidth, height = iheight, sx = 0, sy = 0, color = 0xFFFFFFFF)
+client.img_blit(img, dx, dy, width = iwidth, height = iheight, sx = 0, sy = 0, color = 0xFFFFFFFF) @
 	blits an image onto screen position dx, dy
 	
 	"color" indicates a base 0xAARRGGBB colour to use

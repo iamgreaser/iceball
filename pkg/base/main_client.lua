@@ -225,7 +225,7 @@ function new_player(settings)
 			this.crouching = true
 		end
 		if this.ev_jump and (MODE_CHEAT_FLY or this.grounded) then
-			this.vy = -0.15
+			this.vy = -7
 			this.ev_jump = false
 		end
 		
@@ -235,7 +235,8 @@ function new_player(settings)
 		mvz = mvz / mvd
 		
 		-- apply base slowdown
-		local mvspd = 8.0*sec_delta/this.zoom
+		local mvspd = 8.0/this.zoom
+		local mvchange = 10.0
 		mvx = mvx * mvspd
 		mvz = mvz * mvspd
 		
@@ -243,6 +244,7 @@ function new_player(settings)
 		if not this.grounded then
 			mvx = mvx * 0.6
 			mvz = mvz * 0.6
+			mvchange = mvchange * 0.3
 		end
 		if this.y > 61.0 then
 			mvx = mvx * 0.6
@@ -261,15 +263,15 @@ function new_player(settings)
 		-- apply rotation
 		mvx, mvz = mvx*cya+mvz*sya, mvz*cya-mvx*sya
 		
-		this.vx = this.vx + (mvx - this.vx)*(1.0-math.exp(-sec_delta*12.0))
-		this.vz = this.vz + (mvz - this.vz)*(1.0-math.exp(-sec_delta*12.0))
-		this.vy = this.vy + 0.4*sec_delta
+		this.vx = this.vx + (mvx - this.vx)*(1.0-math.exp(-sec_delta*mvchange))
+		this.vz = this.vz + (mvz - this.vz)*(1.0-math.exp(-sec_delta*mvchange))
+		this.vy = this.vy + 2*9.81*sec_delta
 		
 		local ox, oy, oz
 		local nx, ny, nz
 		local tx1,ty1,tz1
 		ox, oy, oz = this.x, this.y, this.z
-		this.x, this.y, this.z = this.x + this.vx, this.y + this.vy, this.z + this.vz
+		this.x, this.y, this.z = this.x + this.vx*sec_delta, this.y + this.vy*sec_delta, this.z + this.vz*sec_delta
 		nx, ny, nz = this.x, this.y, this.z
 		this.jerkoffs = this.jerkoffs * math.exp(-sec_delta*15.0)
 		
@@ -375,8 +377,10 @@ function new_player(settings)
 		end
 		
 		if debug_enabled then
+			local camx,camy,camz
+			camx,camy,camz = client.camera_get_pos()
 			local cam_pos_str = string.format("x: %f y: %f z: %f c: %i"
-				, this.x, this.y, this.z, (this.crouching and 1) or 0)
+				, camx, camy, camz, (this.crouching and 1) or 0)
 			
 			print_mini(4, 4, 0x80FFFFFF, cam_pos_str)
 		end
@@ -412,6 +416,8 @@ key_ctrl = false
 key_space = false
 
 -- create a test model
+
+--[[
 mdl_test = client.model_new(1)
 print(client.model_len(mdl_test))
 mdl_test_bone_data = {
@@ -425,6 +431,9 @@ mdl_test_bone_data = {
 }
 mdl_test, mdl_test_bone = client.model_bone_new(mdl_test)
 client.model_bone_set(mdl_test, mdl_test_bone, "test", mdl_test_bone_data)
+]]
+mdl_test = client.model_load_pmf("pkg/base/pmf/test.pmf")
+mdl_test_bone = client.model_bone_find(mdl_test, "test")
 --[[
 client.model_bone_free(mdl_test, mdl_test_bone)
 client.model_free(mdl_test)

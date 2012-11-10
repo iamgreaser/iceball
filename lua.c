@@ -120,6 +120,24 @@ int icelua_fn_common_model_new(lua_State *L)
 	return 1;
 }
 
+int icelua_fn_common_model_load_pmf(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 1, 1);
+	const char *fname = lua_tostring(L, 1);
+	if(fname == NULL)
+		return luaL_error(L, "filename must be a string");
+	
+	model_t *pmf = model_load_pmf(fname);
+	
+	// TODO: add this to a clean-up linked list or something
+	if(pmf == NULL)
+		lua_pushnil(L);
+	else
+		lua_pushlightuserdata(L, pmf);
+	
+	return 1;
+}
+
 int icelua_fn_common_model_free(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 1, 1);
@@ -625,6 +643,7 @@ struct icelua_entry icelua_common[] = {
 	{icelua_fn_common_map_get_dims, "map_get_dims"},
 	{icelua_fn_common_map_pillar_get, "map_pillar_get"},
 	{icelua_fn_common_model_new, "model_new"},
+	{icelua_fn_common_model_load_pmf, "model_load_pmf"},
 	{icelua_fn_common_model_free, "model_free"},
 	{icelua_fn_common_model_len, "model_len"},
 	{icelua_fn_common_model_bone_new, "model_bone_new"},
