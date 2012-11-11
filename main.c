@@ -148,7 +148,7 @@ void run_game(void)
 		lua_pop(lstate_client, 1);
 		
 		// redraw scene if necessary
-		if(fabsf(tcam.mpx-ompx) > 0.001f || fabsf(tcam.mpy-ompy) > 0.001f || fabsf(tcam.mpz-ompz) > 0.001f)
+		if(fabsf(tcam.mpx-ompx) > 0.001f || fabsf(tcam.mpy-ompy) > 0.01f || fabsf(tcam.mpz-ompz) > 0.001f)
 		{
 			render_vxl_redraw(&tcam, clmap);
 			ompx = tcam.mpx;
@@ -229,6 +229,52 @@ void run_game(void)
 					break;
 				}
 				break;
+			case SDL_MOUSEBUTTONUP:
+			case SDL_MOUSEBUTTONDOWN:
+				// inform Lua client
+				lua_getglobal(lstate_client, "client");
+				lua_getfield(lstate_client, -1, "hook_mouse_button");
+				lua_remove(lstate_client, -2);
+				if(lua_isnil(lstate_client, -1))
+				{
+					// not hooked? ignore!
+					lua_pop(lstate_client, 1);
+					break;
+				}
+				lua_pushinteger(lstate_client, ev.button.button);
+				lua_pushboolean(lstate_client, (ev.type == SDL_MOUSEBUTTONDOWN));
+				if(lua_pcall(lstate_client, 2, 0, 0) != 0)
+				{
+					printf("Lua Client Error (mouse_button): %s\n", lua_tostring(lstate_client, -1));
+					lua_pop(lstate_client, 1);
+					quitflag = 1;
+					break;
+				}
+				break;
+			case SDL_MOUSEMOTION:
+				// inform Lua client
+				lua_getglobal(lstate_client, "client");
+				lua_getfield(lstate_client, -1, "hook_mouse_motion");
+				lua_remove(lstate_client, -2);
+				if(lua_isnil(lstate_client, -1))
+				{
+					// not hooked? ignore!
+					lua_pop(lstate_client, 1);
+					break;
+				}
+				lua_pushinteger(lstate_client, ev.motion.x);
+				lua_pushinteger(lstate_client, ev.motion.y);
+				lua_pushinteger(lstate_client, ev.motion.xrel);
+				lua_pushinteger(lstate_client, ev.motion.yrel);
+				if(lua_pcall(lstate_client, 4, 0, 0) != 0)
+				{
+					printf("Lua Client Error (mouse_motion): %s\n", lua_tostring(lstate_client, -1));
+					lua_pop(lstate_client, 1);
+					quitflag = 1;
+					break;
+				}
+				break;
+				
 			case SDL_QUIT:
 				quitflag = 1;
 				break;

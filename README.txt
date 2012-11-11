@@ -27,13 +27,25 @@ CURRENT STATUS:
 - The cubemap renders!
 - The scene is rendered to the cubemap!
 - You can move around!
+- There are player objects!
+- There are physics!
+- There are models!
+- There are IMAGES! Wow!
+- The mouse works!
 
 STUFF TO DO:
-- Shift the camera control stuff to Lua.
-- Get physics working.
-- Models! Which means a z-buffer will most likely be needed.
-  (We have those on the cubemaps at least! But they're not used yet.)
+- Model assets! We need your models, guys!
+- Sound assets! We need those, too!
+- A proper PMF editor that doesn't have "hex" in its name.
+- Actually implement sound support.
+- Get weapons working.
+  - Once again, please send your assets!
+- Drawing to an image, so we can get e.g. an overview map.
 - Network it up. (UnrealIncident has offered to work on this.)
+- Make the physics less crap.
 - Speed up the render a bit.
+  - Actually raycast.
   - Reuse the cubemaps while moving (scale / depth-dependent translate)
     so we don't need to redraw the FULL cubemaps.
+- Make the renderer look less crap.
+- Implement some form of lighting.

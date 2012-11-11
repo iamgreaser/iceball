@@ -30,10 +30,7 @@ BTSK_JUMP    = SDLK_SPACE
 BTSK_CROUCH  = SDLK_LCTRL
 BTSK_SNEAK   = SDLK_v
 
-BTSK_LOOKUP    = SDLK_UP
-BTSK_LOOKDOWN  = SDLK_DOWN
-BTSK_LOOKLEFT  = SDLK_LEFT
-BTSK_LOOKRIGHT = SDLK_RIGHT
+BTSK_QUIT = SDLK_ESCAPE
 
 BTSK_DEBUG = SDLK_F1
 
@@ -129,16 +126,12 @@ function new_player(settings)
 		this.ev_left = false
 		this.ev_right = false
 		
-		-- TODO: use mouse instead
-		this.ev_turn_left = false
-		this.ev_turn_right = false
-		this.ev_tilt_up = false
-		this.ev_tilt_down = false
-		
 		this.ev_jump = false
 		this.ev_crouch = false
 		this.ev_sneak = false
 	end
+	
+	this.input_reset()
 	
 	function this.spawn()
 		local xlen,ylen,zlen
@@ -172,20 +165,6 @@ function new_player(settings)
 	this.spawn()
 	
 	function this.tick(sec_current, sec_delta)
-		-- update angles
-		if this.ev_turn_left then
-			this.angy = this.angy + math.pi*sec_delta/this.zoom;
-		end
-		if this.ev_turn_right then
-			this.angy = this.angy - math.pi*sec_delta/this.zoom;
-		end
-		if this.ev_tilt_up then
-			this.angx = this.angx - math.pi*sec_delta/this.zoom;
-		end
-		if this.ev_tilt_down then
-			this.angx = this.angx + math.pi*sec_delta/this.zoom;
-		end
-		
 		-- clamp angle, YOU MUST NOT LOOK DIRECTLY UP OR DOWN!
 		if this.angx > math.pi*0.499 then
 			this.angx = math.pi*0.499
@@ -392,28 +371,10 @@ end
 players = {max = 32}
 
 -- set stuff
-zoom = 1.0
-angx = 0.0
-angy = math.pi/2
 rotpos = 0.0
 debug_enabled = false
-grounded = false
-crouching = false
-
-jerkoffs = 0 -- This variable has nothing to do with porn.
-pgravlev = 0.0
-
-key_left = false
-key_right = false
-key_up = false
-key_down = false
-
-key_w = false
-key_s = false
-key_a = false
-key_d = false
-key_ctrl = false
-key_space = false
+mouse_released = false
+sensitivity = 1.0/1000.0
 
 -- create a test model
 
@@ -493,6 +454,10 @@ function h_tick_init(sec_current, sec_delta)
 		weapon = WPN_RIFLE,
 	})
 	
+	mouse_released = false
+	client.mouse_lock_set(true)
+	client.mouse_visible_set(false)
+	
 	client.hook_tick = h_tick_camfly
 	return client.hook_tick(sec_current, sec_delta)
 end
@@ -500,14 +465,15 @@ end
 client.hook_tick = h_tick_init
 
 function client.hook_key(key, state)
-	if key == BTSK_LOOKUP then
-		players[1].ev_tilt_up = state
-	elseif key == BTSK_LOOKDOWN then
-		players[1].ev_tilt_down = state
-	elseif key == BTSK_LOOKLEFT then
-		players[1].ev_turn_left = state
-	elseif key == BTSK_LOOKRIGHT then
-		players[1].ev_turn_right = state
+	if not players[1] then return end
+	
+	if key == SDLK_F5 then
+		mouse_released = true
+		client.mouse_lock_set(false)
+		client.mouse_visible_set(true)
+	elseif key == BTSK_QUIT then
+		-- TODO: clean up
+		client.hook_tick = nil
 	elseif key == BTSK_FORWARD then
 		players[1].ev_forward = state
 	elseif key == BTSK_BACK then
@@ -527,6 +493,21 @@ function client.hook_key(key, state)
 			debug_enabled = not debug_enabled
 		end
 	end
+end
+
+function client.hook_mouse_button(button, state)
+	-- TODO!
+	mouse_released = false
+	client.mouse_lock_set(true)
+	client.mouse_visible_set(false)
+end
+
+function client.hook_mouse_motion(x, y, dx, dy)
+	if not players[1] then return end
+	if mouse_released then return end
+	
+	players[1].angy = players[1].angy - dx*math.pi*sensitivity
+	players[1].angx = players[1].angx + dy*math.pi*sensitivity
 end
 
 digit_map = {

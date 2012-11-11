@@ -54,6 +54,14 @@ function box_is_clear(x1,y1,z1,x2,y2,z2,canwrap)
 end
 
 function trace_map_box(x1,y1,z1, x2,y2,z2, bx1,by1,bz1, bx2,by2,bz2, canwrap)
+	local function depsilon(d)
+		if d < 0.0000001 then
+			return 0.0000001
+		else
+			return d
+		end
+	end
+	
 	-- delta
 	local dx,dy,dz
 	dx = x2-x1
@@ -106,9 +114,9 @@ function trace_map_box(x1,y1,z1, x2,y2,z2, bx1,by1,bz1, bx2,by2,bz2, canwrap)
 	
 	-- target cell
 	local tcx,tcy,tcz
-	tcx = math.floor(x2+fx+gx*0.001)
-	tcy = math.floor(y2+fy+gy*0.001)
-	tcz = math.floor(z2+fz+gz*0.001)
+	tcx = math.floor(x2+fx+gx*0.002)
+	tcy = math.floor(y2+fy+gy*0.002)
+	tcz = math.floor(z2+fz+gz*0.002)
 	
 	-- sub deltas
 	local sx, sy, sz
@@ -136,9 +144,9 @@ function trace_map_box(x1,y1,z1, x2,y2,z2, bx1,by1,bz1, bx2,by2,bz2, canwrap)
 	
 	for i=1,iend do
 		-- get the time it takes to hit the boundary
-		local tx = sx/math.max(dx,0.0000001)
-		local ty = sy/math.max(dy,0.0000001)
-		local tz = sz/math.max(dz,0.0000001)
+		local tx = sx/depsilon(dx)
+		local ty = sy/depsilon(dy)
+		local tz = sz/depsilon(dz)
 		
 		local t, d, ck
 		

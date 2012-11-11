@@ -17,6 +17,7 @@
 
 #define MODEL_BONE_MAX  256
 #define MODEL_POINT_MAX 4096
+#define PACKET_LEN_MAX 1280
 
 #include <immintrin.h>
 
@@ -157,6 +158,14 @@ enum
 	BT_MAX
 };
 
+typedef struct packet packet_t;
+struct packet
+{
+	packet_t *p, *n;
+	int len;
+	uint8_t data[];
+};
+
 // img.c
 void img_free(img_t *img);
 img_t *img_load_tga(const char *fname);
@@ -190,6 +199,8 @@ void model_free(model_t *pmf);
 model_t *model_load_pmf(const char *fname);
 
 // network.c
+packet_t *net_packet_new(int len, uint8_t *data);
+void net_packet_free(packet_t *pkt);
 int net_init(void);
 void net_deinit(void);
 

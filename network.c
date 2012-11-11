@@ -17,6 +17,39 @@
 
 #include "common.h"
 
+packet_t *net_packet_new(int len, uint8_t *data)
+{
+	if(len > PACKET_LEN_MAX)
+	{
+		fprintf(stderr, "net_packet_new: packet too large (%i > %i)\n"
+			, len, PACKET_LEN_MAX);
+		return NULL;
+	}
+	
+	packet_t *pkt = malloc(sizeof(packet_t));
+	if(pkt == NULL)
+	{
+		error_perror("net_packet_new");
+		return NULL;
+	}
+	
+	memcpy(pkt->data, data, len);
+	pkt->len = len;
+	pkt->p = pkt->n = NULL;
+	
+	return pkt;
+}
+
+void net_packet_free(packet_t *pkt)
+{
+	if(pkt->p != NULL)
+		pkt->p->n = pkt->n;
+	if(pkt->n != NULL)
+		pkt->n->p = pkt->p;
+	
+	free(pkt);
+}
+
 int net_init(void)
 {
 	// TODO!

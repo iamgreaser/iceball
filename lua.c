@@ -388,6 +388,26 @@ int icelua_fn_common_model_bone_find(lua_State *L)
 }
 
 // client functions
+int icelua_fn_client_mouse_lock_set(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 1, 1);
+	
+	SDL_WM_GrabInput(lua_toboolean(L, 1)
+		? SDL_GRAB_ON
+		: SDL_GRAB_OFF);
+	
+	return 0;
+}
+
+int icelua_fn_client_mouse_visible_set(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 1, 1);
+	
+	SDL_ShowCursor(lua_toboolean(L, 1));
+	
+	return 0;
+}
+
 int icelua_fn_client_camera_point(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 3, 5);
@@ -622,6 +642,8 @@ int icelua_fn_client_img_blit(lua_State *L)
 // server functions
 
 struct icelua_entry icelua_client[] = {
+	{icelua_fn_client_mouse_lock_set, "mouse_lock_set"},
+	{icelua_fn_client_mouse_visible_set, "mouse_visible_set"},
 	{icelua_fn_client_camera_point, "camera_point"},
 	{icelua_fn_client_camera_move_local, "camera_move_local"},
 	{icelua_fn_client_camera_move_global, "camera_move_global"},
