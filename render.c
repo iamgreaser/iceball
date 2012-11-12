@@ -18,7 +18,8 @@
 #include "common.h"
 
 //define DEBUG_INVERT_DRAW_DIR
-
+//define DEBUG_SHOW_TOP_BOTTOM
+//define DEBUG_HIDE_MAIN
 // TODO: bump up to 127.5f
 #define FOG_DISTANCE 60.0f
 
@@ -479,10 +480,16 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 		// get delta
 		float dx = rd->x - bx;
 		float dz = rd->z - bz;
+		if(rd->gx < 0) dx++;
+		else if(rd->gx == 0) dx = 0;
+		if(rd->gz < 0) dz++;
+		else if(rd->gz == 0) dz = 0;
 		
 		// skip this if it's in the fog
 		if(dx*dx+dz*dz >= FOG_DISTANCE*FOG_DISTANCE)
 			continue;
+		
+		int near_cast = (rayc_data_head == 1);
 		
 		// find where we are
 		int idx = (((int)(rd->z)) & (zlen-1))*xlen + (((int)rd->x) & (xlen-1));
@@ -492,9 +499,10 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 		int topcount = 0;
 		int lasttop = 0;
 		
+		float ysearch = rd->y1;
 		while(p[0] != 0)
 		{
-			if(rd->y1 < p[1] && (lastn == 0 || rd->y1 >= lasttop))
+			if(ysearch < p[1] && (lastn == 0 || ysearch >= lasttop))
 				break;
 			
 			lastn = p[0];
@@ -503,24 +511,24 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 			p += p[0]*4;
 		}
 		
-		int spreadflag = !(
-			rd->y1 >= p[1] && (p[0] == 0 || rd->y1 <= p[p[0]*4+3])
-			&& rd->y2 >= p[1] && (p[0] == 0 || rd->y2 <= p[p[0]*4+3]));
+		int spreadflag = 1;
 		
 		// advance y1/y2
 		float y1 = rd->y1;
 		float y2 = rd->y2;
 		
-		if(rayc_data_head == 1)
+		if(near_cast)
 		{
 			y1 = (lastn == 0 ? 0.0f : p[3]);
 			y2 = p[1];
 		} else {
 			float dist1 = sqrtf(dx*dx+dz*dz);
-			float dist2 = dist1 + 1.42f; // max dist this can travel
+			float dist2 = dist1 + 1.0f; // approx max dist this can travel
 			float travel = dist2/dist1;
-			y1 = by + (y1-by)*travel;
-			y2 = by + (y2-by)*travel;
+			if(y1 < by)
+				y1 = by + (y1-by)*travel;
+			if(y2 > by)
+				y2 = by + (y2-by)*travel;
 		}
 		
 		int iy1 = floor(y1);
@@ -530,11 +538,32 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 		
 		// TODO: get the order right!
 		
-		// add the top blocks (if they exist and we can see them)
-		if(p[3] >= iy1 && lastn != 0)
+#ifdef DEBUG_SHOW_TOP_BOTTOM
 		{
-			y2 = y1 = p[3]-1;
+			rayblock_t *b = &rayc_block[rayc_block_len++];
+			b->x = rd->x;
+			b->z = rd->z;
+			b->y = iy1;
+			b->color = 0xFFFF0000;
+		}
+		{
+			rayblock_t *b = &rayc_block[rayc_block_len++];
+			b->x = rd->x;
+			b->z = rd->z;
+			b->y = iy2;
+			b->color = 0xFF0000FF;
+		}
+#endif
+		// add the top blocks (if they exist and we can see them)
+		if(lastn == 0)
+		{
+			y1 = 0;
+			y2 = p[1];
+		} else if(p[3] >= iy1) {
+			y1 = p[3];
+			y2 = p[1];
 			uint32_t *c = (uint32_t *)(&p[-4]);
+#ifndef DEBUG_HIDE_MAIN
 			for(i = p[3]-1; i >= p[3]-topcount && i >= iy1; i--)
 			{
 				rayblock_t *b = &rayc_block[rayc_block_len++];
@@ -543,14 +572,18 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 				b->y = i;
 				b->color = *(c--);
 			}
+#endif
 		}
 		
 		// sneak your way down
 		while(p[1] <= iy2)
 		{
-			y2 = p[1]+1;
+			if(p[1] != p[3])
+				y2 = p[1];
+			
 			//printf("%i %i %i %i [%i, %i]\n", p[0],p[1],p[2],p[3],iy1,iy2);
 			uint32_t *c = (uint32_t *)(&p[4]);
+#ifndef DEBUG_HIDE_MAIN
 			for(i = p[1]; i <= p[2] && i <= iy2; i++)
 			{
 				rayblock_t *b = &rayc_block[rayc_block_len++];
@@ -559,9 +592,13 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 				b->y = i;
 				b->color = *(c++);
 			}
+#endif
 			
 			if(p[0] == 0)
 				break;
+			
+			if(p[1] != p[3])
+				y2 = p[1];
 			
 			lastn = p[0];
 			lasttop = p[1];
@@ -569,6 +606,7 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 			p += 4*p[0];
 			
 			c = (uint32_t *)(&p[-4]);
+#ifndef DEBUG_HIDE_MAIN
 			for(i = p[3]-1; i >= p[3]-topcount; i--)
 			{
 				if(i > iy2)
@@ -582,6 +620,7 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 				b->y = i;
 				b->color = *(c--);
 			}
+#endif
 		}
 		
 		// correct the y spread
@@ -589,6 +628,9 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 			y1 = by1;
 		if(y2 > by2)
 			y2 = by2;
+		
+		spreadflag = spreadflag && (y1 < y2);
+		//spreadflag = 1;
 		
 		// spread out
 		int ofx = 1;
@@ -598,7 +640,7 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 			int idx2 = ((ofx + (int)rd->x) & (xlen-1))
 				+ xlen * ((ofz + (int)rd->z) & (zlen-1));
 			
-			if((ofx != 0 && ofx == -rd->gx) || (ofz != 0 && ofz == -rd->gz))
+			if(ofx * rd->gx < 0 || ofz * rd->gz < 0)
 			{
 				// do nothing
 			} else if(rayc_mark[idx2] == 0) {
@@ -612,8 +654,8 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 				rd2->sx = subx;
 				rd2->sy = suby;
 				rd2->sz = subz;
-				rd2->gx += ofx;
-				rd2->gz += ofz;
+				rd2->gx = (ofx == 0 ? rd->gx : ofx);
+				rd2->gz = (ofz == 0 ? rd->gz : ofz);
 			} else if(rayc_mark[idx2] != -1) {
 				raydata_t *rd2 = &(rayc_data[rayc_mark[idx2]-1]);
 				
@@ -621,6 +663,10 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 					rd2->y1 = y1;
 				if(y2 > rd2->y2)
 					rd2->y2 = y2;
+				if(rd2->gx == 0)
+					rd2->gx = (ofx == 0 ? rd->gx : ofx);
+				if(rd2->gz == 0)
+					rd2->gz = (ofz == 0 ? rd->gz : ofz);
 			}
 			
 			{
