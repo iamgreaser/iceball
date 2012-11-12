@@ -136,11 +136,15 @@ function new_player(settings)
 	function this.spawn()
 		local xlen,ylen,zlen
 		xlen,ylen,zlen = common.map_get_dims()
-		this.x = math.floor(math.random()*xlen/4.0)+0.5
-		this.z = math.floor(math.random()*zlen)+0.5
-		this.y = (common.map_pillar_get(this.x, this.z))[1+1]-3.0
 		
-		if this.team == 1 then this.x = xlen - this.x end
+		while true do
+			this.x = math.floor(math.random()*xlen/4.0)+0.5
+			this.z = math.floor(math.random()*zlen)+0.5
+			if this.team == 1 then this.x = xlen - this.x end
+			this.y = (common.map_pillar_get(this.x, this.z))[1+1]
+			if this.y < 63 then break end
+		end
+		this.y = this.y - 3.0
 		
 		this.alive = true
 		this.spawned = true
