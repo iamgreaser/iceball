@@ -17,9 +17,13 @@
 
 #include "common.h"
 
-//define DEBUG_INVERT_DRAW_DIR
-//define DEBUG_SHOW_TOP_BOTTOM
-//define DEBUG_HIDE_MAIN
+#if 0
+#define DEBUG_INVERT_DRAW_DIR
+#endif
+#if 0
+#define DEBUG_SHOW_TOP_BOTTOM
+#define DEBUG_HIDE_MAIN
+#endif
 // TODO: bump up to 127.5f
 #define FOG_DISTANCE 60.0f
 
@@ -365,6 +369,20 @@ void render_vxl_face_raycast(int blkx, int blky, int blkz,
 		bz += xgz;
 	}
 	
+	if(ygx+ygy+ygz < 0)
+	{
+		bx += ygx;
+		by += ygy;
+		bz += ygz;
+	}
+	
+	if(gx+gy+gz < 0)
+	{
+		bx += gx;
+		by += gy;
+		bz += gz;
+	}
+	
 	// now crawl through the block list
 #ifdef DEBUG_INVERT_DRAW_DIR
 	rayblock_t *b = &rayc_block[rayc_block_len-1];
@@ -507,7 +525,7 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 		float ysearch = rd->y1;
 		while(p[0] != 0)
 		{
-			if(ysearch < p[1] && (lastn == 0 || ysearch >= lasttop))
+			if(ysearch < p[2] && (lastn == 0 || ysearch >= lasttop))
 				break;
 			
 			lastn = p[0];
@@ -524,8 +542,8 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 		
 		if(near_cast)
 		{
-			y1 = (lastn == 0 ? 0.0f : p[3]);
-			y2 = p[1];
+			rd->y1 = y1 = (lastn == 0 ? 0.0f : p[3]);
+			rd->y2 = y2 = p[1];
 		} else {
 			float dist1 = sqrtf(dx*dx+dz*dz);
 			float dist2 = dist1 + 1.0f; // approx max dist this can travel
@@ -564,7 +582,7 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 		{
 			y1 = 0;
 			y2 = p[1];
-		} else if(p[3] >= iy1) {
+		} else if(p[3] >= rd->y1-1) {
 			y1 = p[3];
 			y2 = p[1];
 			uint32_t *c = (uint32_t *)(&p[-4]);
@@ -598,17 +616,16 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 				b->color = *(c++);
 			}
 #endif
-			
 			if(p[0] == 0)
 				break;
-			
-			if(p[1] != p[3])
-				y2 = p[1];
 			
 			lastn = p[0];
 			lasttop = p[1];
 			topcount = p[0] - (p[2]-p[1]+1);
 			p += 4*p[0];
+			
+			if(p[1] != p[3] && rd->y2 >= p[3])
+				y2 = p[1];
 			
 			c = (uint32_t *)(&p[-4]);
 #ifndef DEBUG_HIDE_MAIN
