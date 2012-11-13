@@ -77,6 +77,11 @@ int rayc_mark_size = 0;
 
 float *dbuf;
 
+#ifdef RENDER_FACE_COUNT
+	int render_face_current = 0;
+	int render_face_remain = 0;
+#endif
+
 
 /*
  * REFERENCE IMPLEMENTATION
@@ -679,12 +684,44 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 	}
 	
 	// render each face
+#ifdef RENDER_FACE_COUNT
+	for(i = 0; i < RENDER_FACE_COUNT && render_face_remain > 0; i++)
+	{
+		switch(render_face_current)
+		{
+			default:
+				render_face_current = 0;
+				/* FALL THROUGH */
+			case 0:
+				render_vxl_face_raycast(blkx, blky, blkz, subx, suby, subz, CM_NX, -1,  0,  0);
+				break;
+			case 1:
+				render_vxl_face_raycast(blkx, blky, blkz, subx, suby, subz, CM_NY,  0, -1,  0);
+				break;
+			case 2:
+				render_vxl_face_raycast(blkx, blky, blkz, subx, suby, subz, CM_NZ,  0,  0, -1);
+				break;
+			case 3:
+				render_vxl_face_raycast(blkx, blky, blkz, subx, suby, subz, CM_PX,  1,  0,  0);
+				break;
+			case 4:
+				render_vxl_face_raycast(blkx, blky, blkz, subx, suby, subz, CM_PY,  0,  1,  0);
+				break;
+			case 5:
+				render_vxl_face_raycast(blkx, blky, blkz, subx, suby, subz, CM_PZ,  0,  0,  1);
+				break;
+		}
+		render_face_current++;
+		render_face_remain--;
+	}
+#else
 	render_vxl_face_raycast(blkx, blky, blkz, subx, suby, subz, CM_NX, -1,  0,  0);
 	render_vxl_face_raycast(blkx, blky, blkz, subx, suby, subz, CM_NY,  0, -1,  0);
 	render_vxl_face_raycast(blkx, blky, blkz, subx, suby, subz, CM_NZ,  0,  0, -1);
 	render_vxl_face_raycast(blkx, blky, blkz, subx, suby, subz, CM_PX,  1,  0,  0);
 	render_vxl_face_raycast(blkx, blky, blkz, subx, suby, subz, CM_PY,  0,  1,  0);
 	render_vxl_face_raycast(blkx, blky, blkz, subx, suby, subz, CM_PZ,  0,  0,  1);
+#endif
 }
 
 void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t *camera, map_t *map)
@@ -752,20 +789,31 @@ void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t
 		{
 			int pidx, pmap;
 			// get correct cube map + pos
+			float tx,ty,tz,atz;
+			
 			if(fabsf(fx) > fabsf(fy) && fabsf(fx) > fabsf(fz))
 			{
-				pidx = ((cubemap_size-1)&(int)(-fz*tracemul/fx+traceadd))
-					|(((cubemap_size-1)&(int)(fy*tracemul/fabsf(fx)+traceadd))<<cubemap_shift);
+				tx = -fz;
+				ty = fy;
+				tz = fx;
+				atz = fabs(tz);
 				pmap = fx >= 0.0f ? CM_PX : CM_NX;
 			} else if(fabsf(fz) > fabsf(fy) && fabsf(fz) > fabsf(fx)) {
-				pidx = ((cubemap_size-1)&(int)(fx*tracemul/fz+traceadd))
-					|(((cubemap_size-1)&(int)(fy*tracemul/fabsf(fz)+traceadd))<<cubemap_shift);
+				tx = fx;
+				ty = fy;
+				tz = fz;
+				atz = fabs(tz);
 				pmap = fz >= 0.0f ? CM_PZ : CM_NZ;
 			} else {
-				pidx = ((cubemap_size-1)&(int)(fx*tracemul/fy+traceadd))
-					|(((cubemap_size-1)&(int)(fz*tracemul/fy+traceadd))<<cubemap_shift);
+				tx = fx;
+				ty = fz;
+				tz = fy;
+				atz = tz;
 				pmap = fy >= 0.0f ? CM_PY : CM_NY;
 			}
+			
+			pidx = ((cubemap_size-1)&(int)(tx*tracemul/tz+traceadd))
+				|(((cubemap_size-1)&(int)(ty*tracemul/atz+traceadd))<<cubemap_shift);
 			
 			*(p++) = cubemap_color[pmap][pidx];
 			*(d++) = cubemap_depth[pmap][pidx];//*sqrtf(fx*fx+fy*fy+fz*fz);

@@ -448,7 +448,7 @@ function h_tick_camfly(sec_current, sec_delta)
 	players[1].tick(sec_current, sec_delta)
 	players[1].camera_firstperson()
 	-- wait a bit
-	return 0.01
+	return 0.005
 end
 
 

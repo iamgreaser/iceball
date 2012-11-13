@@ -150,11 +150,20 @@ void run_game(void)
 		// redraw scene if necessary
 		if(fabsf(tcam.mpx-ompx) > 0.001f || fabsf(tcam.mpy-ompy) > 0.01f || fabsf(tcam.mpz-ompz) > 0.001f)
 		{
+#ifdef RENDER_FACE_COUNT
+			render_face_remain = 6;
+#else
 			render_vxl_redraw(&tcam, clmap);
+#endif
 			ompx = tcam.mpx;
 			ompy = tcam.mpy;
 			ompz = tcam.mpz;
 		}
+		
+#ifdef RENDER_FACE_COUNT
+		if(render_face_remain > 0)
+			render_vxl_redraw(&tcam, clmap);
+#endif
 		
 		// update FPS counter
 		frame_now = SDL_GetTicks();

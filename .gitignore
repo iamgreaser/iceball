@@ -7,6 +7,14 @@ iceball.exe
 pmfedit
 pmfedit.exe
 
+# windows build crap
+winlibs/
+*.dll
+
+# windows crap i mean why the hell does it do this crap
+stdout.txt
+stderr.txt
+
 # remnants
 bts
 

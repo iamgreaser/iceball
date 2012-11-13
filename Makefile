@@ -6,27 +6,11 @@ CFLAGS = -pg -O2 -fno-strict-aliasing -g `sdl-config --cflags` -Wall -Wextra \
 
 LDFLAGS = -pg -g
 LIBS_SDL = `sdl-config --libs`
-LIBS_LUA = -llua
-LIBS = -lm $(LIBS_LUA) $(LIBS_SDL) 
+LIBS_Lua = -llua
+# Lua is not an acronym. Get used to typing it with lower case u/a.
+LIBS = -lm $(LIBS_Lua) $(LIBS_SDL) 
 BINNAME = iceball
-TOOLS = 
 
-INCLUDES = common.h
-OBJS = \
-	main.o \
-	vecmath.o \
-	map.o model.o \
-	img.o render.o \
-	lua.o network.o
+OBJDIR = build/unix
 
-all: $(BINNAME) $(TOOLS)
-
-clean:
-	rm -f $(OBJS)
-
-$(BINNAME): $(OBJS)
-	$(CC) -o $(BINNAME) $(LDFLAGS) $(OBJS) $(LIBS)
-
-%.o: %.c $(INCLUDES)
-	$(CC) -c -o $@ $(CFLAGS) $<
-
+include main.make

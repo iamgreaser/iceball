@@ -1,0 +1,28 @@
+# I personally don't care if you steal this makefile. --GM
+
+# USAGE:
+# - Make a file called "winlibs".
+# - Stash SDL/Lua ar libs in winlibs/*.a.
+# - Stash SDL includes in winlibs/SDL/*.h.
+# - Stash Lua includes in winlibs/*.h.
+#   - lua.h, lualib.h, lauxlib.h, luaconf.h
+#
+
+CFLAGS = -O2 -fno-strict-aliasing -g -Wall -Wextra \
+	-Wno-unused-variable -Wno-unused-parameter \
+	-Wno-unused-but-set-variable \
+	-Iwinlibs -Iwinlibs/SDL
+
+LDFLAGS = -g
+LIBS_SDL = -lSDLmain -lSDL
+LIBS_Lua = -llua
+# Lua is not an acronym. Get used to typing it with lower case u/a.
+LIBS = -Lwinlibs -lm -lmingw32 $(LIBS_Lua) $(LIBS_SDL)
+BINNAME = iceball.exe
+
+OBJDIR = build/mingw32
+
+MINGPREFIX = i686-pc-mingw32
+CC = $(MINGPREFIX)-gcc
+
+include main.make

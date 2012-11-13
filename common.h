@@ -19,6 +19,8 @@
 #define MODEL_POINT_MAX 4096
 #define PACKET_LEN_MAX 1280
 
+//define RENDER_FACE_COUNT 2
+
 #include <immintrin.h>
 
 #include <string.h>
@@ -205,6 +207,9 @@ int net_init(void);
 void net_deinit(void);
 
 // render.c
+#ifdef RENDER_FACE_COUNT
+extern int render_face_remain;
+#endif
 void render_vxl_redraw(camera_t *camera, map_t *map);
 void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t *camera, map_t *map);
 void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_t *cam_base,
