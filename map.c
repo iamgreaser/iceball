@@ -76,7 +76,7 @@ map_t *map_load_aos(char *fname)
 				break;
 		}
 		
-		pillar_temp[0] = (ti>>2)-1;
+		pillar_temp[0] = (ti>>2)-2;
 		map->pillars[pi] = malloc(ti);
 		// TODO: check if NULL
 		memcpy(map->pillars[pi], pillar_temp, ti);

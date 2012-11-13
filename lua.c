@@ -89,7 +89,7 @@ int icelua_fn_common_map_pillar_get(lua_State *L)
 	uint8_t *p = map->pillars[(pz&(map->zlen-1))*map->xlen+(px&(map->xlen-1))];
 	
 	// build the list
-	int llen = 4*(1+(int)*p);
+	int llen = 4*((255&(int)*p)+1);
 	lua_createtable(L, llen, 0);
 	p += 4;
 	
@@ -101,6 +101,116 @@ int icelua_fn_common_map_pillar_get(lua_State *L)
 	}
 	
 	return 1;
+}
+
+int icelua_fn_common_map_pillar_set(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 3, 3);
+	int px, pz, tlen;
+	int i;
+	
+	px = lua_tointeger(L, 1);
+	pz = lua_tointeger(L, 2);
+	if(!lua_istable(L, 3))
+		return luaL_error(L, "expected a table, got something else");
+	tlen = lua_objlen(L, 3);
+	
+	map_t *map = (L == lstate_server ? svmap : clmap);
+	
+	// if no map, ignore (for now)
+	if(map == NULL)
+		return 0;
+	
+	// validate that the table is not TOO large and is 4-byte aligned wrt size
+	if((tlen&3) || tlen > 1024)
+		return luaL_error(L, "table length %d invalid", tlen);
+	
+	// validate the table's input range
+	for(i = 0; i < tlen; i++)
+	{
+		lua_pushinteger(L, 1+i);
+		lua_gettable(L, 3);
+		int v = lua_tointeger(L, -1);
+		lua_pop(L, 1);
+		if(v < 0 || v > 255)
+			return luaL_error(L, "value at index %d out of unsigned byte range (%d)"
+				, 1+i, v);
+	}
+	
+	// validate the table data
+	i = 0;
+	for(;;)
+	{
+		lua_pushinteger(L, 1+i+0);
+		lua_gettable(L, 3);
+		lua_pushinteger(L, 1+i+1);
+		lua_gettable(L, 3);
+		lua_pushinteger(L, 1+i+2);
+		lua_gettable(L, 3);
+		lua_pushinteger(L, 1+i+3);
+		lua_gettable(L, 3);
+		int n = lua_tointeger(L, -4);
+		int s = lua_tointeger(L, -3);
+		int e = lua_tointeger(L, -2);
+		int a = lua_tointeger(L, -1);
+		lua_pop(L, 4);
+		
+		//printf("%i %i | %i %i | %i %i %i %i\n",px,pz,i,tlen,n,s,e,a);
+		
+		// Note, we are not supporting the shenanigans you can do in VOXLAP.
+		// Especially considering that editing said shenanigans causes issues.
+		// Also noting that said shenanigans weren't all that exploited,
+		// VOXLAP automatically corrects shenanigans when you edit stuff,
+		// and pyspades has no support for such shenanigans.
+		if(e+1 < s)
+			return luaL_error(L, "pillar has end+1 < start (%d < %d)"
+					, e+1, s);
+		if(i != 0 && s < a)
+			return luaL_error(L, "pillar has start < air (%d < %d)"
+					, s, a);
+		if(n != 0 && n-1 < e-s+1)
+			return luaL_error(L, "pillar has length < top length (%d < %d)"
+					, n-1, e-s+1);
+		
+		
+		// NOTE: this doesn't validate the BGRT (colour/type) entries.
+		int la = 0;
+		if(n == 0)
+		{
+			int exlen = (e-s+1)*4+i+4;
+			if(exlen != tlen)
+				return luaL_error(L, "pillar table len should be %d, got %d instead"
+					, exlen, tlen);
+			break;
+		} else {
+			i += 4*n;
+			// should always be colour on the bottom!
+			if(i > tlen-4)
+				return luaL_error(L, "pillar table overflow when validating");
+		
+		}
+	}
+	
+	// expand the pillar data if necessary
+	int idx = (pz&(map->zlen-1))*map->xlen+(px&(map->xlen-1));
+	uint8_t *p = map->pillars[idx];
+	if((p[0]+1)*4 < tlen)
+	{
+		p = map->pillars[idx] = realloc(p, tlen+4);
+		p[0] = (tlen>>2)-1;
+	}
+	
+	// transfer the table data
+	p += 4;
+	for(i = 1; i <= tlen; i++)
+	{
+		lua_pushinteger(L, i);
+		lua_gettable(L, 3);
+		*(p++) = (uint8_t)lua_tointeger(L, -1);
+		lua_pop(L, 1);
+	}
+	
+	return 0;
 }
 
 int icelua_fn_common_model_new(lua_State *L)
@@ -631,7 +741,7 @@ int icelua_fn_client_img_blit(lua_State *L)
 	bh = (top < 5 ? img->head.height : lua_tointeger(L, 5));
 	sx = (top < 6 ? 0 : lua_tointeger(L, 6));
 	sy = (top < 7 ? 0 : lua_tointeger(L, 7));
-	color = (top < 8 ? 0xFFFFFFFF : lua_tointeger(L, 8));
+	color = (top < 8 ? 0xFFFFFFFF : (uint32_t)lua_tointeger(L, 8));
 	
 	render_blit_img(screen->pixels, screen->w, screen->h, screen->pitch/4,
 		img, dx, dy, bw, bh, sx, sy, color);
@@ -664,6 +774,7 @@ struct icelua_entry icelua_server[] = {
 struct icelua_entry icelua_common[] = {
 	{icelua_fn_common_map_get_dims, "map_get_dims"},
 	{icelua_fn_common_map_pillar_get, "map_pillar_get"},
+	{icelua_fn_common_map_pillar_set, "map_pillar_set"},
 	{icelua_fn_common_model_new, "model_new"},
 	{icelua_fn_common_model_load_pmf, "model_load_pmf"},
 	{icelua_fn_common_model_free, "model_free"},

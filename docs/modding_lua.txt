@@ -106,7 +106,7 @@ table = common.map_pillar_get(px, pz) @
 	
 	note, the data wraps around here (wrt px,pz)!
 
-common.map_pillar_set(px, pz, table)
+common.map_pillar_set(px, pz, table) @
 	sets a full pillar of data
 	
 	this will be nil if there is no map loaded
@@ -115,6 +115,13 @@ common.map_pillar_set(px, pz, table)
 	and will throw a lua error if it fails.
 	
 	note, the data wraps around here (wrt px,pz)!
+	
+	WARNING: You MUST update the side pillars in your code!
+	You MUST ALSO fill in the newly-exposed blocks,
+	as well as remove the newly-unexposed blocks!
+	Otherwise, there WILL be gaps!
+	
+	WE'RE NOT DOING IT FOR YOU!
 
 client.camera_point(dx, dy, dz, zoom = 1.0, roll = 0.0) @
 	points the camera in a direction with zoom factor "zoom"

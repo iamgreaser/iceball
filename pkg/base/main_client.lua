@@ -379,6 +379,7 @@ rotpos = 0.0
 debug_enabled = false
 mouse_released = false
 sensitivity = 1.0/1000.0
+mouse_skip = 3
 
 -- create a test model
 
@@ -509,6 +510,10 @@ end
 function client.hook_mouse_motion(x, y, dx, dy)
 	if not players[1] then return end
 	if mouse_released then return end
+	if mouse_skip > 0 then
+		mouse_skip = mouse_skip - 1
+		return
+	end
 	
 	players[1].angy = players[1].angy - dx*math.pi*sensitivity
 	players[1].angx = players[1].angx + dy*math.pi*sensitivity
@@ -534,3 +539,5 @@ function client.hook_render()
 end
 
 print("pkg/base/main_client.lua loaded.")
+
+dofile("pkg/base/plug_snow.lua")
