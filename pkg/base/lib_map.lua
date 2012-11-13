@@ -26,11 +26,13 @@ function map_pillar_raw_get(x,z)
 	y = 0
 	
 	while true do
+		-- fill with air
 		while y < tpack[i+1] do
 			t[y+1] = nil
 			y = y + 1
 		end
 		
+		-- fill with top data
 		j = i + 4
 		while y <= tpack[i+2] do
 			t[y+1] = {tpack[j+3],tpack[j+2],tpack[j+1],tpack[j+0]}
@@ -38,23 +40,28 @@ function map_pillar_raw_get(x,z)
 			j = j + 4
 		end
 		
+		-- check if end
 		if tpack[i] == 0 then
+			-- fill the rest with invisible
 			while y < ylen do
 				t[y+1] = false
 				y = y + 1
 			end
+			-- that's it
 			break
 		end
 		
-		local ntr = tpack[i]-(tpack[i+2]-tpack[i+1])
+		local ntr = tpack[i]-1-(tpack[i+2]-tpack[i+1]+1)
 		i = i + 4*tpack[i]
-		ntr = tpack[i] - ntr
+		ntr = tpack[i+3] - ntr
 		
+		-- fill with invisible
 		while y < ntr do
 			t[y+1] = false
 			y = y + 1
 		end
 		
+		-- fill with bottom data
 		while y < tpack[i+3] do
 			t[y+1] = {tpack[j+3],tpack[j+2],tpack[j+1],tpack[j+0]}
 			y = y + 1
@@ -131,8 +138,8 @@ end
 function map_block_aerate(x,y,z)
 	return ({
 		1,
-		64+16+math.sin((x+z)*math.pi/4)*16,
-		64-math.sin((x-z)*math.pi/4)*16,
+		64+math.sin((x+z)*math.pi/4)*8,
+		32-math.sin((x-z)*math.pi/4)*8,
 		0
 	})
 end
@@ -153,13 +160,13 @@ function map_pillar_aerate(x,z)
 		if t[y] then
 			if l[1][y] ~= nil and l[2][y] ~= nil
 					and l[3][y] ~= nil and l[4][y] ~= nil
-					and l[y-1] ~= nil and (y == ylen or l[y+1] ~= nil) then
+					and t[y-1] ~= nil and (y == ylen or t[y+1] ~= nil) then
 				t[y] = false
 			end
 		elseif t[y] == false then
 			if l[1][y] == nil or l[2][y] == nil
 					or l[3][y] == nil or l[4][y] == nil
-					or l[y-1] == nil or (y ~= ylen and l[y+1] == nil) then
+					or t[y-1] == nil or (y ~= ylen and t[y+1] == nil) then
 				t[y] = map_block_aerate(x,y-1,z)
 			end
 		end
