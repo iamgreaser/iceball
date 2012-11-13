@@ -210,6 +210,8 @@ int icelua_fn_common_map_pillar_set(lua_State *L)
 		lua_pop(L, 1);
 	}
 	
+	force_redraw = 1;
+	
 	return 0;
 }
 

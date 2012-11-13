@@ -18,6 +18,8 @@
 print("pkg/base/main_client.lua starting")
 
 -- load libs
+dofile("pkg/base/lib_map.lua")
+dofile("pkg/base/lib_pmf.lua")
 dofile("pkg/base/lib_sdlkey.lua")
 dofile("pkg/base/lib_vector.lua")
 
@@ -156,6 +158,9 @@ function new_player(settings)
 		this.vx, this.vy, this.vz = 0, 0, 0
 		this.angy, this.angx = math.pi/2.0, 0.0
 		
+		this.blx1, this.bly1, this.blz1 = nil, nil, nil
+		this.blx2, this.bly2, this.blz2 = nil, nil, nil
+		
 		this.jerkoffs = 0.0
 		
 		this.zoom = 1.0
@@ -181,7 +186,9 @@ function new_player(settings)
 		local cya = math.cos(this.angy)
 		local sxa = math.sin(this.angx)
 		local cxa = math.cos(this.angx)
-		client.camera_point(sya*cxa, sxa, cya*cxa, zoom, 0.0)
+		local fwx,fwy,fwz
+		fwx,fwy,fwz = sya*cxa, sxa, cya*cxa
+		client.camera_point(fwx, fwy, fwz, zoom, 0.0)
 		
 		-- move along
 		local mvx = 0.0
@@ -313,17 +320,33 @@ function new_player(settings)
 		if this.vy > 0 and this.grounded then
 			this.vy = 0
 		end
+		
+		-- trace for stuff
+		do
+			local td
+			
+			td,
+			this.blx1, this.bly1, this.blz1, 
+			this.blx2, this.bly2, this.blz2
+			= trace_map_ray_dist(this.x,this.y,this.z, fwx,fwy,fwz, 5)
+		end
 	end
 	
 	function this.camera_firstperson()
 		client.camera_move_to(this.x, this.y + this.jerkoffs, this.z)
-		
 	end
 	
 	function this.show_hud()
-		client.model_render_bone_global(mdl_test, mdl_test_bone,
-			120.5, 50.5, 150.5,
-			rotpos*0.01, rotpos*0.004, 1.0+0.1*math.sin(rotpos*0.071))
+		if this.blx1 then
+			client.model_render_bone_global(mdl_test, mdl_test_bone,
+				this.blx1+0.5, this.bly1+0.5, this.blz1+0.5,
+				rotpos*0.01, rotpos*0.004, 0.1+0.01*math.sin(rotpos*0.071))
+			client.model_render_bone_global(mdl_test, mdl_test_bone,
+				(this.blx1*2+this.blx2)/3+0.5,
+				(this.bly1*2+this.bly2)/3+0.5,
+				(this.blz1*2+this.blz2)/3+0.5,
+				-rotpos*0.01, -rotpos*0.004, 0.1+0.01*math.sin(-rotpos*0.071))
+		end
 		client.model_render_bone_local(mdl_test, mdl_test_bone,
 			1-0.2, 600/800-0.2, 1.0,
 			rotpos*0.01, rotpos*0.004, 0.1)
@@ -455,7 +478,7 @@ end
 
 function h_tick_init(sec_current, sec_delta)
 	players[1] = new_player({
-		team = 0, -- 0 == blue, 1 == green
+		team = 1, -- 0 == blue, 1 == green
 		weapon = WPN_RIFLE,
 	})
 	
@@ -501,10 +524,29 @@ function client.hook_key(key, state)
 end
 
 function client.hook_mouse_button(button, state)
-	-- TODO!
-	mouse_released = false
-	client.mouse_lock_set(true)
-	client.mouse_visible_set(false)
+	if mouse_released then
+		mouse_released = false
+		client.mouse_lock_set(true)
+		client.mouse_visible_set(false)
+		return
+	end
+	
+	if state then
+		if button == 1 then
+			-- LMB
+			if players[1].blx1 then
+				map_block_set(
+					players[1].blx1, players[1].bly1, players[1].blz1,
+					1, 192, 192, 192)
+			end
+		elseif button == 3 then
+			-- RMB
+			if players[1].blx2 then
+				map_block_break(players[1].blx2, players[1].bly2, players[1].blz2)
+			end
+			
+		end
+	end
 end
 
 function client.hook_mouse_motion(x, y, dx, dy)
@@ -540,4 +582,4 @@ end
 
 print("pkg/base/main_client.lua loaded.")
 
-dofile("pkg/base/plug_snow.lua")
+--dofile("pkg/base/plug_snow.lua")

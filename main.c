@@ -25,6 +25,8 @@ SDL_Surface *screen = NULL;
 int screen_width = 800;
 int screen_height = 600;
 
+int force_redraw = 1;
+
 char *fnmap = "mesa.vxl";
 
 int error_sdl(char *msg)
@@ -148,7 +150,10 @@ void run_game(void)
 		lua_pop(lstate_client, 1);
 		
 		// redraw scene if necessary
-		if(fabsf(tcam.mpx-ompx) > 0.001f || fabsf(tcam.mpy-ompy) > 0.01f || fabsf(tcam.mpz-ompz) > 0.001f)
+		if(force_redraw
+			|| fabsf(tcam.mpx-ompx) > 0.001f
+			|| fabsf(tcam.mpy-ompy) > 0.01f
+			|| fabsf(tcam.mpz-ompz) > 0.001f)
 		{
 #ifdef RENDER_FACE_COUNT
 			render_face_remain = 6;
@@ -158,6 +163,7 @@ void run_game(void)
 			ompx = tcam.mpx;
 			ompy = tcam.mpy;
 			ompz = tcam.mpz;
+			force_redraw = 0;
 		}
 		
 #ifdef RENDER_FACE_COUNT

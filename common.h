@@ -183,6 +183,7 @@ extern camera_t tcam;
 extern map_t *clmap;
 extern map_t *svmap;
 extern SDL_Surface *screen;
+extern int force_redraw;
 int error_sdl(char *msg);
 int error_perror(char *msg);
 

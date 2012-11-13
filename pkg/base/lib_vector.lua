@@ -53,6 +53,102 @@ function box_is_clear(x1,y1,z1,x2,y2,z2,canwrap)
 	return true
 end
 
+function trace_map_ray_dist(x1,y1,z1, vx,vy,vz, maxdist)
+	local function depsilon(d)
+		if d < 0.0000001 then
+			return 0.0000001
+		else
+			return d
+		end
+	end
+	
+	local xlen,ylen,zlen
+	xlen,ylen,zlen = common.map_get_dims()
+	
+	-- offsets
+	local fx,fy,fz
+	if vx < 0 then fx = bx1 else fx = bx2 end
+	if vy < 0 then fy = by1 else fy = by2 end
+	if vz < 0 then fz = bz1 else fz = bz2 end
+	
+	-- direction
+	local gx,gy,gz
+	if vx < 0 then gx = -1 else gx = 1 end
+	if vy < 0 then gy = -1 else gy = 1 end
+	if vz < 0 then gz = -1 else gz = 1 end
+	vx = vx * gx
+	vy = vy * gy
+	vz = vz * gz
+	
+	-- cell
+	local cx,cy,cz
+	cx = math.floor(x1)
+	cy = math.floor(y1)
+	cz = math.floor(z1)
+	
+	-- subpos
+	local sx,sy,sz
+	sx = x1-cx
+	sy = y1-cy
+	sz = z1-cz
+	if gx >= 0 then sx = 1-sx end
+	if gy >= 0 then sy = 1-sy end
+	if gz >= 0 then sz = 1-sz end
+	
+	local dist = 0
+	local pillar, npillar
+	npillar = common.map_pillar_get(cx,cz)
+	pillar = npillar
+	
+	while true do
+		local tx = sx/depsilon(vx)
+		local ty = sy/depsilon(vy)
+		local tz = sz/depsilon(vz)
+		local t,d
+		local ncx,ncy,ncz
+		ncx,ncy,ncz = cx,cy,cz
+		
+		if tx < ty and tx < tz then
+			t = tx
+			d = 0
+			ncx = cx + gx
+			npillar = common.map_pillar_get(ncx,ncz)
+		elseif ty < tx and ty < tz then
+			t = ty
+			d = 1
+			ncy = cy + gy
+		else
+			t = tz
+			d = 2
+			ncz = cz + gz
+			npillar = common.map_pillar_get(ncx,ncz)
+		end
+		
+		dist = dist + t
+		if dist > maxdist then return nil, nil, nil, nil end
+		
+		local i=1
+		while true do
+			if ncy < npillar[i+1] then break end
+			if npillar[i] == 0 then return dist, cx, cy, cz, ncx, ncy, ncz end
+			i = i + npillar[i]*4
+			if ncy < npillar[i+3] then return dist, cx, cy, cz, ncx, ncy, ncz end
+		end
+		
+		sx = sx - vx*t
+		sy = sy - vy*t
+		sz = sz - vz*t
+		
+		cx,cy,cz = ncx,ncy,ncz
+		
+		if d == 0 then sx = 1
+		elseif d == 1 then sy = 1
+		else sz = 1 end
+		
+		pillar = npillar
+	end
+end
+
 function trace_map_box(x1,y1,z1, x2,y2,z2, bx1,by1,bz1, bx2,by2,bz2, canwrap)
 	local function depsilon(d)
 		if d < 0.0000001 then

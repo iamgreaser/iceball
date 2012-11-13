@@ -16,6 +16,7 @@
 ]]
 
 function snow_init()
+	print("Snowing the map...")
 	local xlen,ylen,zlen
 	local x,y,z,i
 	xlen,ylen,zlen = common.map_get_dims()
@@ -65,6 +66,7 @@ function snow_init()
 			return ret
 		end
 	end
+	print("Done!")
 end
 
 do
