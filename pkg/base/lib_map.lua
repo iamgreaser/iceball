@@ -84,6 +84,8 @@ function map_pillar_raw_set(x,z,t)
 		end
 		if y >= ylen then break end
 		
+		if i then tpack[i] = n end
+		
 		-- allocate slot
 		i = #tpack+1
 		tpack[i+0] = 0
@@ -92,12 +94,14 @@ function map_pillar_raw_set(x,z,t)
 		tpack[i+3] = a
 		
 		-- copy top run
+		n = 1
 		while t[y+1] do
 			tpack[#tpack+1] = t[y+1][4]
 			tpack[#tpack+1] = t[y+1][3]
 			tpack[#tpack+1] = t[y+1][2]
 			tpack[#tpack+1] = t[y+1][1]
 			y = y + 1
+			n = n + 1
 		end
 		tpack[i+2] = y-1
 		
@@ -108,14 +112,13 @@ function map_pillar_raw_set(x,z,t)
 		end
 		if y >= ylen then break end
 		
-		tpack[i] = tpack[i+2]-tpack[i+1]+2
 		-- build bottom run
 		while t[y+1] do
 			tpack[#tpack+1] = t[y+1][4]
 			tpack[#tpack+1] = t[y+1][3]
 			tpack[#tpack+1] = t[y+1][2]
 			tpack[#tpack+1] = t[y+1][1]
-			tpack[i] = tpack[i] + 1
+			n = n + 1
 			y = y + 1
 		end
 		
@@ -123,6 +126,15 @@ function map_pillar_raw_set(x,z,t)
 	end
 	
 	common.map_pillar_set(x,z,tpack)
+end
+
+function map_block_aerate(x,y,z)
+	return ({
+		1,
+		64+16+math.sin((x+z)*math.pi/4)*16,
+		64-math.sin((x-z)*math.pi/4)*16,
+		0
+	})
 end
 
 function map_pillar_aerate(x,z)
@@ -137,7 +149,23 @@ function map_pillar_aerate(x,z)
 	}
 	local y
 	
-	-- TODO!
+	for y=1,ylen do
+		if t[y] then
+			if l[1][y] ~= nil and l[2][y] ~= nil
+					and l[3][y] ~= nil and l[4][y] ~= nil
+					and l[y-1] ~= nil and (y == ylen or l[y+1] ~= nil) then
+				t[y] = false
+			end
+		elseif t[y] == false then
+			if l[1][y] == nil or l[2][y] == nil
+					or l[3][y] == nil or l[4][y] == nil
+					or l[y-1] == nil or (y ~= ylen and l[y+1] == nil) then
+				t[y] = map_block_aerate(x,y-1,z)
+			end
+		end
+	end
+	
+	map_pillar_raw_set(x,z,t)
 end
 
 function map_block_set(x,y,z,typ,r,g,b)
@@ -159,7 +187,7 @@ end
 function map_block_break(x,y,z)
 	local xlen,ylen,zlen 
 	xlen,ylen,zlen = common.map_get_dims()
-	if y < 0 or y >= ylen then return end
+	if y < 0 or y >= ylen-1 then return end
 	
 	local t = map_pillar_raw_get(x,z)
 	t[y+1] = nil
