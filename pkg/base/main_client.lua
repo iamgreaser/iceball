@@ -19,6 +19,7 @@ print("pkg/base/main_client.lua starting")
 
 -- load libs
 dofile("pkg/base/lib_collect.lua")
+dofile("pkg/base/lib_gui.lua")
 dofile("pkg/base/lib_map.lua")
 dofile("pkg/base/lib_pmf.lua")
 dofile("pkg/base/lib_sdlkey.lua")
@@ -32,6 +33,11 @@ BTSK_RIGHT   = SDLK_d
 BTSK_JUMP    = SDLK_SPACE
 BTSK_CROUCH  = SDLK_LCTRL
 BTSK_SNEAK   = SDLK_v
+
+BTSK_COLORLEFT  = SDLK_LEFT
+BTSK_COLORRIGHT = SDLK_RIGHT
+BTSK_COLORUP    = SDLK_UP
+BTSK_COLORDOWN  = SDLK_DOWN
 
 BTSK_QUIT = SDLK_ESCAPE
 
@@ -115,6 +121,40 @@ weapons = {
 	},
 }
 
+cpalette_base = {
+	0x7F,0x7F,0x7F,
+	0xFF,0x00,0x00,
+	0xFF,0x7F,0x00,
+	0xFF,0xFF,0x00,
+	0x00,0xFF,0x00,
+	0x00,0xFF,0xFF,
+	0x00,0x00,0xFF,
+	0xFF,0x00,0xFF,
+}
+
+cpalette = {}
+do
+	local i,j
+	for i=0,7 do
+		local r,g,b
+		r = cpalette_base[i*3+1]
+		g = cpalette_base[i*3+2]
+		b = cpalette_base[i*3+3]
+		for j=0,3 do
+			local cr = math.floor((r*j)/3)
+			local cg = math.floor((g*j)/3)
+			local cb = math.floor((b*j)/3)
+			cpalette[#cpalette+1] = {cr,cg,cb}
+		end
+		for j=1,4 do
+			local cr = r + math.floor(((255-r)*j)/4)
+			local cg = g + math.floor(((255-g)*j)/4)
+			local cb = b + math.floor(((255-b)*j)/4)
+			cpalette[#cpalette+1] = {cr,cg,cb}
+		end
+	end
+end
+
 function new_player(settings)
 	local this = {} this.this = this this.this.this = this this = this.this
 	
@@ -162,11 +202,16 @@ function new_player(settings)
 		this.blx1, this.bly1, this.blz1 = nil, nil, nil
 		this.blx2, this.bly2, this.blz2 = nil, nil, nil
 		
+		this.blk_color = {0x7F,0x7F,0x7F}
+		this.blk_color_x = 3
+		this.blk_color_y = 0
+		
 		this.jerkoffs = 0.0
 		
 		this.zoom = 1.0
 		
 		this.health = 100
+		this.blocks = 25
 		this.ammo_clip = weapons[this.weapon].ammo_clip
 		this.ammo_reserve = weapons[this.weapon].ammo_reserve
 		
@@ -360,30 +405,18 @@ function new_player(settings)
 		local w, h
 		w, h = client.screen_get_dims()
 		
-		-- TODO ship this off to a library
-		local function draw_digit(x, y, n, c)
-			client.img_blit(img_font_numbers, x, y, 32, 48, digit_map[n]*32, 0, c)
-		end
-		
-		local function print_mini(x, y, c, str)
-			local i
-			for i=1,#str do
-				client.img_blit(img_font_mini, x, y, 6, 8, (string.byte(str,i)-32)*6, 0, c)
-				x = x + 6
-			end
-		end
-		
 		local color = 0xFFA1FFA1
 		local hstr = ""..this.health
 		local astr = ""..this.ammo_clip.."-"..this.ammo_reserve
+		local bstr = ""..this.blocks
 		
 		local i
-		for i=1,#hstr do
-			draw_digit((i-1)*32+(w-32*#hstr)/2, h-48, string.sub(hstr,i,i), color)
-		end
-		for i=1,#astr do
-			draw_digit((i-1)*32+w-32*#astr, h-48, string.sub(astr,i,i), 0xAA880000)
-		end
+		gui_print_digits((w-32*#hstr)/2, h-48, color, hstr)
+		gui_print_digits(-16+w-32*#astr, h-48, 0xAA880000, astr)
+		local cr,cg,cb
+		cr,cg,cb = this.blk_color[1],this.blk_color[2],this.blk_color[3]
+		local cw = (cr*256+cg)*256+cb
+		gui_print_digits(16, h-48, cw+0xFF000000, bstr)
 		
 		if debug_enabled then
 			local camx,camy,camz
@@ -391,7 +424,7 @@ function new_player(settings)
 			local cam_pos_str = string.format("x: %f y: %f z: %f j: %f c: %i"
 				, camx, camy, camz, this.jerkoffs, (this.crouching and 1) or 0)
 			
-			print_mini(4, 4, 0x80FFFFFF, cam_pos_str)
+			gui_print_mini(4, 4, 0x80FFFFFF, cam_pos_str)
 		end
 	end
 	
@@ -458,16 +491,6 @@ mdl_bbox, mdl_bbox_bone2 = client.model_bone_new(mdl_bbox)
 client.model_bone_set(mdl_bbox, mdl_bbox_bone1, "bbox_stand", mdl_bbox_bone_data1)
 client.model_bone_set(mdl_bbox, mdl_bbox_bone2, "bbox_crouch", mdl_bbox_bone_data2)
 
--- load images
-img_font_numbers = client.img_load("pkg/base/gfx/font-numbers.tga")
-print(client.img_get_dims(img_font_numbers))
-img_font_mini = client.img_load("pkg/base/gfx/font-mini.tga")
-print(client.img_get_dims(img_font_mini))
---[[
-client.img_free(img_font_numbers)
-img_font_numbers = nil -- PLEASE DO THIS, GUYS!
-]]
-
 -- set hooks
 function h_tick_camfly(sec_current, sec_delta)
 	rotpos = rotpos + sec_delta*120.0
@@ -519,9 +542,33 @@ function client.hook_key(key, state)
 		players[1].ev_jump = state
 	elseif key == BTSK_SNEAK then
 		players[1].ev_sneak = state
-	elseif key == BTSK_DEBUG then
-		if state then
+	elseif state then
+		if key == BTSK_DEBUG then
 			debug_enabled = not debug_enabled
+		elseif key == BTSK_COLORLEFT then
+			players[1].blk_color_x = players[1].blk_color_x - 1
+			if players[1].blk_color_x < 0 then
+				players[1].blk_color_x = 7
+			end
+			players[1].blk_color = cpalette[players[1].blk_color_x+players[1].blk_color_y*8+1]
+		elseif key == BTSK_COLORRIGHT then
+			players[1].blk_color_x = players[1].blk_color_x + 1
+			if players[1].blk_color_x > 7 then
+				players[1].blk_color_x = 0
+			end
+			players[1].blk_color = cpalette[players[1].blk_color_x+players[1].blk_color_y*8+1]
+		elseif key == BTSK_COLORUP then
+			players[1].blk_color_y = players[1].blk_color_y - 1
+			if players[1].blk_color_y < 0 then
+				players[1].blk_color_y = 7
+			end
+			players[1].blk_color = cpalette[players[1].blk_color_x+players[1].blk_color_y*8+1]
+		elseif key == BTSK_COLORDOWN then
+			players[1].blk_color_y = players[1].blk_color_y + 1
+			if players[1].blk_color_y > 7 then
+				players[1].blk_color_y = 0
+			end
+			players[1].blk_color = cpalette[players[1].blk_color_x+players[1].blk_color_y*8+1]
 		end
 	end
 end
@@ -540,14 +587,23 @@ function client.hook_mouse_button(button, state)
 			if players[1].blx1 then
 				map_block_set(
 					players[1].blx1, players[1].bly1, players[1].blz1,
-					1, 192, 192, 192)
+					1,
+					players[1].blk_color[1],
+					players[1].blk_color[2],
+					players[1].blk_color[3])
 			end
 		elseif button == 3 then
 			-- RMB
 			if players[1].blx2 then
 				map_block_break(players[1].blx2, players[1].bly2, players[1].blz2)
 			end
-			
+		elseif button == 2 then
+			-- RMB
+			if players[1].blx2 then
+				local ct,cr,cg,cb
+				ct,cr,cg,cb = map_block_pick(players[1].blx2, players[1].bly2, players[1].blz2)
+				players[1].blk_color = {cr,cg,cb}
+			end
 		end
 	end
 end
@@ -564,21 +620,6 @@ function client.hook_mouse_motion(x, y, dx, dy)
 	players[1].angx = players[1].angx + dy*math.pi*sensitivity
 end
 
-digit_map = {
-	[" "] = 0,
-	["0"] = 1,
-	["1"] = 2,
-	["2"] = 3,
-	["3"] = 4,
-	["4"] = 5,
-	["5"] = 6,
-	["6"] = 7,
-	["7"] = 8,
-	["8"] = 9,
-	["9"] = 10,
-	["-"] = 11,
-}
-
 function client.hook_render()
 	players[1].show_hud()
 end
@@ -586,3 +627,4 @@ end
 print("pkg/base/main_client.lua loaded.")
 
 --dofile("pkg/base/plug_snow.lua")
+dofile("pkg/base/plug_pmfedit.lua")

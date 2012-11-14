@@ -1,0 +1,13 @@
+PMF editing guide
+
+Press F2 (default) to bring up the editor.
+
+Default keys:
+
+i/k = move up/down
+j/l = move left/right
+u/o = move forward/back
+
++/- = enlarge/shrink block
+g = add/paint block
+b = remove block

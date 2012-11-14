@@ -63,7 +63,8 @@ Maps:
   Y'know, smaller maps and whatnot.
 
 Models:
-- None yet! Aiming for *.pmf and *.kv6.
+- *.pmf: Point Model Format, designed for this game
+- Might support *.kv6 in future, who knows.
 
 Graphics:
 - *.tga: Truevision Targa
