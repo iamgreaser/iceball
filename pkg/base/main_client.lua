@@ -18,6 +18,7 @@
 print("pkg/base/main_client.lua starting")
 
 -- load libs
+dofile("pkg/base/lib_collect.lua")
 dofile("pkg/base/lib_map.lua")
 dofile("pkg/base/lib_pmf.lua")
 dofile("pkg/base/lib_sdlkey.lua")
@@ -308,7 +309,9 @@ function new_player(settings)
 				this.crouching = true
 				ty1 = ty1 + 1
 			end
-			if MODE_SOFTCROUCH then this.jerkoffs = this.jerkoffs + jerky - ty1 end
+			if math.abs(jerky-ty1) > 0.2 then
+				this.jerkoffs = this.jerkoffs + jerky - ty1
+			end
 		end
 		
 		this.x, this.y, this.z = tx1, ty1, tz1
@@ -385,8 +388,8 @@ function new_player(settings)
 		if debug_enabled then
 			local camx,camy,camz
 			camx,camy,camz = client.camera_get_pos()
-			local cam_pos_str = string.format("x: %f y: %f z: %f c: %i"
-				, camx, camy, camz, (this.crouching and 1) or 0)
+			local cam_pos_str = string.format("x: %f y: %f z: %f j: %f c: %i"
+				, camx, camy, camz, this.jerkoffs, (this.crouching and 1) or 0)
 			
 			print_mini(4, 4, 0x80FFFFFF, cam_pos_str)
 		end

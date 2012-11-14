@@ -138,8 +138,8 @@ end
 function map_block_aerate(x,y,z)
 	return ({
 		1,
-		64+math.sin((x+z)*math.pi/4)*8,
-		32-math.sin((x-z)*math.pi/4)*8,
+		64+math.sin((x+z-y)*math.pi/4)*8,
+		32-math.sin((x-z+y)*math.pi/4)*8,
 		0
 	})
 end
@@ -175,6 +175,175 @@ function map_pillar_aerate(x,z)
 	map_pillar_raw_set(x,z,t)
 end
 
+function map_hashcoord3(x,y,z)
+	local xlen,ylen,zlen
+	xlen,ylen,zlen = common.map_get_dims()
+	
+	return 
+		 math.fmod(math.fmod(y,ylen)+ylen,ylen)
+		+ylen*(math.fmod(math.fmod(x,xlen)+xlen,xlen)
+		+xlen*math.fmod(math.fmod(z,zlen)+zlen,zlen))
+end
+
+function map_hashcoord2(x,z)
+	local xlen,ylen,zlen
+	xlen,ylen,zlen = common.map_get_dims()
+	
+	return math.fmod(math.fmod(x,xlen)+xlen,xlen)
+		+xlen*math.fmod(math.fmod(z,zlen)+zlen,zlen)
+end
+
+function map_chkdisbrk(x,y,z)
+	-- A* ftw
+	local loadq = {
+		{x-1,y,z},
+		{x+1,y,z},
+		{x,y-1,z},
+		{x,y+1,z},
+		{x,y,z-1},
+		{x,y,z+1},
+	}
+	local tmap = {}
+	local pmap = {}
+	local plist = {}
+	local ptag = {}
+	local ptaglist = {}
+	local nukeq = {}
+	
+	local xlen,ylen,zlen
+	xlen,ylen,zlen = common.map_get_dims()
+	
+	-- build chunks
+	local i,j
+		for i=1,#loadq do
+		local prio,tx,ty,tz
+		tx,ty,tz = loadq[i][1],loadq[i][2],loadq[i][3]
+			
+		if not pmap[map_hashcoord2(tx,tz)] then
+			pmap[map_hashcoord2(tx,tz)] = map_pillar_raw_get(tx,tz)
+			plist[#plist+1] = {tx,tz}
+		end
+		
+		if (not tmap[map_hashcoord3(tx,ty,tz)]) and pmap[map_hashcoord2(tx,tz)][ty+1] ~= nil then
+			local pq = collect_new_prioq(function(p,q)
+				return p[1] < q[1]
+			end)
+			
+			tmap[map_hashcoord3(tx,ty,tz)] = {
+				heur = -ty,
+				dist = 0,
+				i = i,
+			}
+			pq.push({-ty,tx,ty,tz})
+			
+			local nukeasm = {}
+			while nukeasm and not pq.empty() do
+				local c = pq.pop()
+				prio,tx,ty,tz = c[1],c[2],c[3],c[4]
+				--print(prio,tx,ty,tz)
+				local tm = tmap[map_hashcoord3(tx,ty,tz)]
+				if prio <= tm.heur + tm.dist then
+					--print(i,prio,tx,ty,tz)
+					nukeasm[#nukeasm+1] = {tx,ty,tz}
+					if not pmap[map_hashcoord2(tx,tz)] then
+						pmap[map_hashcoord2(tx,tz)] = map_pillar_raw_get(tx,tz)
+						plist[#plist+1] = {tx,tz}
+					end
+					
+					local nb = {
+						{tx-1,ty,tz},
+						{tx+1,ty,tz},
+						{tx,ty-1,tz},
+						{tx,ty+1,tz},
+						{tx,ty,tz-1},
+						{tx,ty,tz+1},
+					}
+					
+					local dist = tm.dist+1
+					for j=1,6 do
+						local cx,cy,cz = nb[j][1], nb[j][2], nb[j][3]
+						local cm = tmap[map_hashcoord3(cx,cy,cz)]
+						if cy == ylen or (cm and cm.i ~= i) then
+							--print("BAIL!")
+							nukeasm = nil
+							break
+						end
+						
+						if not pmap[map_hashcoord2(cx,cz)] then
+							pmap[map_hashcoord2(cx,cz)] = map_pillar_raw_get(cx,cz)
+							plist[#plist+1] = {cx,cz}
+						end
+						
+						if pmap[map_hashcoord2(cx,cz)][cy+1] ~= nil then
+							local heur = -cy
+							if not cm then
+								cm = {
+									heur = heur,
+									dist = dist,
+									i = i,
+								}
+								tmap[map_hashcoord3(cx,cy,cz)] = cm
+								pq.push({heur+dist,cx,cy,cz})
+							else
+								if cm.heur+cm.dist > heur+dist then
+									cm.heur = heur
+									cm.dist = dist
+									pq.push({heur+dist,cx,cy,cz})
+								end
+							end
+						end
+					end
+				end
+			end
+			
+			if nukeasm then
+				nukeq[#nukeq+1] = nukeasm
+				--print(#nukeq,#nukeasm)
+			end
+		end
+	end
+	
+	-- nuke it all
+	-- TODO: assemble falling PMFs and drop the buggers
+	for i=1,#nukeq do
+		local tx,ty,tz
+		local nl = nukeq[i]
+		for j=1,#nl do
+			local c = nl[j]
+			tx,ty,tz = c[1],c[2],c[3]
+			if not ptag[map_hashcoord2(tx,tz)] then
+				ptag[map_hashcoord2(tx,tz)] = true
+				ptaglist[#ptaglist+1] = {tx,tz}
+			end
+			pmap[map_hashcoord2(tx,tz)][ty+1] = nil
+		end
+	end
+	
+	-- apply nukings
+	local nptag = {}
+	local nptaglist = {}
+	for i=1,#ptaglist do
+		local tx,tz
+		local c = ptaglist[i]
+		tx,tz = c[1], c[2]
+		map_pillar_raw_set(tx,tz,pmap[map_hashcoord2(tx,tz)])
+		
+		if not nptag[map_hashcoord2(tx,tz)] then
+			nptag[map_hashcoord2(tx,tz)] = true
+			nptaglist[#nptaglist+1] = {tx,tz}
+		end
+	end
+	
+	-- aerate
+	for i=1,#nptaglist do
+		local tx,tz
+		local c = nptaglist[i]
+		tx,tz = c[1], c[2]
+		
+		map_pillar_aerate(tx,tz)
+	end
+end
+
 function map_block_set(x,y,z,typ,r,g,b)
 	local xlen,ylen,zlen 
 	xlen,ylen,zlen = common.map_get_dims()
@@ -205,4 +374,6 @@ function map_block_break(x,y,z)
 	map_pillar_aerate(x+1,z)
 	map_pillar_aerate(x,z-1)
 	map_pillar_aerate(x,z+1)
+	
+	map_chkdisbrk(x,y,z)
 end
