@@ -163,6 +163,9 @@ pmf = common.model_load_pmf(fname) @
 	
 	returns nil on failure.
 
+success = common.model_save_pmf(pmf, fname) @
+	saves a pmf to a file
+
 common.model_free(pmf) @
 	free the given model
 	if you don't do this then it's memoryleaktopia

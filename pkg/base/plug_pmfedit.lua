@@ -15,6 +15,8 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
+PMFEDIT_FNAME = "clsave/editor.pmf"
+
 BTSK_PMF_EDIT = SDLK_F2
 
 BTSK_PMF_MOVEXN = SDLK_l
@@ -30,6 +32,8 @@ BTSK_PMF_SIZEN = SDLK_MINUS
 BTSK_PMF_BLKSET = SDLK_g
 BTSK_PMF_BLKCLEAR = SDLK_b
 
+BTSK_PMF_QUICKLOAD = SDLK_F3
+BTSK_PMF_QUICKSAVE = SDLK_F10
 
 pmfedit_enabled = false
 pmfedit_x = 0
@@ -118,6 +122,30 @@ function client.hook_key(key, state)
 					end
 					pmfedit_data[#pmfedit_data] = nil
 				end
+			elseif key == BTSK_PMF_QUICKLOAD then
+				local xpmf = common.model_load_pmf(PMFEDIT_FNAME)
+				if xpmf then
+					pmfedit_model = xpmf
+					pmfedit_model_bone = 0
+					local bname
+					bname, pmfedit_data = common.model_bone_get(pmfedit_model, pmfedit_model_bone)
+					pmfedit_data[#pmfedit_data+1] = {}
+					print("loaded!")
+				else
+					print("error during loading - NOT LOADED")
+				end
+			elseif key == BTSK_PMF_QUICKSAVE then
+				local xpt = pmfedit_data[#pmfedit_data]
+				pmfedit_data[#pmfedit_data] = nil
+				local bname, blah
+				bname, blah = common.model_bone_get(pmfedit_model, pmfedit_model_bone)
+				common.model_bone_set(pmfedit_model, pmfedit_model_bone, bname, pmfedit_data)
+				if common.model_save_pmf(pmfedit_model, PMFEDIT_FNAME) then
+					print("saved!")
+				else
+					print("error during saving - NOT SAVED")
+				end
+				pmfedit_data[#pmfedit_data+1] = xpt
 			end
 		end
 		if key == BTSK_PMF_EDIT then
@@ -126,6 +154,7 @@ function client.hook_key(key, state)
 	end
 	return old_keyhook(key, state)
 end
+
 local old_renderhook = client.hook_render
 -- I still believe the "Old Kenderhook" explanation for the meaning of O.K. is a load of crap. --GM
 function client.hook_render()

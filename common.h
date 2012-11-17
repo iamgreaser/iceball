@@ -200,6 +200,7 @@ model_t *model_new(int bonemax);
 model_t *model_extend(model_t *pmf, int bonemax);
 void model_free(model_t *pmf);
 model_t *model_load_pmf(const char *fname);
+int model_save_pmf(model_t *pmf, const char *fname);
 
 // network.c
 packet_t *net_packet_new(int len, uint8_t *data);

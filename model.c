@@ -190,3 +190,50 @@ model_t *model_load_pmf(const char *fname)
 	
 	return pmf;
 }
+
+int model_save_pmf(model_t *pmf, const char *fname)
+{
+	int i,j;
+	
+	FILE *fp = fopen(fname, "wb");
+	
+	// check for errors
+	if(fp == NULL)
+		return error_perror("model_save_pmf");
+	
+	// and now we crawl through the spec.
+	
+	// start with the header of "PMF",0x1A,1,0,0,0
+	char head[8];
+	
+	fwrite("PMF\x1A\x01\x00\x00\x00", 8, 1, fp);
+	
+	// then there's a uint32_t denoting how many body parts there are
+	uint32_t bone_count = pmf->bonelen;
+	fwrite(&bone_count, 4, 1, fp);
+	
+	// then, for each body part,
+	for(i = 0; i < (int)bone_count; i++)
+	{
+		// there's a null-terminated 16-byte string (max 15 chars) denoting the part
+		fwrite(pmf->bones[i]->name, 16, 1, fp);
+		
+		// then there's a uint32_t denoting how many points there are in this body part
+		uint32_t pt_count = pmf->bones[i]->ptlen;
+		fwrite(&pt_count, 4, 1, fp);
+		
+		// then there's a whole bunch of this:
+		//   uint16_t radius;
+		//   int16_t x,y,z;
+		//   uint8_t b,g,r,reserved;
+		fwrite(pmf->bones[i]->pts, sizeof(model_point_t), pt_count, fp);
+		
+		// rinse, lather, repeat
+		
+		// units are 8:8 fixed point in terms of the vxl grid by default
+	}
+	
+	fclose(fp);
+	
+	return 0;
+}

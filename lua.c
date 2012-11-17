@@ -250,6 +250,22 @@ int icelua_fn_common_model_load_pmf(lua_State *L)
 	return 1;
 }
 
+int icelua_fn_common_model_save_pmf(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 2, 2);
+	
+	model_t *pmf = lua_touserdata(L, 1);
+	if(pmf == NULL)
+		return luaL_error(L, "not a model");
+	const char *fname = lua_tostring(L, 2);
+	if(fname == NULL)
+		return luaL_error(L, "filename must be a string");
+	
+	lua_pushboolean(L, !model_save_pmf(pmf, fname));
+	
+	return 1;
+}
+
 int icelua_fn_common_model_free(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 1, 1);
@@ -779,6 +795,7 @@ struct icelua_entry icelua_common[] = {
 	{icelua_fn_common_map_pillar_set, "map_pillar_set"},
 	{icelua_fn_common_model_new, "model_new"},
 	{icelua_fn_common_model_load_pmf, "model_load_pmf"},
+	{icelua_fn_common_model_save_pmf, "model_save_pmf"},
 	{icelua_fn_common_model_free, "model_free"},
 	{icelua_fn_common_model_len, "model_len"},
 	{icelua_fn_common_model_bone_new, "model_bone_new"},
