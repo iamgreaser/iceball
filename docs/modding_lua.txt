@@ -225,18 +225,20 @@ boneidx = common.model_bone_find(pmf, name) @
 	
 	if it cannot be found, this returns nil
 
-client.model_render_bone_global(pmf, boneidx, px, py, pz, ry, rx, scale) @
+client.model_render_bone_global(pmf, boneidx, px, py, pz, ry, rx, ry2, scale) @
 	renders a bone at world position (px,py,pz),
 	
 	rotated around Y by "ry" radians,
 	then around X by "rx" radians,
+	then around Y by "ry2" radians,
 	and scaled "scale" times
 
-client.model_render_bone_local(pmf, boneidx, px, py, pz, ry, rx, scale) @
+client.model_render_bone_local(pmf, boneidx, px, py, pz, ry, rx, ry2, scale) @
 	renders a bone at camera-local position (px,py,pz),
 	
 	rotated around Y by "ry" radians,
 	then around X by "rx" radians,
+	then around Y by "ry2" radians,
 	and scaled "scale" times
 
 width, height = client.screen_get_dims() @

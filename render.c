@@ -879,7 +879,7 @@ void render_pmf_box(float x, float y, float z, float depth, float r, uint32_t co
 
 void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_t *cam_base,
 	model_bone_t *bone, int islocal,
-	float px, float py, float pz, float ry, float rx, float scale)
+	float px, float py, float pz, float ry, float rx, float ry2, float scale)
 {
 	// stash stuff in globals to prevent spamming the stack too much
 	// (and in turn thrashing the cache)
@@ -908,14 +908,18 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 		float cry = cos(ry);
 		float srx = sin(rx);
 		float crx = cos(rx);
+		float sry2 = sin(ry2);
+		float cry2 = cos(ry2);
 		
 		float tx = (x*cry+z*sry);
 		float ty = y;
 		float tz = (z*cry-x*sry);
 		
-		x = tx;
 		y = (ty*crx-tz*srx);
-		z = (tz*crx+ty*srx);
+		tz = (tz*crx+ty*srx);
+		
+		x = (tx*cry2+tz*sry2);
+		z = (tz*cry2-tx*sry2);
 		
 		// scalinate
 		x *= scale;

@@ -627,9 +627,9 @@ int icelua_fn_client_camera_get_forward(lua_State *L)
 
 int icelua_fn_client_model_render_bone_global(lua_State *L)
 {
-	int top = icelua_assert_stack(L, 8, 8);
+	int top = icelua_assert_stack(L, 9, 9);
 	float px, py, pz;
-	float rx, ry;
+	float ry, rx, ry2;
 	float scale;
 	
 	model_t *pmf = lua_touserdata(L, 1);
@@ -647,20 +647,21 @@ int icelua_fn_client_model_render_bone_global(lua_State *L)
 	
 	ry = lua_tonumber(L, 6);
 	rx = lua_tonumber(L, 7);
+	ry2 = lua_tonumber(L, 8);
 	
-	scale = lua_tonumber(L, 8);
+	scale = lua_tonumber(L, 9);
 	
 	render_pmf_bone(screen->pixels, screen->w, screen->h, screen->pitch/4, &tcam,
-		bone, 0, px, py, pz, ry, rx, scale);
+		bone, 0, px, py, pz, ry, rx, ry2, scale);
 	
 	return 0;
 }
 
 int icelua_fn_client_model_render_bone_local(lua_State *L)
 {
-	int top = icelua_assert_stack(L, 8, 8);
+	int top = icelua_assert_stack(L, 9, 9);
 	float px, py, pz;
-	float rx, ry;
+	float ry, rx, ry2;
 	float scale;
 	
 	model_t *pmf = lua_touserdata(L, 1);
@@ -678,11 +679,12 @@ int icelua_fn_client_model_render_bone_local(lua_State *L)
 	
 	ry = lua_tonumber(L, 6);
 	rx = lua_tonumber(L, 7);
+	ry2 = lua_tonumber(L, 8);
 	
-	scale = lua_tonumber(L, 8);
+	scale = lua_tonumber(L, 9);
 	
 	render_pmf_bone(screen->pixels, screen->w, screen->h, screen->pitch/4, &tcam,
-		bone, 1, px, py, pz, ry, rx, scale);
+		bone, 1, px, py, pz, ry, rx, ry2, scale);
 	
 	return 0;
 }

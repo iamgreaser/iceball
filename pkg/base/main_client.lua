@@ -385,22 +385,30 @@ function new_player(settings)
 	end
 	
 	function this.show_hud()
+		local ays,ayc
+		ays = math.sin(this.angy)
+		ayc = math.cos(this.angy)
 		if this.blx1 then
 			client.model_render_bone_global(mdl_test, mdl_test_bone,
 				this.blx1+0.5, this.bly1+0.5, this.blz1+0.5,
-				rotpos*0.01, rotpos*0.004, 0.1+0.01*math.sin(rotpos*0.071))
+				rotpos*0.01, rotpos*0.004, 0.0, 0.1+0.01*math.sin(rotpos*0.071))
 			client.model_render_bone_global(mdl_test, mdl_test_bone,
 				(this.blx1*2+this.blx2)/3+0.5,
 				(this.bly1*2+this.bly2)/3+0.5,
 				(this.blz1*2+this.blz2)/3+0.5,
-				-rotpos*0.01, -rotpos*0.004, 0.1+0.01*math.sin(-rotpos*0.071))
+				-rotpos*0.01, -rotpos*0.004, 0.0, 0.1+0.01*math.sin(-rotpos*0.071))
 		end
 		client.model_render_bone_local(mdl_test, mdl_test_bone,
 			1-0.2, 600/800-0.2, 1.0,
-			rotpos*0.01, rotpos*0.004, 0.1)
+			rotpos*0.01, rotpos*0.004, 0.0, 0.1)
 		client.model_render_bone_global(mdl_bbox, 
 			(this.crouching and mdl_bbox_bone2) or mdl_bbox_bone1,
-			this.x, this.y, this.z, 0, 0, 1)
+			this.x, this.y, this.z, 0, 0, 0.0, 1)
+		
+		client.model_render_bone_global(mdl_spade, mdl_spade_bone,
+			this.x-ayc*0.2, this.y+this.jerkoffs+0.2, this.z+ays*0.2,
+			0.0, -this.angx-math.pi/2*0.90, this.angy, 1)
+		
 		
 		local w, h
 		w, h = client.screen_get_dims()
@@ -440,30 +448,10 @@ mouse_released = false
 sensitivity = 1.0/1000.0
 mouse_skip = 3
 
--- create a test model
-
---[[
-mdl_test = client.model_new(1)
-print(client.model_len(mdl_test))
-mdl_test_bone_data = {
-	{radius=192, x= 0  ,y= 0  ,z= 0  , r=255,g=170,b=0  },
-	{radius=96 , x= 256,y= 0  ,z= 0  , r=255,g=0  ,b=0  },
-	{radius=96 , x= 0  ,y= 256,z= 0  , r=0  ,g=255,b=0  },
-	{radius=96 , x= 0  ,y= 0  ,z= 256, r=0  ,g=0  ,b=255},
-	{radius=96 , x=-256,y= 0  ,z= 0  , r=0  ,g=255,b=255},
-	{radius=96 , x= 0  ,y=-256,z= 0  , r=255,g=0  ,b=255},
-	{radius=96 , x= 0  ,y= 0  ,z=-256, r=255,g=255,b=0  },
-}
-mdl_test, mdl_test_bone = client.model_bone_new(mdl_test)
-client.model_bone_set(mdl_test, mdl_test_bone, "test", mdl_test_bone_data)
-]]
+-- load/make models
 mdl_test = client.model_load_pmf("pkg/base/pmf/test.pmf")
 mdl_test_bone = client.model_bone_find(mdl_test, "test")
---[[
-client.model_bone_free(mdl_test, mdl_test_bone)
-client.model_free(mdl_test)
-mdl_test = nil -- PLEASE DO THIS, GUYS!
-]]
+mdl_spade, mdl_spade_bone = client.model_load_pmf("pkg/base/pmf/spade.pmf"), 0
 
 mdl_bbox = client.model_new(1)
 mdl_bbox_bone_data1 = {

@@ -125,6 +125,7 @@ function client.hook_key(key, state)
 			elseif key == BTSK_PMF_QUICKLOAD then
 				local xpmf = common.model_load_pmf(PMFEDIT_FNAME)
 				if xpmf then
+					common.model_free(pmfedit_model) -- YECCH! Forgot this line!
 					pmfedit_model = xpmf
 					pmfedit_model_bone = 0
 					local bname
@@ -169,7 +170,7 @@ function client.hook_render()
 		
 		client.model_render_bone_local(pmfedit_model, pmfedit_model_bone,
 			0,0,1,
-			0,0,
+			0,0,0,
 			0.7)
 	end
 	return old_renderhook()
