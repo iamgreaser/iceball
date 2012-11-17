@@ -34,6 +34,12 @@ BTSK_JUMP    = SDLK_SPACE
 BTSK_CROUCH  = SDLK_LCTRL
 BTSK_SNEAK   = SDLK_v
 
+BTSK_TOOL1 = SDLK_1
+BTSK_TOOL2 = SDLK_2
+BTSK_TOOL3 = SDLK_3
+BTSK_TOOL4 = SDLK_4
+BTSK_TOOL5 = SDLK_5
+
 BTSK_COLORLEFT  = SDLK_LEFT
 BTSK_COLORRIGHT = SDLK_RIGHT
 BTSK_COLORUP    = SDLK_UP
@@ -52,6 +58,11 @@ MODE_SOFTCROUCH = true
 
 MODE_TILT_SLOWDOWN = false -- TODO!
 MODE_TILT_DOWN_NOCLIMB = false -- TODO!
+
+-- tools
+TOOL_SPADE = 0
+TOOL_BLOCK = 1
+TOOL_GUN = 2
 
 -- weapons
 WPN_RIFLE = 0
@@ -78,6 +89,8 @@ weapons = {
 		recoil_x = 0.0001,
 		recoil_y = -0.05,
 		
+		basename = "rifle",
+		
 		enabled = true,
 	},
 	[WPN_NOOB] = {
@@ -96,6 +109,8 @@ weapons = {
 		spread = 0.006, -- This is the 0.75 rifle spread.
 		recoil_x = 0.001,
 		recoil_y = -0.05,
+		
+		basename = "smg",
 		
 		enabled = false,
 	},
@@ -116,6 +131,8 @@ weapons = {
 		spread = 0.015, -- No, this should not be good at range.
 		recoil_x = 0.003,
 		recoil_y = -0.12,
+		
+		basename = "shotty",
 		
 		enabled = false,
 	},
@@ -198,6 +215,7 @@ function new_player(settings)
 		
 		this.vx, this.vy, this.vz = 0, 0, 0
 		this.angy, this.angx = math.pi/2.0, 0.0
+		if this.team == 1 then this.angy = this.angy-math.pi end
 		
 		this.blx1, this.bly1, this.blz1 = nil, nil, nil
 		this.blx2, this.bly2, this.blz2 = nil, nil, nil
@@ -215,6 +233,7 @@ function new_player(settings)
 		this.ammo_clip = weapons[this.weapon].ammo_clip
 		this.ammo_reserve = weapons[this.weapon].ammo_reserve
 		
+		this.tool = 2
 	end
 	
 	this.spawn()
@@ -372,11 +391,17 @@ function new_player(settings)
 		-- trace for stuff
 		do
 			local td
+			local _
 			
 			td,
 			this.blx1, this.bly1, this.blz1, 
 			this.blx2, this.bly2, this.blz2
 			= trace_map_ray_dist(this.x,this.y,this.z, fwx,fwy,fwz, 5)
+			
+			_,
+			_, _, _, 
+			this.blx3, this.bly3, this.blz3
+			= trace_map_ray_dist(this.x,this.y,this.z, fwx,fwy,fwz, 127.5)
 		end
 	end
 	
@@ -405,10 +430,30 @@ function new_player(settings)
 			(this.crouching and mdl_bbox_bone2) or mdl_bbox_bone1,
 			this.x, this.y, this.z, 0, 0, 0.0, 1)
 		
-		client.model_render_bone_global(mdl_spade, mdl_spade_bone,
-			this.x-ayc*0.2, this.y+this.jerkoffs+0.2, this.z+ays*0.2,
-			0.0, -this.angx-math.pi/2*0.90, this.angy, 1)
-		
+		if this.tool == TOOL_SPADE then
+			client.model_render_bone_global(mdl_spade, mdl_spade_bone,
+				this.x-ayc*0.2, this.y+this.jerkoffs+0.2, this.z+ays*0.2,
+				0.0, -this.angx-math.pi/2*0.90, this.angy, 1)
+		elseif this.tool == TOOL_BLOCK then
+			-- TODO: palettise this more nicely
+			local i
+			for i=1,#mdl_block_data do
+				mdl_block_data[i].r,
+				mdl_block_data[i].g,
+				mdl_block_data[i].b =
+					this.blk_color[1],
+					this.blk_color[2],
+					this.blk_color[3]
+			end
+			client.model_bone_set(mdl_block, mdl_block_bone, "block", mdl_block_data)
+			client.model_render_bone_global(mdl_block, mdl_block_bone,
+				this.x-ayc*0.1+ays*0.1, this.y+this.jerkoffs+0.1, this.z+ays*0.1+ayc*0.1,
+				0.0, -this.angx, this.angy, 0.2)
+		elseif this.tool == TOOL_GUN then
+			client.model_render_bone_global(mdl_rifle, mdl_rifle_bone,
+				this.x-ayc*0.1+ays*0.1, this.y+this.jerkoffs+0.1, this.z+ays*0.1+ayc*0.1,
+				math.pi/2, -this.angx, this.angy, 1)
+		end
 		
 		local w, h
 		w, h = client.screen_get_dims()
@@ -434,6 +479,8 @@ function new_player(settings)
 			
 			gui_print_mini(4, 4, 0x80FFFFFF, cam_pos_str)
 		end
+		
+		client.img_blit(img_crosshair, w/2 - 8, h/2 - 8)
 	end
 	
 	return this
@@ -448,10 +495,20 @@ mouse_released = false
 sensitivity = 1.0/1000.0
 mouse_skip = 3
 
+-- load images
+img_crosshair = client.img_load("pkg/base/gfx/crosshair.tga")
+
 -- load/make models
 mdl_test = client.model_load_pmf("pkg/base/pmf/test.pmf")
 mdl_test_bone = client.model_bone_find(mdl_test, "test")
 mdl_spade, mdl_spade_bone = client.model_load_pmf("pkg/base/pmf/spade.pmf"), 0
+mdl_block, mdl_block_bone = client.model_load_pmf("pkg/base/pmf/block.pmf"), 0
+-- TODO: load all weapons
+mdl_rifle, mdl_rifle_bone = client.model_load_pmf("pkg/base/pmf/rifle.pmf"), 0
+
+local _
+_, mdl_block_data = client.model_bone_get(mdl_block, mdl_block_bone)
+
 
 mdl_bbox = client.model_new(1)
 mdl_bbox_bone_data1 = {
@@ -478,6 +535,7 @@ mdl_bbox, mdl_bbox_bone1 = client.model_bone_new(mdl_bbox)
 mdl_bbox, mdl_bbox_bone2 = client.model_bone_new(mdl_bbox)
 client.model_bone_set(mdl_bbox, mdl_bbox_bone1, "bbox_stand", mdl_bbox_bone_data1)
 client.model_bone_set(mdl_bbox, mdl_bbox_bone2, "bbox_crouch", mdl_bbox_bone_data2)
+
 
 -- set hooks
 function h_tick_camfly(sec_current, sec_delta)
@@ -530,6 +588,16 @@ function client.hook_key(key, state)
 		players[1].ev_jump = state
 	elseif key == BTSK_SNEAK then
 		players[1].ev_sneak = state
+	elseif key == BTSK_TOOL1 then
+		players[1].tool = TOOL_SPADE
+	elseif key == BTSK_TOOL2 then
+		players[1].tool = TOOL_BLOCK
+	elseif key == BTSK_TOOL3 then
+		players[1].tool = TOOL_GUN
+	elseif key == BTSK_TOOL4 then
+		-- TODO
+	elseif key == BTSK_TOOL5 then
+		-- TODO
 	elseif state then
 		if key == BTSK_DEBUG then
 			debug_enabled = not debug_enabled
@@ -572,26 +640,27 @@ function client.hook_mouse_button(button, state)
 	if state then
 		if button == 1 then
 			-- LMB
-			if players[1].blx1 then
+			if players[1].tool == TOOL_BLOCK and players[1].blx1 then
 				map_block_set(
 					players[1].blx1, players[1].bly1, players[1].blz1,
 					1,
 					players[1].blk_color[1],
 					players[1].blk_color[2],
 					players[1].blk_color[3])
+			elseif players[1].tool == TOOL_SPADE and players[1].blx2 then
+				map_block_break(players[1].blx2, players[1].bly2, players[1].blz2)
 			end
 		elseif button == 3 then
 			-- RMB
-			if players[1].blx2 then
-				map_block_break(players[1].blx2, players[1].bly2, players[1].blz2)
+			if players[1].tool == TOOL_BLOCK and players[1].blx3 then
+				local ct,cr,cg,cb
+				ct,cr,cg,cb = map_block_pick(players[1].blx3, players[1].bly3, players[1].blz3)
+				players[1].blk_color = {cr,cg,cb}
+			elseif players[1].tool == TOOL_SPADE and players[1].blx3 then
+				-- TODO: 1x3 break
 			end
 		elseif button == 2 then
-			-- RMB
-			if players[1].blx2 then
-				local ct,cr,cg,cb
-				ct,cr,cg,cb = map_block_pick(players[1].blx2, players[1].bly2, players[1].blz2)
-				players[1].blk_color = {cr,cg,cb}
-			end
+			-- middleclick
 		end
 	end
 end

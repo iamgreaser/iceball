@@ -35,11 +35,16 @@ CURRENT STATUS:
 - There are models!
 - There are IMAGES! Wow!
 - The mouse works!
+- PMF editor!
+- You can buld!
+- You can grif cahirs!
 
 STUFF TO DO:
+- You can't snip yet :(
 - Model assets! We need your models, guys!
+  - I have made some of these already.
 - Sound assets! We need those, too!
-- A proper PMF editor that doesn't have "hex" in its name.
+  - Ditto.
 - Actually implement sound support.
 - Get weapons working.
   - Once again, please send your assets!
@@ -47,7 +52,7 @@ STUFF TO DO:
 - Network it up. (UnrealIncident has offered to work on this.)
 - Make the physics less crap.
 - Speed up the render a bit.
-  - Actually raycast.
+  - Fix the raycaster.
   - Reuse the cubemaps while moving (scale / depth-dependent translate)
     so we don't need to redraw the FULL cubemaps.
 - Make the renderer look less crap.

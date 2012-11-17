@@ -377,3 +377,14 @@ function map_block_break(x,y,z)
 	
 	map_chkdisbrk(x,y,z)
 end
+
+function map_block_pick(x,y,z)
+	local xlen,ylen,zlen 
+	xlen,ylen,zlen = common.map_get_dims()
+	if y < 0 or y >= ylen-1 then return end
+	
+	local t = map_pillar_raw_get(x,z)
+	local c = t[y+1]
+	
+	return c[1],c[2],c[3],c[4]
+end
