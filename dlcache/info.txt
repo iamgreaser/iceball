@@ -1,0 +1,1 @@
+This is where client downloads are stashed. They will probably be CRC32'd as CRC is much easier to implement than MD5.
