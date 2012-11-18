@@ -79,7 +79,7 @@ success = server.map_load(fname, fmt = "auto")
 	
 	this will also send the map to the other clients
 
-server.map_new(lx, ly, lz)
+common.map_new(lx, ly, lz)
 	creates a new map
 	
 	note, ly is the *height* of the new map
@@ -93,6 +93,12 @@ common.map_save(fname, fmt = "bsm")
 	saves a map to a file
 	
 	this will throw a lua error if it fails.
+
+r, g, b, dist = client.map_fog_get() @
+	gets the current fog colour / distance
+
+client.map_fog_set(r, g, b, dist) @
+	sets the current fog colour / distance
 
 lx, ly, lz = common.map_get_dims() @
 	gets the map's dimensions
@@ -265,5 +271,4 @@ client.img_blit(img, dx, dy, width = iwidth, height = iheight, sx = 0, sy = 0, c
 	"color" indicates a base 0xAARRGGBB colour to use
 	
 	this is clipped to fit!
-
 #

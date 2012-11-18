@@ -29,6 +29,9 @@ BTSK_PMF_MOVEZP = SDLK_o
 BTSK_PMF_SIZEP = SDLK_EQUALS
 BTSK_PMF_SIZEN = SDLK_MINUS
 
+BTSK_PMF_ROTYN = SDLK_LEFTBRACKET
+BTSK_PMF_ROTYP = SDLK_RIGHTBRACKET
+
 BTSK_PMF_BLKSET = SDLK_g
 BTSK_PMF_BLKCLEAR = SDLK_b
 
@@ -44,6 +47,7 @@ pmfedit_data = {}
 pmfedit_model = common.model_new(1)
 pmfedit_model, pmfedit_model_bone = common.model_bone_new(pmfedit_model)
 pmfedit_data[#pmfedit_data+1] = {x=0,y=0,z=0,r=0,g=0,b=0,radius=1}
+pmfedit_rx = 0
 
 do
 local old_tickhook = client.hook_tick
@@ -85,6 +89,10 @@ function client.hook_key(key, state)
 				pmfedit_size = pmfedit_size - 1
 			elseif key == BTSK_PMF_SIZEP and pmfedit_size < 65535 then
 				pmfedit_size = pmfedit_size + 1
+			elseif key == SDLK_LEFTBRACKET then
+				pmfedit_rx = pmfedit_rx + math.pi/16
+			elseif key == SDLK_RIGHTBRACKET then
+				pmfedit_rx = pmfedit_rx - math.pi/16
 			elseif key == BTSK_PMF_BLKSET and #pmfedit_data < 4095 then
 				pmfedit_data[#pmfedit_data].r = players[1].blk_color[1]
 				pmfedit_data[#pmfedit_data].g = players[1].blk_color[2]
@@ -161,16 +169,17 @@ local old_renderhook = client.hook_render
 function client.hook_render()
 	if pmfedit_enabled then
 		gui_print_mini(4,20,0x80FFFFFF,string.format(
-			"PMF - size: %-6i x: %-6i y: %6i z: %-6i - COUNT: %6i"
+			"PMF - size: %-6i x: %-6i y: %6i z: %-6i - COUNT: %6i / rot: %3f"
 			,pmfedit_size
 			,pmfedit_x
 			,pmfedit_y
 			,pmfedit_z
+			,pmfedit_rx
 			,#pmfedit_data-1))
 		
 		client.model_render_bone_local(pmfedit_model, pmfedit_model_bone,
 			0,0,1,
-			0,0,0,
+			pmfedit_rx,0,0,
 			0.7)
 	end
 	return old_renderhook()

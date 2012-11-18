@@ -212,6 +212,10 @@ void net_deinit(void);
 #ifdef RENDER_FACE_COUNT
 extern int render_face_remain;
 #endif
+#define FOG_MAX_DISTANCE 511.5f /* that's not going to work well, by the way! */
+#define FOG_INIT_DISTANCE 60.0f
+extern float fog_distance;
+extern uint32_t fog_color;
 void render_vxl_redraw(camera_t *camera, map_t *map);
 void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t *camera, map_t *map);
 void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_t *cam_base,

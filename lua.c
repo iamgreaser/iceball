@@ -536,6 +536,37 @@ int icelua_fn_client_mouse_visible_set(lua_State *L)
 	return 0;
 }
 
+int icelua_fn_client_map_fog_get(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 0, 0);
+	
+	lua_pushinteger(L, (fog_color>>16)&255);
+	lua_pushinteger(L, (fog_color>>8)&255);
+	lua_pushinteger(L, (fog_color)&255);
+	lua_pushnumber(L, fog_distance);
+	
+	return 4;
+}
+
+int icelua_fn_client_map_fog_set(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 4, 4);
+	
+	int r = lua_tointeger(L, 1)&255;
+	int g = lua_tointeger(L, 2)&255;
+	int b = lua_tointeger(L, 3)&255;
+	fog_distance = lua_tonumber(L, 4);
+	if(fog_distance < 5.0f)
+		fog_distance = 5.0f;
+	if(fog_distance > FOG_MAX_DISTANCE)
+		fog_distance = FOG_MAX_DISTANCE;
+	
+	fog_color = (r<<16)|(g<<8)|b;
+	force_redraw = 1;
+	
+	return 4;
+}
+
 int icelua_fn_client_camera_point(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 3, 5);
@@ -775,6 +806,8 @@ int icelua_fn_client_img_blit(lua_State *L)
 struct icelua_entry icelua_client[] = {
 	{icelua_fn_client_mouse_lock_set, "mouse_lock_set"},
 	{icelua_fn_client_mouse_visible_set, "mouse_visible_set"},
+	{icelua_fn_client_map_fog_get, "map_fog_get"},
+	{icelua_fn_client_map_fog_set, "map_fog_set"},
 	{icelua_fn_client_camera_point, "camera_point"},
 	{icelua_fn_client_camera_move_local, "camera_move_local"},
 	{icelua_fn_client_camera_move_global, "camera_move_global"},

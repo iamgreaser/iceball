@@ -7,10 +7,12 @@ Default keys:
 i/k = move up/down
 j/l = move left/right
 u/o = move forward/back
+]/[ = rotate around y axis
 
 +/- = enlarge/shrink block
 g = add/paint block
 b = remove block
+
 
 F3 = quickload clsave/editor.pmf
 F10 = quicksave clsave/editor.pmf

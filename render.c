@@ -24,10 +24,8 @@
 #define DEBUG_SHOW_TOP_BOTTOM
 #define DEBUG_HIDE_MAIN
 #endif
-// TODO: bump up to 127.5f
-#define FOG_DISTANCE 60.0f
 
-#define RAYC_MAX ((int)((FOG_DISTANCE+1)*(FOG_DISTANCE+1)*8+10))
+#define RAYC_MAX ((int)((FOG_MAX_DISTANCE+1)*(FOG_MAX_DISTANCE+1)*8+10))
 
 #define DF_NX 0x01
 #define DF_NY 0x02
@@ -52,6 +50,9 @@ uint32_t *cubemap_color[CM_MAX];
 float *cubemap_depth[CM_MAX];
 int cubemap_size;
 int cubemap_shift;
+
+float fog_distance = FOG_INIT_DISTANCE;
+uint32_t fog_color = 0xD0E0FF;
 
 uint32_t *rtmp_pixels;
 int rtmp_width, rtmp_height, rtmp_pitch;
@@ -99,19 +100,20 @@ uint32_t render_fog_apply_new(uint32_t color, float depth)
 	int r = (color>>16)&255;
 	int t = (color>>24)&255;
 	
-	//float fog = (FOG_DISTANCE*FOG_DISTANCE/depth)/256.0f;
-	float fog = (FOG_DISTANCE*FOG_DISTANCE-(depth < 0.001f ? 0.001f : depth))
-		/(FOG_DISTANCE*FOG_DISTANCE);
+	//float fog = (fog_distance*fog_distance/depth)/256.0f;
+	float fog = (fog_distance*fog_distance-(depth < 0.001f ? 0.001f : depth))
+		/(fog_distance*fog_distance);
 	if(fog > 1.0f)
 		fog = 1.0f;
 	if(fog < 0.0f)
 		fog = 0.0f;
 	
-	r = (r*fog+0.5f);
-	g = (g*fog+0.5f);
-	b = (b*fog+0.5f);
+	r = (r*fog+((fog_color>>16)&0xFF)*(1.0-fog)+0.5f);
+	g = (g*fog+((fog_color>>8)&0xFF)*(1.0-fog)+0.5f);
+	b = (b*fog+((fog_color)&0xFF)*(1.0-fog)+0.5f);
 	
-	return b|(g<<8)|(r<<16)|(t<<24);
+	int fcol = b|(g<<8)|(r<<16);
+	return fcol|(t<<24);
 }
 
 uint32_t render_fog_apply(uint32_t color, float depth)
@@ -121,17 +123,18 @@ uint32_t render_fog_apply(uint32_t color, float depth)
 	int r = (color>>16)&255;
 	int t = (color>>24)&255;
 	
-	float fog = (FOG_DISTANCE-(depth < 0.001f ? 0.001f : depth))/FOG_DISTANCE;
+	float fog = (fog_distance-(depth < 0.001f ? 0.001f : depth))/fog_distance;
 	if(fog > 1.0f)
 		fog = 1.0f;
 	if(fog < 0.0f)
 		fog = 0.0f;
 	
-	r = (r*fog+0.5f);
-	g = (g*fog+0.5f);
-	b = (b*fog+0.5f);
+	r = (r*fog+((fog_color>>16)&0xFF)*(1.0-fog)+0.5f);
+	g = (g*fog+((fog_color>>8)&0xFF)*(1.0-fog)+0.5f);
+	b = (b*fog+((fog_color)&0xFF)*(1.0-fog)+0.5f);
 	
-	return b|(g<<8)|(r<<16)|(t<<24);
+	int fcol = b|(g<<8)|(r<<16);
+	return fcol|(t<<24);
 }
 
 void render_rect_clip(uint32_t *color, int *x1, int *y1, int *x2, int *y2, float depth)
@@ -277,7 +280,7 @@ void render_vxl_rect_ftb_fast(uint32_t *ccolor, float *cdepth, int x1, int y1, i
 	{
 		for(x = x1; x < x2; x++)
 		{
-			if(*cptr == 0)
+			if(*cptr == fog_color)
 			{
 				*cptr = color;
 				*dptr = depth;
@@ -343,8 +346,8 @@ void render_vxl_face_raycast(int blkx, int blky, int blkz,
 	// clear cubemap
 	for(i = 0; i < cubemap_size*cubemap_size; i++)
 	{
-		ccolor[i] = 0x00000000;
-		cdepth[i] = FOG_DISTANCE;
+		ccolor[i] = fog_color;
+		cdepth[i] = fog_distance;
 	}
 	
 	// get X cube direction
@@ -405,7 +408,7 @@ void render_vxl_face_raycast(int blkx, int blky, int blkz,
 		float sz = dx* gx+dy* gy+dz* gz;
 		
 		// check distance
-		if(sz < 0.001f || sz >= FOG_DISTANCE)
+		if(sz < 0.001f || sz >= fog_distance)
 			continue;
 		
 		// frustum cull
@@ -509,7 +512,7 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 		else if(rd->gz == 0) dz = 0;
 		
 		// skip this if it's in the fog
-		if(dx*dx+dz*dz >= FOG_DISTANCE*FOG_DISTANCE)
+		if(dx*dx+dz*dz >= fog_distance*fog_distance)
 			continue;
 		
 		int near_cast = (rayc_data_head == 1);
