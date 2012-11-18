@@ -296,3 +296,8 @@ function trace_map_box(x1,y1,z1, x2,y2,z2, bx1,by1,bz1, bx2,by2,bz2, canwrap)
 	
 	return rx or x2, ry or y2, rz or z2
 end
+
+function isect_line_sphere(x1,y1,z1,fx,fy,fz,x2,y2,z2)
+	
+end
+

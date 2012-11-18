@@ -889,6 +889,11 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 	rtmp_pitch = pitch;
 	rtmp_camera = cam_base;
 	
+	// get zoom factor
+	float bzoom = (cam_base->mzx*cam_base->mzx
+		+ cam_base->mzy*cam_base->mzy
+		+ cam_base->mzz*cam_base->mzz);
+	float unzoom = 1.0f/bzoom;
 	scale /= 256.0f;
 	int i;
 	for(i = 0; i < bone->ptlen; i++)
@@ -952,7 +957,7 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 		{
 			float nx = x*cam_base->mxx+y*cam_base->mxy+z*cam_base->mxz;
 			float ny = x*cam_base->myx+y*cam_base->myy+z*cam_base->myz;
-			float nz = x*cam_base->mzx+y*cam_base->mzy+z*cam_base->mzz;
+			float nz = x*cam_base->mzx*unzoom+y*cam_base->mzy*unzoom+z*cam_base->mzz*unzoom;
 			
 			x = nx;
 			y = ny;

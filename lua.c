@@ -545,11 +545,12 @@ int icelua_fn_client_camera_point(lua_State *L)
 	dx = lua_tonumber(L, 1);
 	dy = lua_tonumber(L, 2);
 	dz = lua_tonumber(L, 3);
-	if(top <= 4)
+	if(top >= 4)
 		zoom = lua_tonumber(L, 4);
-	if(top <= 5)
+	if(top >= 5)
 		roll = lua_tonumber(L, 5);
 	
+	//printf("%f\n", zoom);
 	cam_point_dir(&tcam, dx, dy, dz, zoom, roll);
 	
 	return 0;

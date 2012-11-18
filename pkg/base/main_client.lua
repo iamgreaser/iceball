@@ -33,6 +33,7 @@ BTSK_RIGHT   = SDLK_d
 BTSK_JUMP    = SDLK_SPACE
 BTSK_CROUCH  = SDLK_LCTRL
 BTSK_SNEAK   = SDLK_v
+BTSK_RELOAD  = SDLK_r
 
 BTSK_TOOL1 = SDLK_1
 BTSK_TOOL2 = SDLK_2
@@ -59,17 +60,21 @@ MODE_SOFTCROUCH = true
 MODE_TILT_SLOWDOWN = false -- TODO!
 MODE_TILT_DOWN_NOCLIMB = false -- TODO!
 
+MODE_DELAY_SPADE_DIG = 1.0
+MODE_DELAY_SPADE_HIT = 0.25
+MODE_DELAY_BLOCK_BUILD = 0.5
+MODE_DELAY_TOOL_CHANGE = 0.4
+
 -- tools
 TOOL_SPADE = 0
 TOOL_BLOCK = 1
 TOOL_GUN = 2
+TOOL_NADE = 3
 
 -- weapons
 WPN_RIFLE = 0
 WPN_NOOB = 1
 WPN_SHOTTY = 2
-
-math.random()
 
 weapons = {
 	[WPN_RIFLE] = {
@@ -179,6 +184,7 @@ function new_player(settings)
 	this.weapon = settings.weapon or WPN_RIFLE
 	this.alive = false
 	this.spawned = false
+	this.zooming = false
 	
 	function this.input_reset()
 		this.ev_forward = false
@@ -211,7 +217,6 @@ function new_player(settings)
 		
 		this.grounded = false
 		this.crouching = false
-		this.scoped = false
 		
 		this.vx, this.vy, this.vz = 0, 0, 0
 		this.angy, this.angx = math.pi/2.0, 0.0
@@ -227,6 +232,7 @@ function new_player(settings)
 		this.jerkoffs = 0.0
 		
 		this.zoom = 1.0
+		this.zooming = false
 		
 		this.health = 100
 		this.blocks = 25
@@ -246,6 +252,16 @@ function new_player(settings)
 			this.angx = -math.pi*0.499
 		end
 		
+		if this.tool ~= TOOL_GUN then
+			this.zooming = false
+		end
+		
+		if this.zooming then
+			this.zoom = 3.0
+		else
+			this.zoom = 1.0
+		end
+		
 		-- set camera direction
 		local sya = math.sin(this.angy)
 		local cya = math.cos(this.angy)
@@ -253,7 +269,6 @@ function new_player(settings)
 		local cxa = math.cos(this.angx)
 		local fwx,fwy,fwz
 		fwx,fwy,fwz = sya*cxa, sxa, cya*cxa
-		client.camera_point(fwx, fwy, fwz, zoom, 0.0)
 		
 		-- move along
 		local mvx = 0.0
@@ -290,7 +305,7 @@ function new_player(settings)
 		mvz = mvz / mvd
 		
 		-- apply base slowdown
-		local mvspd = 8.0/this.zoom
+		local mvspd = 8.0
 		local mvchange = 10.0
 		mvx = mvx * mvspd
 		mvz = mvz * mvspd
@@ -309,11 +324,10 @@ function new_player(settings)
 			mvx = mvx * 0.5
 			mvz = mvz * 0.5
 		end
-		if this.scoped or this.ev_sneak then
+		if this.zooming or this.ev_sneak then
 			mvx = mvx * 0.5
 			mvz = mvz * 0.5
 		end
-		
 		
 		-- apply rotation
 		mvx, mvz = mvx*cya+mvz*sya, mvz*cya-mvx*sya
@@ -406,10 +420,35 @@ function new_player(settings)
 	end
 	
 	function this.camera_firstperson()
+		-- set camera position
 		client.camera_move_to(this.x, this.y + this.jerkoffs, this.z)
+		
+		-- set camera direction
+		local sya = math.sin(this.angy)
+		local cya = math.cos(this.angy)
+		local sxa = math.sin(this.angx)
+		local cxa = math.cos(this.angx)
+		local fwx,fwy,fwz
+		fwx,fwy,fwz = sya*cxa, sxa, cya*cxa
+		client.camera_point(fwx, fwy, fwz, this.zoom, 0.0)
 	end
 	
 	function this.show_hud()
+		local w, h
+		w, h = client.screen_get_dims()
+		
+		-- TODO: palettise this more nicely
+		local i
+		for i=1,#mdl_block_data do
+			mdl_block_data[i].r,
+			mdl_block_data[i].g,
+			mdl_block_data[i].b =
+				this.blk_color[1],
+				this.blk_color[2],
+				this.blk_color[3]
+		end
+		client.model_bone_set(mdl_block, mdl_block_bone, "block", mdl_block_data)
+		
 		local ays,ayc
 		ays = math.sin(this.angy)
 		ayc = math.cos(this.angy)
@@ -430,22 +469,25 @@ function new_player(settings)
 			(this.crouching and mdl_bbox_bone2) or mdl_bbox_bone1,
 			this.x, this.y, this.z, 0, 0, 0.0, 1)
 		
+		-- TODO: not have this on all the time
+		client.model_render_bone_local(mdl_spade, mdl_spade_bone,
+			1-0.15, -h/w+0.25, 1.0,
+			rotpos*0.01, 0.0, 0.0, 0.2*((this.tool == TOOL_SPADE and 1.5) or 1.0))
+		client.model_render_bone_local(mdl_block, mdl_block_bone,
+			1-0.30, -h/w+0.2, 1.0,
+			rotpos*0.01, 0.0, 0.0, 0.1*((this.tool == TOOL_BLOCK and 2.0) or 1.0))
+		client.model_render_bone_local(mdl_rifle, mdl_rifle_bone,
+			1-0.45, -h/w+0.2, 1.0,
+			rotpos*0.01, 0.0, 0.0, 0.2*((this.tool == TOOL_GUN and 2.0) or 1.0))
+		client.model_render_bone_local(mdl_nade, mdl_nade_bone,
+			1-0.60, -h/w+0.2, 1.0,
+			rotpos*0.01, 0.0, 0.0, 0.1*((this.tool == TOOL_NADE and 2.0) or 1.0))
+		
 		if this.tool == TOOL_SPADE then
 			client.model_render_bone_global(mdl_spade, mdl_spade_bone,
 				this.x-ayc*0.2, this.y+this.jerkoffs+0.2, this.z+ays*0.2,
 				0.0, -this.angx-math.pi/2*0.90, this.angy, 1)
 		elseif this.tool == TOOL_BLOCK then
-			-- TODO: palettise this more nicely
-			local i
-			for i=1,#mdl_block_data do
-				mdl_block_data[i].r,
-				mdl_block_data[i].g,
-				mdl_block_data[i].b =
-					this.blk_color[1],
-					this.blk_color[2],
-					this.blk_color[3]
-			end
-			client.model_bone_set(mdl_block, mdl_block_bone, "block", mdl_block_data)
 			client.model_render_bone_global(mdl_block, mdl_block_bone,
 				this.x-ayc*0.1+ays*0.1, this.y+this.jerkoffs+0.1, this.z+ays*0.1+ayc*0.1,
 				0.0, -this.angx, this.angy, 0.2)
@@ -453,10 +495,11 @@ function new_player(settings)
 			client.model_render_bone_global(mdl_rifle, mdl_rifle_bone,
 				this.x-ayc*0.1+ays*0.1, this.y+this.jerkoffs+0.1, this.z+ays*0.1+ayc*0.1,
 				math.pi/2, -this.angx, this.angy, 1)
+		elseif this.tool == TOOL_NADE then
+			client.model_render_bone_global(mdl_nade, mdl_nade_bone,
+				this.x-ayc*0.1+ays*0.1, this.y+this.jerkoffs+0.1, this.z+ays*0.1+ayc*0.1,
+				0.0, -this.angx, this.angy, 0.14)
 		end
-		
-		local w, h
-		w, h = client.screen_get_dims()
 		
 		local color = 0xFFA1FFA1
 		local hstr = ""..this.health
@@ -505,6 +548,7 @@ mdl_spade, mdl_spade_bone = client.model_load_pmf("pkg/base/pmf/spade.pmf"), 0
 mdl_block, mdl_block_bone = client.model_load_pmf("pkg/base/pmf/block.pmf"), 0
 -- TODO: load all weapons
 mdl_rifle, mdl_rifle_bone = client.model_load_pmf("pkg/base/pmf/rifle.pmf"), 0
+mdl_nade, mdl_nade_bone = client.model_load_pmf("pkg/base/pmf/nade.pmf"), 0
 
 local _
 _, mdl_block_data = client.model_bone_get(mdl_block, mdl_block_bone)
@@ -595,7 +639,7 @@ function client.hook_key(key, state)
 	elseif key == BTSK_TOOL3 then
 		players[1].tool = TOOL_GUN
 	elseif key == BTSK_TOOL4 then
-		-- TODO
+		players[1].tool = TOOL_NADE
 	elseif key == BTSK_TOOL5 then
 		-- TODO
 	elseif state then
@@ -658,6 +702,8 @@ function client.hook_mouse_button(button, state)
 				players[1].blk_color = {cr,cg,cb}
 			elseif players[1].tool == TOOL_SPADE and players[1].blx3 then
 				-- TODO: 1x3 break
+			elseif players[1].tool == TOOL_GUN then
+				players[1].zooming = not players[1].zooming
 			end
 		elseif button == 2 then
 			-- middleclick
@@ -673,8 +719,8 @@ function client.hook_mouse_motion(x, y, dx, dy)
 		return
 	end
 	
-	players[1].angy = players[1].angy - dx*math.pi*sensitivity
-	players[1].angx = players[1].angx + dy*math.pi*sensitivity
+	players[1].angy = players[1].angy - dx*math.pi*sensitivity/players[1].zoom
+	players[1].angx = players[1].angx + dy*math.pi*sensitivity/players[1].zoom
 end
 
 function client.hook_render()
