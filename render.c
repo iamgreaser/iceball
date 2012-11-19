@@ -897,6 +897,7 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 		+ cam_base->mzy*cam_base->mzy
 		+ cam_base->mzz*cam_base->mzz);
 	float unzoom = 1.0f/bzoom;
+	float rezoom = sqrtf(bzoom);
 	scale /= 256.0f;
 	int i;
 	for(i = 0; i < bone->ptlen; i++)
@@ -966,7 +967,7 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 			y = ny;
 			z = nz;
 		}
-		depth *= z;
+		depth *= z*rezoom;
 		
 		// plotinate
 		render_pmf_box(-x, y, z, depth, pt->radius*scale, color);

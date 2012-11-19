@@ -19,10 +19,61 @@ function new_player(settings)
 	local this = {} this.this = this this.this.this = this this = this.this
 	
 	this.team = settings.team or math.floor(math.random()*2)
+	this.squad = settings.squad or nil
 	this.weapon = settings.weapon or WPN_RIFLE
 	this.alive = false
 	this.spawned = false
 	this.zooming = false
+	
+	this.mdl_block = common.model_new(1)
+	this.mdl_block = common.model_bone_new(this.mdl_block)
+	
+	this.mdl_player = common.model_new(4)
+	this.mdl_player = common.model_bone_new(this.mdl_player)
+	this.mdl_player = common.model_bone_new(this.mdl_player)
+	this.mdl_player = common.model_bone_new(this.mdl_player)
+	this.mdl_player = common.model_bone_new(this.mdl_player)
+	
+	local function prv_recolor_component(r,g,b,mdata)
+		for i=1,#mdata do
+			if mdata[i].r == 0 and mdata[i].g == 0 and mdata[i].b == 0 then
+				mdata[i].r = r
+				mdata[i].g = g
+				mdata[i].b = b
+			end
+		end
+	end
+	
+	local function prv_recolor_team(r,g,b)
+		local mname,mdata
+		mname,mdata = common.model_bone_get(mdl_player, mdl_player_head)
+		prv_recolor_component(r,g,b,mdata)
+		common.model_bone_set(this.mdl_player, mdl_player_head, mname, mdata)
+		mname,mdata = common.model_bone_get(mdl_player, mdl_player_body)
+		prv_recolor_component(r,g,b,mdata)
+		common.model_bone_set(this.mdl_player, mdl_player_body, mname, mdata)
+		mname,mdata = common.model_bone_get(mdl_player, mdl_player_arm)
+		prv_recolor_component(r,g,b,mdata)
+		common.model_bone_set(this.mdl_player, mdl_player_arm, mname, mdata)
+		mname,mdata = common.model_bone_get(mdl_player, mdl_player_leg)
+		prv_recolor_component(r,g,b,mdata)
+		common.model_bone_set(this.mdl_player, mdl_player_leg, mname, mdata)
+	end
+	
+	local function prv_recolor_block(r,g,b)
+		local mname,mdata
+		mname,mdata = common.model_bone_get(mdl_block, mdl_block_bone)
+		prv_recolor_component(r,g,b,mdata)
+		common.model_bone_set(this.mdl_block, mdl_block_bone, mname, mdata)
+	end
+	
+	prv_recolor_block(0,0,0)
+	do
+		local c = teams[this.team].color_mdl
+		local r,g,b
+		r,g,b = c[1],c[2],c[3]
+		prv_recolor_team(r,g,b)
+	end
 	
 	function this.input_reset()
 		this.ev_forward = false
@@ -36,6 +87,11 @@ function new_player(settings)
 	end
 	
 	this.input_reset()
+	
+	function this.free()
+		if this.mdl_block then common.model_free(this.mdl_block) end
+		if this.mdl_player then common.model_free(this.mdl_player) end
+	end
 	
 	function this.spawn()
 		local xlen,ylen,zlen
@@ -76,6 +132,8 @@ function new_player(settings)
 		this.blocks = 25
 		this.ammo_clip = weapons[this.weapon].ammo_clip
 		this.ammo_reserve = weapons[this.weapon].ammo_reserve
+		
+		this.name = settings.name or "Noob"
 		
 		this.tool = 2
 	end
@@ -271,25 +329,94 @@ function new_player(settings)
 		client.camera_point(fwx, fwy, fwz, this.zoom, 0.0)
 	end
 	
+	function this.render_tool()
+		local ays,ayc,axs,axc
+		ays = math.sin(this.angy)
+		ayc = math.cos(this.angy)
+		axs = math.sin(this.angx)
+		axc = math.cos(this.angx)
+		
+		local mdl = nil
+		
+		local hand_x1 = -ayc*0.4
+		local hand_y1 = 0.5
+		local hand_z1 = ays*0.4
+		
+		local hand_x2 = ayc*0.4
+		local hand_y2 = 0.5
+		local hand_z2 = -ays*0.4
+		
+		local mdl_x = hand_x1+axc*ays*0.8
+		local mdl_y = hand_y1+axs*0.8
+		local mdl_z = hand_z1+axc*ayc*0.8
+		if this.tool == TOOL_SPADE then
+			client.model_render_bone_global(mdl_spade, mdl_spade_bone,
+				this.x+mdl_x, this.y+this.jerkoffs+mdl_y, this.z+mdl_z,
+				--0.0, -this.angx-math.pi/2*0.90, this.angy, 1)
+				0.0, -this.angx, this.angy, 1)
+		elseif this.tool == TOOL_BLOCK then
+			client.model_render_bone_global(this.mdl_block, mdl_block_bone,
+				this.x+mdl_x, this.y+this.jerkoffs+mdl_y, this.z+mdl_z,
+				0.0, -this.angx, this.angy, 1)
+		elseif this.tool == TOOL_GUN then
+			client.model_render_bone_global(mdl_rifle, mdl_rifle_bone,
+				this.x+mdl_x, this.y+this.jerkoffs+mdl_y, this.z+mdl_z,
+				math.pi/2, -this.angx, this.angy, 3)
+		elseif this.tool == TOOL_NADE then
+			client.model_render_bone_global(mdl_nade, mdl_nade_bone,
+				this.x+mdl_x, this.y+this.jerkoffs+mdl_y, this.z+mdl_z,
+				0.0, -this.angx, this.angy, 0.5)
+		end
+		
+		client.model_render_bone_global(this.mdl_player, mdl_player_arm,
+			this.x+hand_x1, this.y+this.jerkoffs+hand_y1, this.z+hand_z1,
+			0.0, this.angx-math.pi/2, this.angy-math.pi, 2.0)
+		client.model_render_bone_global(this.mdl_player, mdl_player_arm,
+			this.x+hand_x2, this.y+this.jerkoffs+hand_y2, this.z+hand_z2,
+			0.0, this.angx-math.pi/2, this.angy-math.pi, 2.0)
+	end
+	
+	function this.render()
+		local ays,ayc,axs,axc
+		ays = math.sin(this.angy)
+		ayc = math.cos(this.angy)
+		axs = math.sin(this.angx)
+		axc = math.cos(this.angx)
+		
+		this.render_tool()
+		
+		client.model_render_bone_global(this.mdl_player, mdl_player_head,
+			this.x, this.y+this.jerkoffs, this.z,
+			0.0, -this.angx, -this.angy, 1)
+		
+		client.model_render_bone_global(this.mdl_player, mdl_player_body,
+			this.x, this.y+this.jerkoffs+0.8, this.z,
+			0.0, -this.angx, -this.angy, 1.5)
+		
+		client.model_render_bone_global(this.mdl_player, mdl_player_leg,
+			this.x, this.y+this.jerkoffs+1.5, this.z-0.2,
+			0.0, -this.angx, -this.angy, 2.2)
+		client.model_render_bone_global(this.mdl_player, mdl_player_leg,
+			this.x, this.y+this.jerkoffs+1.5, this.z+0.2,
+			0.0, -this.angx, -this.angy, 2.2)
+	end
+	
 	function this.show_hud()
+		local fogr,fogg,fogb,fogd = client.map_fog_get()
+		
+		local ays,ayc,axs,axc
+		ays = math.sin(this.angy)
+		ayc = math.cos(this.angy)
+		axs = math.sin(this.angx)
+		axc = math.cos(this.angx)
+		
 		local w, h
 		w, h = client.screen_get_dims()
 		
 		-- TODO: palettise this more nicely
 		local i
-		for i=1,#mdl_block_data do
-			mdl_block_data[i].r,
-			mdl_block_data[i].g,
-			mdl_block_data[i].b =
-				this.blk_color[1],
-				this.blk_color[2],
-				this.blk_color[3]
-		end
-		client.model_bone_set(mdl_block, mdl_block_bone, "block", mdl_block_data)
+		prv_recolor_block(this.blk_color[1],this.blk_color[2],this.blk_color[3])
 		
-		local ays,ayc
-		ays = math.sin(this.angy)
-		ayc = math.cos(this.angy)
 		if this.blx1 then
 			client.model_render_bone_global(mdl_test, mdl_test_bone,
 				this.blx1+0.5, this.bly1+0.5, this.blz1+0.5,
@@ -303,40 +430,76 @@ function new_player(settings)
 		client.model_render_bone_local(mdl_test, mdl_test_bone,
 			1-0.2, 600/800-0.2, 1.0,
 			rotpos*0.01, rotpos*0.004, 0.0, 0.1)
+		
+		-- TODO: not have this on all the time
+		client.model_render_bone_local(mdl_spade, mdl_spade_bone,
+			1-0.15, -h/w+0.25+((this.tool == TOOL_SPADE and 0.02*math.sin(rotpos*0.02)) or 0), 1.0,
+			rotpos*0.01, 0.0, 0.0, 0.2*((this.tool == TOOL_SPADE and 1.5) or 1.0))
+		client.model_render_bone_local(this.mdl_block, this.mdl_block_bone,
+			1-0.30, -h/w+0.2+((this.tool == TOOL_BLOCK and 0.02*math.sin(rotpos*0.02)) or 0), 1.0,
+			rotpos*0.01, 0.0, 0.0, 0.1*((this.tool == TOOL_BLOCK and 2.0) or 1.0))
+		client.model_render_bone_local(mdl_rifle, mdl_rifle_bone,
+			1-0.45, -h/w+0.2+((this.tool == TOOL_GUN and 0.02*math.sin(rotpos*0.02)) or 0), 1.0,
+			rotpos*0.01, 0.0, 0.0, 0.2*((this.tool == TOOL_GUN and 2.0) or 1.0))
+		client.model_render_bone_local(mdl_nade, mdl_nade_bone,
+			1-0.60, -h/w+0.2+((this.tool == TOOL_NADE and 0.02*math.sin(rotpos*0.02)) or 0), 1.0,
+			rotpos*0.01, 0.0, 0.0, 0.1*((this.tool == TOOL_NADE and 2.0) or 1.0))
+		
+		this.render_tool()
+		
 		client.model_render_bone_global(mdl_bbox, 
 			(this.crouching and mdl_bbox_bone2) or mdl_bbox_bone1,
 			this.x, this.y, this.z, 0, 0, 0.0, 1)
 		
-		-- TODO: not have this on all the time
-		client.model_render_bone_local(mdl_spade, mdl_spade_bone,
-			1-0.15, -h/w+0.25, 1.0,
-			rotpos*0.01, 0.0, 0.0, 0.2*((this.tool == TOOL_SPADE and 1.5) or 1.0))
-		client.model_render_bone_local(mdl_block, mdl_block_bone,
-			1-0.30, -h/w+0.2, 1.0,
-			rotpos*0.01, 0.0, 0.0, 0.1*((this.tool == TOOL_BLOCK and 2.0) or 1.0))
-		client.model_render_bone_local(mdl_rifle, mdl_rifle_bone,
-			1-0.45, -h/w+0.2, 1.0,
-			rotpos*0.01, 0.0, 0.0, 0.2*((this.tool == TOOL_GUN and 2.0) or 1.0))
-		client.model_render_bone_local(mdl_nade, mdl_nade_bone,
-			1-0.60, -h/w+0.2, 1.0,
-			rotpos*0.01, 0.0, 0.0, 0.1*((this.tool == TOOL_NADE and 2.0) or 1.0))
-		
-		if this.tool == TOOL_SPADE then
-			client.model_render_bone_global(mdl_spade, mdl_spade_bone,
-				this.x-ayc*0.2, this.y+this.jerkoffs+0.2, this.z+ays*0.2,
-				0.0, -this.angx-math.pi/2*0.90, this.angy, 1)
-		elseif this.tool == TOOL_BLOCK then
-			client.model_render_bone_global(mdl_block, mdl_block_bone,
-				this.x-ayc*0.1+ays*0.1, this.y+this.jerkoffs+0.1, this.z+ays*0.1+ayc*0.1,
-				0.0, -this.angx, this.angy, 0.2)
-		elseif this.tool == TOOL_GUN then
-			client.model_render_bone_global(mdl_rifle, mdl_rifle_bone,
-				this.x-ayc*0.1+ays*0.1, this.y+this.jerkoffs+0.1, this.z+ays*0.1+ayc*0.1,
-				math.pi/2, -this.angx, this.angy, 1)
-		elseif this.tool == TOOL_NADE then
-			client.model_render_bone_global(mdl_nade, mdl_nade_bone,
-				this.x-ayc*0.1+ays*0.1, this.y+this.jerkoffs+0.1, this.z+ays*0.1+ayc*0.1,
-				0.0, -this.angx, this.angy, 0.14)
+		for i=1,players.max do
+			local plr = players[i]
+			if plr and plr ~= this then
+				plr.render()
+				if plr.team == this.team then
+					local px,py
+					local dx,dy,dz
+					dx,dy,dz = plr.x-this.x,
+						plr.y+plr.jerkoffs-this.y-this.jerkoffs-0.5,
+						plr.z-this.z
+					local d = dx*dx+dy*dy+dz*dz
+					d = math.sqrt(d)
+					dx,dy,dz = dx/d,dy/d,dz/d
+					dx,dy,dz =
+						(dx*ayc-dz*ays),
+						dy,
+						(dx*ays+dz*ayc)
+					dx,dy,dz =
+						dx,
+						(dy*axc-dz*axs),
+						(dy*axs+dz*axc)
+					
+					if dz > 0.001 then
+						local fatt = ((fogd*fogd
+							-((d*d < 0.001 and 0.001) or d*d))
+							/(fogd*fogd));
+						if fatt > 1.0 then fatt = 1.0 end
+						if fatt < 0.25 then fatt = 0.25 end
+						px = w/2-w/2*dx*this.zoom/dz
+						py = h/2+w/2*dy*this.zoom/dz
+						local c
+						if plr.squad and plr.squad == this.squad then
+							c = {255,255,255}
+						else
+							c = teams[this.team].color_chat
+						end
+						
+						local s_name = plr.name
+						if plr.squad then
+							s_name = s_name.." ["..plr.squad.."]"
+						end
+						
+						gui_print_mini(px-(6*#s_name)/2,py-7
+							,(c[1]*256+c[2])*256+c[3]
+							+0x01000000*math.floor(fatt*255)
+							,s_name)
+					end
+				end
+			end
 		end
 		
 		local color = 0xFFA1FFA1

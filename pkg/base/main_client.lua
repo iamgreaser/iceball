@@ -21,6 +21,7 @@ print("pkg/base/main_client.lua starting")
 dofile("pkg/base/lib_collect.lua")
 dofile("pkg/base/lib_gui.lua")
 dofile("pkg/base/lib_map.lua")
+dofile("pkg/base/lib_namegen.lua")
 dofile("pkg/base/lib_pmf.lua")
 dofile("pkg/base/lib_sdlkey.lua")
 dofile("pkg/base/lib_vector.lua")
@@ -123,6 +124,20 @@ weapons = {
 	},
 }
 
+-- teams
+teams = {
+	[0] = {
+		name = "Blue Master Race",
+		color_mdl = {16,128,32},
+		color_chat = {0,255,0},
+	},
+	[1] = {
+		name = "Green Master Race",
+		color_mdl = {16,32,128},
+		color_chat = {0,0,255},
+	},
+}
+
 cpalette_base = {
 	0x7F,0x7F,0x7F,
 	0xFF,0x00,0x00,
@@ -157,7 +172,7 @@ do
 	end
 end
 
-players = {max = 32}
+players = {max = 32, current = 1}
 
 -- set stuff
 rotpos = 0.0
@@ -245,18 +260,36 @@ client.model_bone_set(mdl_bbox, mdl_bbox_bone2, "bbox_crouch", mdl_bbox_bone_dat
 function h_tick_camfly(sec_current, sec_delta)
 	rotpos = rotpos + sec_delta*120.0
 	
-	players[1].tick(sec_current, sec_delta)
-	players[1].camera_firstperson()
+	local i
+	for i=1,players.max do
+		local plr = players[i]
+		if plr then
+			plr.tick(sec_current, sec_delta)
+		end
+	end
+	players[players.current].camera_firstperson()
 	-- wait a bit
 	return 0.005
 end
 
-
 function h_tick_init(sec_current, sec_delta)
-	players[1] = new_player({
-		team = 1, -- 0 == blue, 1 == green
-		weapon = WPN_RIFLE,
-	})
+	local i
+	local squads = {[0]={},[1]={}}
+	for i=1,4 do
+		squads[0][i] = name_generate()
+		squads[1][i] = name_generate()
+	end
+	
+	for i=1,players.max do
+		players[i] = new_player({
+			name = name_generate(),
+			squad = squads[math.fmod(i-1,2)][
+				math.fmod(math.floor((i-1)/2),4)+1],
+			team = math.fmod(i-1,2), -- 0 == blue, 1 == green
+			weapon = WPN_RIFLE,
+		})
+	end
+	players.current = math.floor(math.random()*32)+1
 	
 	mouse_released = false
 	client.mouse_lock_set(true)
@@ -269,7 +302,8 @@ end
 client.hook_tick = h_tick_init
 
 function client.hook_key(key, state)
-	if not players[1] then return end
+	if not players[players.current] then return end
+	local plr = players[players.current]
 	
 	if key == SDLK_F5 then
 		mouse_released = true
@@ -279,56 +313,56 @@ function client.hook_key(key, state)
 		-- TODO: clean up
 		client.hook_tick = nil
 	elseif key == BTSK_FORWARD then
-		players[1].ev_forward = state
+		plr.ev_forward = state
 	elseif key == BTSK_BACK then
-		players[1].ev_back = state
+		plr.ev_back = state
 	elseif key == BTSK_LEFT then
-		players[1].ev_left = state
+		plr.ev_left = state
 	elseif key == BTSK_RIGHT then
-		players[1].ev_right = state
+		plr.ev_right = state
 	elseif key == BTSK_CROUCH then
-		players[1].ev_crouch = state
+		plr.ev_crouch = state
 	elseif key == BTSK_JUMP then
-		players[1].ev_jump = state
+		plr.ev_jump = state
 	elseif key == BTSK_SNEAK then
-		players[1].ev_sneak = state
+		plr.ev_sneak = state
 	elseif key == BTSK_TOOL1 then
-		players[1].tool = TOOL_SPADE
+		plr.tool = TOOL_SPADE
 	elseif key == BTSK_TOOL2 then
-		players[1].tool = TOOL_BLOCK
+		plr.tool = TOOL_BLOCK
 	elseif key == BTSK_TOOL3 then
-		players[1].tool = TOOL_GUN
+		plr.tool = TOOL_GUN
 	elseif key == BTSK_TOOL4 then
-		players[1].tool = TOOL_NADE
+		plr.tool = TOOL_NADE
 	elseif key == BTSK_TOOL5 then
 		-- TODO
 	elseif state then
 		if key == BTSK_DEBUG then
 			debug_enabled = not debug_enabled
 		elseif key == BTSK_COLORLEFT then
-			players[1].blk_color_x = players[1].blk_color_x - 1
-			if players[1].blk_color_x < 0 then
-				players[1].blk_color_x = 7
+			plr.blk_color_x = plr.blk_color_x - 1
+			if plr.blk_color_x < 0 then
+				plr.blk_color_x = 7
 			end
-			players[1].blk_color = cpalette[players[1].blk_color_x+players[1].blk_color_y*8+1]
+			plr.blk_color = cpalette[plr.blk_color_x+plr.blk_color_y*8+1]
 		elseif key == BTSK_COLORRIGHT then
-			players[1].blk_color_x = players[1].blk_color_x + 1
-			if players[1].blk_color_x > 7 then
-				players[1].blk_color_x = 0
+			plr.blk_color_x = plr.blk_color_x + 1
+			if plr.blk_color_x > 7 then
+				plr.blk_color_x = 0
 			end
-			players[1].blk_color = cpalette[players[1].blk_color_x+players[1].blk_color_y*8+1]
+			plr.blk_color = cpalette[plr.blk_color_x+plr.blk_color_y*8+1]
 		elseif key == BTSK_COLORUP then
-			players[1].blk_color_y = players[1].blk_color_y - 1
-			if players[1].blk_color_y < 0 then
-				players[1].blk_color_y = 7
+			plr.blk_color_y = plr.blk_color_y - 1
+			if plr.blk_color_y < 0 then
+				plr.blk_color_y = 7
 			end
-			players[1].blk_color = cpalette[players[1].blk_color_x+players[1].blk_color_y*8+1]
+			plr.blk_color = cpalette[plr.blk_color_x+plr.blk_color_y*8+1]
 		elseif key == BTSK_COLORDOWN then
-			players[1].blk_color_y = players[1].blk_color_y + 1
-			if players[1].blk_color_y > 7 then
-				players[1].blk_color_y = 0
+			plr.blk_color_y = plr.blk_color_y + 1
+			if plr.blk_color_y > 7 then
+				plr.blk_color_y = 0
 			end
-			players[1].blk_color = cpalette[players[1].blk_color_x+players[1].blk_color_y*8+1]
+			plr.blk_color = cpalette[plr.blk_color_x+plr.blk_color_y*8+1]
 		end
 	end
 end
@@ -341,29 +375,31 @@ function client.hook_mouse_button(button, state)
 		return
 	end
 	
+	local plr = players[players.current]
+	
 	if state then
 		if button == 1 then
 			-- LMB
-			if players[1].tool == TOOL_BLOCK and players[1].blx1 then
+			if plr.tool == TOOL_BLOCK and plr.blx1 then
 				map_block_set(
-					players[1].blx1, players[1].bly1, players[1].blz1,
+					plr.blx1, plr.bly1, plr.blz1,
 					1,
-					players[1].blk_color[1],
-					players[1].blk_color[2],
-					players[1].blk_color[3])
-			elseif players[1].tool == TOOL_SPADE and players[1].blx2 then
-				map_block_break(players[1].blx2, players[1].bly2, players[1].blz2)
+					plr.blk_color[1],
+					plr.blk_color[2],
+					plr.blk_color[3])
+			elseif plr.tool == TOOL_SPADE and plr.blx2 then
+				map_block_break(plr.blx2, plr.bly2, plr.blz2)
 			end
 		elseif button == 3 then
 			-- RMB
-			if players[1].tool == TOOL_BLOCK and players[1].blx3 then
+			if plr.tool == TOOL_BLOCK and plr.blx3 then
 				local ct,cr,cg,cb
-				ct,cr,cg,cb = map_block_pick(players[1].blx3, players[1].bly3, players[1].blz3)
-				players[1].blk_color = {cr,cg,cb}
-			elseif players[1].tool == TOOL_SPADE and players[1].blx3 then
+				ct,cr,cg,cb = map_block_pick(plr.blx3, plr.bly3, plr.blz3)
+				plr.blk_color = {cr,cg,cb}
+			elseif plr.tool == TOOL_SPADE and plr.blx3 then
 				-- TODO: 1x3 break
-			elseif players[1].tool == TOOL_GUN then
-				players[1].zooming = not players[1].zooming
+			elseif plr.tool == TOOL_GUN then
+				plr.zooming = not plr.zooming
 			end
 		elseif button == 2 then
 			-- middleclick
@@ -372,19 +408,21 @@ function client.hook_mouse_button(button, state)
 end
 
 function client.hook_mouse_motion(x, y, dx, dy)
-	if not players[1] then return end
+	if not players[players.current] then return end
 	if mouse_released then return end
 	if mouse_skip > 0 then
 		mouse_skip = mouse_skip - 1
 		return
 	end
 	
-	players[1].angy = players[1].angy - dx*math.pi*sensitivity/players[1].zoom
-	players[1].angx = players[1].angx + dy*math.pi*sensitivity/players[1].zoom
+	local plr = players[players.current]
+	
+	plr.angy = plr.angy - dx*math.pi*sensitivity/plr.zoom
+	plr.angx = plr.angx + dy*math.pi*sensitivity/plr.zoom
 end
 
 function client.hook_render()
-	players[1].show_hud()
+	players[players.current].show_hud()
 end
 
 print(client.map_fog_get())
