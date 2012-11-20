@@ -1,3 +1,12 @@
+GUYS GUYS GUYS
+FIRST THING YOU NEED TO READ:
+
+Read docs/READ_THIS_FIRST.txt, otherwise you will not be able to play this!
+docs/ also has plenty of fun stuff, too,
+though if you're getting into modding, read docs/modding_101.txt. Please.
+
+ ------------------------------------------------------------------------------
+
 This isn't a game yet. But it works to some extent now.
 
 NOTE:
@@ -10,8 +19,9 @@ Iceball is licensed under the regular GNU GPL version 3.
 Ice Lua Components is licensed under the LGPL version 3.
 Ice Lua Components contains some content from libSDL,
   which is licensed under the LGPL version 2.1.
-All assets are released under Creative Commons 3.0 BY-SA:
+All PMF/WAV/TGA assets are released under Creative Commons 3.0 BY-SA:
   http://creativecommons.org/licenses/by-sa/3.0/
+All VXL maps are (C) their respective owners.
 
   
 REQUIREMENTS:
@@ -41,10 +51,8 @@ CURRENT STATUS:
 
 STUFF TO DO:
 - You can't snip yet :(
-- Model assets! We need your models, guys!
+- Sound assets! We need your sounds, guys!
   - I have made some of these already.
-- Sound assets! We need those, too!
-  - Ditto.
 - Actually implement sound support.
 - Get weapons working.
   - Once again, please send your assets!
@@ -56,4 +64,5 @@ STUFF TO DO:
   - Reuse the cubemaps while moving (scale / depth-dependent translate)
     so we don't need to redraw the FULL cubemaps.
 - Make the renderer look less crap.
+- Make the models look less crap.
 - Implement some form of lighting.

@@ -27,6 +27,7 @@ dofile("pkg/base/lib_sdlkey.lua")
 dofile("pkg/base/lib_vector.lua")
 
 dofile("pkg/base/obj_player.lua")
+dofile("pkg/base/obj_intent.lua")
 
 -- define keys
 BTSK_FORWARD = SDLK_w

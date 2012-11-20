@@ -17,6 +17,19 @@
 
 print("pkg/base/main_server.lua starting")
 
--- TODO!
+dofile("pkg/base/lib_collect.lua")
+dofile("pkg/base/lib_map.lua")
+dofile("pkg/base/lib_namegen.lua")
+dofile("pkg/base/lib_pmf.lua")
+dofile("pkg/base/lib_sdlkey.lua")
+dofile("pkg/base/lib_vector.lua")
+
+dofile("pkg/base/obj_player.lua")
+dofile("pkg/base/obj_intent.lua")
+
+function server.hook_tick(sec_current, sec_delta)
+	--print("tick",sec_current,sec_delta)
+	return 0.005
+end
 
 print("pkg/base/main_server.lua loaded.")

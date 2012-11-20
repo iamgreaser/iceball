@@ -427,7 +427,7 @@ int icelua_fn_common_model_bone_set(lua_State *L)
 		if(csize < tsize)
 			csize = tsize;
 		
-		printf("bone extend %i %i %i\n", bone->ptmax, tsize, csize);
+		//printf("bone extend %i %i %i\n", bone->ptmax, tsize, csize);
 		bone = model_bone_extend(bone, csize);
 	}
 	

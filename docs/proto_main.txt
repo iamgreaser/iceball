@@ -1,0 +1,120 @@
+
+Notes:
+	"FATAL ERROR" means "terminate the damn connection".
+
+Base encapsulation:
+	0x10 salt[32] version.u32 namelen name[namelen] 0x00:
+		C->S Authentication with server
+		"salt" is agreed on from some sort of master server
+		Currently ignored and should all be 0x00
+		"name" is also ignored at the moment
+		"version" is the current protocol version
+		
+		current: 0x00000001
+		
+		TODO: add some sort of auth method
+	0x11:
+		S->C Authentication acknowledgement
+	0x17 msglen msg[msglen] 0x00:
+		C->S Quit / S->C Kick
+		
+		Connection MUST be terminated
+		after sending/receiving this message
+	
+	0x30 flags namelen name[namelen] 0x00:
+		Request file to be transferred
+		"name" is the filename
+		"flags" has these bits:
+			bits 0-2:
+				000 = * RESERVED *
+				001 = user data [ NOT SUPPORTED YET ]
+				010 = lua script
+				011 = map data
+				100 = pmf model
+				101 = tga image
+				110 = * RESERVED *
+				111 = * RESERVED *
+	0x31 flags clen.u32 ulen.u32 namelen name[namelen] 0x00:
+		Start file transfer
+		"name" is the filename
+		"flags" has these bits:
+			bits 0-2:
+				000 = * RESERVED *
+				001 = user data [ NOT SUPPORTED YET ]
+				010 = lua script
+				011 = map data
+				100 = pmf model
+				101 = tga image
+				110 = * RESERVED *
+				111 = * RESERVED *
+		"clen" is the compressed length
+		"ulen" is the uncompressed length
+		
+		"name" CAN be blank, and probably should be if it's a map
+		
+		All files are compressed as zlib streams
+	0x32:
+		Cleanly end file transfer
+	0x33: offset.u32 len.u16 data[len]
+		Send a block of data
+		Maximum length of len is 1024
+		If offset+len > clen, FATAL ERROR
+	0x34:
+		Abort incoming file transfer
+	0x35:
+		Abort outgoing file transfer
+	
+	0x40..0x7E data[this-0x3F]:
+		Lua packet of length (this-0x3F)
+	0x7F length.u16 data[length]:
+		Lua packet of length "length"
+		Minimum length of a packet is 1
+		Maximum length of a packet is 1280
+
+Iceball Base Mod:
+	Notes:
+	- pid is from the range 1 to 250.
+	
+	0x01 time.u16:
+		ping with lower 16 bits of current time in msecs
+	0x02 time.u16:
+		pong with lower 16 bits of current time in msecs
+		
+		if the connection exceeds 10 seconds of lag, kill it
+		
+		if the gap between the server and client time
+		extends by 10 seconds, client is probably using CE speedhack
+	
+	0x03 pid x.fs y.fs z.fs:
+		player set position
+		
+		note, for C->S pid MUST be 0x00
+	
+	0x04 pid ya.u8 xa.u8:
+		player set orientation
+		
+		angles are as defined:
+		for ya, -128->128 is full circle
+		for xa, -128->128 is half circle
+		
+		note, for C->S pid MUST be 0x00
+	
+	0x05 pid team weapon namelen name[namelen] score.s16 kills.s16 deaths.s16: (S->C)
+		adds player to server
+		
+		note, this can be used to update a player on the server
+	
+	0x06 pid: (S->C)
+		sets client player id to "pid"
+	
+	0x07 pid: (S->C)
+		removes player from server
+	
+	0x08:
+	
+	
+	
+	0x05
+	
+	0x05 pid: (S->C)
+		player spawn

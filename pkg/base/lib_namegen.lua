@@ -19,13 +19,13 @@
 
 do
 local n_base1 = {
-	"b","c","ch","cl","d","fl","h","j","l","m","n","r","spl","th","thr","w","z",
+	"b","c","ch","cl","d","fl","h","j","l","m","n","r","sh","spl","th","thr","w","z",
 }
 local n_base2 = {
-	"alt","arp","at","each","erf","erp","iff","ing","izz","og","ong","oog","oop","ooze","ug","urf",
+	"alt","arp","at","each","erf","erp","iff","it","itt","ing","izz","og","ong","oog","oop","ooze","ug","urf",
 }
 local n_base3 = {
-	"ator","ate","er","ing","iser","le","ler","ner","ter"
+	"ator","ate","er","es","ette","ing","it","iser","le","ler","man","ner","son","ter"
 }
 
 function name_generate()

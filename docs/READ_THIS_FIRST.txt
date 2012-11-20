@@ -1,0 +1,85 @@
+### INCOMPLETE. Hopefully will apply eventually. ###
+
+Congratulations for successfully extracting Iceball from its archive!
+I'm assuming you did that, right?
+If you're running it from within the archive, extract the damn thing NOW.
+It won't work, otherwise.
+
+Anyhow, if this manual isn't clear enough, please inform us somehow!
+
+-------------------------------------------------------------------------------
+
+PROGRAMMERS, TAKE NOTE: Please don't make server launchers.
+
+I want there to be a minimum barrier to entry which requires that people read
+this text file here which you are reading right now.
+
+While on the topic of stuff to not make...
+If you have a hack for this game, PLEASE DON'T RELEASE IT.
+
+Releasing hacks means that people a shitload dumber than yourself are using the
+stuff you made, and they'll say "thank you" once, then immediately forget about
+you and say "i'm so awesome and my penis is huge" many, many more times.
+
+A good deterrent is to look at mpgh.net, and watching all the all-lower-case
+zero-punctuation posts which have been repeated countless times throughout the
+whole forums. Just look at a thread and you can feel your IQ being sapped out
+of you. Yes, MPGH really is bad enough to lower your IQ just by READING it.
+
+-------------------------------------------------------------------------------
+
+Now, the first thing you will need to know is how to use the commandline.
+If you don't know THAT, here's a quick guide:
+
+Stuff on the commandline takes the form:
+  command argument argument "argument with spaces in it" argument
+If the command you're running has no arguments,
+you can run it like so:
+On MS-DOS systems, like Windows:
+  cls
+On UNIX based systems, like Linux:
+  clear
+
+Basically, the only built-in command you'll need is "cd".
+Let's say you were dropped into where you extracted Iceball to on startup,
+and you want to go to the pkg/base/pmf folder,
+you would do this:
+MS-DOS:
+  cd pkg\base\pmf
+UNIX:
+  cd pkg/base/pmf
+
+If for some reason you extracted Iceball to C:\Program Files\Iceball,
+and you got dropped into some random location on, say, the D: drive,
+you would do this:
+  c:
+  cd "\Program Files\Iceball"
+
+I'm assuming people using UNIX based systems can work out how it works on
+their system. (Also, typing some of something then pressing TAB helps, too,
+at least for those of you who are using bash as your shell.)
+
+If you would like to know more about how to use the command line,
+use a search engine.
+
+UNIX users: "man" is a great program. Try "man ls", for instance.
+Note, for shell builtins, you might want to try e.g. "help cd".
+
+Anyhow, with that sorted, and assuming you're in the Iceball directory now,
+type this into the commandline for help:
+MS-DOS:
+  iceball
+UNIX:
+  ./iceball
+
+You should be fine from there.
+
+-------------------------------------------------------------------------------
+
+Iceball refers to one of two things:
+- The game engine.
+- The game itself, currently located in pkg/base.
+
+-------------------------------------------------------------------------------
+
+TODO: more stuff
