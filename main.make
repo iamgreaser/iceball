@@ -8,7 +8,8 @@ OBJS = \
 	$(OBJDIR)/vecmath.o \
 	$(OBJDIR)/map.o $(OBJDIR)/model.o \
 	$(OBJDIR)/img.o $(OBJDIR)/render.o \
-	$(OBJDIR)/lua.o $(OBJDIR)/network.o
+	$(OBJDIR)/lua.o $(OBJDIR)/network.o \
+	$(OBJDIR)/path.o
 
 all: $(OBJDIR) $(BINNAME) $(TOOLS)
 
@@ -20,6 +21,9 @@ $(OBJDIR):
 
 $(BINNAME): $(OBJS)
 	$(CC) -o $(BINNAME) $(LDFLAGS) $(OBJS) $(LIBS)
+
+$(OBJDIR)/lua.o: lua.c lua_*.h $(INCLUDES)
+	$(CC) -c -o $@ $(CFLAGS) $<
 
 $(OBJDIR)/%.o: %.c $(INCLUDES)
 	$(CC) -c -o $@ $(CFLAGS) $<

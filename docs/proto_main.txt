@@ -27,12 +27,12 @@ Base encapsulation:
 		"flags" has these bits:
 			bits 0-2:
 				000 = * RESERVED *
-				001 = user data [ NOT SUPPORTED YET ]
+				001 = JSON data [ NOT SUPPORTED YET ]
 				010 = lua script
 				011 = map data
 				100 = pmf model
 				101 = tga image
-				110 = * RESERVED *
+				110 = CSV log data [ NOT SUPPORTED YET ]
 				111 = * RESERVED *
 	0x31 flags clen.u32 ulen.u32 namelen name[namelen] 0x00:
 		Start file transfer
@@ -40,12 +40,12 @@ Base encapsulation:
 		"flags" has these bits:
 			bits 0-2:
 				000 = * RESERVED *
-				001 = user data [ NOT SUPPORTED YET ]
+				001 = JSON data [ NOT SUPPORTED YET ]
 				010 = lua script
 				011 = map data
 				100 = pmf model
 				101 = tga image
-				110 = * RESERVED *
+				110 = CSV log data [ NOT SUPPORTED YET ]
 				111 = * RESERVED *
 		"clen" is the compressed length
 		"ulen" is the uncompressed length
@@ -110,11 +110,19 @@ Iceball Base Mod:
 	0x07 pid: (S->C)
 		removes player from server
 	
-	0x08:
+	0x08 x.u16 y.u16 z.u16 b g r typ:
+		place a block
 	
+	0x09 x.u16 y.u16 z.u16:
+		destroy a block
 	
+	0x0A x.u16 y.u16 z.u16:
+		destroy a 3 high pillar
 	
-	0x05
+	0x0B x.u16 y.u16 z.u16:
+		collapse a section of blocks
+		
+		NOTE: will be IGNORED if the floodfill hits the bottom!
 	
-	0x05 pid: (S->C)
+	0x0C pid x.fs y.fs z.fs ya.u8 xa.u8: (S->C)
 		player spawn

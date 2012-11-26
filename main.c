@@ -31,6 +31,10 @@ int boot_mode = 0; // bit 0 = client, bit 1 = server
 
 char *fnmap = "mesa.vxl";
 
+int main_argc;
+char **main_argv;
+int main_largstart = -1;
+
 int error_sdl(char *msg)
 {
 	fprintf(stderr, "%s: %s\n", msg, SDL_GetError());
@@ -128,7 +132,8 @@ int update_client(void)
 		lua_pop(lstate_client, 1);
 		return 1;
 	}
-	sec_wait += lua_tonumber(lstate_client, -1);
+	if(!(boot_mode & 2))
+		sec_wait += lua_tonumber(lstate_client, -1);
 	lua_pop(lstate_client, 1);
 	
 	// redraw scene if necessary
@@ -358,7 +363,7 @@ int print_usage(char *rname)
 	fprintf(stderr, "usage:\n"
 			"\tfor clients:\n"
 			"\t\t%s -c address port {clargs}\n"
-			"\tfor servers:\n"
+			"\tfor servers (quick-start, not recommended for anything serious!):\n"
 			"\t\t%s -s port mod {args}\n"
 			"\tfor dedicated servers:\n"
 			"\t\t%s -d port mod {args}\n"
@@ -382,6 +387,9 @@ int main(int argc, char *argv[])
 	if(argc <= 1)
 		return print_usage(argv[0]);
 	
+	main_argc = argc;
+	main_argv = argv;
+	
 	if(!strcmp(argv[1], "-c"))
 	{
 		if(argc <= 3)
@@ -390,6 +398,7 @@ int main(int argc, char *argv[])
 		char *net_addr = argv[2];
 		int net_port = atoi(argv[3]);
 		printf("TODO: connect to \"%s\" port %i\n", net_addr, net_port);
+		main_largstart = 4;
 		
 		boot_mode = 1;
 		return 101;
@@ -400,6 +409,7 @@ int main(int argc, char *argv[])
 		int net_port = atoi(argv[2]);
 		char *net_mod = argv[3];
 		printf("TODO: run a server on port %i, mod \"%s\"\n", net_port, net_mod);
+		main_largstart = 4;
 		if(argc > 4)
 			fnmap = argv[4];
 		
@@ -411,9 +421,10 @@ int main(int argc, char *argv[])
 		int net_port = atoi(argv[2]);
 		char *net_mod = argv[3];
 		printf("TODO: run a ded server on port %i, mod \"%s\"\n", net_port, net_mod);
-		return 101;
+		main_largstart = 4;
 		
 		boot_mode = 2;
+		return 101;
 	} else {
 		return print_usage(argv[0]);
 	}

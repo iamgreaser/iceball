@@ -3,7 +3,7 @@
 Congratulations for successfully extracting Iceball from its archive!
 I'm assuming you did that, right?
 If you're running it from within the archive, extract the damn thing NOW.
-It won't work, otherwise.
+(It won't work otherwise.)
 
 Anyhow, if this manual isn't clear enough, please inform us somehow!
 
@@ -74,12 +74,41 @@ UNIX:
 
 You should be fine from there.
 
+NOTE: On Windows, you will need to check stderr.txt for the help you need.
+I haven't worked out how to make SDL *NOT* do this stupid crap yet.
+
+By the way, here's a tip for the Windows users:
+Double-click opencmd.bat. It should get you into the right directory.
+
 -------------------------------------------------------------------------------
 
 Iceball refers to one of two things:
 - The game engine.
-- The game itself, currently located in pkg/base.
+- The base game itself, currently located in pkg/base.
+
+If you wish to screw with the base game, check docs/modding_101.txt.
+
+It's advised that you don't screw with the engine, though,
+unless you wish to improve the mainline engine,
+in which case you should prod me (GreaseMonkey) on IRC, 
+#AoS @ QuakeNet.
 
 -------------------------------------------------------------------------------
 
 TODO: more stuff
+
+-------------------------------------------------------------------------------
+
+List of things NOT to request:
+- SMG.
+- SMG.
+- Family-friendly filtering of the name generator.
+- SMG.
+- Sprinting.
+- RPG.
+- Nerfing the rifle.
+- SMG.
+- Any weapons which have not been field-tested.
+- Any weapons which are SMG.
+- SMG.
+

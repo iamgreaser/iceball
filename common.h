@@ -18,6 +18,7 @@
 #define MODEL_BONE_MAX  256
 #define MODEL_POINT_MAX 4096
 #define PACKET_LEN_MAX 1280
+#define PATH_LEN_MAX 128
 
 //define RENDER_FACE_COUNT 2
 
@@ -171,6 +172,23 @@ struct packet
 	uint8_t data[];
 };
 
+enum
+{
+	PATH_INVALID_ENUM = 0, // don't use this!
+	
+	PATH_CLSAVE_BASEDIR,
+	PATH_CLSAVE_PUBLIC,
+	PATH_SVSAVE_BASEDIR,
+	PATH_SVSAVE_PUBLIC,
+	PATH_PKG_BASEDIR,
+	PATH_PKG,
+	
+	PATH_ERROR_BADCHARS,
+	PATH_ERROR_ACCDENIED,
+	
+	PATH_ENUM_MAX
+};
+
 // img.c
 void img_free(img_t *img);
 img_t *img_load_tga(const char *fname);
@@ -183,10 +201,16 @@ void icelua_deinit(void);
 
 // main.c
 extern camera_t tcam;
-extern map_t *clmap;
-extern map_t *svmap;
+extern map_t *clmap, *svmap;
 extern SDL_Surface *screen;
 extern int force_redraw;
+
+extern int boot_mode;
+
+extern int main_argc;
+extern char **main_argv;
+extern int main_largstart;
+
 int error_sdl(char *msg);
 int error_perror(char *msg);
 
@@ -210,6 +234,10 @@ packet_t *net_packet_new(int len, uint8_t *data);
 void net_packet_free(packet_t *pkt);
 int net_init(void);
 void net_deinit(void);
+
+// path.c
+char *path_filter(const char *path);
+int path_get_type(const char *path);
 
 // render.c
 #ifdef RENDER_FACE_COUNT

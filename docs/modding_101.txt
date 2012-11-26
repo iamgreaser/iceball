@@ -15,6 +15,8 @@ svsave/<group name>/<mod name>/*
 You can use a common name for these if you want,
 but please stick to your group name.
 
+Also, "pub" is not a valid group name, as you will find out soon...
+
  ------------------------------------------------------------------------------
 
 There are libraries in the base mod!
@@ -25,18 +27,26 @@ Use pkg/base/lib_*.lua for them.
 For security reasons,
 you are only allowed to modify files in these directories:
   Client only:
-    clsave/<group name>/*
+    clsave/<group name>/<mod name>/*
   Server only:
-    svsave/<group name>/*
+    svsave/<group name>/<mod name>/*
+
+You can also modify them.
 
 You ARE allowed to read these:
   pkg/*
   Client only:
-    clsave/*
+    clsave/pub/*
   Server only:
-    svsave/*
+    svsave/pub/*
 
 (TODO: enforce this!)
+
+Note, it is advised that you DO NOT run client-local Lua scripts!
+If you do, you open your mod up to an awful lot of cheating.
+
+In fact, you should be very careful with ANYTHING in clsave.
+If it's anything other than a config, you will have to sanity-check it.
 
  ------------------------------------------------------------------------------
 
@@ -49,8 +59,23 @@ I would encourage you to use that for AoS data instead.
 If you're taking on this task, please do the following:
 - Include models/sounds from all versions where possible
 - Denote stuff by the first version that uses it in this format:
-  pkg/<group name>/<pack name>/whatever/*
--
+    pkg/<group name>/<pack name>/whatever/name-X.XX.whatever
+  For instance, shotgun.kv6 would be:
+    pkg/<group name>/<pack name>/kv6/shotgun-0.58.kv6
+  OR, if converted to PMF:
+    pkg/<group name>/<pack name>/pmf/shotgun-0.58.pmf
+- I think that's it, really.
+
+ ------------------------------------------------------------------------------
+
+A quick template for a mod that uses a custom set of PMFs:
+
+-- main_client.lua
+PKG_DIR_PMF = common.pkg_base.."/pmf"
+loadfile("pkg/base/main_client.lua")(...)
+
+-- main_server.lua
+loadfile("pkg/base/main_server.lua")(...)
 
  ------------------------------------------------------------------------------
 
@@ -61,6 +86,7 @@ Maps:
   - well, why *wouldn't* we support that?
 - Aiming to support a modified + headered map format, too.
   Y'know, smaller maps and whatnot.
+  Will probably designate *.icemap, because who uses DOS these days.
 
 Models:
 - *.pmf: Point Model Format, designed for this game

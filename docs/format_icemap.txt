@@ -1,0 +1,58 @@
+basically, an extensible tagged format.
+
+note:
+	db means a byte
+	dw means a word (2 bytes here)
+	dd means a dword (4 bytes here)
+
+for starters, there's a header,
+just in case some clutz decides to use this in AoS
+	db "IceMap", 0x1A, 0x01
+
+then a bunch of chunks follow in the format
+	db "7 Chars", length
+	
+or, if the length is >= 255:
+	db "7 Chars", 255
+	dd length
+
+the terminator is:
+	db "       ", 0
+yes, that's 7 spaces.
+
+for AoS compatibility, the "header" CAN be at the end, BUT:
+- MapData is NOT to be defined.
+- all non-air blocks are assumed to be type 1.
+
+now, here are the defined chunks as per version 1 of the format.
+	MapData:
+		db "MapData", 255
+		dd map_length
+		dw len_x, len_y, len_z
+		; map data goes here
+		
+		this contains the map itself.
+		
+		must appear exactly ONCE,
+		or not at all if using AoS compat.
+	
+	MetaInf:
+		db "MetaInf", length
+		db field_name, 0
+		db field_data, 0
+		
+		this contains meta info pertaining to the map.
+		
+		yes, there can be more than one MetaInf with the same name.
+		
+		defined names are:
+			"*Name": name of this map
+			"*Author": who made this map
+			"*Tool": program responsible for making this map
+		
+		any custom names MUST NOT be prefixed with a *;
+		this is reserved for OFFICIALLY DEFINED NAMES ONLY.
+		
+		all tools MUST leave "*Tool" fields intact.
+		
+		this field can appear many times.

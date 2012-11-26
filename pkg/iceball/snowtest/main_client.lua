@@ -15,14 +15,6 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
-print("pkg/base/main_server.lua starting")
-print(...)
-
-dofile("pkg/base/common.lua")
-
-function server.hook_tick(sec_current, sec_delta)
-	--print("tick",sec_current,sec_delta)
-	return 0.005
-end
-
-print("pkg/base/main_server.lua loaded.")
+print("[client] Testing the snow plugin!")
+dofile("pkg/base/main_client.lua")
+dofile("pkg/base/plug_snow.lua")

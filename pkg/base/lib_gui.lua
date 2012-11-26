@@ -15,10 +15,10 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
-do
+if client then
 -- load images
-local img_font_numbers = client.img_load("pkg/base/gfx/font-numbers.tga")
-local img_font_mini = client.img_load("pkg/base/gfx/font-mini.tga")
+local img_font_numbers = common.img_load("pkg/base/gfx/font-numbers.tga")
+local img_font_mini = common.img_load("pkg/base/gfx/font-mini.tga")
 --[[
 client.img_free(img_font_numbers)
 img_font_numbers = nil -- PLEASE DO THIS, GUYS!

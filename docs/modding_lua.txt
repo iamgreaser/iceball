@@ -9,6 +9,12 @@ valid characters are listed here (ignoring the path separator):
 -.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ[]_abcdefghijklmnopqrstuvwxyz
 anything else is invalid and will just be outright rejected
 
+furthermore, no paths will be accepted where a . follows a /
+this means that hidden files on unixlikes will not be accepted!
+
+files that are meant to be intercepted should be prefixed with a *
+e.g. "*thismap"
+
 maximum path length is 128
 
 stuff that's actually implemented will be marked with an @
@@ -37,6 +43,17 @@ client/server.hook_tick = fn(sec_curtime, sec_delta)->sec_wait @
 	call to the hooked function
 	
 	setting this to nil will quit your game
+	
+	NOTE: DO NOT USE COMMON FOR THIS HOOK!
+	(only client/server is accepted)
+
+client/server.hook_file = fn(ftype, fname, clisock)->object
+	sets a hook to intercept networked file requests
+	
+	"clisock" is the socket pertaining to the file request
+	
+	can return nil to cancel the request
+	can return true to perform the default request
 	
 	NOTE: DO NOT USE COMMON FOR THIS HOOK!
 	(only client/server is accepted)
@@ -72,14 +89,12 @@ client.mouse_lock_set(state) @
 client.mouse_visible_set(state) @
 	shows / hides the mouse depending on "state"
 
-success = server.map_load(fname, fmt = "auto")
+map = common.map_load(fname, fmt = "auto")
 	loads a map, either .vxl or some format we might invent
 	which will probably be .vxl with our own header
 	+ changed meaning for the 4th colour byte
-	
-	this will also send the map to the other clients
 
-common.map_new(lx, ly, lz)
+map = common.map_new(lx, ly, lz)
 	creates a new map
 	
 	note, ly is the *height* of the new map
@@ -89,7 +104,11 @@ common.map_new(lx, ly, lz)
 	
 	this will throw a lua error if it fails.
 
-common.map_save(fname, fmt = "bsm")
+common.map_set(map)
+	sets the "current" map to "map"
+	note, "map" can be nil to disable rendering anything
+
+common.map_save(map, fname, fmt = "icemap")
 	saves a map to a file
 	
 	this will throw a lua error if it fails.
@@ -250,19 +269,19 @@ client.model_render_bone_local(pmf, boneidx, px, py, pz, ry, rx, ry2, scale) @
 width, height = client.screen_get_dims() @
 	gets the dimensions of the screen
 
-img, width, height = client.img_load(fname) @
+img, width, height = common.img_load(fname) @
 	loads an image with filename "fname"
 	remember to free it when you're done
 	as this is only a light userdata
 	
 	if this fails, img, width, height will all be nil
 
-client.img_free(img) @
+common.img_free(img) @
 	free the given image
 	if you don't do this then it's memoryleaktopia
 	(plus i'm allowed to kill you)
 
-width, height = img_get_dims(img) @
+width, height = common.img_get_dims(img) @
 	gets the image's dimensions
 
 client.img_blit(img, dx, dy, width = iwidth, height = iheight, sx = 0, sy = 0, color = 0xFFFFFFFF) @

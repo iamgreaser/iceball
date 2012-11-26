@@ -327,9 +327,13 @@ function new_player(settings)
 		local fwx,fwy,fwz
 		fwx,fwy,fwz = sya*cxa, sxa, cya*cxa
 		client.camera_point(fwx, fwy, fwz, this.zoom, 0.0)
+		
+		-- offset by eye pos
+		-- slightly cheating here.
+		client.camera_move_global(sya*0.4, 0, cya*0.4)
 	end
 	
-	function this.render_tool()
+	function this.render()
 		local ays,ayc,axs,axc
 		ays = math.sin(this.angy)
 		ayc = math.cos(this.angy)
@@ -345,6 +349,20 @@ function new_player(settings)
 		local hand_x2 = ayc*0.4
 		local hand_y2 = 0.5
 		local hand_z2 = -ays*0.4
+		
+		local leg_x1 = -ayc*0.2
+		local leg_y1 = 1.5
+		local leg_z1 = ays*0.2
+		
+		local leg_x2 = ayc*0.2
+		local leg_y2 = 1.5
+		local leg_z2 = -ays*0.2
+		
+		if this.crouching then
+			-- TODO make this look less crap
+			leg_y1 = leg_y1 - 1
+			leg_y2 = leg_y2 - 1
+		end
 		
 		local mdl_x = hand_x1+axc*ays*0.8
 		local mdl_y = hand_y1+axs*0.8
@@ -368,37 +386,33 @@ function new_player(settings)
 				0.0, -this.angx, this.angy, 0.5)
 		end
 		
+		local swing = math.sin(rotpos/30*2)
+			*math.min(1.0, math.sqrt(
+				 this.vx*this.vx
+				+this.vz*this.vz)/8.0)
+			*math.pi/4.0
+		
 		client.model_render_bone_global(this.mdl_player, mdl_player_arm,
 			this.x+hand_x1, this.y+this.jerkoffs+hand_y1, this.z+hand_z1,
 			0.0, this.angx-math.pi/2, this.angy-math.pi, 2.0)
 		client.model_render_bone_global(this.mdl_player, mdl_player_arm,
 			this.x+hand_x2, this.y+this.jerkoffs+hand_y2, this.z+hand_z2,
-			0.0, this.angx-math.pi/2, this.angy-math.pi, 2.0)
-	end
-	
-	function this.render()
-		local ays,ayc,axs,axc
-		ays = math.sin(this.angy)
-		ayc = math.cos(this.angy)
-		axs = math.sin(this.angx)
-		axc = math.cos(this.angx)
+			0.0, 0-math.pi/4+swing, this.angy-math.pi, 2.0)
 		
-		this.render_tool()
+		client.model_render_bone_global(this.mdl_player, mdl_player_leg,
+			this.x+leg_x1, this.y+this.jerkoffs+leg_y1, this.z+leg_z1,
+			0.0, swing, this.angy-math.pi, 2.2)
+		client.model_render_bone_global(this.mdl_player, mdl_player_leg,
+			this.x+leg_x2, this.y+this.jerkoffs+leg_y2, this.z+leg_z2,
+			0.0, -swing, this.angy-math.pi, 2.2)
 		
 		client.model_render_bone_global(this.mdl_player, mdl_player_head,
 			this.x, this.y+this.jerkoffs, this.z,
-			0.0, -this.angx, -this.angy, 1)
+			0.0, this.angx, this.angy-math.pi, 1)
 		
 		client.model_render_bone_global(this.mdl_player, mdl_player_body,
 			this.x, this.y+this.jerkoffs+0.8, this.z,
-			0.0, -this.angx, -this.angy, 1.5)
-		
-		client.model_render_bone_global(this.mdl_player, mdl_player_leg,
-			this.x, this.y+this.jerkoffs+1.5, this.z-0.2,
-			0.0, -this.angx, -this.angy, 2.2)
-		client.model_render_bone_global(this.mdl_player, mdl_player_leg,
-			this.x, this.y+this.jerkoffs+1.5, this.z+0.2,
-			0.0, -this.angx, -this.angy, 2.2)
+			0.0, 0.0, this.angy-math.pi, 1.5)
 	end
 	
 	function this.show_hud()
@@ -427,9 +441,11 @@ function new_player(settings)
 				(this.blz1*2+this.blz2)/3+0.5,
 				-rotpos*0.01, -rotpos*0.004, 0.0, 0.1+0.01*math.sin(-rotpos*0.071))
 		end
+		--[[
 		client.model_render_bone_local(mdl_test, mdl_test_bone,
 			1-0.2, 600/800-0.2, 1.0,
 			rotpos*0.01, rotpos*0.004, 0.0, 0.1)
+		]]
 		
 		-- TODO: not have this on all the time
 		client.model_render_bone_local(mdl_spade, mdl_spade_bone,
@@ -445,11 +461,13 @@ function new_player(settings)
 			1-0.60, -h/w+0.2+((this.tool == TOOL_NADE and 0.02*math.sin(rotpos*0.02)) or 0), 1.0,
 			rotpos*0.01, 0.0, 0.0, 0.1*((this.tool == TOOL_NADE and 2.0) or 1.0))
 		
-		this.render_tool()
+		this.render()
 		
-		client.model_render_bone_global(mdl_bbox, 
-			(this.crouching and mdl_bbox_bone2) or mdl_bbox_bone1,
-			this.x, this.y, this.z, 0, 0, 0.0, 1)
+		if MODE_DEBUG_SHOWBOXES then
+			client.model_render_bone_global(mdl_bbox, 
+				(this.crouching and mdl_bbox_bone2) or mdl_bbox_bone1,
+				this.x, this.y, this.z, 0, 0, 0.0, 1)
+		end
 		
 		for i=1,players.max do
 			local plr = players[i]
@@ -457,7 +475,7 @@ function new_player(settings)
 				plr.render()
 				if plr.team == this.team then
 					local px,py
-					local dx,dy,dz
+					local dx,dy,dzNULL
 					dx,dy,dz = plr.x-this.x,
 						plr.y+plr.jerkoffs-this.y-this.jerkoffs-0.5,
 						plr.z-this.z

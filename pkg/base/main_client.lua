@@ -16,18 +16,9 @@
 ]]
 
 print("pkg/base/main_client.lua starting")
+print(...)
 
--- load libs
-dofile("pkg/base/lib_collect.lua")
-dofile("pkg/base/lib_gui.lua")
-dofile("pkg/base/lib_map.lua")
-dofile("pkg/base/lib_namegen.lua")
-dofile("pkg/base/lib_pmf.lua")
-dofile("pkg/base/lib_sdlkey.lua")
-dofile("pkg/base/lib_vector.lua")
-
-dofile("pkg/base/obj_player.lua")
-dofile("pkg/base/obj_intent.lua")
+dofile("pkg/base/common.lua")
 
 -- define keys
 BTSK_FORWARD = SDLK_w
@@ -53,125 +44,6 @@ BTSK_COLORDOWN  = SDLK_DOWN
 BTSK_QUIT = SDLK_ESCAPE
 
 BTSK_DEBUG = SDLK_F1
-
--- mode stuff
-MODE_CHEAT_FLY = false
-
-MODE_AUTOCLIMB = true
-MODE_AIRJUMP = false
-MODE_SOFTCROUCH = true
-
-MODE_TILT_SLOWDOWN = false -- TODO!
-MODE_TILT_DOWN_NOCLIMB = false -- TODO!
-
-MODE_DELAY_SPADE_DIG = 1.0
-MODE_DELAY_SPADE_HIT = 0.25
-MODE_DELAY_BLOCK_BUILD = 0.5
-MODE_DELAY_TOOL_CHANGE = 0.4
-
--- tools
-TOOL_SPADE = 0
-TOOL_BLOCK = 1
-TOOL_GUN = 2
-TOOL_NADE = 3
-
--- weapons
-WPN_RIFLE = 1
-WPN_SHOTTY = 2
-
-weapons = {
-	[WPN_RIFLE] = {
-		-- version: 0.60 with spread removed completely
-		dmg_head = 100,
-		dmg_body = 49,
-		dmg_limb = 33,
-		
-		ammo_clip = 10,
-		ammo_reserve = 50,
-		ammo_pallets = 1,
-		time_fire = 1/2,
-		time_reload = 2.5,
-		is_reload_perclip = false,
-		
-		spread = 0.0, -- THAT'S RIGHT, THE 0.75 RIFLE SUCKS
-		recoil_x = 0.0001,
-		recoil_y = -0.05,
-		
-		basename = "rifle",
-		
-		enabled = true,
-	},
-	[WPN_SHOTTY] = {
-		-- version: something quite different.
-		-- TODO: get the balance right!
-		dmg_head = 26,
-		dmg_body = 23,
-		dmg_limb = 19,
-		
-		ammo_clip = 10,
-		ammo_reserve = 50,
-		ammo_pallets = 16,
-		time_fire = 1/15,
-		time_reload = 2.5,
-		is_reload_perclip = false,
-		
-		spread = 0.015, -- No, this should not be good at range.
-		recoil_x = 0.003,
-		recoil_y = -0.12,
-		
-		basename = "shotty",
-		
-		enabled = false,
-	},
-}
-
--- teams
-teams = {
-	[0] = {
-		name = "Blue Master Race",
-		color_mdl = {16,128,32},
-		color_chat = {0,255,0},
-	},
-	[1] = {
-		name = "Green Master Race",
-		color_mdl = {16,32,128},
-		color_chat = {0,0,255},
-	},
-}
-
-cpalette_base = {
-	0x7F,0x7F,0x7F,
-	0xFF,0x00,0x00,
-	0xFF,0x7F,0x00,
-	0xFF,0xFF,0x00,
-	0x00,0xFF,0x00,
-	0x00,0xFF,0xFF,
-	0x00,0x00,0xFF,
-	0xFF,0x00,0xFF,
-}
-
-cpalette = {}
-do
-	local i,j
-	for i=0,7 do
-		local r,g,b
-		r = cpalette_base[i*3+1]
-		g = cpalette_base[i*3+2]
-		b = cpalette_base[i*3+3]
-		for j=0,3 do
-			local cr = math.floor((r*j)/3)
-			local cg = math.floor((g*j)/3)
-			local cb = math.floor((b*j)/3)
-			cpalette[#cpalette+1] = {cr,cg,cb}
-		end
-		for j=1,4 do
-			local cr = r + math.floor(((255-r)*j)/4)
-			local cg = g + math.floor(((255-g)*j)/4)
-			local cb = b + math.floor(((255-b)*j)/4)
-			cpalette[#cpalette+1] = {cr,cg,cb}
-		end
-	end
-end
 
 players = {max = 32, current = 1}
 
@@ -275,17 +147,18 @@ end
 
 function h_tick_init(sec_current, sec_delta)
 	local i
-	local squads = {[0]={},[1]={}}
+	--[[local squads = {[0]={},[1]={}}
 	for i=1,4 do
 		squads[0][i] = name_generate()
 		squads[1][i] = name_generate()
-	end
+	end]]
 	
 	for i=1,players.max do
 		players[i] = new_player({
 			name = name_generate(),
-			squad = squads[math.fmod(i-1,2)][
-				math.fmod(math.floor((i-1)/2),4)+1],
+			--[[squad = squads[math.fmod(i-1,2)][
+				math.fmod(math.floor((i-1)/2),4)+1],]]
+			squad = nil,
 			team = math.fmod(i-1,2), -- 0 == blue, 1 == green
 			weapon = WPN_RIFLE,
 		})
@@ -426,9 +299,19 @@ function client.hook_render()
 	players[players.current].show_hud()
 end
 
+-- load map
+map_fname = ...
+map_fname = map_fname or MAP_DEFAULT
+
+-- TODO: *.icemap support
+--map_loaded = common.map_load(map_fname, "vxl")
+	--or common.map_load(map_fname, "icemap")
+
 print(client.map_fog_get())
-client.map_fog_set(24,0,32,60)
+--client.map_fog_set(24,0,32,60)
+client.map_fog_set(192,238,255,60)
 print(client.map_fog_get())
+
 
 print("pkg/base/main_client.lua loaded.")
 
