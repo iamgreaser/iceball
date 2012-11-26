@@ -89,12 +89,13 @@ client.mouse_lock_set(state) @
 client.mouse_visible_set(state) @
 	shows / hides the mouse depending on "state"
 
-map = common.map_load(fname, fmt = "auto")
-	loads a map, either .vxl or some format we might invent
-	which will probably be .vxl with our own header
-	+ changed meaning for the 4th colour byte
+map = common.map_load(fname, fmt = "auto") @
+	loads a map, either "vxl" or "icemap"
+	use "auto" to autodetect
+	
+	this will return nil if it fails.
 
-map = common.map_new(lx, ly, lz)
+map = common.map_new(lx, ly, lz) @
 	creates a new map
 	
 	note, ly is the *height* of the new map
@@ -104,12 +105,21 @@ map = common.map_new(lx, ly, lz)
 	
 	this will throw a lua error if it fails.
 
-common.map_set(map)
+common.map_free(map) @
+	free the given map
+	if you don't do this then it's memoryleaktopia
+	(plus i'm allowed to kill you)
+	
+	ALSO DON'T DO THIS TO THE CURRENT "SET" MAP
+	
+	TODO: clean up all models on game kill
+
+common.map_set(map) @
 	sets the "current" map to "map"
 	note, "map" can be nil to disable rendering anything
 
 common.map_save(map, fname, fmt = "icemap")
-	saves a map to a file
+	saves a map to a file, either "vxl" or "icemap"
 	
 	this will throw a lua error if it fails.
 

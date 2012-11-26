@@ -2,10 +2,7 @@
 *.o
 
 # final binaries
-iceball
 iceball.exe
-pmfedit
-pmfedit.exe
 
 # windows build crap
 winlibs/

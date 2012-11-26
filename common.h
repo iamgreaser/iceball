@@ -215,8 +215,8 @@ int error_sdl(char *msg);
 int error_perror(char *msg);
 
 // map.c
-map_t *map_load_aos(char *fname);
-map_t *map_load_bts(char *fname);
+map_t *map_load_aos(const char *fname);
+map_t *map_load_icemap(const char *fname);
 void map_free(map_t *map);
 
 // model.c

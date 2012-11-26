@@ -29,7 +29,7 @@ Base encapsulation:
 				000 = * RESERVED *
 				001 = JSON data [ NOT SUPPORTED YET ]
 				010 = lua script
-				011 = map data
+				011 = icemap data
 				100 = pmf model
 				101 = tga image
 				110 = CSV log data [ NOT SUPPORTED YET ]
@@ -42,7 +42,7 @@ Base encapsulation:
 				000 = * RESERVED *
 				001 = JSON data [ NOT SUPPORTED YET ]
 				010 = lua script
-				011 = map data
+				011 = icemap data
 				100 = pmf model
 				101 = tga image
 				110 = CSV log data [ NOT SUPPORTED YET ]

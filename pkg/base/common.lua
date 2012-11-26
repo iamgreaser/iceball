@@ -21,7 +21,7 @@ DIR_PKG_LIB = DIR_PKG_LIB or DIR_PKG_ROOT
 DIR_PKG_PMF = DIR_PKG_PMF or DIR_PKG_ROOT.."/pmf"
 DIR_PKG_GFX = DIR_PKG_GFX or DIR_PKG_ROOT.."/gfx"
 DIR_PKG_WAV = DIR_PKG_WAV or DIR_PKG_ROOT.."/wav"
-DIR_PKG_MAP = DIR_PKG_MAP or DIR_PKG_ROOT.."/map"
+DIR_PKG_MAP = DIR_PKG_MAP or "pkg/maps"
 
 MAP_DEFAULT = MAP_DEFAULT or DIR_PKG_MAP.."/mesa.vxl"
 
@@ -139,7 +139,7 @@ teams = {
 	[0] = {
 		name = "Blue Master Race",
 		color_mdl = {16,128,32},
-		color_chat = {0,255,0},
+		color_chat = {0,192,0},
 	},
 	[1] = {
 		name = "Green Master Race",

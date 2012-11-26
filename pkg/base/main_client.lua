@@ -262,7 +262,11 @@ function client.hook_mouse_button(button, state)
 					plr.blk_color[2],
 					plr.blk_color[3])
 			elseif plr.tool == TOOL_SPADE and plr.blx2 then
-				map_block_break(plr.blx2, plr.bly2, plr.blz2)
+				local xlen, ylen, zlen
+				xlen, ylen, zlen = common.map_get_dims()
+				if plr.bly2 <= ylen-3 then
+					map_block_break(plr.blx2, plr.bly2, plr.blz2)
+				end
 			end
 		elseif button == 3 then
 			-- RMB
@@ -302,10 +306,8 @@ end
 -- load map
 map_fname = ...
 map_fname = map_fname or MAP_DEFAULT
-
--- TODO: *.icemap support
---map_loaded = common.map_load(map_fname, "vxl")
-	--or common.map_load(map_fname, "icemap")
+map_loaded = common.map_load(map_fname, "auto")
+common.map_set(map_loaded)
 
 print(client.map_fog_get())
 --client.map_fog_set(24,0,32,60)

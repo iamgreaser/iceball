@@ -25,4 +25,10 @@ function server.hook_tick(sec_current, sec_delta)
 	return 0.005
 end
 
+-- load map
+map_fname = ...
+map_fname = map_fname or MAP_DEFAULT
+map_loaded = common.map_load(map_fname, "auto")
+common.map_set(map_loaded)
+
 print("pkg/base/main_server.lua loaded.")

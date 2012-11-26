@@ -316,11 +316,12 @@ int update_server(void)
 
 void run_game(void)
 {
-	clmap = map_load_aos(fnmap);
+	//clmap = map_load_aos(fnmap);
 	
 	tcam.mpx = 256.5f;
 	tcam.mpz = 256.5f;
-	tcam.mpy = clmap->pillars[((int)tcam.mpz)*clmap->xlen+((int)tcam.mpy)][4+1]-2.0f;
+	tcam.mpy = 32.0f-3.0f;
+	//clmap->pillars[((int)tcam.mpz)*clmap->xlen+((int)tcam.mpy)][4+1]-2.0f;
 	
 	tcam.mxx = 1.0f;
 	tcam.mxy = 0.0f;
@@ -334,12 +335,11 @@ void run_game(void)
 	
 	int i;
 	
-	render_vxl_redraw(&tcam, clmap);
+	//render_vxl_redraw(&tcam, clmap);
 	
 	int quitflag = 0;
 	
 	usec_basetime = platform_get_time_usec();
-	
 	
 	while(!quitflag)
 	{

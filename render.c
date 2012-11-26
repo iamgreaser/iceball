@@ -432,6 +432,28 @@ void render_vxl_face_raycast(int blkx, int blky, int blkz,
 
 void render_vxl_redraw(camera_t *camera, map_t *map)
 {
+	// if there isn't a map, clear screen and return
+	if(map == NULL)
+	{
+		int face,i;
+		
+		for(face = 0; face < 6; face++)
+		{
+			// get cubemaps
+			uint32_t *ccolor = cubemap_color[face];
+			float *cdepth = cubemap_depth[face];
+			
+			// clear cubemap
+			for(i = 0; i < cubemap_size*cubemap_size; i++)
+			{
+				ccolor[i] = fog_color;
+				cdepth[i] = fog_distance;
+			}
+		}
+		
+		return;
+	}
+	
 	int i,x,y,z;
 	
 	// stash stuff in globals to prevent spamming the stack too much
@@ -472,7 +494,7 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 		
 		if(rayc_block_size != blockbase)
 		{
-			rayc_block_size = markbase;
+			rayc_block_size = blockbase;
 			rayc_block = realloc(rayc_block, rayc_block_size*sizeof(rayblock_t));
 		}
 	}

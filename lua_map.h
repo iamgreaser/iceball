@@ -16,6 +16,105 @@
 */
 
 // common functions
+int icelua_fn_common_map_load(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 1, 2);
+	const char *fname = lua_tostring(L, 1);
+	const char *type = "auto";
+	if(top >= 2)
+		type = lua_tostring(L, 2);
+	
+	map_t *map = NULL;
+	
+	if(!strcmp(type, "auto"))
+	{
+		map = map_load_icemap(fname);
+		if(map == NULL)
+			map = map_load_aos(fname);
+	} else if(!strcmp(type, "vxl")) {
+		map = map_load_aos(fname);
+	} else if(!strcmp(type, "icemap")) {
+		map = map_load_icemap(fname);
+	} else {
+		return luaL_error(L, "not a valid map type");
+	}
+	
+	lua_pushlightuserdata(L, map);
+	return 1;
+}
+
+int icelua_fn_common_map_new(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 3, 3);
+	int xlen = lua_tointeger(L, 1);
+	int ylen = lua_tointeger(L, 2);
+	int zlen = lua_tointeger(L, 3);
+	
+	if(xlen < 4 || ylen < 4 || zlen < 4)
+		return luaL_error(L, "map size too small");
+	
+	// XXX: shouldn't this be in map.c?
+	map_t *map = malloc(sizeof(map_t));
+	if(map == NULL)
+	{
+		int err = errno;
+		return luaL_error(L, "could not allocate map: %d / %s", err, strerror(err));
+	}
+	map->xlen = xlen;
+	map->ylen = ylen;
+	map->zlen = zlen;
+	map->pillars = malloc(xlen*zlen*sizeof(uint8_t *));
+	if(map->pillars == NULL)
+	{
+		int err = errno;
+		map_free(map);
+		return luaL_error(L, "could not allocate map->pillars: %d / %s", err, strerror(err));
+	}
+	
+	int x,z,pi;
+	int b = map->ylen-2;
+	for(z = 0, pi = 0; z < map->zlen; z++)
+	for(x = 0; x < map->xlen; x++, pi++)
+	{
+		uint8_t *p = map->pillars[pi] = malloc(16);
+		// TODO: check if NULL
+		uint8_t v = (uint8_t)(x^z);
+		*(p++) = 1; *(p++) = 0; *(p++) = 0; *(p++) = 0;
+		*(p++) = 0; *(p++) = b; *(p++) = b; *(p++) = 0;
+		*(p++) = v; *(p++) = v; *(p++) = v; *(p++) = 1;
+	}
+	
+	lua_pushlightuserdata(L, map);
+	return 1;
+}
+
+int icelua_fn_common_map_free(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 1, 1);
+	map_t *map = lua_touserdata(L, 1);
+	if(map == NULL)
+		return luaL_error(L, "not a map");
+	
+	map_free(map);
+	
+	return 0;
+}
+
+int icelua_fn_common_map_set(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 1, 1);
+	map_t *map = lua_touserdata(L, 1);
+	if(map == NULL && !lua_isnil(L, 1))
+		return luaL_error(L, "not a map");
+	
+	if(L == lstate_server)
+		svmap = map;
+	else if(L == lstate_client)
+		clmap = map;
+	
+	return 0;
+}
+
 int icelua_fn_common_map_get_dims(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 0, 0);
