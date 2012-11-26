@@ -103,6 +103,8 @@ struct icelua_entry icelua_common[] = {
 	{icelua_fn_common_model_bone_set, "model_bone_set"},
 	{icelua_fn_common_model_bone_find, "model_bone_find"},
 	{icelua_fn_common_img_load, "img_load"},
+	{icelua_fn_common_img_new, "img_new"},
+	{icelua_fn_common_img_pixel_set, "img_pixel_set"},
 	{icelua_fn_common_img_free, "img_free"},
 	{icelua_fn_common_img_get_dims, "img_get_dims"},
 	

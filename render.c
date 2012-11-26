@@ -1002,10 +1002,22 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 	int x,y;
 	
 	// clip blit width/height
-	if(bw > src->head.width)
-		bw = src->head.width;
-	if(bh > src->head.height)
-		bh = src->head.height;
+	if(bw > src->head.width-sx)
+		bw = src->head.width-sx;
+	if(bh > src->head.height-sy)
+		bh = src->head.height-sy;
+	if(sx < 0)
+	{
+		bw -= -sx;
+		dx += -sx;
+		sx = 0;
+	}
+	if(sy < 0)
+	{
+		bh -= -sy;
+		dy += -sy;
+		sy = 0;
+	}
 	
 	// drop if completely out of range
 	if(dx >= width || dy >= height)
@@ -1017,13 +1029,13 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 	if(dx < 0)
 	{
 		sx += -dx;
-		bw += -dx;
+		bw -= -dx;
 		dx = 0;
 	}
 	if(dy < 0)
 	{
 		sy += -dy;
-		bh += -dy;
+		bh -= -dy;
 		dy = 0;
 	}
 	

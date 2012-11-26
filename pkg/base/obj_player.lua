@@ -543,6 +543,47 @@ function new_player(settings)
 		end
 		
 		client.img_blit(img_crosshair, w/2 - 8, h/2 - 8)
+		
+		local ow, oh
+		ow, oh = common.img_get_dims(img_overview)
+		if large_map then
+			local mx, my
+			mx = w/2 - ow/2
+			my = h/2 - oh/2 - 24
+			client.img_blit(img_overview, mx, my)
+			client.img_blit(img_overview_grid, mx, my,
+				ow, oh, 0, 0, 0x80FFFFFF)
+			
+			local i
+			
+			for i=1,8 do
+				gui_print_mini(mx - 12, my + (i-0.5)*64,
+					0xFFFFFFFF, ""..i)
+				gui_print_mini(mx + ow + 12-6, my + (i-0.5)*64,
+					0xFFFFFFFF, ""..i)
+				gui_print_mini(mx + (i-0.5)*64, my - 12,
+					0xFFFFFFFF, ""..string.char(64+i))
+				gui_print_mini(mx + (i-0.5)*64, my + oh + 12-6,
+					0xFFFFFFFF, ""..string.char(64+i))
+			end
+		else
+			local mw, mh
+			mw, mh = 128, 128
+			local qx, qy
+			
+			for qy=-1,1 do
+			for qx=-1,1 do
+				client.img_blit(img_overview, w - mw, 0,
+					mw, mh,
+					this.x-mw/2+ow*qx, this.z-mh/2+oh*qy,
+					0xFFFFFFFF)
+				client.img_blit(img_overview_grid, w - mw, 0,
+					mw, mh,
+					this.x-mw/2+ow*qx, this.z-mh/2+oh*qy,
+					0x80FFFFFF)
+			end
+			end
+		end
 	end
 	
 	return this

@@ -60,6 +60,63 @@ int icelua_fn_common_img_load(lua_State *L)
 	return 3;
 }
 
+int icelua_fn_common_img_new(lua_State *L)
+{
+	int i;
+	
+	int top = icelua_assert_stack(L, 2, 2);
+	
+	int w = lua_tointeger(L, 1);
+	int h = lua_tointeger(L, 2);
+	
+	if(w < 1 || h < 1)
+		return luaL_error(L, "image too small");
+	
+	img_t *img = malloc(sizeof(img_t)+(w*h*sizeof(uint32_t)));
+	if(img == NULL)
+		return luaL_error(L, "could not allocate memory");
+	
+	img->head.idlen = 0; // no ID
+	img->head.cmtype = 0; // no colourmap
+	img->head.imgtype = 2; // uncompressed RGB
+	img->head.cmoffs = 0;
+	img->head.cmlen = 0;
+	img->head.cmbpp = 0;
+	img->head.xstart = 0;
+	img->head.ystart = h-1;
+	img->head.width = w;
+	img->head.height = h;
+	img->head.bpp = 32;
+	img->head.flags = 0x20;
+	
+	for(i = 0; i < w*h; i++)
+		img->pixels[i] = 0x00000000;
+	
+	lua_pushlightuserdata(L, img);
+	return 1;
+}
+
+int icelua_fn_common_img_pixel_set(lua_State *L)
+{
+	int i;
+	
+	int top = icelua_assert_stack(L, 4, 4);
+	
+	img_t *img = lua_touserdata(L, 1);
+	if(img == NULL)
+		return luaL_error(L, "not an image");
+	int x = lua_tointeger(L, 2);
+	int y = lua_tointeger(L, 3);
+	uint32_t color = lua_tointeger(L, 4);
+	
+	if(x < 0 || y < 0 || x >= img->head.width || y >= img->head.height)
+		return 0;
+	
+	img->pixels[y*img->head.height+x] = color;
+	
+	return 0;
+}
+
 int icelua_fn_common_img_free(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 1, 1);

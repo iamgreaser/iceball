@@ -138,13 +138,13 @@ weapons = {
 teams = {
 	[0] = {
 		name = "Blue Master Race",
-		color_mdl = {16,128,32},
-		color_chat = {0,192,0},
+		color_mdl = {16,32,128},
+		color_chat = {0,0,255},
 	},
 	[1] = {
 		name = "Green Master Race",
-		color_mdl = {16,32,128},
-		color_chat = {0,0,255},
+		color_mdl = {16,128,32},
+		color_chat = {0,192,0},
 	},
 }
 

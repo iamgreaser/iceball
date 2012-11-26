@@ -44,6 +44,7 @@ BTSK_COLORDOWN  = SDLK_DOWN
 BTSK_QUIT = SDLK_ESCAPE
 
 BTSK_DEBUG = SDLK_F1
+BTSK_MAP = SDLK_m
 
 players = {max = 32, current = 1}
 
@@ -51,6 +52,7 @@ players = {max = 32, current = 1}
 rotpos = 0.0
 debug_enabled = false
 mouse_released = false
+large_map = false
 sensitivity = 1.0/1000.0
 mouse_skip = 3
 
@@ -213,6 +215,8 @@ function client.hook_key(key, state)
 	elseif state then
 		if key == BTSK_DEBUG then
 			debug_enabled = not debug_enabled
+		elseif key == BTSK_MAP then
+			large_map = not large_map
 		elseif key == BTSK_COLORLEFT then
 			plr.blk_color_x = plr.blk_color_x - 1
 			if plr.blk_color_x < 0 then
@@ -251,21 +255,28 @@ function client.hook_mouse_button(button, state)
 	
 	local plr = players[players.current]
 	
+	local xlen, ylen, zlen
+	xlen, ylen, zlen = common.map_get_dims()
+	
 	if state then
 		if button == 1 then
 			-- LMB
 			if plr.tool == TOOL_BLOCK and plr.blx1 then
+				if plr.blx1 >= 0 and plr.blx1 < xlen and plr.blz1 >= 0 and plr.blz1 < zlen then
+				if plr.bly2 <= ylen-2 then
 				map_block_set(
 					plr.blx1, plr.bly1, plr.blz1,
 					1,
 					plr.blk_color[1],
 					plr.blk_color[2],
 					plr.blk_color[3])
+				end
+				end
 			elseif plr.tool == TOOL_SPADE and plr.blx2 then
-				local xlen, ylen, zlen
-				xlen, ylen, zlen = common.map_get_dims()
+				if plr.blx1 >= 0 and plr.blx1 < xlen and plr.blz1 >= 0 and plr.blz1 < zlen then
 				if plr.bly2 <= ylen-3 then
 					map_block_break(plr.blx2, plr.bly2, plr.blz2)
+				end
 				end
 			end
 		elseif button == 3 then
@@ -274,8 +285,18 @@ function client.hook_mouse_button(button, state)
 				local ct,cr,cg,cb
 				ct,cr,cg,cb = map_block_pick(plr.blx3, plr.bly3, plr.blz3)
 				plr.blk_color = {cr,cg,cb}
-			elseif plr.tool == TOOL_SPADE and plr.blx3 then
-				-- TODO: 1x3 break
+			elseif plr.tool == TOOL_SPADE and plr.blx2 then
+				if plr.blx1 >= 0 and plr.blx1 < xlen and plr.blz1 >= 0 and plr.blz1 < zlen then
+				if plr.bly2-1 <= ylen-3 then
+					map_block_break(plr.blx2, plr.bly2-1, plr.blz2)
+				end
+				if plr.bly2 <= ylen-3 then
+					map_block_break(plr.blx2, plr.bly2, plr.blz2)
+				end
+				if plr.bly2+1 <= ylen-3 then
+					map_block_break(plr.blx2, plr.bly2+1, plr.blz2)
+				end
+				end
 			elseif plr.tool == TOOL_GUN then
 				plr.zooming = not plr.zooming
 			end
@@ -314,6 +335,38 @@ print(client.map_fog_get())
 client.map_fog_set(192,238,255,60)
 print(client.map_fog_get())
 
+-- create map overview
+-- TODO: update image when map gets mutilated
+do
+	local xlen, ylen, zlen
+	xlen, ylen, zlen = common.map_get_dims()
+	img_overview = common.img_new(xlen, zlen)
+	img_overview_grid = common.img_new(xlen, zlen)
+	img_overview_icons = common.img_new(xlen, zlen)
+	local x,z
+	
+	for z=0,zlen-1 do
+	for x=0,xlen-1 do
+		local l = common.map_pillar_get(x,z)
+		local r,g,b
+		r = l[5]
+		g = l[6]
+		b = l[7]
+		local c = 0xFF000000+256*(256*b+g)+r
+		common.img_pixel_set(img_overview, x, z, c)
+	end
+	end
+	for z=63,zlen-1,64 do
+	for x=0,xlen-1 do
+		common.img_pixel_set(img_overview_grid, x, z, 0xFFFFFFFF)
+	end
+	end
+	for z=0,zlen-1 do
+	for x=63,xlen-1,64 do
+		common.img_pixel_set(img_overview_grid, x, z, 0xFFFFFFFF)
+	end
+	end
+end
 
 print("pkg/base/main_client.lua loaded.")
 

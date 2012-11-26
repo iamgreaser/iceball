@@ -117,7 +117,7 @@ map_t *map_load_icemap(const char *fname)
 	tag[7] = 0;
 	
 	fread(tag, 8, 1, fp);
-	if(!memcmp(tag, "IceMap\x1A\x01", 8))
+	if(memcmp(tag, "IceMap\x1A\x01", 8))
 	{
 		// don't spew an error, this is useful for autodetection mode
 		//fprintf(stderr, "map_load_icemap: not an IceMap v1 file\n");

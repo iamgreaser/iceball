@@ -286,6 +286,18 @@ img, width, height = common.img_load(fname) @
 	
 	if this fails, img, width, height will all be nil
 
+img = common.img_new(width, height) @
+	creates a new 32bpp RGBA image
+	remember to free it when you're done
+	as this is only a light userdata
+	
+	if this fails, img will be nil
+
+common.img_pixel_set(img, x, y, color) @
+	sets the pixel x,y on image "img" to "color"
+	
+	drawing is clipped
+
 common.img_free(img) @
 	free the given image
 	if you don't do this then it's memoryleaktopia
