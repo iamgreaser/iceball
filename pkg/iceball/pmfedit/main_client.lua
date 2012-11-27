@@ -19,6 +19,7 @@ dofile("pkg/base/lib_gui.lua")
 dofile("pkg/base/lib_pmf.lua")
 dofile("pkg/base/lib_sdlkey.lua")
 
+preload = ...
 PMFEDIT_FNAME = "clsave/editor.pmf"
 
 BTSK_PMF_MOVEXN = SDLK_l
@@ -237,6 +238,21 @@ function client.hook_render()
 		0,0,1,
 		pmfedit_rx,0,0,
 		0.7)
+end
+
+if preload then
+	local xpmf = common.model_load_pmf(preload)
+	if xpmf then
+		common.model_free(pmfedit_model) -- YECCH! Forgot this line!
+		pmfedit_model = xpmf
+		pmfedit_model_bone = 0
+		local bname
+		bname, pmfedit_data = common.model_bone_get(pmfedit_model, pmfedit_model_bone)
+		pmfedit_data[#pmfedit_data+1] = {}
+		print("loaded!")
+	else
+		print("error during loading - NOT LOADED")
+	end
 end
 
 client.map_fog_set(32, 32, 32, 60)

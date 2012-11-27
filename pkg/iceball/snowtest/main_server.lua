@@ -15,6 +15,8 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
+-- Example mod. NOT RELIABLE.
+
 print("[server] Testing the snow plugin!")
 loadfile("pkg/base/main_server.lua")(...)
 --dofile("pkg/base/plug_snow.lua")

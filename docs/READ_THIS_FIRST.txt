@@ -78,6 +78,7 @@ NOTE: On Windows, you will need to check stderr.txt for the help you need.
 I haven't worked out how to make SDL *NOT* do this stupid crap yet.
 
 By the way, here's a tip for the Windows users:
+
 Double-click opencmd.bat. It should get you into the right directory.
 
 -------------------------------------------------------------------------------
