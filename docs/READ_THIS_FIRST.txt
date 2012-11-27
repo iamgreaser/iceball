@@ -95,6 +95,38 @@ in which case you should prod me (GreaseMonkey) on IRC,
 
 -------------------------------------------------------------------------------
 
+Here are the default keys. MAKE A NOTE OF THEM.
+
+W A S D = move/strafe
+space = jump
+left ctrl = crouch
+V = sneak
+
+1 2 3 4 = select tool
+arrow keys = select block colour
+
+M = show map
+
+[ TODO: add T/Y for talk / teamchat ]
+[ TODO: add , for teamswitch ]
+
+Note that there is no weapon select key. This isn't Ace of Jagex.
+
+For each tool, here is what each mouse button does:
+  1:   Spade: L = break 1 block, R = dig 3 blocks
+  2:   Block: L = place a block, R = sample block colour
+  3:     Gun: L = shoot, R = zoom
+  4: Grenade: L press = pull the pin, L release = throw
+
+[ TODO: These will eventually be valid! ]
+
+A few notes:
+- If you left-click-dig with the spade, you can get blocks back.
+- Holding the grenade longer does not make it travel further.
+  If you want that to happen, try jumping.
+
+-------------------------------------------------------------------------------
+
 TODO: more stuff
 
 -------------------------------------------------------------------------------

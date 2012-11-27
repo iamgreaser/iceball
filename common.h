@@ -172,6 +172,15 @@ struct packet
 	uint8_t data[];
 };
 
+struct netdata
+{
+	int sockfd;
+} netdata_t;
+
+#define SOCKFD_NONE -1
+#define SOCKFD_LOCAL_SWAPLIST -2
+#define SOCKFD_LOCAL_SERIAL -3
+
 enum
 {
 	PATH_INVALID_ENUM = 0, // don't use this!
@@ -206,6 +215,7 @@ extern SDL_Surface *screen;
 extern int force_redraw;
 
 extern int boot_mode;
+extern char *mod_basedir;
 
 extern int main_argc;
 extern char **main_argv;

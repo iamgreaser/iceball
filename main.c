@@ -29,7 +29,7 @@ int force_redraw = 1;
 
 int boot_mode = 0; // bit 0 = client, bit 1 = server
 
-char *fnmap = "mesa.vxl";
+char *mod_basedir = NULL;
 
 int main_argc;
 char **main_argv;
@@ -407,11 +407,9 @@ int main(int argc, char *argv[])
 			return print_usage(argv[0]);
 		
 		int net_port = atoi(argv[2]);
-		char *net_mod = argv[3];
-		printf("TODO: run a server on port %i, mod \"%s\"\n", net_port, net_mod);
+		mod_basedir = argv[3];
+		printf("TODO: run a server on port %i, mod \"%s\"\n", net_port, mod_basedir);
 		main_largstart = 4;
-		if(argc > 4)
-			fnmap = argv[4];
 		
 		boot_mode = 3;
 	} else if(!strcmp(argv[1], "-d")) {
@@ -419,8 +417,8 @@ int main(int argc, char *argv[])
 			return print_usage(argv[0]);
 		
 		int net_port = atoi(argv[2]);
-		char *net_mod = argv[3];
-		printf("TODO: run a ded server on port %i, mod \"%s\"\n", net_port, net_mod);
+		mod_basedir = argv[3];
+		printf("TODO: run a ded server on port %i, mod \"%s\"\n", net_port, mod_basedir);
 		main_largstart = 4;
 		
 		boot_mode = 2;

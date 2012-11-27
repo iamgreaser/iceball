@@ -45,8 +45,8 @@ function snow_init()
 	
 	do
 		local bicold = box_is_clear
-		local mpgold = common.map_pillar_get
 		function box_is_clear(x1,y1,z1,x2,y2,z2,canwrap)
+			local mpgold = common.map_pillar_get
 			common.map_pillar_get = function (px,pz)
 				local t = mpgold(px,pz)
 				if t[5+3] == 2 then
@@ -55,9 +55,12 @@ function snow_init()
 					if t[1+0] ~= 0 then t[1+0] = t[1+0] - 1 end
 					t[1+1] = t[1+1] + 1
 					for i=1,4 do t[#t] = nil end
+					-- the melting causes it to screw up
+					--[[
 					if math.random() < 0.05 then
 						common.map_pillar_set(px,pz,t)
 					end
+					]]
 				end
 				return t
 			end

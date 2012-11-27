@@ -204,13 +204,16 @@ int icelua_init(void)
 	// quick test
 	// TODO: set up a "convert/filter file path" function
 	// TODO: split the client/server inits
-	if((lstate_server != NULL) && luaL_loadfile(lstate_server, "pkg/base/main_server.lua") != 0)
+	char xpath[128];
+	snprintf(xpath, 128, "%s/main_server.lua", mod_basedir);
+	if((lstate_server != NULL) && luaL_loadfile(lstate_server, xpath) != 0)
 	{
 		printf("ERROR loading server Lua: %s\n", lua_tostring(lstate_server, -1));
 		return 1;
 	}
 	
-	if((lstate_client != NULL) && luaL_loadfile(lstate_client, "pkg/base/main_client.lua") != 0)
+	snprintf(xpath, 128, "%s/main_client.lua", mod_basedir);
+	if((lstate_client != NULL) && luaL_loadfile(lstate_client, xpath) != 0)
 	{
 		printf("ERROR loading client Lua: %s\n", lua_tostring(lstate_client, -1));
 		return 1;
