@@ -15,6 +15,7 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
+print("pmfedit selected")
 PMFEDIT_FNAME = "clsave/editor.pmf"
 
 BTSK_PMF_EDIT = SDLK_F2
@@ -94,9 +95,10 @@ function client.hook_key(key, state)
 			elseif key == SDLK_RIGHTBRACKET then
 				pmfedit_rx = pmfedit_rx - math.pi/16
 			elseif key == BTSK_PMF_BLKSET and #pmfedit_data < 4095 then
-				pmfedit_data[#pmfedit_data].r = players[1].blk_color[1]
-				pmfedit_data[#pmfedit_data].g = players[1].blk_color[2]
-				pmfedit_data[#pmfedit_data].b = players[1].blk_color[3]
+				local plr = players[players.current]
+				pmfedit_data[#pmfedit_data].r = plr.blk_color[1]
+				pmfedit_data[#pmfedit_data].g = plr.blk_color[2]
+				pmfedit_data[#pmfedit_data].b = plr.blk_color[3]
 				pmfedit_data[#pmfedit_data+1] = pmfedit_data[#pmfedit_data]
 			elseif key == BTSK_PMF_BLKCLEAR then
 				if #pmfedit_data > 1 then
@@ -168,14 +170,14 @@ local old_renderhook = client.hook_render
 -- I still believe the "Old Kenderhook" explanation for the meaning of O.K. is a load of crap. --GM
 function client.hook_render()
 	if pmfedit_enabled then
-		gui_print_mini(4,20,0x80FFFFFF,string.format(
+		gui_print_mini(4,40,0x80FFFFFF,string.format(
 			"PMF - size: %-6i x: %-6i y: %6i z: %-6i - COUNT: %6i / rot: %3f"
 			,pmfedit_size
 			,pmfedit_x
 			,pmfedit_y
 			,pmfedit_z
-			,pmfedit_rx
-			,#pmfedit_data-1))
+			,#pmfedit_data-1
+			,pmfedit_rx))
 		
 		client.model_render_bone_local(pmfedit_model, pmfedit_model_bone,
 			0,0,1,
@@ -185,3 +187,5 @@ function client.hook_render()
 	return old_renderhook()
 end
 end
+
+print("pmfedit loaded")

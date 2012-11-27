@@ -1,6 +1,6 @@
 PMF editing guide
 
-Press F2 (default) to bring up the editor.
+Use pkg/iceball/pmfedit.
 
 Default keys:
 

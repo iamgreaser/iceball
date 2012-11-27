@@ -16,5 +16,5 @@
 ]]
 
 print("[client] Testing the snow plugin!")
-dofile("pkg/base/main_client.lua")
+loadfile("pkg/base/main_client.lua")(...)
 dofile("pkg/base/plug_snow.lua")

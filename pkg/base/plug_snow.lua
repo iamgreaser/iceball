@@ -37,6 +37,7 @@ function snow_init()
 			t[5+1] = 255
 			t[5+2] = 255
 			t[5+3] = 2
+			common.img_pixel_set(img_overview,x,z,0xFFFFFFFF)
 		end
 		--print(x,z)
 		common.map_pillar_set(x,z,t)
