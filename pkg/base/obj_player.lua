@@ -175,12 +175,45 @@ function new_player(settings)
 		this.angx = math.asin(yrec/ydist)
 	end
 	
+	function this.gun_damage(part, amt, enemy, sec_current)
+		--print("damage",this.name,part,amt)
+		this.health = this.health - amt
+		if this.health <= 0 then
+			local r,g,b
+			r,g,b = 0,0,0
+			
+			local l = teams[enemy.team].color_chat
+			r,g,b = l[1],l[2],l[3]
+			
+			local c = 0xFF000000+256*(256*r+g)+b
+			
+			chat_add(chat_killfeed, sec_current,
+				enemy.name.." killed "..this.name, c)
+			this.health = 0
+			this.alive = false
+		end
+	end
+	
 	function this.tick(sec_current, sec_delta)
+		if (not this.alive) and (not this.t_respawn) then
+			this.t_respawn = sec_current + MODE_RESPAWN_TIME
+			this.input_reset()
+		end
+		
+		if this.t_respawn then
+			if this.t_respawn <= sec_current then
+				this.t_respawn = nil
+				this.spawn()
+			else
+				-- any last requests?
+			end
+		end
+		
 		if this.t_switch == true then
 			this.t_switch = sec_current + 0.2
 		end
 		
-		if this.t_switch then
+		if this.alive and this.t_switch then
 			if sec_current > this.t_switch then
 				this.t_switch = nil
 				this.arm_rest_right = 0
@@ -304,13 +337,18 @@ function new_player(settings)
 		end
 		
 		
-		tx1,ty1,tz1 = trace_map_box(
-			ox, oy, oz,
-			nx, ny, nz,
-			-0.4,  by1, -0.4,
-			0.4,  by2,  0.4,
-			false)
-		if MODE_AUTOCLIMB then
+		if this.alive then
+			tx1,ty1,tz1 = trace_map_box(
+				ox, oy, oz,
+				nx, ny, nz,
+				-0.4,  by1, -0.4,
+				0.4,  by2,  0.4,
+				false)
+		else
+			tx1,ty1,tz1 = nx,ny,nz
+		end
+		
+		if this.alive and MODE_AUTOCLIMB then
 			local jerky = ty1
 			if not this.crouching then
 				ty1 = ty1 - 1
@@ -339,7 +377,7 @@ function new_player(settings)
 			tx1-0.39, ty1+by2, tz1-0.39,
 			tx1+0.39, ty1+by2+0.1, tz1+0.39)
 		
-		if this.vy > 0 and this.grounded then
+		if this.alive and this.vy > 0 and this.grounded then
 			this.vy = 0
 		end
 		
@@ -527,7 +565,7 @@ function new_player(settings)
 			local plr = players[i]
 			if plr and plr ~= this then
 				plr.render()
-				if plr.team == this.team then
+				if plr.alive and plr.team == this.team then
 					local px,py
 					local dx,dy,dzNULL
 					dx,dy,dz = plr.x-this.x,
@@ -621,13 +659,15 @@ function new_player(settings)
 				x,y = plr.x, plr.z
 				local c
 				local drawit = true
-				if plr == this then
+				if not plr.alive then
+					drawit = false
+				elseif plr == this then
 					c = 0xFF00FFFF
 				elseif plr.team == this.team then
 					c = 0xFFFFFFFF
 				else
 					c = 0xFFFF0000
-					drawit = (this.t_rcirc ~= nil and
+					drawit = drawit and (this.t_rcirc ~= nil and
 						(MODE_MINIMAP_RCIRC or large_map))
 				end
 				
@@ -694,10 +734,20 @@ function new_player(settings)
 				..(1+math.floor(this.z/64))
 			gui_print_mini(w - mw/2 - 3*#s, mh + 2, 0xFFFFFFFF, s)
 		end
-		client.img_blit(img_cpal, 0, h-80)
+		client.img_blit(img_cpal, 0, h-64)
 		client.img_blit(img_cpal_rect,
-			0 + this.blk_color_x*10,
-			h-80 + this.blk_color_y*10)
+			0 + this.blk_color_x*8,
+			h-64 + this.blk_color_y*8)
+		
+		local coffs_killfeed = (#chat_killfeed-chat_killfeed.head)
+		local coffs_text = (#chat_text-chat_text.head)
+		
+		chat_draw(chat_killfeed, (function (i,s,w,h)
+			return w-4-6*#s, h-90-(coffs_killfeed-i)*8
+		end))
+		chat_draw(chat_text, (function (i,s,w,h)
+			return 4, h-90-(coffs_text-i)*8
+		end))
 	end
 	
 	return this

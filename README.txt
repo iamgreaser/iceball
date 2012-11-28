@@ -48,16 +48,15 @@ CURRENT STATUS:
 - PMF editor!
 - You can buld!
 - You can grif cahirs!
+- YOU CAN SNIP!
 - Map!
 - Minimap!
+- Killfeed!
 
 STUFF TO DO:
-- You can't snip yet :(
 - Sound assets! We need your sounds, guys!
   - I have made some of these already.
 - Actually implement sound support.
-- Get weapons working.
-  - Once again, please send your assets!
 - Network it up. (UnrealIncident has offered to work on this.)
 - Make the physics less crap.
 - Speed up the render a bit.

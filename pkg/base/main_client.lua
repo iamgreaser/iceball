@@ -47,7 +47,40 @@ BTSK_DEBUG = SDLK_F1
 BTSK_MAP = SDLK_m
 
 players = {max = 32, current = 1}
-wdamage = {}
+damage_blk = {}
+chat_killfeed = {head = 1, scroll = nil}
+chat_text = {head = 1, scroll = nil}
+
+function chat_add(ctab, mtime, msg, color)
+	ctab[#ctab+1] = {
+		mtime = mtime,
+		color = color,
+		msg = msg,
+	}
+end
+
+function chat_prune(ctab, mtime)
+	mtime = mtime - MODE_CHAT_LINGER
+	while ctab.head <= #ctab and (
+			#ctab-ctab.head > MODE_CHAT_MAX
+			or ctab[ctab.head].mtime <= mtime) do
+		ctab.head = ctab.head + 1
+	end
+end
+
+function chat_draw(ctab, fn_pos)
+	-- TODO: scrollback
+	local i
+	local w,h
+	w,h = client.screen_get_dims()
+	
+	for i=ctab.head,#ctab do
+		local x,y
+		local ri = i-ctab.head
+		x,y = fn_pos(ri,ctab[i].msg,w,h)
+		gui_print_mini(x,y,ctab[i].color,ctab[i].msg)
+	end
+end
 
 -- set stuff
 rotpos = 0.0
@@ -135,6 +168,9 @@ client.model_bone_set(mdl_bbox, mdl_bbox_bone2, "bbox_crouch", mdl_bbox_bone_dat
 function h_tick_camfly(sec_current, sec_delta)
 	rotpos = rotpos + sec_delta*120.0
 	
+	chat_prune(chat_text, sec_current)
+	chat_prune(chat_killfeed, sec_current)
+	
 	local i
 	for i=1,players.max do
 		local plr = players[i]
@@ -142,6 +178,7 @@ function h_tick_camfly(sec_current, sec_delta)
 			plr.tick(sec_current, sec_delta)
 		end
 	end
+	
 	players[players.current].camera_firstperson()
 	-- wait a bit
 	return 0.005
@@ -166,6 +203,12 @@ function h_tick_init(sec_current, sec_delta)
 		})
 	end
 	players.current = math.floor(math.random()*32)+1
+	
+	chat_add(chat_text, sec_current, "Just testing the chat...", 0xFFFFFFFF)
+	chat_add(chat_text, sec_current, "BLUE MASTER RACE", 0xFF0000FF)
+	chat_add(chat_text, sec_current, "GREEN MASTER RACE", 0xFF00C000)
+	chat_add(chat_text, sec_current, "SALLY MASTER RACE", 0xFFAA00FF)
+	chat_add(chat_text, sec_current, "YOU ALL SUCK", 0xFFFF0000)
 	
 	mouse_released = false
 	client.mouse_lock_set(true)
@@ -202,16 +245,6 @@ function client.hook_key(key, state)
 		plr.ev_jump = state
 	elseif key == BTSK_SNEAK then
 		plr.ev_sneak = state
-	elseif key == BTSK_TOOL1 then
-		plr.tool_switch(TOOL_SPADE)
-	elseif key == BTSK_TOOL2 then
-		plr.tool_switch(TOOL_BLOCK)
-	elseif key == BTSK_TOOL3 then
-		plr.tool_switch(TOOL_GUN)
-	elseif key == BTSK_TOOL4 then
-		plr.tool_switch(TOOL_NADE)
-	elseif key == BTSK_TOOL5 then
-		-- TODO
 	elseif state then
 		if key == BTSK_DEBUG then
 			debug_enabled = not debug_enabled
@@ -219,6 +252,16 @@ function client.hook_key(key, state)
 			large_map = not large_map
 		elseif key == BTSK_RELOAD then
 			if plr.wpn then plr.wpn.reload() end
+		elseif key == BTSK_TOOL1 then
+			plr.tool_switch(TOOL_SPADE)
+		elseif key == BTSK_TOOL2 then
+			plr.tool_switch(TOOL_BLOCK)
+		elseif key == BTSK_TOOL3 then
+			plr.tool_switch(TOOL_GUN)
+		elseif key == BTSK_TOOL4 then
+			plr.tool_switch(TOOL_NADE)
+		elseif key == BTSK_TOOL5 then
+			-- TODO
 		elseif key == BTSK_COLORLEFT then
 			plr.blk_color_x = plr.blk_color_x - 1
 			if plr.blk_color_x < 0 then
@@ -388,8 +431,8 @@ mspr_player = {
 }
 
 -- create colour palette image
-img_cpal = common.img_new(80,80)
-img_cpal_rect = common.img_new(10,10)
+img_cpal = common.img_new(64,64)
+img_cpal_rect = common.img_new(8,8)
 do
 	local cx,cy,x,y
 	for cy=0,7 do
@@ -400,8 +443,8 @@ do
 		b = cpalette[cy*8+cx+1][1]
 		local c = 0xFF000000+256*(256*b+g)+r
 		
-		for y=cy*10+1,cy*10+8 do
-		for x=cx*10+1,cx*10+8 do
+		for y=cy*8+1,cy*8+6 do
+		for x=cx*8+1,cx*8+6 do
 			common.img_pixel_set(img_cpal, x, y, c)
 		end
 		end
@@ -409,11 +452,11 @@ do
 	end
 	
 	local i
-	for i=0,8 do
+	for i=0,6 do
 		common.img_pixel_set(img_cpal_rect, i, 0, 0xFFFFFFFF)
-		common.img_pixel_set(img_cpal_rect, 9, i, 0xFFFFFFFF)
-		common.img_pixel_set(img_cpal_rect, 9-i, 9, 0xFFFFFFFF)
-		common.img_pixel_set(img_cpal_rect, 0, 9-i, 0xFFFFFFFF)
+		common.img_pixel_set(img_cpal_rect, 7, i, 0xFFFFFFFF)
+		common.img_pixel_set(img_cpal_rect, 7-i, 7, 0xFFFFFFFF)
+		common.img_pixel_set(img_cpal_rect, 0, 7-i, 0xFFFFFFFF)
 	end
 end
 

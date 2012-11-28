@@ -354,6 +354,15 @@ function map_chkdisbrk(x,y,z)
 	end
 end
 
+function map_block_get(x,y,z,typ)
+	local xlen,ylen,zlen 
+	xlen,ylen,zlen = common.map_get_dims()
+	if y < 0 or y >= ylen then return end
+	
+	local t = map_pillar_raw_get(x,z)
+	return t[y+1]
+end
+
 function map_block_set(x,y,z,typ,r,g,b)
 	local xlen,ylen,zlen 
 	xlen,ylen,zlen = common.map_get_dims()
@@ -368,6 +377,18 @@ function map_block_set(x,y,z,typ,r,g,b)
 	map_pillar_aerate(x+1,z)
 	map_pillar_aerate(x,z-1)
 	map_pillar_aerate(x,z+1)
+end
+
+function map_block_paint(x,y,z,typ,r,g,b)
+	local xlen,ylen,zlen 
+	xlen,ylen,zlen = common.map_get_dims()
+	if y < 0 or y >= ylen then return end
+	
+	local t = map_pillar_raw_get(x,z)
+	if t[y+1] then
+		t[y+1] = {typ, r, g, b}
+		map_pillar_raw_set(x,z,t)
+	end
 end
 
 function map_block_break(x,y,z)

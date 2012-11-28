@@ -64,7 +64,12 @@ MODE_TILT_DOWN_NOCLIMB = false -- TODO!
 MODE_DELAY_SPADE_DIG = 1.0
 MODE_DELAY_SPADE_HIT = 0.25
 MODE_DELAY_BLOCK_BUILD = 0.5
-MODE_DELAY_TOOL_CHANGE = 0.4
+MODE_DELAY_TOOL_CHANGE = 0.2
+
+MODE_RESPAWN_TIME = 8.0
+
+MODE_CHAT_LINGER = 15.0
+MODE_CHAT_MAX = 10
 
 -- tools
 TOOL_SPADE = 0
@@ -133,7 +138,42 @@ weapons = {
 				d = 127.5
 			end
 			
-			-- TODO: kill people
+			-- see if there's anyone we can kill
+			local hurt_idx = nil
+			local hurt_part = nil
+			local hurt_dist = d*d
+			local i,j
+			
+			for i=1,players.max do
+				local p = players[i]
+				if p and p ~= plr and p.alive then
+					local dx = p.x-plr.x
+					local dy = p.y-plr.y
+					local dz = p.z-plr.z
+					
+					for j=1,3 do
+						local dd = dx*dx+dy*dy+dz*dz
+						
+						local dotk = dx*fwx+dy*fwy+dz*fwz
+						local dot = math.sqrt(dd-dotk*dotk)
+						if dot < 0.45 and dd < hurt_dist then
+							hurt_idx = i
+							hurt_dist = dd
+							hurt_part = ({"head","body","legs"})[j]
+							
+							break
+						end
+						dy = dy + 0.8
+					end
+				end
+			end
+			
+			if hurt_idx then
+				-- TODO: ship this off to the server!
+				players[hurt_idx].gun_damage(
+					hurt_part, this.cfg.dmg[hurt_part], plr, sec_current)
+			end
+			
 			-- TODO: fire a tracer
 			
 			-- apply recoil
