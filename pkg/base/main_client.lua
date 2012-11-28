@@ -47,6 +47,7 @@ BTSK_DEBUG = SDLK_F1
 BTSK_MAP = SDLK_m
 
 players = {max = 32, current = 1}
+wdamage = {}
 
 -- set stuff
 rotpos = 0.0
@@ -64,8 +65,7 @@ mdl_test = client.model_load_pmf("pkg/base/pmf/test.pmf")
 mdl_test_bone = client.model_bone_find(mdl_test, "test")
 mdl_spade, mdl_spade_bone = client.model_load_pmf("pkg/base/pmf/spade.pmf"), 0
 mdl_block, mdl_block_bone = client.model_load_pmf("pkg/base/pmf/block.pmf"), 0
--- TODO: load all weapons
-mdl_rifle, mdl_rifle_bone = client.model_load_pmf("pkg/base/pmf/rifle.pmf"), 0
+weapon_models[WPN_RIFLE] = client.model_load_pmf("pkg/base/pmf/rifle.pmf")
 mdl_nade, mdl_nade_bone = client.model_load_pmf("pkg/base/pmf/nade.pmf"), 0
 
 -- quick hack to stitch a player model together
@@ -203,13 +203,13 @@ function client.hook_key(key, state)
 	elseif key == BTSK_SNEAK then
 		plr.ev_sneak = state
 	elseif key == BTSK_TOOL1 then
-		plr.tool = TOOL_SPADE
+		plr.tool_switch(TOOL_SPADE)
 	elseif key == BTSK_TOOL2 then
-		plr.tool = TOOL_BLOCK
+		plr.tool_switch(TOOL_BLOCK)
 	elseif key == BTSK_TOOL3 then
-		plr.tool = TOOL_GUN
+		plr.tool_switch(TOOL_GUN)
 	elseif key == BTSK_TOOL4 then
-		plr.tool = TOOL_NADE
+		plr.tool_switch(TOOL_NADE)
 	elseif key == BTSK_TOOL5 then
 		-- TODO
 	elseif state then
@@ -217,6 +217,8 @@ function client.hook_key(key, state)
 			debug_enabled = not debug_enabled
 		elseif key == BTSK_MAP then
 			large_map = not large_map
+		elseif key == BTSK_RELOAD then
+			if plr.wpn then plr.wpn.reload() end
 		elseif key == BTSK_COLORLEFT then
 			plr.blk_color_x = plr.blk_color_x - 1
 			if plr.blk_color_x < 0 then
@@ -258,6 +260,10 @@ function client.hook_mouse_button(button, state)
 	local xlen, ylen, zlen
 	xlen, ylen, zlen = common.map_get_dims()
 	
+	if plr.tool == TOOL_GUN then
+		plr.wpn.click(button, state)
+	end
+	
 	if state then
 		if button == 1 then
 			-- LMB
@@ -297,8 +303,6 @@ function client.hook_mouse_button(button, state)
 					map_block_break(plr.blx2, plr.bly2+1, plr.blz2)
 				end
 				end
-			elseif plr.tool == TOOL_GUN then
-				plr.zooming = not plr.zooming
 			end
 		elseif button == 2 then
 			-- middleclick
@@ -365,6 +369,51 @@ do
 	for x=63,xlen-1,64 do
 		common.img_pixel_set(img_overview_grid, x, z, 0xFFFFFFFF)
 	end
+	end
+end
+
+-- create map sprites
+log_mspr = {}
+
+mspr_player = {
+	-3,-1,  -3, 0,  -3, 1,
+	 3,-1,   3, 0,   3, 1,
+	-1,-3,   0,-3,   1,-3,
+	-1, 3,   0, 3,   1, 3,
+	
+	-2,-2,
+	-2, 2,
+	 2, 2,
+	 2,-2,
+}
+
+-- create colour palette image
+img_cpal = common.img_new(80,80)
+img_cpal_rect = common.img_new(10,10)
+do
+	local cx,cy,x,y
+	for cy=0,7 do
+	for cx=0,7 do
+		local r,g,b
+		r = cpalette[cy*8+cx+1][3]
+		g = cpalette[cy*8+cx+1][2]
+		b = cpalette[cy*8+cx+1][1]
+		local c = 0xFF000000+256*(256*b+g)+r
+		
+		for y=cy*10+1,cy*10+8 do
+		for x=cx*10+1,cx*10+8 do
+			common.img_pixel_set(img_cpal, x, y, c)
+		end
+		end
+	end
+	end
+	
+	local i
+	for i=0,8 do
+		common.img_pixel_set(img_cpal_rect, i, 0, 0xFFFFFFFF)
+		common.img_pixel_set(img_cpal_rect, 9, i, 0xFFFFFFFF)
+		common.img_pixel_set(img_cpal_rect, 9-i, 9, 0xFFFFFFFF)
+		common.img_pixel_set(img_cpal_rect, 0, 9-i, 0xFFFFFFFF)
 	end
 end
 

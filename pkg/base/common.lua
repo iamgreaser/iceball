@@ -56,6 +56,7 @@ MODE_CHEAT_FLY = false
 MODE_AUTOCLIMB = true
 MODE_AIRJUMP = false
 MODE_SOFTCROUCH = true
+MODE_MINIMAP_RCIRC = false
 
 MODE_TILT_SLOWDOWN = false -- TODO!
 MODE_TILT_DOWN_NOCLIMB = false -- TODO!
@@ -73,66 +74,160 @@ TOOL_NADE = 3
 
 -- weapons
 WPN_RIFLE = 1
-WPN_SHOTTY = 2
+
+weapon_models = {}
 
 weapons = {
-	[WPN_RIFLE] = {
-		-- version: 0.60 with spread removed completely
-		dmg_head = 100,
-		dmg_body = 49,
-		dmg_limb = 33,
+	[WPN_RIFLE] = function (plr)
+		local this = {} this.this = this
 		
-		ammo_clip = 10,
-		ammo_reserve = 50,
-		ammo_pallets = 1,
-		time_fire = 1/2,
-		time_reload = 2.5,
-		is_reload_perclip = false,
+		this.cfg = {
+			dmg = {
+				head = 100,
+				body = 49,
+				legs = 33,
+			},
+			
+			ammo_clip = 10,
+			ammo_reserve = 50,
+			time_fire = 1/2,
+			time_reload = 2.5,
+			
+			recoil_x = 0.0001,
+			recoil_y = -0.05,
+			
+			name = "Rifle"
+		}
 		
-		spread = 0.0, -- THAT'S RIGHT, THE 0.75 RIFLE SUCKS
-		recoil_x = 0.0001,
-		recoil_y = -0.05,
+		function this.restock()
+			this.ammo_clip = this.cfg.ammo_clip
+			this.ammo_reserve = this.cfg.ammo_reserve
+		end
 		
-		basename = "rifle",
+		function this.reset()
+			this.t_fire = nil
+			this.t_reload = nil
+			this.reloading = false
+			this.restock()
+		end
 		
-		fn_tick = function(sec_current, sec_delta, plr, wpn, wpnstatic)
-			if wpn.firing and sec_current < wpn.t_fire then
-				-- TODO: actually fire gun
-				
-				wpn.t_fire = wpn.t_fire + wpnstatic.time_fire
-				if wpn.t_fire < sec_current then
-					wpn.t_fire = sec_current
+		this.reset()
+		
+		local function prv_fire(sec_current)
+			local sya = math.sin(plr.angy)
+			local cya = math.cos(plr.angy)
+			local sxa = math.sin(plr.angx)
+			local cxa = math.cos(plr.angx)
+			local fwx,fwy,fwz
+			fwx,fwy,fwz = sya*cxa, sxa, cya*cxa
+			
+			-- perform a trace
+			local d,cx1,cy1,cz1,cx2,cy2,cz2
+			d,cx1,cy1,cz1,cx2,cy2,cz2
+			= trace_map_ray_dist(plr.x,plr.y,plr.z, fwx,fwy,fwz, 127.5)
+			
+			if d then
+				-- TODO: block health rather than instant block removal
+				map_block_break(cx2,cy2,cz2)
+			else
+				d = 127.5
+			end
+			
+			-- TODO: kill people
+			-- TODO: fire a tracer
+			
+			-- apply recoil
+			-- attempting to emulate classic behaviour provided i have it right
+			plr.recoil(sec_current, this.cfg.recoil_y, this.cfg.recoil_x)
+		end
+		
+		function this.reload()
+			if this.ammo_clip ~= this.cfg.ammo_clip then
+			if this.ammo_reserve ~= 0 then
+			if not this.reloading then
+				this.reloading = true
+				plr.zooming = false
+				this.t_reload = nil
+			end end end
+		end
+		
+		function this.click(button, state)
+			if button == 1 then
+				-- LMB
+				if this.ammo_clip > 0 then
+					this.firing = state
+				else
+					this.firing = false
+					-- TODO: play sound
 				end
+			elseif button == 3 then
+				-- RMB
+				if state and not this.reloading then
+					plr.zooming = not plr.zooming
+				end
+			end
+		end
+		
+		function this.get_model()
+			return weapon_models[WPN_RIFLE]
+		end
+		
+		function this.draw(px, py, pz, ya, xa, ya2)
+			client.model_render_bone_global(this.get_model(), 0,
+				px, py, pz, ya, xa, ya2, 3)
+		end
+		
+		function this.tick(sec_current, sec_delta)
+			if this.reloading then
+				if not this.t_reload then
+					this.t_reload = sec_current + this.cfg.time_reload
+				end
+				
+				if sec_current >= this.t_reload then
+					local adelta = this.cfg.ammo_clip - this.ammo_clip
+					if adelta > this.ammo_reserve then
+						adelta = this.ammo_reserve
+					end
+					this.ammo_reserve = this.ammo_reserve - adelta
+					this.ammo_clip = this.ammo_clip + adelta
+					this.t_reload = nil
+					this.reloading = false
+					plr.arm_rest_right = 0
+				else
+					local tremain = this.t_reload - sec_current
+					local telapsed = this.cfg.time_reload - tremain
+					local roffs = math.min(tremain,telapsed)
+					roffs = math.min(roffs,0.3)/0.3
+					
+					plr.arm_rest_right = roffs
+				end
+			elseif this.firing and this.ammo_clip == 0 then
+				this.firing = false
+			elseif this.firing and ((not this.t_fire) or sec_current >= this.t_fire) then
+				prv_fire(sec_current)
+				
+				this.t_fire = this.t_fire or sec_current
+				this.t_fire = this.t_fire + this.cfg.time_fire
+				if this.t_fire < sec_current then
+					this.t_fire = sec_current
+				end
+				
+				this.ammo_clip = this.ammo_clip - 1
 				
 				-- TODO: poll: do we want to require a new click per shot?
 			end
-		end,
+			
+			if this.t_fire and this.t_fire < sec_current then
+				this.t_fire = nil
+			end
+		end
 		
-		enabled = true,
-	},
-	[WPN_SHOTTY] = {
-		-- version: something quite different.
-		-- TODO: get the balance right!
-		dmg_head = 26,
-		dmg_body = 23,
-		dmg_limb = 19,
-		
-		ammo_clip = 10,
-		ammo_reserve = 50,
-		ammo_pallets = 16,
-		time_fire = 1/15,
-		time_reload = 2.5,
-		is_reload_perclip = false,
-		
-		spread = 0.015, -- No, this should not be good at range.
-		recoil_x = 0.003,
-		recoil_y = -0.12,
-		
-		basename = "shotty",
-		
-		enabled = false,
-	},
+		return this
+	end,
 }
+
+weapons_enabled = {}
+weapons_enabled[WPN_RIFLE] = true
 
 -- teams
 teams = {

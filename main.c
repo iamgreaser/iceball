@@ -369,7 +369,7 @@ int print_usage(char *rname)
 			"\t\t%s -d port mod {args}\n"
 			"\n"
 			"quick start:\n"
-			"\t%s -s 0 pkg/base mesa.vxl\n"
+			"\t%s -s 0 pkg/base pkg/maps/mesa.vxl\n"
 			"\n"
 			"options:\n"
 			"\taddress:  hostname / IP address to connect to\n"

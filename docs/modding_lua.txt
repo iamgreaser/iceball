@@ -28,11 +28,25 @@ lua base library stuff:
 	loadstring @
 	loadfile @ (TODO: filter the path)
 	dofile @ (TODO: filter the path)
+	_G @
 	
 	nothing else yet
-	(TODO: stop leaking the whole base library)
 	
 	check http://www.lua.org/manual/5.1/ for more info on these
+	
+	some notes:
+	- dofile(x) = loadfile(x)()
+	- loadfile(x) = common.fetch_block("lua", x)
+	- common.fetch_block(ftype, x) =
+	    local f = common.fetch(ftype, x)
+	    while true do
+	      local val = f()
+	      if val == true then coroutine.yield()
+	      elseif val == nil then return nil
+	      else return f
+	    end
+	- just about every "load" function is based on common.fetch_block
+	  (TODO: make this true!)
 
 client/server.hook_tick = fn(sec_curtime, sec_delta)->sec_wait @
 	sets a hook called every "tick"
@@ -88,6 +102,39 @@ client.mouse_lock_set(state) @
 
 client.mouse_visible_set(state) @
 	shows / hides the mouse depending on "state"
+
+(f()->obj, amount), csize, usize = common.fetch(ftype, fname)
+	initiates a file fetch
+	
+	"ftype" is one of the following:
+	- "lua": lua script
+	- "map": map (autodetect)
+	- "icemap": map (icemap) - in-memory maps are serialised as THIS.
+	- "vxl": map (vxl) - CANNOT SAVE IN THIS FORMAT.
+	- "pmf": pmf model
+	- "tga": tga image
+	- "json": json data (TODO)
+	- "log": log data (TODO)
+	
+	for the server, this just loads the file from the disk.
+	
+	for the client, all clsave/* stuff is taken from the disk,
+	but all other files are downloaded from the server.
+	
+	returns a function you can poll which returns:
+	- "obj", either:
+	  - "true" if still loading
+	  - "nil" if can't load (check "amount" for error message)
+	  - the object you're looking for
+	- 0 <= "amount" <= 1, how much is downloaded
+	
+	"csize" is the compressed size of the file
+	"usize" is the uncompressed size
+
+obj = common.fetch_block(ftype, fname)
+	fetches a file using common.fetch(ftype, fname)
+	
+	simply returns "nil" on error
 
 map = common.map_load(fname, fmt = "auto") @
 	loads a map, either "vxl" or "icemap"

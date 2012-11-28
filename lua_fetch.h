@@ -24,6 +24,39 @@ int icelua_fn_common_fetch(lua_State *L)
 
 int icelua_fn_common_fetch_block(lua_State *L)
 {
-	// TODO!
-	return 0;
+	// TODO: base this on common.fetch
+	// TODO: run this through a network
+	
+	int top = icelua_assert_stack(L, 2, 2);
+	const char *ftype = lua_tostring(L, 1);
+	const char *fname = lua_tostring(L, 2);
+	
+	if(!strcmp(ftype, "lua"))
+	{
+		// TODO!
+		return 0;
+	} else if(!strcmp(ftype, "map")) {
+		// TODO!
+		return 0;
+	} else if(!strcmp(ftype, "icemap")) {
+		// TODO!
+		return 0;
+	} else if(!strcmp(ftype, "vxl")) {
+		// TODO!
+		return 0;
+	} else if(!strcmp(ftype, "pmf")) {
+		// TODO!
+		return 0;
+	} else if(!strcmp(ftype, "tga")) {
+		// TODO!
+		return 0;
+	} else if(!strcmp(ftype, "json")) {
+		// TODO!
+		return 0;
+	} else if(!strcmp(ftype, "log")) {
+		// TODO!
+		return 0;
+	} else {
+		return luaL_error(L, "unsupported format for fetch");
+	}
 }

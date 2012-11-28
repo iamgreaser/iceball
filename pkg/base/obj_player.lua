@@ -93,6 +93,8 @@ function new_player(settings)
 		if this.mdl_player then common.model_free(this.mdl_player) end
 	end
 	
+	this.t_rcirc = nil
+	
 	function this.spawn()
 		local xlen,ylen,zlen
 		xlen,ylen,zlen = common.map_get_dims()
@@ -112,6 +114,16 @@ function new_player(settings)
 		this.grounded = false
 		this.crouching = false
 		
+		this.arm_rest_right = 0.0
+		this.arm_rest_left = 1.0
+		
+		this.t_respawn = nil
+		this.t_switch = true
+		this.t_newnade = nil
+		this.t_newblock = nil
+		this.t_newspade1 = nil
+		this.t_newspade2 = nil
+		
 		this.vx, this.vy, this.vz = 0, 0, 0
 		this.angy, this.angx = math.pi/2.0, 0.0
 		if this.team == 1 then this.angy = this.angy-math.pi end
@@ -130,26 +142,59 @@ function new_player(settings)
 		
 		this.health = 100
 		this.blocks = 25
-		this.ammo_clip = weapons[this.weapon].ammo_clip
-		this.ammo_reserve = weapons[this.weapon].ammo_reserve
+		this.grenades = 2
 		
-		this.name = settings.name or "Noob"
+		this.wpn = weapons[this.weapon](this)
 		
 		this.tool = 2
 	end
 	
+	this.name = settings.name or "Noob"
 	this.spawn()
 	
+	function this.tool_switch(tool)
+		if this.tool == TOOL_GUN then
+			if this.wpn then
+				this.wpn.firing = false
+				this.wpn.reloading = false
+			end
+			this.zooming = false
+			this.arm_rest_right = 0
+		end
+		this.t_switch = true
+		this.tool = tool
+	end
+	
+	function this.recoil(sec_current, recoil_y, recoil_x)
+		local xrec = recoil_x*math.cos(sec_current*math.pi*2)*math.pi*20
+		local ydip = math.sin(this.angx)
+		local ycos = math.cos(this.angx)
+		local yrec = recoil_y + ydip
+		local ydist = math.sqrt(ycos*ycos+yrec*yrec)
+		this.angy = this.angy + xrec
+		this.angx = math.asin(yrec/ydist)
+	end
+	
 	function this.tick(sec_current, sec_delta)
+		if this.t_switch == true then
+			this.t_switch = sec_current + 0.2
+		end
+		
+		if this.t_switch then
+			if sec_current > this.t_switch then
+				this.t_switch = nil
+				this.arm_rest_right = 0
+			else
+				local delta = this.t_switch-sec_current
+				this.arm_rest_right = math.max(0.0,delta/0.2)
+			end
+		end
+		
 		-- clamp angle, YOU MUST NOT LOOK DIRECTLY UP OR DOWN!
 		if this.angx > math.pi*0.499 then
 			this.angx = math.pi*0.499
 		elseif this.angx < -math.pi*0.499 then
 			this.angx = -math.pi*0.499
-		end
-		
-		if this.tool ~= TOOL_GUN then
-			this.zooming = false
 		end
 		
 		if this.zooming then
@@ -313,6 +358,9 @@ function new_player(settings)
 			this.blx3, this.bly3, this.blz3
 			= trace_map_ray_dist(this.x,this.y,this.z, fwx,fwy,fwz, 127.5)
 		end
+		
+		-- update gun
+		if this.wpn then this.wpn.tick(sec_current, sec_delta) end
 	end
 	
 	function this.camera_firstperson()
@@ -364,9 +412,20 @@ function new_player(settings)
 			leg_y2 = leg_y2 - 1
 		end
 		
-		local mdl_x = hand_x1+axc*ays*0.8
-		local mdl_y = hand_y1+axs*0.8
-		local mdl_z = hand_z1+axc*ayc*0.8
+		local swing = math.sin(rotpos/30*2)
+			*math.min(1.0, math.sqrt(
+				 this.vx*this.vx
+				+this.vz*this.vz)/8.0)
+			*math.pi/4.0
+		
+		local rax_right = (1-this.arm_rest_right)*(this.angx)
+				+ this.arm_rest_right*(-swing+math.pi/2)
+		local rax_left = (1-this.arm_rest_left)*(this.angx)
+				+ this.arm_rest_left*(swing+math.pi/2)
+		
+		local mdl_x = hand_x1+math.cos(rax_right)*ays*0.8
+		local mdl_y = hand_y1+math.sin(rax_right)*0.8
+		local mdl_z = hand_z1+math.cos(rax_right)*ayc*0.8
 		if this.tool == TOOL_SPADE then
 			client.model_render_bone_global(mdl_spade, mdl_spade_bone,
 				this.x+mdl_x, this.y+this.jerkoffs+mdl_y, this.z+mdl_z,
@@ -377,27 +436,22 @@ function new_player(settings)
 				this.x+mdl_x, this.y+this.jerkoffs+mdl_y, this.z+mdl_z,
 				0.0, -this.angx, this.angy, 1)
 		elseif this.tool == TOOL_GUN then
-			client.model_render_bone_global(mdl_rifle, mdl_rifle_bone,
-				this.x+mdl_x, this.y+this.jerkoffs+mdl_y, this.z+mdl_z,
-				math.pi/2, -this.angx, this.angy, 3)
+			this.wpn.draw(this.x+mdl_x, this.y+this.jerkoffs+mdl_y, this.z+mdl_z,
+				math.pi/2, -this.angx, this.angy)
 		elseif this.tool == TOOL_NADE then
 			client.model_render_bone_global(mdl_nade, mdl_nade_bone,
 				this.x+mdl_x, this.y+this.jerkoffs+mdl_y, this.z+mdl_z,
 				0.0, -this.angx, this.angy, 0.5)
 		end
 		
-		local swing = math.sin(rotpos/30*2)
-			*math.min(1.0, math.sqrt(
-				 this.vx*this.vx
-				+this.vz*this.vz)/8.0)
-			*math.pi/4.0
-		
 		client.model_render_bone_global(this.mdl_player, mdl_player_arm,
 			this.x+hand_x1, this.y+this.jerkoffs+hand_y1, this.z+hand_z1,
-			0.0, this.angx-math.pi/2, this.angy-math.pi, 2.0)
+			0.0, rax_right-math.pi/2,
+			this.angy-math.pi, 2.0)
 		client.model_render_bone_global(this.mdl_player, mdl_player_arm,
 			this.x+hand_x2, this.y+this.jerkoffs+hand_y2, this.z+hand_z2,
-			0.0, 0-math.pi/4+swing, this.angy-math.pi, 2.0)
+			0.0, rax_left-math.pi/2,
+			this.angy-math.pi, 2.0)
 		
 		client.model_render_bone_global(this.mdl_player, mdl_player_leg,
 			this.x+leg_x1, this.y+this.jerkoffs+leg_y1, this.z+leg_z1,
@@ -425,13 +479,13 @@ function new_player(settings)
 		axc = math.cos(this.angx)
 		
 		local w, h
+		local i, j
 		w, h = client.screen_get_dims()
 		
 		-- TODO: palettise this more nicely
-		local i
 		prv_recolor_block(this.blk_color[1],this.blk_color[2],this.blk_color[3])
 		
-		if this.blx1 then
+		if (this.tool == TOOL_SPADE or this.tool == TOOL_BLOCK) and this.blx1 then
 			client.model_render_bone_global(mdl_test, mdl_test_bone,
 				this.blx1+0.5, this.bly1+0.5, this.blz1+0.5,
 				rotpos*0.01, rotpos*0.004, 0.0, 0.1+0.01*math.sin(rotpos*0.071))
@@ -454,7 +508,7 @@ function new_player(settings)
 		client.model_render_bone_local(this.mdl_block, this.mdl_block_bone,
 			1-0.30, -h/w+0.2+((this.tool == TOOL_BLOCK and 0.02*math.sin(rotpos*0.02)) or 0), 1.0,
 			rotpos*0.01, 0.0, 0.0, 0.1*((this.tool == TOOL_BLOCK and 2.0) or 1.0))
-		client.model_render_bone_local(mdl_rifle, mdl_rifle_bone,
+		client.model_render_bone_local(this.wpn.get_model(), 0,
 			1-0.45, -h/w+0.2+((this.tool == TOOL_GUN and 0.02*math.sin(rotpos*0.02)) or 0), 1.0,
 			rotpos*0.01, 0.0, 0.0, 0.2*((this.tool == TOOL_GUN and 2.0) or 1.0))
 		client.model_render_bone_local(mdl_nade, mdl_nade_bone,
@@ -520,18 +574,26 @@ function new_player(settings)
 			end
 		end
 		
-		local color = 0xFFA1FFA1
-		local hstr = ""..this.health
-		local astr = ""..this.ammo_clip.."-"..this.ammo_reserve
-		local bstr = ""..this.blocks
-		
-		local i
-		gui_print_digits((w-32*#hstr)/2, h-48, color, hstr)
-		gui_print_digits(-16+w-32*#astr, h-48, 0xAA880000, astr)
+		local hcolor = 0xFFA1FFA1
+		local acolor = 0xFFC0C0C0
+		local gcolor = 0xFFC0C0C0
 		local cr,cg,cb
 		cr,cg,cb = this.blk_color[1],this.blk_color[2],this.blk_color[3]
-		local cw = (cr*256+cg)*256+cb
-		gui_print_digits(16, h-48, cw+0xFF000000, bstr)
+		local bcolor = (cr*256+cg)*256+cb
+		local hstr = ""..this.health
+		local astr = ""..this.wpn.ammo_clip.."-"..this.wpn.ammo_reserve
+		local bstr = ""..this.blocks
+		local gstr = ""..this.grenades
+		
+		gui_print_digits((w-32*#hstr)/2, h-48, hcolor, hstr)
+		if this.tool == TOOL_GUN then
+			gui_print_digits(-16+w-32*#astr, h-48, acolor, astr)
+		elseif this.tool == TOOL_NADE then
+			gui_print_digits(-16+w-32*#gstr, h-48, gcolor, gstr)
+		else
+			gui_print_digits(-16+w-32*#bstr, h-48, bcolor+0xFF000000, bstr)
+		end
+		local i
 		
 		if debug_enabled then
 			local camx,camy,camz
@@ -544,6 +606,44 @@ function new_player(settings)
 		
 		client.img_blit(img_crosshair, w/2 - 8, h/2 - 8)
 		
+		for i=1,#log_mspr,2 do
+			local u,v
+			u = log_mspr[i  ]
+			v = log_mspr[i+1]
+			common.img_pixel_set(img_overview_icons, u, v, 0x00000000)
+		end
+		log_mspr = {}
+		
+		for j=1,players.max do
+			local plr = players[j]
+			if plr then
+				local x,y
+				x,y = plr.x, plr.z
+				local c
+				local drawit = true
+				if plr == this then
+					c = 0xFF00FFFF
+				elseif plr.team == this.team then
+					c = 0xFFFFFFFF
+				else
+					c = 0xFFFF0000
+					drawit = (this.t_rcirc ~= nil and
+						(MODE_MINIMAP_RCIRC or large_map))
+				end
+				
+				if drawit then
+					for i=1,#mspr_player,2 do
+						local u,v
+						u = x+mspr_player[i  ]
+						v = y+mspr_player[i+1]
+						log_mspr[#log_mspr+1] = u
+						log_mspr[#log_mspr+1] = v
+						common.img_pixel_set(img_overview_icons, u, v, c)
+					end
+				end
+			end
+		end
+		
 		local ow, oh
 		ow, oh = common.img_get_dims(img_overview)
 		if large_map then
@@ -553,6 +653,7 @@ function new_player(settings)
 			client.img_blit(img_overview, mx, my)
 			client.img_blit(img_overview_grid, mx, my,
 				ow, oh, 0, 0, 0x80FFFFFF)
+			client.img_blit(img_overview_icons, mx, my)
 			
 			local i
 			
@@ -581,9 +682,22 @@ function new_player(settings)
 					mw, mh,
 					this.x-mw/2+ow*qx, this.z-mh/2+oh*qy,
 					0x80FFFFFF)
+				client.img_blit(img_overview_icons, w - mw, 0,
+					mw, mh,
+					this.x-mw/2+ow*qx, this.z-mh/2+oh*qy,
+					0xFFFFFFFF)
 			end
 			end
+			
+			local s = "Location: "
+				..string.char(65+math.floor(this.x/64))
+				..(1+math.floor(this.z/64))
+			gui_print_mini(w - mw/2 - 3*#s, mh + 2, 0xFFFFFFFF, s)
 		end
+		client.img_blit(img_cpal, 0, h-80)
+		client.img_blit(img_cpal_rect,
+			0 + this.blk_color_x*10,
+			h-80 + this.blk_color_y*10)
 	end
 	
 	return this

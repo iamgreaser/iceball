@@ -15,38 +15,28 @@
     along with Iceball.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-int icelua_fn_base_print(lua_State *L)
-{
-	// TODO!
-	return 0;
-}
-
-int icelua_fn_base_error(lua_State *L)
-{
-	// TODO!
-	return 0;
-}
-
-int icelua_fn_base_pcall(lua_State *L)
-{
-	// TODO!
-	return 0;
-}
-
-int icelua_fn_base_loadstring(lua_State *L)
-{
-	// TODO!
-	return 0;
-}
-
 int icelua_fn_base_loadfile(lua_State *L)
 {
-	// TODO!
-	return 0;
+	// TODO: base this on common.fetch_block
+	
+	int top = icelua_assert_stack(L, 1, 1);
+	
+	if(luaL_loadfile(L, lua_tostring(L, 1)) != 0)
+		return luaL_error(L, "%s", lua_tostring(L, -1));
+	
+	return 1;
 }
 
 int icelua_fn_base_dofile(lua_State *L)
 {
-	// TODO!
+	int top = icelua_assert_stack(L, 1, 1);
+	
+	lua_pushcfunction(L, icelua_fn_base_loadfile);
+	lua_pushvalue(L, 1);
+	lua_call(L, 1, 1);
+	
+	// TODO: pcall this
+	lua_call(L, 0, 0);
+	
 	return 0;
 }

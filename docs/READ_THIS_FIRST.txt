@@ -81,6 +81,8 @@ By the way, here's a tip for the Windows users:
 
 Double-click opencmd.bat. It should get you into the right directory.
 
+If you have any questions, use your preferred search engine.
+
 -------------------------------------------------------------------------------
 
 Iceball refers to one of two things:
@@ -141,7 +143,7 @@ List of things NOT to request:
 - RPG.
 - Nerfing the rifle.
 - SMG.
-- Any weapons which have not been field-tested.
+- Any weapons which have not been field-tested in a mod.
 - Any weapons which are SMG.
 - SMG.
 

@@ -125,7 +125,7 @@ function trace_map_ray_dist(x1,y1,z1, vx,vy,vz, maxdist)
 		end
 		
 		dist = dist + t
-		if dist > maxdist then return nil, nil, nil, nil end
+		if dist > maxdist then return nil, nil, nil, nil, nil, nil, nil end
 		
 		local i=1
 		while true do

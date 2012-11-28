@@ -51,7 +51,9 @@ int icelua_force_get_integer(lua_State *L, int table, char *name)
 	return ret;
 }
 
+#include "lua_base.h"
 #include "lua_camera.h"
+#include "lua_fetch.h"
 #include "lua_image.h"
 #include "lua_input.h"
 #include "lua_map.h"
@@ -152,6 +154,12 @@ void icelua_loadbasefuncs(lua_State *L)
 	lua_call(L, 0, 0);
 	lua_pushcfunction(L, luaopen_math);
 	lua_call(L, 0, 0);
+	
+	// overwrite dofile/loadfile.
+	lua_pushcfunction(L, icelua_fn_base_loadfile);
+	lua_setglobal(L, "loadfile");
+	lua_pushcfunction(L, icelua_fn_base_dofile);
+	lua_setglobal(L, "dofile");
 }
 
 int icelua_init(void)
@@ -169,6 +177,8 @@ int icelua_init(void)
 		lua_setglobal(lstate_client, "client");
 		lua_newtable(lstate_client);
 		lua_setglobal(lstate_client, "common");
+		lua_pushvalue(lstate_client, LUA_GLOBALSINDEX);
+		lua_setglobal(lstate_client, "_G");
 	}
 	
 	if(lstate_server != NULL)
@@ -177,6 +187,8 @@ int icelua_init(void)
 		lua_setglobal(lstate_server, "server");
 		lua_newtable(lstate_server);
 		lua_setglobal(lstate_server, "common");
+		lua_pushvalue(lstate_server, LUA_GLOBALSINDEX);
+		lua_setglobal(lstate_server, "_G");
 	}
 	
 	// load stuff into them
