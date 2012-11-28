@@ -130,13 +130,7 @@ weapons = {
 			local d,cx1,cy1,cz1,cx2,cy2,cz2
 			d,cx1,cy1,cz1,cx2,cy2,cz2
 			= trace_map_ray_dist(plr.x,plr.y,plr.z, fwx,fwy,fwz, 127.5)
-			
-			if d then
-				-- TODO: block health rather than instant block removal
-				map_block_break(cx2,cy2,cz2)
-			else
-				d = 127.5
-			end
+			d = d or 127.5
 			
 			-- see if there's anyone we can kill
 			local hurt_idx = nil
@@ -172,6 +166,9 @@ weapons = {
 				-- TODO: ship this off to the server!
 				players[hurt_idx].gun_damage(
 					hurt_part, this.cfg.dmg[hurt_part], plr, sec_current)
+			elseif cx2 then
+				-- TODO: block health rather than instant block removal
+				map_block_break(cx2,cy2,cz2)
 			end
 			
 			-- TODO: fire a tracer

@@ -87,8 +87,11 @@ Iceball Base Mod:
 		if the gap between the server and client time
 		extends by 10 seconds, client is probably using CE speedhack
 	
-	0x03 pid x.fs y.fs z.fs:
+	0x03 pid x.s16 y.s16 z.s16:
 		player set position
+		
+		positions are 11.5 fixed point,
+		giving a hypothetical max map size of 1024x128x1024
 		
 		note, for C->S pid MUST be 0x00
 	
@@ -105,6 +108,11 @@ Iceball Base Mod:
 		adds player to server
 		
 		note, this can be used to update a player on the server
+		
+		"weapon" can be one of these:
+			1: rifle
+		
+		yeah that's it really.
 	
 	0x06 pid: (S->C)
 		sets client player id to "pid"

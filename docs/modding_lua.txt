@@ -359,4 +359,17 @@ client.img_blit(img, dx, dy, width = iwidth, height = iheight, sx = 0, sy = 0, c
 	"color" indicates a base 0xAARRGGBB colour to use
 	
 	this is clipped to fit!
+
+wav = common.wav_load(fname)
+	loads a sound with filename "fname"
+	remember to free it when you're done
+	as this is only a light userdata
+
+common.wav_free(wav)
+	free the given sound
+	if you don't do this then it's memoryleaktopia
+	(plus i'm allowed to kill you)
+
+client.wav_play(wav, vol_left = 1.0, vol_right = 1.0, freq_mod = 1.0)
+	play the given sound
 #

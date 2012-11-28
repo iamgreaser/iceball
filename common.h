@@ -20,6 +20,8 @@
 #define PACKET_LEN_MAX 1280
 #define PATH_LEN_MAX 128
 
+#define WAV_MFREQ 44100
+
 //define RENDER_FACE_COUNT 2
 
 #include <immintrin.h>
@@ -271,3 +273,7 @@ void render_deinit(void);
 vec4f_t mtx_apply_vec(matrix_t *mtx, vec4f_t *vec);
 void mtx_identity(matrix_t *mtx);
 void cam_point_dir(camera_t *model, float dx, float dy, float dz, float zoom, float roll);
+
+// wav.c
+int wav_init(void);
+void wav_deinit(void);

@@ -48,18 +48,33 @@ BTSK_MAP = SDLK_m
 
 players = {max = 32, current = 1}
 damage_blk = {}
-chat_killfeed = {head = 1, scroll = nil}
-chat_text = {head = 1, scroll = nil}
+chat_killfeed = {head = 1, scroll = nil, queue = {}}
+chat_text = {head = 1, scroll = nil, queue = {}}
 
 function chat_add(ctab, mtime, msg, color)
-	ctab[#ctab+1] = {
+	local l = {
 		mtime = mtime,
 		color = color,
 		msg = msg,
 	}
+	
+	if mtime then
+		ctab[#ctab+1] = l
+	else
+		ctab.queue[#(ctab.queue)] = l
+	end
 end
 
 function chat_prune(ctab, mtime)
+	local i
+	
+	for i=1,#(ctab.queue) do
+		local l = ctab.queue[i]
+		l.mtime = mtime
+		ctab[#ctab+1] = l
+	end
+	ctab.queue = {}
+	
 	mtime = mtime - MODE_CHAT_LINGER
 	while ctab.head <= #ctab and (
 			#ctab-ctab.head > MODE_CHAT_MAX

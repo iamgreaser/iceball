@@ -431,9 +431,11 @@ int main(int argc, char *argv[])
 	if(!icelua_init()) {
 	if(!net_init()) {
 	if((!(boot_mode & 1)) || !video_init()) {
+	if((!(boot_mode & 1)) || !wav_init()) {
 	if((!(boot_mode & 1)) || !render_init(screen->w, screen->h)) {
 		run_game();
 		if(boot_mode & 1) render_deinit();
+	} if(boot_mode & 1) wav_deinit();
 	} if(boot_mode & 1) video_deinit();
 	} net_deinit();
 	} icelua_deinit();

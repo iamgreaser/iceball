@@ -107,6 +107,7 @@ V = sneak
 
 1 2 3 4 = select tool
 arrow keys = select block colour
+R = reload gun
 
 M = show map
 
