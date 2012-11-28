@@ -78,7 +78,7 @@ client.hook_render = fn() @
 	this is the only place where it is safe to render stuff
 	such as models and HUDs and whatnot
 
-client.hook_key = fn(key, state) @
+client.hook_key = fn(key, state, modif) @
 	sets a hook called every time a key changes
 	
 	state is either true or false

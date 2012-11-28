@@ -20,7 +20,7 @@ dofile("pkg/base/lib_pmf.lua")
 dofile("pkg/base/lib_sdlkey.lua")
 
 preload = ...
-PMFEDIT_FNAME = "clsave/editor.pmf"
+PMFEDIT_FNAME = "clsave/vol/editor.pmf"
 
 BTSK_PMF_MOVEXN = SDLK_l
 BTSK_PMF_MOVEXP = SDLK_j

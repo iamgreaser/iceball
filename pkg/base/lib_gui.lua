@@ -39,6 +39,17 @@ local digit_map = {
 	["-"] = 11,
 }
 
+-- TODO: find a better solution than this shit
+-- y'know, just in case someone decides they're going to play this with an AZERTY
+local shift_map = {
+	["1"] = "!", ["2"] = "@", ["3"] = "#", ["4"] = "$", ["5"] = "%",
+	["6"] = "^", ["7"] = "&", ["8"] = "*", ["9"] = "(", ["0"] = ")",
+	["`"] = "~", ["-"] = "_", ["="] = "+",
+	["["] = "{", ["]"] = "}", ["\\"] = "|",
+	[";"] = ":", ["'"] = "\"",
+	[","] = "<", ["."] = ">", ["/"] = "?",
+}
+
 function gui_print_mini(x, y, c, str)
 	local i
 	for i=1,#str do
@@ -53,5 +64,45 @@ function gui_print_digits(x, y, c, str)
 		client.img_blit(img_font_numbers, x, y, 32, 48, digit_map[string.sub(str,i,i)]*32, 0, c)
 		x = x + 32
 	end
+end
+
+function gui_print_mini_wrap(wp, x, y, c, str)
+	-- TODO!
+	-- note: [W]idth in [P]ixels
+	gui_print_mini(x, y, c, str)
+end
+
+function gui_get_char(key, modif)
+	if key >= 32 and key <= 126 then
+		local shifted = (bit_and(modif, KMOD_SHIFT) ~= 0)
+		local crapslock = (bit_and(modif, KMOD_CAPS) ~= 0)
+		if key >= SDLK_a and key <= SDLK_z then
+			if shifted ~= crapslock then
+				key = key - 32
+			end
+		end
+		
+		local k = string.char(key)
+		k = (shifted and shift_map[k]) or k
+		return k
+	end
+	
+	-- TODO: check some other things
+	
+	return nil
+end
+
+function gui_string_edit(str, maxlen, key, modif)
+	if key == SDLK_BACKSPACE then
+		str = string.sub(str, 1, #str-1)
+	else
+		local k = gui_get_char(key, modif)
+		
+		if #str < maxlen and k then
+			str = str .. k
+		end
+	end
+	
+	return str
 end
 end

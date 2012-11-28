@@ -41,6 +41,10 @@ BTSK_COLORRIGHT = SDLK_RIGHT
 BTSK_COLORUP    = SDLK_UP
 BTSK_COLORDOWN  = SDLK_DOWN
 
+BTSK_CHAT     = SDLK_t
+BTSK_COMMAND  = SDLK_SLASH
+BTSK_TEAMCHAT = SDLK_y
+
 BTSK_QUIT = SDLK_ESCAPE
 
 BTSK_DEBUG = SDLK_F1
@@ -61,7 +65,7 @@ function chat_add(ctab, mtime, msg, color)
 	if mtime then
 		ctab[#ctab+1] = l
 	else
-		ctab.queue[#(ctab.queue)] = l
+		ctab.queue[#(ctab.queue)+1] = l
 	end
 end
 
@@ -104,6 +108,9 @@ mouse_released = false
 large_map = false
 sensitivity = 1.0/1000.0
 mouse_skip = 3
+
+typing_type = nil
+typing_msg = nil
 
 -- load images
 img_crosshair = client.img_load("pkg/base/gfx/crosshair.tga")
@@ -235,7 +242,7 @@ end
 
 client.hook_tick = h_tick_init
 
-function client.hook_key(key, state)
+function client.hook_key(key, state, modif)
 	if not players[players.current] then return end
 	local plr = players[players.current]
 	
@@ -243,9 +250,29 @@ function client.hook_key(key, state)
 		mouse_released = true
 		client.mouse_lock_set(false)
 		client.mouse_visible_set(true)
-	elseif key == BTSK_QUIT then
-		-- TODO: clean up
-		client.hook_tick = nil
+	elseif typing_type then
+		if state then
+			if key == SDLK_ESCAPE then
+				typing_type = nil
+				typing_msg = nil
+			elseif key == SDLK_RETURN then
+				if typing_msg ~= "" then
+					if typing_type == "Chat: " then
+						local s = plr.name.." ("..teams[plr.team].name.."): "..typing_msg
+						chat_add(chat_text, nil, s, 0xFFFFFFFF)
+					elseif typing_type == "Team: " then
+						local s = plr.name..": "..typing_msg
+						local cb = teams[plr.team].color_chat
+						local c = argb_split_to_merged(cb[1],cb[2],cb[3])
+						chat_add(chat_text, nil, s, c)
+					end
+				end
+				typing_type = nil
+				typing_msg = nil
+			else
+				typing_msg = gui_string_edit(typing_msg, MODE_CHAT_STRMAX, key, modif)
+			end
+		end
 	elseif key == BTSK_FORWARD then
 		plr.ev_forward = state
 	elseif key == BTSK_BACK then
@@ -263,6 +290,9 @@ function client.hook_key(key, state)
 	elseif state then
 		if key == BTSK_DEBUG then
 			debug_enabled = not debug_enabled
+		elseif key == BTSK_QUIT then
+			-- TODO: clean up
+			client.hook_tick = nil
 		elseif key == BTSK_MAP then
 			large_map = not large_map
 		elseif key == BTSK_RELOAD then
@@ -277,6 +307,15 @@ function client.hook_key(key, state)
 			plr.tool_switch(TOOL_NADE)
 		elseif key == BTSK_TOOL5 then
 			-- TODO
+		elseif key == BTSK_CHAT then
+			typing_type = "Chat: "
+			typing_msg = ""
+		elseif key == BTSK_COMMAND then
+			typing_type = "Chat: "
+			typing_msg = "/"
+		elseif key == BTSK_TEAMCHAT then
+			typing_type = "Team: "
+			typing_msg = ""
 		elseif key == BTSK_COLORLEFT then
 			plr.blk_color_x = plr.blk_color_x - 1
 			if plr.blk_color_x < 0 then
@@ -410,11 +449,7 @@ do
 	for z=0,zlen-1 do
 	for x=0,xlen-1 do
 		local l = common.map_pillar_get(x,z)
-		local r,g,b
-		r = l[5]
-		g = l[6]
-		b = l[7]
-		local c = 0xFF000000+256*(256*b+g)+r
+		local c = argb_split_to_merged(l[7],l[6],l[5])
 		common.img_pixel_set(img_overview, x, z, c)
 	end
 	end
@@ -453,10 +488,10 @@ do
 	for cy=0,7 do
 	for cx=0,7 do
 		local r,g,b
-		r = cpalette[cy*8+cx+1][3]
+		r = cpalette[cy*8+cx+1][1]
 		g = cpalette[cy*8+cx+1][2]
-		b = cpalette[cy*8+cx+1][1]
-		local c = 0xFF000000+256*(256*b+g)+r
+		b = cpalette[cy*8+cx+1][3]
+		local c = argb_split_to_merged(r,g,b)
 		
 		for y=cy*8+1,cy*8+6 do
 		for x=cx*8+1,cx*8+6 do

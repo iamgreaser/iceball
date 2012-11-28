@@ -14,5 +14,5 @@ g = add/paint block
 b = remove block
 
 
-F3 = quickload clsave/editor.pmf
-F10 = quicksave clsave/editor.pmf
+F3 = quickload clsave/vol/editor.pmf
+F10 = quicksave clsave/vol/editor.pmf

@@ -175,23 +175,66 @@ function new_player(settings)
 		this.angx = math.asin(yrec/ydist)
 	end
 	
-	function this.gun_damage(part, amt, enemy, sec_current)
-		--print("damage",this.name,part,amt)
+	function this.damage(amt, kcol, kmsg)
 		this.health = this.health - amt
 		if this.health <= 0 then
-			local r,g,b
-			r,g,b = 0,0,0
-			
-			local l = teams[enemy.team].color_chat
-			r,g,b = l[1],l[2],l[3]
-			
-			local c = 0xFF000000+256*(256*r+g)+b
-			
-			chat_add(chat_killfeed, sec_current,
-				enemy.name.." killed "..this.name, c)
+			chat_add(chat_killfeed, nil, kmsg, kcol)
 			this.health = 0
 			this.alive = false
 		end
+	end
+	
+	function this.fall_damage(amt)
+		--print("damage",this.name,part,amt)
+		local l = teams[this.team].color_chat
+		r,g,b = l[1],l[2],l[3]
+		
+		local c = argb_split_to_merged(r,g,b)
+		
+		local kmsg = this.name.." found a high place"
+		this.damage(amt, c, kmsg)
+	end
+	
+	function this.gun_damage(part, amt, enemy)
+		--print("damage",this.name,part,amt)
+		local midmsg = " killed "
+		if this.team == enemy.team then
+			midmsg = " teamkilled "
+		end
+		
+		local r,g,b
+		r,g,b = 0,0,0
+		
+		local l = teams[enemy.team].color_chat
+		r,g,b = l[1],l[2],l[3]
+		
+		local c = argb_split_to_merged(r,g,b)
+		
+		local kmsg = enemy.name..midmsg..this.name
+		this.damage(amt, c, kmsg)
+	end
+	
+	function this.grenade_damage(amt, enemy)
+		--print("damage",this.name,part,amt)
+		local midmsg = " killed "
+		if this.team == enemy.team then
+			midmsg = " teamkilled "
+		end
+		
+		local r,g,b
+		r,g,b = 0,0,0
+		
+		local l = teams[enemy.team].color_chat
+		r,g,b = l[1],l[2],l[3]
+		
+		local c = argb_split_to_merged(r,g,b)
+		
+		local kmsg = enemy.name..midmsg..this.name
+		if enemy == this then
+			kmsg = this.name.." exploded"
+		end
+		
+		this.damage(amt, c, kmsg)
 	end
 	
 	function this.tick(sec_current, sec_delta)
@@ -604,8 +647,8 @@ function new_player(settings)
 						end
 						
 						gui_print_mini(px-(6*#s_name)/2,py-7
-							,(c[1]*256+c[2])*256+c[3]
-							+0x01000000*math.floor(fatt*255)
+							,argb_split_to_merged(c[1],c[2],c[3]
+								,math.floor(fatt*255))
 							,s_name)
 					end
 				end
@@ -748,6 +791,11 @@ function new_player(settings)
 		chat_draw(chat_text, (function (i,s,w,h)
 			return 4, h-90-(coffs_text-i)*8
 		end))
+		
+		if typing_type then
+			local s = typing_type..typing_msg.."_"
+			gui_print_mini(4, h-80, 0xFFFFFFFF, s)
+		end
 	end
 	
 	return this

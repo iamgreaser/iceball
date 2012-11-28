@@ -220,9 +220,12 @@ int update_client(void)
 				lua_pop(lstate_client, 1);
 				break;
 			}
+			
 			lua_pushinteger(lstate_client, ev.key.keysym.sym);
 			lua_pushboolean(lstate_client, (ev.type == SDL_KEYDOWN));
-			if(lua_pcall(lstate_client, 2, 0, 0) != 0)
+			lua_pushinteger(lstate_client, (int)(ev.key.keysym.mod));
+			
+			if(lua_pcall(lstate_client, 3, 0, 0) != 0)
 			{
 				printf("Lua Client Error (key): %s\n", lua_tostring(lstate_client, -1));
 				lua_pop(lstate_client, 1);

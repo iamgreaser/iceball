@@ -135,10 +135,10 @@ function map_pillar_raw_set(x,z,t)
 	if img_overview and tpack[5] then
 		-- TODO: check for wrapping
 		local r,g,b
-		r = tpack[5]
+		b = tpack[5]
 		g = tpack[6]
-		b = tpack[7]
-		local c = 0xFF000000+256*(256*b+g)+r
+		r = tpack[7]
+		local c = argb_split_to_merged(r,g,b)
 		common.img_pixel_set(img_overview, x, z, c)
 	end
 	

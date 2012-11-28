@@ -28,10 +28,14 @@ For security reasons,
 you are only allowed to modify files in these directories:
   Client only:
     clsave/<group name>/<mod name>/*
+    clsave/vol/*
   Server only:
     svsave/<group name>/<mod name>/*
+    svsave/vol/*
 
-You can also modify them.
+Note: "vol" is short for "volatile".
+
+You can also read them.
 
 You ARE allowed to read these:
   pkg/*

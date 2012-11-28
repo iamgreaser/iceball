@@ -71,7 +71,7 @@ end
 client.hook_tick = pmfhook_tick
 
 local old_keyhook = client.hook_key
-function client.hook_key(key, state)
+function client.hook_key(key, state, modif)
 	if state then
 		if pmfedit_enabled then
 			if key == BTSK_PMF_MOVEXN then
@@ -163,7 +163,7 @@ function client.hook_key(key, state)
 			pmfedit_enabled = not pmfedit_enabled
 		end
 	end
-	return old_keyhook(key, state)
+	return old_keyhook(key, state, modif)
 end
 
 local old_renderhook = client.hook_render

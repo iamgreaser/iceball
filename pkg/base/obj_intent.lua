@@ -20,6 +20,10 @@ function new_intel(settings)
 	
 	this.team = settings.team or -1
 	
+	function this.tick(sec_current, sec_delta)
+		-- TODO?
+	end
+	
 	function this.spawn()
 		local xlen,ylen,zlen
 		xlen,ylen,zlen = common.map_get_dims()
@@ -43,6 +47,10 @@ function new_tent(settings)
 	local this = {} this.this = this
 	
 	this.team = settings.team or -1
+	
+	function this.tick(sec_current, sec_delta)
+		-- TODO?
+	end
 	
 	function this.spawn()
 		local xlen,ylen,zlen
