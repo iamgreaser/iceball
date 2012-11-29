@@ -66,19 +66,25 @@ function new_intel(settings)
 	end
 	
 	function this.render()
-		if this.visible then
-			client.model_render_bone_global(this.mdl_intel, 0,
-				this.x, this.y-0.9, this.z,
-				this.rotpos, 0, 0, 3)
-		else
-			local rpx = this.player.x
-			local rpy = this.player.y+0.5
-			local rpz = this.player.z
-			
-			client.model_render_bone_global(this.mdl_intel, 0,
-				rpx, rpy, rpz,
-				this.player.angy, 0, 0, 1)
-		end
+		client.model_render_bone_global(this.mdl_intel, 0,
+			this.x, this.y-0.9, this.z,
+			this.rotpos, 0, 0, 3)
+	end
+	
+	function this.render_backpack()
+		local rpx = this.player.x
+		local rpy = this.player.y+0.5
+		local rpz = this.player.z
+		
+		local sya = math.sin(this.player.angy)
+		local cya = math.cos(this.player.angy)
+		
+		rpx = rpx - sya*0.4
+		rpz = rpz - cya*0.4
+		
+		client.model_render_bone_global(this.mdl_intel, 0,
+			rpx, rpy, rpz,
+			math.pi/2, math.pi/2, this.player.angy-math.pi/2, 1)
 	end
 	
 	function this.render_icon(x,y,z,scale)

@@ -586,6 +586,10 @@ function new_player(settings)
 		client.model_render_bone_global(this.mdl_player, mdl_player_body,
 			this.x, this.y+this.jerkoffs+0.8, this.z,
 			0.0, 0.0, this.angy-math.pi, 1.5)
+		
+		if this.has_intel then
+			this.has_intel.render_backpack()
+		end
 	end
 	
 	function this.show_hud()
