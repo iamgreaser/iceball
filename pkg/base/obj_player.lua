@@ -771,8 +771,8 @@ function new_player(settings)
 				if drawit then
 					for i=1,#mspr_player,2 do
 						local u,v
-						u = x+mspr_player[i  ]
-						v = y+mspr_player[i+1]
+						u = math.floor(x)+mspr_player[i  ]
+						v = math.floor(y)+mspr_player[i+1]
 						log_mspr[#log_mspr+1] = u
 						log_mspr[#log_mspr+1] = v
 						common.img_pixel_set(img_overview_icons, u, v, c)
@@ -791,8 +791,8 @@ function new_player(settings)
 				local c = argb_split_to_merged(l[1],l[2],l[3])
 				for i=1,#(obj.mspr),2 do
 					local u,v
-					u = x+obj.mspr[i  ]
-					v = y+obj.mspr[i+1]
+					u = math.floor(x)+obj.mspr[i  ]
+					v = math.floor(y)+obj.mspr[i+1]
 					log_mspr[#log_mspr+1] = u
 					log_mspr[#log_mspr+1] = v
 					common.img_pixel_set(img_overview_icons, u, v, c)
