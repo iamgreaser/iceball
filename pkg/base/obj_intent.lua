@@ -96,6 +96,18 @@ function new_intel(settings)
 		this.player = nil
 	end
 	
+	function this.intel_capture(sec_current)
+		local i
+		for i=1,players.max do
+			local plr = players[i]
+			if plr and plr.team == this.player.team then
+				plr.t_rcirc = sec_current + MODE_RCIRC_LINGER
+			end
+		end
+		this.player = nil
+		this.spawn()
+	end
+	
 	function this.spawn()
 		local xlen,ylen,zlen
 		xlen,ylen,zlen = common.map_get_dims()
@@ -176,6 +188,10 @@ function new_tent(settings)
 						plr.wpn.ammo_clip = plr.wpn.cfg.ammo_clip
 						plr.wpn.ammo_reserve = plr.wpn.cfg.ammo_reserve
 					end
+				end
+				
+				if plr.has_intel then
+					plr.intel_capture(sec_current)
 				end
 			end
 		end

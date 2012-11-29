@@ -440,20 +440,26 @@ function client.hook_mouse_button(button, state)
 		if button == 1 then
 			-- LMB
 			if plr.tool == TOOL_BLOCK and plr.blx1 then
+				if plr.blocks > 0 then
 				if plr.blx1 >= 0 and plr.blx1 < xlen and plr.blz1 >= 0 and plr.blz1 < zlen then
 				if plr.bly2 <= ylen-2 then
-				map_block_set(
-					plr.blx1, plr.bly1, plr.blz1,
-					1,
-					plr.blk_color[1],
-					plr.blk_color[2],
-					plr.blk_color[3])
+					map_block_set(
+						plr.blx1, plr.bly1, plr.blz1,
+						1,
+						plr.blk_color[1],
+						plr.blk_color[2],
+						plr.blk_color[3])
+					plr.blocks = plr.blocks - 1
+				end
 				end
 				end
 			elseif plr.tool == TOOL_SPADE and plr.blx2 then
 				if plr.blx1 >= 0 and plr.blx1 < xlen and plr.blz1 >= 0 and plr.blz1 < zlen then
 				if plr.bly2 <= ylen-3 then
 					map_block_break(plr.blx2, plr.bly2, plr.blz2)
+					if plr.blocks < 100 then
+						plr.blocks = plr.blocks + 1
+					end
 				end
 				end
 			end

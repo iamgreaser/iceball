@@ -254,6 +254,18 @@ function new_player(settings)
 		chat_add(chat_text, nil, s, 0xFFC00000)
 	end
 	
+	function this.intel_capture(sec_current)
+		local intel = this.has_intel
+		if not intel then
+			return
+		end
+		
+		local s = this.name.." has captured the "..teams[intel.team].name.." intel."
+		intel.intel_capture(sec_current)
+		this.has_intel = nil
+		chat_add(chat_text, nil, s, 0xFFC00000)
+	end
+	
 	function this.tick(sec_current, sec_delta)
 		if (not this.alive) and (not this.t_respawn) then
 			this.t_respawn = sec_current + MODE_RESPAWN_TIME
@@ -271,6 +283,10 @@ function new_player(settings)
 		
 		if this.t_switch == true then
 			this.t_switch = sec_current + 0.2
+		end
+		
+		if this.t_rcirc and sec_current >= this.t_rcirc then
+			this.t_rcirc = nil
 		end
 		
 		if this.alive and this.t_switch then
