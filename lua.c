@@ -51,9 +51,10 @@ int icelua_force_get_integer(lua_State *L, int table, char *name)
 	return ret;
 }
 
+#include "lua_fetch.h"
+
 #include "lua_base.h"
 #include "lua_camera.h"
-#include "lua_fetch.h"
 #include "lua_image.h"
 #include "lua_input.h"
 #include "lua_map.h"
@@ -208,6 +209,26 @@ int icelua_init(void)
 	icelua_loadbasefuncs(lstate_client);
 	icelua_loadbasefuncs(lstate_server);
 	
+	// shove some pathnames in
+	{
+		lua_getglobal(lstate_client, "common");
+		lua_getglobal(lstate_client, "client");
+		lua_pushstring(lstate_client, mod_basedir+4);
+		lua_setfield(lstate_client, -2, "base_dir");
+		lua_pop(lstate_client, 1);
+		lua_pushstring(lstate_client, mod_basedir+4);
+		lua_setfield(lstate_client, -2, "base_dir");
+		lua_pop(lstate_client, 1);
+		
+		lua_getglobal(lstate_server, "common");
+		lua_getglobal(lstate_server, "server");
+		lua_pushstring(lstate_server, mod_basedir+4);
+		lua_setfield(lstate_server, -2, "base_dir");
+		lua_pop(lstate_server, 1);
+		lua_pushstring(lstate_server, mod_basedir+4);
+		lua_setfield(lstate_server, -2, "base_dir");
+		lua_pop(lstate_server, 1);
+	}
 	/*
 	NOTE:
 	to call stuff, use lua_pcall.
@@ -219,6 +240,7 @@ int icelua_init(void)
 	// TODO: split the client/server inits
 	char xpath[128];
 	snprintf(xpath, 128, "%s/main_server.lua", mod_basedir);
+	
 	if((lstate_server != NULL) && luaL_loadfile(lstate_server, xpath) != 0)
 	{
 		printf("ERROR loading server Lua: %s\n", lua_tostring(lstate_server, -1));

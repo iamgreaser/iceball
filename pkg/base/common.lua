@@ -15,6 +15,8 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
+print("base dir:",common.base_dir)
+
 -- base dir stuff
 DIR_PKG_ROOT = DIR_PKG_ROOT or "pkg/base"
 DIR_PKG_LIB = DIR_PKG_LIB or DIR_PKG_ROOT

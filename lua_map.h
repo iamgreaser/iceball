@@ -24,27 +24,20 @@ int icelua_fn_common_map_load(lua_State *L)
 	if(top >= 2)
 		type = lua_tostring(L, 2);
 	
-	if(L == lstate_server
-		? !path_type_server_readable(path_get_type(fname))
-		: !path_type_client_readable(path_get_type(fname)))
-			return luaL_error(L, "cannot read from there");
-	
-	map_t *map = NULL;
-	
+	lua_pushcfunction(L, icelua_fn_common_fetch_block);
 	if(!strcmp(type, "auto"))
 	{
-		map = map_load_icemap(fname);
-		if(map == NULL)
-			map = map_load_aos(fname);
+		lua_pushstring(L, "map");
 	} else if(!strcmp(type, "vxl")) {
-		map = map_load_aos(fname);
+		lua_pushstring(L, "vxl");
 	} else if(!strcmp(type, "icemap")) {
-		map = map_load_icemap(fname);
+		lua_pushstring(L, "icemap");
 	} else {
 		return luaL_error(L, "not a valid map type");
 	}
+	lua_pushvalue(L, 1);
+	lua_call(L, 2, 1);
 	
-	lua_pushlightuserdata(L, map);
 	return 1;
 }
 
@@ -65,6 +58,7 @@ int icelua_fn_common_map_new(lua_State *L)
 		int err = errno;
 		return luaL_error(L, "could not allocate map: %d / %s", err, strerror(err));
 	}
+	map->udtype = UD_MAP;
 	map->xlen = xlen;
 	map->ylen = ylen;
 	map->zlen = zlen;
@@ -97,7 +91,7 @@ int icelua_fn_common_map_free(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 1, 1);
 	map_t *map = lua_touserdata(L, 1);
-	if(map == NULL)
+	if(map == NULL || map->udtype != UD_MAP)
 		return luaL_error(L, "not a map");
 	
 	map_free(map);
@@ -109,7 +103,7 @@ int icelua_fn_common_map_set(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 1, 1);
 	map_t *map = lua_touserdata(L, 1);
-	if(map == NULL && !lua_isnil(L, 1))
+	if((map == NULL || map->udtype != UD_MAP) && !lua_isnil(L, 1))
 		return luaL_error(L, "not a map");
 	
 	if(L == lstate_server)
@@ -125,7 +119,7 @@ int icelua_fn_common_map_save(lua_State *L)
 	int top = icelua_assert_stack(L, 2, 3);
 	
 	map_t *map = lua_touserdata(L, 1);
-	if(map == NULL)
+	if(map == NULL || map->udtype != UD_MAP)
 		return luaL_error(L, "not a map");
 	const char *fname = lua_tostring(L, 2);
 	const char *type = "icemap";
@@ -135,7 +129,7 @@ int icelua_fn_common_map_save(lua_State *L)
 	if(L == lstate_server
 		? !path_type_server_writable(path_get_type(fname))
 		: !path_type_client_writable(path_get_type(fname)))
-			return luaL_error(L, "cannot write to there");
+			return luaL_error(L, "cannot write to there %d",path_get_type(fname));
 	
 	if(!strcmp(type, "vxl"))
 	{
@@ -157,7 +151,7 @@ int icelua_fn_common_map_get_dims(lua_State *L)
 	map_t *map = (L == lstate_server ? svmap : clmap);
 	
 	// if no map, just give off nils
-	if(map == NULL)
+	if(map == NULL || map->udtype != UD_MAP)
 	{
 		return 0;
 	} else {
@@ -180,7 +174,7 @@ int icelua_fn_common_map_pillar_get(lua_State *L)
 	map_t *map = (L == lstate_server ? svmap : clmap);
 	
 	// if no map, return nil
-	if(map == NULL)
+	if(map == NULL || map->udtype != UD_MAP)
 		return 0;
 	
 	// get a pillar
@@ -216,7 +210,7 @@ int icelua_fn_common_map_pillar_set(lua_State *L)
 	map_t *map = (L == lstate_server ? svmap : clmap);
 	
 	// if no map, ignore (for now)
-	if(map == NULL)
+	if(map == NULL || map->udtype != UD_MAP)
 		return 0;
 	
 	// validate that the table is not TOO large and is 4-byte aligned wrt size

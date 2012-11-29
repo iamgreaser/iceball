@@ -237,7 +237,7 @@ function h_tick_init(sec_current, sec_delta)
 	chat_add(chat_text, sec_current, "BLUE MASTER RACE", 0xFF0000FF)
 	chat_add(chat_text, sec_current, "GREEN MASTER RACE", 0xFF00C000)
 	chat_add(chat_text, sec_current, "SALLY MASTER RACE", 0xFFAA00FF)
-	chat_add(chat_text, sec_current, "YOU ALL SUCK", 0xFFFF0000)
+	chat_add(chat_text, sec_current, "YOU ALL SUCK", 0xFFC00000)
 	
 	mouse_released = false
 	client.mouse_lock_set(true)
@@ -300,6 +300,12 @@ function client.hook_key(key, state, modif)
 		elseif key == BTSK_QUIT then
 			-- TODO: clean up
 			client.hook_tick = nil
+		elseif key == SDLK_F10 then
+			local s = "clsave/"..common.base_dir.."/vol/lastsav.icemap"
+			print(s)
+			--client.map_load(s)
+			client.map_save(map_loaded, s, "icemap")
+			chat_add(chat_text, nil, "Map saved to "..s, 0xFFC00000)
 		elseif key == BTSK_MAP then
 			large_map = not large_map
 		elseif key == BTSK_RELOAD then

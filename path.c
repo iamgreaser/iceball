@@ -29,6 +29,10 @@ int path_get_type(const char *path)
 {
 	char *v;
 	
+	// check: is this null?
+	if(path == NULL)
+		return PATH_ERROR_BADCHARS;
+	
 	// check: are all chars valid?
 	for(v = path; *v != '\0'; v++)
 	{
@@ -59,10 +63,10 @@ int path_get_type(const char *path)
 	if(!memcmp(path,"clsave/vol/",11))
 		return PATH_CLSAVE_VOLATILE;
 	if((!memcmp(path,"clsave/",7))
-		&& (!memcmp(path+7,mod_basedir+7,strlen(mod_basedir+7))))
+		&& (!memcmp(path+7,mod_basedir+4,strlen(mod_basedir+4))))
 	{
-		if((!memcmp(path+strlen(mod_basedir),"vol/",4))
-			|| (!memcmp(path+strlen(mod_basedir),"/vol/",5)))
+		if((!memcmp(path+3+strlen(mod_basedir),"vol/",4))
+			|| (!memcmp(path+3+strlen(mod_basedir),"/vol/",5)))
 			return PATH_CLSAVE_BASEDIR_VOLATILE;
 		else
 			return PATH_CLSAVE_BASEDIR;
@@ -73,11 +77,11 @@ int path_get_type(const char *path)
 	if(!memcmp(path,"svsave/vol/",11))
 		return PATH_SVSAVE_VOLATILE;
 	if((!memcmp(path,"svsave/",7))
-		&& (!memcmp(path+7,mod_basedir+7,strlen(mod_basedir+7))))
+		&& (!memcmp(path+7,mod_basedir+4,strlen(mod_basedir+4))))
 	
 	{
-		if((!memcmp(path+strlen(mod_basedir),"vol/",4))
-			|| (!memcmp(path+strlen(mod_basedir),"/vol/",5)))
+		if((!memcmp(path+3+strlen(mod_basedir),"vol/",4))
+			|| (!memcmp(path+3+strlen(mod_basedir),"/vol/",5)))
 			return PATH_SVSAVE_BASEDIR_VOLATILE;
 		else
 			return PATH_SVSAVE_BASEDIR;

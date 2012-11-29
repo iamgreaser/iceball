@@ -81,6 +81,7 @@ img_t *img_load_tga(const char *fname)
 	img_t *img = malloc(sizeof(img_t)+4*head.width*head.height);
 	// TODO: check if NULL
 	img->head = head;
+	img->udtype = UD_IMG;
 	
 	// copy stuff
 	int idx = (head.flags & 32 ? 0 : head.height-1)*head.width;

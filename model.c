@@ -24,6 +24,7 @@ model_t *model_new(int bonemax)
 	
 	pmf->bonelen = 0;
 	pmf->bonemax = bonemax;
+	pmf->udtype = UD_PMF;
 	
 	return pmf;
 }
@@ -129,6 +130,7 @@ model_t *model_load_pmf(const char *fname)
 		fclose(fp);
 		return NULL;
 	}
+	pmf->udtype = UD_PMF;
 	
 	// then, for each body part,
 	for(i = 0; i < (int)bone_count; i++)

@@ -45,6 +45,17 @@
 
 #include <SDL.h>
 
+enum
+{
+	UD_INVALID = 0,
+	
+	UD_MAP,
+	UD_PMF,
+	UD_IMG,
+	
+	UD_MAX
+};
+
 typedef union vec4f
 {
 	struct { float x,y,z,w; } __attribute__((__packed__)) p;
@@ -78,6 +89,7 @@ typedef struct model_point
 typedef struct model model_t;
 typedef struct model_bone
 {
+	int udtype;
 	char name[16];
 	model_t *parent;
 	int parent_idx;
@@ -87,6 +99,7 @@ typedef struct model_bone
 
 struct model
 {
+	int udtype;
 	int bonelen, bonemax;
 	model_bone_t *bones[];
 };
@@ -110,6 +123,7 @@ typedef struct img_tgahead
 
 typedef struct img
 {
+	int udtype;
 	img_tgahead_t head;
 	uint32_t pixels[];
 } img_t;
@@ -153,6 +167,7 @@ feel free to store it in the "invisible" parts.
 
 typedef struct map
 {
+	int udtype;
 	int xlen, ylen, zlen;
 	uint8_t **pillars;
 	// TODO ? heap allocator ?

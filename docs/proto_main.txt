@@ -28,13 +28,16 @@ Base encapsulation:
 			bits 0-3:
 				0000 = * RESERVED *
 				0001 = JSON data [ NOT SUPPORTED YET ]
-				0010 = CSV log data [ NOT SUPPORTED YET ]
+				0010 = log data [ NOT SUPPORTED YET ]
 				0011 = lua script
 				0100 = icemap data
 				0101 = vxl data
 				0110 = pmf model
 				0111 = tga image
-				1xxx = * RESERVED *
+				1000 = wav audio [ NOT SUPPORTED YET ]
+				1001 = * RESERVED *
+				101x = * RESERVED *
+				11xx = * RESERVED *
 	0x31 flags clen.u32 ulen.u32 namelen name[namelen] 0x00:
 		Start file transfer
 		"name" is the filename
@@ -42,13 +45,16 @@ Base encapsulation:
 			bits 0-3:
 				0000 = * RESERVED *
 				0001 = JSON data [ NOT SUPPORTED YET ]
-				0010 = CSV log data [ NOT SUPPORTED YET ]
+				0010 = log data [ NOT SUPPORTED YET ]
 				0011 = lua script
 				0100 = icemap data
 				0101 = vxl data
 				0110 = pmf model
 				0111 = tga image
-				1xxx = * RESERVED *
+				1000 = wav audio [ NOT SUPPORTED YET ]
+				1001 = * RESERVED *
+				101x = * RESERVED *
+				11xx = * RESERVED *
 		"clen" is the compressed length
 		"ulen" is the uncompressed length
 		

@@ -48,12 +48,11 @@ lua base library stuff:
 	- just about every "load" function is based on common.fetch_block
 	  (TODO: make this true!)
 
-common.base_dir
-common.save_dir
-	current base directory / save directory
+common.base_dir @
+	current base directory (minus the "pkg/" bit)
 	
-	writing to these strings will not change the base / save dirs,
-	so don't write to them or else you'll screw up
+	writing to this string will *not* change the base dir,
+	so *don't write to it* or else you'll just screw up your own code!
 
 client/server.hook_tick = fn(sec_curtime, sec_delta)->sec_wait @
 	sets a hook called every "tick"
@@ -138,7 +137,7 @@ client.mouse_visible_set(state) @
 	"csize" is the compressed size of the file
 	"usize" is the uncompressed size
 
-obj = common.fetch_block(ftype, fname)
+obj = common.fetch_block(ftype, fname) @
 	fetches a file using common.fetch(ftype, fname)
 	
 	simply returns "nil" on error

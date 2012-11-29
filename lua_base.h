@@ -17,12 +17,21 @@
 
 int icelua_fn_base_loadfile(lua_State *L)
 {
-	// TODO: base this on common.fetch_block
-	
 	int top = icelua_assert_stack(L, 1, 1);
 	
-	if(luaL_loadfile(L, lua_tostring(L, 1)) != 0)
-		return luaL_error(L, "%s", lua_tostring(L, -1));
+	const char *fname = lua_tostring(L, 1);
+	
+	if(L == lstate_server
+		? !path_type_server_readable(path_get_type(fname))
+		: !path_type_client_readable(path_get_type(fname)))
+	{
+		return luaL_error(L, "cannot read from there");
+	}
+	
+	lua_pushcfunction(L, icelua_fn_common_fetch_block);
+	lua_pushstring(L, "lua");
+	lua_pushvalue(L, 1);
+	lua_call(L, 2, 1);
 	
 	return 1;
 }

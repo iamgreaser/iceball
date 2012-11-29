@@ -23,7 +23,7 @@ int icelua_fn_client_img_blit(lua_State *L)
 	uint32_t color;
 	
 	img_t *img = lua_touserdata(L, 1);
-	if(img == NULL)
+	if(img == NULL || img->udtype != UD_IMG)
 		return luaL_error(L, "not an image");
 	
 	dx = lua_tointeger(L, 2);
@@ -49,18 +49,15 @@ int icelua_fn_common_img_load(lua_State *L)
 	if(fname == NULL)
 		return luaL_error(L, "filename must be a string");
 	
-	if(L == lstate_server
-		? !path_type_server_readable(path_get_type(fname))
-		: !path_type_client_readable(path_get_type(fname)))
-	{
-		return luaL_error(L, "cannot read from there");
-	}
+	lua_pushcfunction(L, icelua_fn_common_fetch_block);
+	lua_pushstring(L, "tga");
+	lua_pushvalue(L, 1);
+	lua_call(L, 2, 1);
 	
-	img_t *img = img_load_tga(fname);
+	img_t *img = lua_touserdata(L, -1);
 	if(img == NULL)
 		return 0;
 	
-	lua_pushlightuserdata(L, img);
 	lua_pushinteger(L, img->head.width);
 	lua_pushinteger(L, img->head.height);
 	
@@ -99,6 +96,8 @@ int icelua_fn_common_img_new(lua_State *L)
 	for(i = 0; i < w*h; i++)
 		img->pixels[i] = 0x00000000;
 	
+	img->udtype = UD_IMG;
+	
 	lua_pushlightuserdata(L, img);
 	return 1;
 }
@@ -110,7 +109,7 @@ int icelua_fn_common_img_pixel_set(lua_State *L)
 	int top = icelua_assert_stack(L, 4, 4);
 	
 	img_t *img = lua_touserdata(L, 1);
-	if(img == NULL)
+	if(img == NULL || img->udtype != UD_IMG)
 		return luaL_error(L, "not an image");
 	int x = lua_tointeger(L, 2);
 	int y = lua_tointeger(L, 3);
@@ -129,7 +128,7 @@ int icelua_fn_common_img_free(lua_State *L)
 	int top = icelua_assert_stack(L, 1, 1);
 	
 	img_t *img = lua_touserdata(L, 1);
-	if(img == NULL)
+	if(img == NULL || img->udtype != UD_IMG)
 		return luaL_error(L, "not an image");
 	
 	img_free(img);
@@ -142,7 +141,7 @@ int icelua_fn_common_img_get_dims(lua_State *L)
 	int top = icelua_assert_stack(L, 1, 1);
 	
 	img_t *img = lua_touserdata(L, 1);
-	if(img == NULL)
+	if(img == NULL || img->udtype != UD_IMG)
 		return luaL_error(L, "not an image");
 	
 	lua_pushinteger(L, img->head.width);

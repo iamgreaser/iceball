@@ -37,6 +37,7 @@ map_t *map_load_aos(const char *fname)
 		fclose(fp);
 		return NULL;
 	}
+	map->udtype = UD_MAP;
 	map->xlen = 512;
 	map->ylen = 64;
 	map->zlen = 512;
@@ -101,7 +102,6 @@ map_t *map_load_aos(const char *fname)
 
 map_t *map_load_icemap(const char *fname)
 {
-	// WARNING UNTESTED CODE
 	uint8_t pillar_temp[(256+1)*4];
 	int x,z,pi;
 	int i;
@@ -132,6 +132,7 @@ map_t *map_load_icemap(const char *fname)
 		fclose(fp);
 		return NULL;
 	}
+	map->udtype = UD_MAP;
 	map->pillars = NULL;
 	
 	int taglen;
@@ -181,6 +182,10 @@ map_t *map_load_icemap(const char *fname)
 				fclose(fp);
 				return NULL;
 			}
+			
+			printf("mapdata %i %ix%ix%i\n"
+				,taglen
+				,map->xlen,map->ylen,map->zlen);
 			
 			// load data
 			for(z = 0, pi = 0; z < map->zlen; z++)
@@ -252,7 +257,6 @@ map_t *map_load_icemap(const char *fname)
 
 int map_save_icemap(map_t *map, const char *fname)
 {
-	// WARNING UNTESTED CODE
 	int x,z,pi;
 	int i;
 	
@@ -280,7 +284,7 @@ int map_save_icemap(map_t *map, const char *fname)
 		
 		for(;;)
 		{
-			int n = (int)*p;
+			int n = (int)p[0];
 			
 			if(n == 0)
 			{
@@ -305,15 +309,17 @@ int map_save_icemap(map_t *map, const char *fname)
 	for(z = 0, pi = 0; z < map->zlen; z++)
 	for(x = 0; x < map->xlen; x++, pi++)
 	{
-		uint8_t *pb = map->pillars[pi]+4;
+		uint8_t *pb = (map->pillars[pi])+4;
 		uint8_t *p = pb;
 		
 		for(;;)
 		{
-			int n = (int)*p;
+			int n = (int)p[0];
 			
 			if(n == 0)
 			{
+				p += 4*(((int)p[2])-((int)p[1])+1);
+				p += 4;
 				break;
 			} else {
 				p += 4*n;
