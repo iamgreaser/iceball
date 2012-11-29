@@ -24,6 +24,11 @@ int icelua_fn_common_map_load(lua_State *L)
 	if(top >= 2)
 		type = lua_tostring(L, 2);
 	
+	if(L == lstate_server
+		? !path_type_server_readable(path_get_type(fname))
+		: !path_type_client_readable(path_get_type(fname)))
+			return luaL_error(L, "cannot read from there");
+	
 	map_t *map = NULL;
 	
 	if(!strcmp(type, "auto"))
@@ -111,6 +116,36 @@ int icelua_fn_common_map_set(lua_State *L)
 		svmap = map;
 	else if(L == lstate_client)
 		clmap = map;
+	
+	return 0;
+}
+
+int icelua_fn_common_map_save(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 2, 3);
+	
+	map_t *map = lua_touserdata(L, 1);
+	if(map == NULL)
+		return luaL_error(L, "not a map");
+	const char *fname = lua_tostring(L, 2);
+	const char *type = "icemap";
+	if(top >= 3)
+		type = lua_tostring(L, 3);
+	
+	if(L == lstate_server
+		? !path_type_server_writable(path_get_type(fname))
+		: !path_type_client_writable(path_get_type(fname)))
+			return luaL_error(L, "cannot write to there");
+	
+	if(!strcmp(type, "vxl"))
+	{
+		return luaL_error(L, "cannot save to vxl, sorry!");
+	} else if(!strcmp(type, "icemap")) {
+		if(map_save_icemap(map, fname))
+			return luaL_error(L, "map save failed, check the console");
+	} else {
+		return luaL_error(L, "not a valid map type");
+	}
 	
 	return 0;
 }

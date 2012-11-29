@@ -567,7 +567,10 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 		
 		if(near_cast)
 		{
-			rd->y1 = y1 = (lastn == 0 ? 0.0f : p[3]);
+			y1 = (lastn == 0 ? 0.0f : p[3]);
+			if(y1 > rd->y1)
+				y1 = rd->y1;
+			rd->y1 = y1;
 			rd->y2 = y2 = p[1];
 		} else {
 			float dist1 = sqrtf(dx*dx+dz*dz);
@@ -605,7 +608,7 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 		// add the top blocks (if they exist and we can see them)
 		if(lastn == 0)
 		{
-			y1 = 0;
+			if(y1 > 0.0f) y1 = 0;
 			y2 = p[1];
 		} else if(p[3] >= rd->y1-1) {
 			y1 = p[3];

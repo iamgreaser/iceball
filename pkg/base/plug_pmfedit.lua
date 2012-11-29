@@ -16,7 +16,7 @@
 ]]
 
 print("pmfedit selected")
-PMFEDIT_FNAME = "clsave/editor.pmf"
+PMFEDIT_FNAME = "clsave/vol/editor.pmf"
 
 BTSK_PMF_EDIT = SDLK_F2
 

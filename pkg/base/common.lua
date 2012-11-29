@@ -58,7 +58,9 @@ MODE_CHEAT_FLY = false
 MODE_AUTOCLIMB = true
 MODE_AIRJUMP = false
 MODE_SOFTCROUCH = true
+
 MODE_MINIMAP_RCIRC = false
+MODE_ENABLE_MINIMAP = true
 
 MODE_TILT_SLOWDOWN = false -- TODO!
 MODE_TILT_DOWN_NOCLIMB = false -- TODO!
@@ -67,6 +69,7 @@ MODE_DELAY_SPADE_DIG = 1.0
 MODE_DELAY_SPADE_HIT = 0.25
 MODE_DELAY_BLOCK_BUILD = 0.5
 MODE_DELAY_TOOL_CHANGE = 0.2
+
 
 MODE_RESPAWN_TIME = 8.0
 
@@ -132,7 +135,7 @@ weapons = {
 			-- perform a trace
 			local d,cx1,cy1,cz1,cx2,cy2,cz2
 			d,cx1,cy1,cz1,cx2,cy2,cz2
-			= trace_map_ray_dist(plr.x,plr.y,plr.z, fwx,fwy,fwz, 127.5)
+			= trace_map_ray_dist(plr.x+sya*0.4,plr.y,plr.z+cya*0.4, fwx,fwy,fwz, 127.5)
 			d = d or 127.5
 			
 			-- see if there's anyone we can kill
@@ -316,3 +319,7 @@ do
 		end
 	end
 end
+
+damage_blk = {}
+players = {max = 32, current = 1}
+intent = {}

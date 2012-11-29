@@ -49,6 +49,13 @@ int icelua_fn_common_img_load(lua_State *L)
 	if(fname == NULL)
 		return luaL_error(L, "filename must be a string");
 	
+	if(L == lstate_server
+		? !path_type_server_readable(path_get_type(fname))
+		: !path_type_client_readable(path_get_type(fname)))
+	{
+		return luaL_error(L, "cannot read from there");
+	}
+	
 	img_t *img = img_load_tga(fname);
 	if(img == NULL)
 		return 0;

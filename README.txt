@@ -52,6 +52,7 @@ CURRENT STATUS:
 - Map!
 - Minimap!
 - Killfeed!
+- Basic pathname security!
 
 STUFF TO DO:
 - Sound assets! We need your sounds, guys!

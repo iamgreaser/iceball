@@ -430,6 +430,12 @@ int main(int argc, char *argv[])
 		return print_usage(argv[0]);
 	}
 	
+	if(memcmp(mod_basedir,"pkg/",4))
+	{
+		fprintf(stderr, "ERROR: package base dir must start with \"pkg/\"!\n");
+		return 109;
+	}
+	
 	if((!(boot_mode & 1)) || !platform_init()) {
 	if(!icelua_init()) {
 	if(!net_init()) {

@@ -50,8 +50,6 @@ BTSK_QUIT = SDLK_ESCAPE
 BTSK_DEBUG = SDLK_F1
 BTSK_MAP = SDLK_m
 
-players = {max = 32, current = 1}
-damage_blk = {}
 chat_killfeed = {head = 1, scroll = nil, queue = {}}
 chat_text = {head = 1, scroll = nil, queue = {}}
 
@@ -122,6 +120,9 @@ mdl_spade, mdl_spade_bone = client.model_load_pmf("pkg/base/pmf/spade.pmf"), 0
 mdl_block, mdl_block_bone = client.model_load_pmf("pkg/base/pmf/block.pmf"), 0
 weapon_models[WPN_RIFLE] = client.model_load_pmf("pkg/base/pmf/rifle.pmf")
 mdl_nade, mdl_nade_bone = client.model_load_pmf("pkg/base/pmf/nade.pmf"), 0
+
+mdl_tent, mdl_tent_bone = client.model_load_pmf("pkg/base/pmf/tent.pmf"), 0
+mdl_intel, mdl_intel_bone = client.model_load_pmf("pkg/base/pmf/intel.pmf"), 0
 
 -- quick hack to stitch a player model together
 if false then
@@ -224,6 +225,12 @@ function h_tick_init(sec_current, sec_delta)
 			weapon = WPN_RIFLE,
 		})
 	end
+	
+	intent[#intent+1] = new_intel({team = 0})
+	intent[#intent+1] = new_tent({team = 0})
+	intent[#intent+1] = new_intel({team = 1})
+	intent[#intent+1] = new_tent({team = 1})
+	
 	players.current = math.floor(math.random()*32)+1
 	
 	chat_add(chat_text, sec_current, "Just testing the chat...", 0xFFFFFFFF)

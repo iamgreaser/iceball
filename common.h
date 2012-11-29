@@ -188,9 +188,13 @@ enum
 	PATH_INVALID_ENUM = 0, // don't use this!
 	
 	PATH_CLSAVE_BASEDIR,
+	PATH_CLSAVE_BASEDIR_VOLATILE,
 	PATH_CLSAVE_PUBLIC,
+	PATH_CLSAVE_VOLATILE,
 	PATH_SVSAVE_BASEDIR,
+	PATH_SVSAVE_BASEDIR_VOLATILE,
 	PATH_SVSAVE_PUBLIC,
+	PATH_SVSAVE_VOLATILE,
 	PATH_PKG_BASEDIR,
 	PATH_PKG,
 	
@@ -229,6 +233,7 @@ int error_perror(char *msg);
 // map.c
 map_t *map_load_aos(const char *fname);
 map_t *map_load_icemap(const char *fname);
+int map_save_icemap(map_t *map, const char *fname);
 void map_free(map_t *map);
 
 // model.c
@@ -250,6 +255,11 @@ void net_deinit(void);
 // path.c
 char *path_filter(const char *path);
 int path_get_type(const char *path);
+int path_type_client_local(int type);
+int path_type_client_readable(int type);
+int path_type_client_writable(int type);
+int path_type_server_readable(int type);
+int path_type_server_writable(int type);
 
 // render.c
 #ifdef RENDER_FACE_COUNT

@@ -15,7 +15,16 @@ svsave/<group name>/<mod name>/*
 You can use a common name for these if you want,
 but please stick to your group name.
 
-Also, "pub" is not a valid group name, as you will find out soon...
+Also, "pub" and "vol" are not valid group names, as you will find out soon...
+
+ ------------------------------------------------------------------------------
+
+ALL FILENAMES ARE CASE SENSITIVE.
+If you find that they're not, they WILL be on my computer.
+
+To prevent any issues, make sure all your filenames are fully lower-case.
+
+THIS INCLUDES FILENAME EXTENSIONS!
 
  ------------------------------------------------------------------------------
 
@@ -27,10 +36,10 @@ Use pkg/base/lib_*.lua for them.
 For security reasons,
 you are only allowed to modify files in these directories:
   Client only:
-    clsave/<group name>/<mod name>/*
+    clsave/<group name>/<mod name>/vol/*
     clsave/vol/*
   Server only:
-    svsave/<group name>/<mod name>/*
+    svsave/<group name>/<mod name>/vol/*
     svsave/vol/*
 
 Note: "vol" is short for "volatile".
@@ -40,11 +49,11 @@ You can also read them.
 You ARE allowed to read these:
   pkg/*
   Client only:
+    clsave/<group name>/<mod name>/*
     clsave/pub/*
   Server only:
+    svsave/<group name>/<mod name>/*
     svsave/pub/*
-
-(TODO: enforce this!)
 
 Note, it is advised that you DO NOT run client-local Lua scripts!
 If you do, you open your mod up to an awful lot of cheating.

@@ -34,36 +34,26 @@ function new_player(settings)
 	this.mdl_player = common.model_bone_new(this.mdl_player)
 	this.mdl_player = common.model_bone_new(this.mdl_player)
 	
-	local function prv_recolor_component(r,g,b,mdata)
-		for i=1,#mdata do
-			if mdata[i].r == 0 and mdata[i].g == 0 and mdata[i].b == 0 then
-				mdata[i].r = r
-				mdata[i].g = g
-				mdata[i].b = b
-			end
-		end
-	end
-	
 	local function prv_recolor_team(r,g,b)
 		local mname,mdata
 		mname,mdata = common.model_bone_get(mdl_player, mdl_player_head)
-		prv_recolor_component(r,g,b,mdata)
+		recolor_component(r,g,b,mdata)
 		common.model_bone_set(this.mdl_player, mdl_player_head, mname, mdata)
 		mname,mdata = common.model_bone_get(mdl_player, mdl_player_body)
-		prv_recolor_component(r,g,b,mdata)
+		recolor_component(r,g,b,mdata)
 		common.model_bone_set(this.mdl_player, mdl_player_body, mname, mdata)
 		mname,mdata = common.model_bone_get(mdl_player, mdl_player_arm)
-		prv_recolor_component(r,g,b,mdata)
+		recolor_component(r,g,b,mdata)
 		common.model_bone_set(this.mdl_player, mdl_player_arm, mname, mdata)
 		mname,mdata = common.model_bone_get(mdl_player, mdl_player_leg)
-		prv_recolor_component(r,g,b,mdata)
+		recolor_component(r,g,b,mdata)
 		common.model_bone_set(this.mdl_player, mdl_player_leg, mname, mdata)
 	end
 	
 	local function prv_recolor_block(r,g,b)
 		local mname,mdata
 		mname,mdata = common.model_bone_get(mdl_block, mdl_block_bone)
-		prv_recolor_component(r,g,b,mdata)
+		recolor_component(r,g,b,mdata)
 		common.model_bone_set(this.mdl_block, mdl_block_bone, mname, mdata)
 	end
 	
@@ -429,15 +419,20 @@ function new_player(settings)
 			local td
 			local _
 			
+			local camx,camy,camz
+			camx = this.x+0.4*math.sin(this.angy)
+			camy = this.y
+			camz = this.z+0.4*math.cos(this.angy)
+			
 			td,
 			this.blx1, this.bly1, this.blz1, 
 			this.blx2, this.bly2, this.blz2
-			= trace_map_ray_dist(this.x,this.y,this.z, fwx,fwy,fwz, 5)
+			= trace_map_ray_dist(camx,camy,camz, fwx,fwy,fwz, 5)
 			
 			_,
 			_, _, _, 
 			this.blx3, this.bly3, this.blz3
-			= trace_map_ray_dist(this.x,this.y,this.z, fwx,fwy,fwz, 127.5)
+			= trace_map_ray_dist(camx,camy,camz, fwx,fwy,fwz, 127.5)
 		end
 		
 		-- update gun
@@ -750,7 +745,8 @@ function new_player(settings)
 				gui_print_mini(mx + (i-0.5)*64, my + oh + 12-6,
 					0xFFFFFFFF, ""..string.char(64+i))
 			end
-		else
+		elseif MODE_ENABLE_MINIMAP then
+			-- TODO: make this a JSON option
 			local mw, mh
 			mw, mh = 128, 128
 			local qx, qy

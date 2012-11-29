@@ -24,3 +24,14 @@ function abgr_split_to_merged(r,g,b,a)
 	a = a or 0xFF
 	return 256*(256*(256*a+b)+g)+r
 end
+
+
+function recolor_component(r,g,b,mdata)
+	for i=1,#mdata do
+		if mdata[i].r == 0 and mdata[i].g == 0 and mdata[i].b == 0 then
+			mdata[i].r = r
+			mdata[i].g = g
+			mdata[i].b = b
+		end
+	end
+end

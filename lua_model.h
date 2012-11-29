@@ -39,6 +39,13 @@ int icelua_fn_common_model_load_pmf(lua_State *L)
 	if(fname == NULL)
 		return luaL_error(L, "filename must be a string");
 	
+	if(L == lstate_server
+		? !path_type_server_readable(path_get_type(fname))
+		: !path_type_client_readable(path_get_type(fname)))
+	{
+		return luaL_error(L, "cannot read from there");
+	}
+	
 	model_t *pmf = model_load_pmf(fname);
 	
 	// TODO: add this to a clean-up linked list or something
@@ -60,6 +67,13 @@ int icelua_fn_common_model_save_pmf(lua_State *L)
 	const char *fname = lua_tostring(L, 2);
 	if(fname == NULL)
 		return luaL_error(L, "filename must be a string");
+	
+	if(L == lstate_server
+		? !path_type_server_writable(path_get_type(fname))
+		: !path_type_client_writable(path_get_type(fname)))
+	{
+		return luaL_error(L, "cannot write to there");
+	}
 	
 	lua_pushboolean(L, !model_save_pmf(pmf, fname));
 	

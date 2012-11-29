@@ -48,6 +48,13 @@ lua base library stuff:
 	- just about every "load" function is based on common.fetch_block
 	  (TODO: make this true!)
 
+common.base_dir
+common.save_dir
+	current base directory / save directory
+	
+	writing to these strings will not change the base / save dirs,
+	so don't write to them or else you'll screw up
+
 client/server.hook_tick = fn(sec_curtime, sec_delta)->sec_wait @
 	sets a hook called every "tick"
 	returns a number telling it how long it wants to wait for
@@ -165,7 +172,7 @@ common.map_set(map) @
 	sets the "current" map to "map"
 	note, "map" can be nil to disable rendering anything
 
-common.map_save(map, fname, fmt = "icemap")
+common.map_save(map, fname, fmt = "icemap") @
 	saves a map to a file, either "vxl" or "icemap"
 	
 	this will throw a lua error if it fails.

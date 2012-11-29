@@ -137,6 +137,7 @@ map_t *map_load_icemap(const char *fname)
 	int taglen;
 	for(;;)
 	{
+		tag[7] = '\0';
 		fread(tag, 7, 1, fp);
 		
 		if(!memcmp(tag,"       ",7))
@@ -247,6 +248,88 @@ map_t *map_load_icemap(const char *fname)
 	fclose(fp);
 	
 	return map;
+}
+
+int map_save_icemap(map_t *map, const char *fname)
+{
+	// WARNING UNTESTED CODE
+	int x,z,pi;
+	int i;
+	
+	FILE *fp = fopen(fname, "wb");
+	if(fp == NULL)
+	{
+		error_perror("map_save_icemap");
+		return 1;
+	}
+	
+	fwrite("IceMap\x1A\x01", 8, 1, fp);
+	
+	// TODO: meta info
+	
+	fwrite("MapData\xFF", 8, 1, fp);
+	
+	// calculate map length
+	int32_t maplen = 6;
+	for(z = 0, pi = 0; z < map->zlen; z++)
+	for(x = 0; x < map->xlen; x++, pi++)
+	{
+		uint8_t *p = map->pillars[pi];
+		
+		p += 4;
+		
+		for(;;)
+		{
+			int n = (int)*p;
+			
+			if(n == 0)
+			{
+				maplen += 4*((((int)p[2])-(int)p[1])+1);
+				maplen += 4;
+				break;
+			} else {
+				maplen += 4*n;
+				p += 4*n;
+			}
+		}
+	}
+	
+	// write map data
+	uint16_t xlen = map->xlen;
+	uint16_t ylen = map->ylen;
+	uint16_t zlen = map->zlen;
+	fwrite(&maplen, 4, 1, fp);
+	fwrite(&xlen, 2, 1, fp);
+	fwrite(&ylen, 2, 1, fp);
+	fwrite(&zlen, 2, 1, fp);
+	for(z = 0, pi = 0; z < map->zlen; z++)
+	for(x = 0; x < map->xlen; x++, pi++)
+	{
+		uint8_t *pb = map->pillars[pi]+4;
+		uint8_t *p = pb;
+		
+		for(;;)
+		{
+			int n = (int)*p;
+			
+			if(n == 0)
+			{
+				break;
+			} else {
+				p += 4*n;
+			}
+		}
+		
+		fwrite(pb, p-pb, 1, fp);
+	}
+	
+	// write end
+	fwrite("       \x00", 8, 1, fp);
+	
+	// close
+	fclose(fp);
+	
+	return 0;
 }
 
 void map_free(map_t *map)
