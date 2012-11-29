@@ -19,33 +19,81 @@ function new_intel(settings)
 	local this = {} this.this = this
 	
 	this.team = settings.team or -1
+	this.mspr = mspr_intel
+	this.player = nil
+	
+	this.rotpos = 0
 	
 	function this.tick(sec_current, sec_delta)
 		local i
 		
-		for i=1,32 do
-			local plr = players[i]
+		this.rotpos = sec_current*2
+		
+		if this.player then
+			-- anything to do here?
+		else
+			-- set position
+			local l = common.map_pillar_get(
+				math.floor(this.x),
+				math.floor(this.z))
 			
-			if plr then
-				local dx = plr.x-this.x
-				local dy = plr.y-this.y
-				local dz = plr.z-this.z
-				local dd = dx*dx+dy*dy+dz*dz
-				if dd > 2*2 then
-					plr = nil
+			this.y = l[1+(1)]
+			
+			-- see if anyone has picked us up
+			local mplr = nil
+			local mdd = 2*2
+			for i=1,32 do
+				local plr = players[i]
+				
+				if plr and plr.alive then
+					local dx = plr.x-this.x
+					local dy = (plr.y+2.8)-this.y
+					local dz = plr.z-this.z
+					local dd = dx*dx+dy*dy+dz*dz
+					if dd < mdd then
+						mplr = plr
+					end
 				end
 			end
 			
-			if plr then
-				-- TODO: intel capture
+			if mplr then
+				if mplr.intel_pickup(this) then
+					this.player = mplr
+					this.visible = false
+				end
 			end
 		end
 	end
 	
 	function this.render()
-		client.model_render_bone_global(this.mdl_tent, mdl_tent_bone,
-			this.x, this.y, this.z,
-			0.0, this.angx, this.angy-math.pi, 1)
+		if this.visible then
+			client.model_render_bone_global(this.mdl_intel, 0,
+				this.x, this.y-0.9, this.z,
+				this.rotpos, 0, 0, 3)
+		else
+			local rpx = this.player.x
+			local rpy = this.player.y+0.5
+			local rpz = this.player.z
+			
+			client.model_render_bone_global(this.mdl_intel, 0,
+				rpx, rpy, rpz,
+				this.player.angy, 0, 0, 1)
+		end
+	end
+	
+	function this.render_icon(x,y,z,scale)
+		client.model_render_bone_local(this.mdl_intel, 0,
+			x, y, z,
+			this.rotpos, 0, 0, scale)
+		
+	end
+	
+	function this.intel_drop()
+		this.visible = true
+		this.x = math.floor(this.player.x)+0.5
+		this.y = math.floor(this.player.y)+0.5
+		this.z = math.floor(this.player.z)+0.5
+		this.player = nil
 	end
 	
 	function this.spawn()
@@ -62,6 +110,7 @@ function new_intel(settings)
 		
 		this.alive = true
 		this.spawned = true
+		this.visible = true
 	end
 	
 	local _
@@ -82,19 +131,28 @@ function new_tent(settings)
 	local this = {} this.this = this
 	
 	this.team = settings.team or -1
+	this.mspr = mspr_tent
 	
 	function this.tick(sec_current, sec_delta)
 		local i
 		
+		-- set position
+		local l = common.map_pillar_get(
+			math.floor(this.x),
+			math.floor(this.z))
+		
+		this.y = l[1+(1)]
+		
+		-- see if anyone is restocking
 		for i=1,32 do
 			local plr = players[i]
 			
 			if plr then
 				local dx = plr.x-this.x
-				local dy = plr.y-this.y
+				local dy = (plr.y+2.4)-this.y
 				local dz = plr.z-this.z
 				local dd = dx*dx+dy*dy+dz*dz
-				if dd > 1.5*1.5 then
+				if dd > 2*2 then
 					plr = nil
 				end
 			end
@@ -108,6 +166,9 @@ function new_tent(settings)
 				restock = restock or plr.health ~= 100
 				restock = restock or plr.blocks ~= 100
 				
+				restock = restock and plr.alive
+				restock = restock and plr.team == this.team
+				
 				if restock then
 					plr.health = 100
 					plr.blocks = 100
@@ -118,6 +179,12 @@ function new_tent(settings)
 				end
 			end
 		end
+	end
+	
+	function this.render()
+		client.model_render_bone_global(this.mdl_tent, 0,
+			this.x, this.y, this.z,
+			0, 0, 0, 3)
 	end
 	
 	function this.spawn()
@@ -134,9 +201,8 @@ function new_tent(settings)
 		
 		this.alive = true
 		this.spawned = true
+		this.visible = true
 	end
-	
-	this.spawn()
 	
 	local _
 	local l = teams[this.team].color_mdl
@@ -146,6 +212,8 @@ function new_tent(settings)
 	mname,mdata = common.model_bone_get(mdl_tent, 0)
 	recolor_component(l[1],l[2],l[3],mdata)
 	common.model_bone_set(this.mdl_tent, 0, mname, mdata)
+	
+	this.spawn()
 	
 	return this
 end

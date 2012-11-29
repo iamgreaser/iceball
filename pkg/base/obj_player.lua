@@ -137,6 +137,8 @@ function new_player(settings)
 		this.wpn = weapons[this.weapon](this)
 		
 		this.tool = 2
+		
+		this.has_intel = nil
 	end
 	
 	this.name = settings.name or "Noob"
@@ -168,6 +170,7 @@ function new_player(settings)
 	function this.damage(amt, kcol, kmsg)
 		this.health = this.health - amt
 		if this.health <= 0 then
+			this.intel_drop()
 			chat_add(chat_killfeed, nil, kmsg, kcol)
 			this.health = 0
 			this.alive = false
@@ -225,6 +228,30 @@ function new_player(settings)
 		end
 		
 		this.damage(amt, c, kmsg)
+	end
+	
+	function this.intel_pickup(intel)
+		if this.has_intel or intel.team == this.team then
+			return false
+		end
+		
+		local s = this.name.." has picked up the "..teams[intel.team].name.." intel."
+		this.has_intel = intel
+		chat_add(chat_text, nil, s, 0xFFC00000)
+		
+		return true
+	end
+	
+	function this.intel_drop()
+		local intel = this.has_intel
+		if not intel then
+			return
+		end
+		
+		local s = this.name.." has dropped the "..teams[intel.team].name.." intel."
+		intel.intel_drop()
+		this.has_intel = nil
+		chat_add(chat_text, nil, s, 0xFFC00000)
 	end
 	
 	function this.tick(sec_current, sec_delta)
@@ -650,6 +677,18 @@ function new_player(settings)
 			end
 		end
 		
+		for i=1,#intent do
+			local obj = intent[i]
+			if obj.visible then
+				obj.render()
+			end
+		end
+		
+		if this.has_intel then
+			local intel = this.has_intel
+			intel.render_icon(-0.5,-0.5,1.0,0.2)
+		end
+		
 		local hcolor = 0xFFA1FFA1
 		local acolor = 0xFFC0C0C0
 		local gcolor = 0xFFC0C0C0
@@ -718,6 +757,25 @@ function new_player(settings)
 						log_mspr[#log_mspr+1] = v
 						common.img_pixel_set(img_overview_icons, u, v, c)
 					end
+				end
+			end
+		end
+		
+		for j=1,#intent do
+			local obj = intent[j]
+			
+			if obj.visible then
+				local x,y
+				x,y = obj.x, obj.z
+				local l = teams[obj.team].color_chat
+				local c = argb_split_to_merged(l[1],l[2],l[3])
+				for i=1,#(obj.mspr),2 do
+					local u,v
+					u = x+obj.mspr[i  ]
+					v = y+obj.mspr[i+1]
+					log_mspr[#log_mspr+1] = u
+					log_mspr[#log_mspr+1] = v
+					common.img_pixel_set(img_overview_icons, u, v, c)
 				end
 			end
 		end

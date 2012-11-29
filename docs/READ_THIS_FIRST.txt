@@ -87,7 +87,7 @@ If you have any questions, use your preferred search engine.
 
 Iceball refers to one of two things:
 - The game engine.
-- The base game itself, currently located in pkg/base.
+- The base game itself ("Ice Lua Components"), currently located in pkg/base.
 
 If you wish to screw with the base game, check docs/modding_101.txt.
 

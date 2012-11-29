@@ -99,6 +99,60 @@ function chat_draw(ctab, fn_pos)
 	end
 end
 
+-- create map sprites
+log_mspr = {}
+
+mspr_player = {
+	                -1,-3,   0,-3,   1,-3,
+	
+	        -2,-2,                           2,-2,
+	
+	-3,-1,                                           3,-1,
+	
+	-3, 0,                                           3, 0,
+	
+	-3, 1,                                           3, 1,
+	
+	        -2, 2,                           2, 2,
+	
+	                -1, 3,   0, 3,   1, 3,
+}
+
+-- TODO: confirm the correct size of the intel + tent icons
+mspr_intel = {
+	-3,-3,  -2,-3,  -1,-3,   0,-3,   1,-3,   2,-3,   3,-3,
+	
+	-3,-2,                                           3,-2,
+	
+	-3,-1,                                           3,-1,
+	
+	-3, 0,                                           3, 0,
+	
+	-3, 1,                                           3, 1,
+	
+	-3, 2,                                           3, 2,
+	
+	-3, 3,  -2, 3,  -1, 3,   0, 3,   1, 3,   2, 3,   3, 3,
+}
+
+mspr_tent = {
+	                         0,-3,
+	
+	                         0,-2,
+	
+	                         0,-1,
+	
+	-3, 0,  -2, 0,  -1, 0,   0, 0,   1, 0,   2, 0,   3, 0,
+	
+	                         0, 1,
+	
+	                         0, 2,
+	
+	                         0, 3,
+}
+
+-- TODO: up/down arrows
+
 -- set stuff
 rotpos = 0.0
 debug_enabled = false
@@ -188,7 +242,7 @@ client.model_bone_set(mdl_bbox, mdl_bbox_bone2, "bbox_crouch", mdl_bbox_bone_dat
 
 
 -- set hooks
-function h_tick_camfly(sec_current, sec_delta)
+function h_tick_main(sec_current, sec_delta)
 	rotpos = rotpos + sec_delta*120.0
 	
 	chat_prune(chat_text, sec_current)
@@ -200,6 +254,10 @@ function h_tick_camfly(sec_current, sec_delta)
 		if plr then
 			plr.tick(sec_current, sec_delta)
 		end
+	end
+	
+	for i=1,#intent do
+		intent[i].tick(sec_current, sec_delta)
 	end
 	
 	players[players.current].camera_firstperson()
@@ -243,7 +301,7 @@ function h_tick_init(sec_current, sec_delta)
 	client.mouse_lock_set(true)
 	client.mouse_visible_set(false)
 	
-	client.hook_tick = h_tick_camfly
+	client.hook_tick = h_tick_main
 	return client.hook_tick(sec_current, sec_delta)
 end
 
@@ -266,6 +324,10 @@ function client.hook_key(key, state, modif)
 				if typing_msg ~= "" then
 					if typing_type == "Chat: " then
 						local s = plr.name.." ("..teams[plr.team].name.."): "..typing_msg
+						if typing_msg == "/kill" then
+							plr.damage(100, 0xFFC00000, plr.name.." committed suicide")
+						end
+						
 						chat_add(chat_text, nil, s, 0xFFFFFFFF)
 					elseif typing_type == "Team: " then
 						local s = plr.name..": "..typing_msg
@@ -477,21 +539,6 @@ do
 	end
 	end
 end
-
--- create map sprites
-log_mspr = {}
-
-mspr_player = {
-	-3,-1,  -3, 0,  -3, 1,
-	 3,-1,   3, 0,   3, 1,
-	-1,-3,   0,-3,   1,-3,
-	-1, 3,   0, 3,   1, 3,
-	
-	-2,-2,
-	-2, 2,
-	 2, 2,
-	 2,-2,
-}
 
 -- create colour palette image
 img_cpal = common.img_new(64,64)
