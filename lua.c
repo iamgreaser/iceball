@@ -88,6 +88,9 @@ struct icelua_entry icelua_server[] = {
 	{NULL, NULL}
 };
 struct icelua_entry icelua_common[] = {
+	{icelua_fn_common_fetch_start, "fetch_start"},
+	{icelua_fn_common_fetch_poll, "fetch_poll"},
+	{icelua_fn_common_fetch_block, "fetch_block"},
 	{icelua_fn_common_map_load, "map_load"},
 	{icelua_fn_common_map_new, "map_new"},
 	{icelua_fn_common_map_free, "map_free"},

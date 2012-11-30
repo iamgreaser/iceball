@@ -7,7 +7,7 @@ OBJS = \
 	$(OBJDIR)/main.o \
 	$(OBJDIR)/vecmath.o \
 	$(OBJDIR)/map.o $(OBJDIR)/model.o \
-	$(OBJDIR)/img.o $(OBJDIR)/render.o \
+	$(OBJDIR)/img.o $(OBJDIR)/render.o $(OBJDIR)/render_img.o \
 	$(OBJDIR)/lua.o $(OBJDIR)/network.o \
 	$(OBJDIR)/path.o \
 	$(OBJDIR)/wav.o

@@ -56,6 +56,9 @@ enum
 	UD_MAX
 };
 
+// if this flag is set, free when finished sending
+#define UDF_TEMPSEND 0x8000
+
 typedef union vec4f
 {
 	struct { float x,y,z,w; } __attribute__((__packed__)) p;

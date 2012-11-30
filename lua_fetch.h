@@ -15,32 +15,47 @@
     along with Iceball.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-// common functions
-int icelua_fn_common_fetch(lua_State *L)
+// aux helpers
+int icelua_fnaux_common_fetch_immediate(lua_State *L, const char *ftype, const char *fname)
 {
-	// TODO!
-	return 0;
-}
-
-int icelua_fn_common_fetch_block(lua_State *L)
-{
-	// TODO: base this on common.fetch
-	// TODO: run this through a network
-	
-	int top = icelua_assert_stack(L, 2, 2);
-	const char *ftype = lua_tostring(L, 1);
-	const char *fname = lua_tostring(L, 2);
-	
-	if(L == lstate_server
-		? !path_type_server_readable(path_get_type(fname))
-		: !path_type_client_readable(path_get_type(fname)))
-	{
-		return luaL_error(L, "cannot read from there");
-	}
-	
-	// TODO: actually set up proper fetching
-	
 	if(!strcmp(ftype, "lua"))
+	{
+		if(luaL_loadfile(L, fname) != 0)
+			return luaL_error(L, "%s", lua_tostring(L, -1));
+		
+		return 1;
+	} else if(!strcmp(ftype, "map")) {
+		map_t *map = NULL;
+		
+		map = map_load_icemap(fname);
+		if(map == NULL)
+			map = map_load_aos(fname);
+		
+		lua_pushlightuserdata(L, map);
+		return 1;
+	} else if(!strcmp(ftype, "icemap")) {
+		map_t *map = map_load_icemap(fname);
+		
+		lua_pushlightuserdata(L, map);
+		return 1;
+	} else if(!strcmp(ftype, "vxl")) {
+		map_t *map = map_load_aos(fname);
+		
+		lua_pushlightuserdata(L, map);
+		return 1;
+	} else if(!strcmp(ftype, "pmf")) {
+		model_t *pmf = model_load_pmf(fname);
+		
+		if(pmf == NULL)
+			return 0;
+		
+		lua_pushlightuserdata(L, pmf);
+		return 1;
+	} else if(!strcmp(ftype, "tga")) {
+		img_t *img = img_load_tga(fname);
+		if(img == NULL)
+			return 0;
+		if(!strcmp(ftype, "lua"))
 	{
 		if(luaL_loadfile(L, fname) != 0)
 			return luaL_error(L, "%s", lua_tostring(L, -1));
@@ -89,4 +104,58 @@ int icelua_fn_common_fetch_block(lua_State *L)
 	} else {
 		return luaL_error(L, "unsupported format for fetch");
 	}
+		lua_pushlightuserdata(L, img);
+		return 1;
+	} else if(!strcmp(ftype, "json")) {
+		// TODO!
+		return luaL_error(L, "format not supported yet!");
+	} else if(!strcmp(ftype, "log")) {
+		// TODO!
+		return luaL_error(L, "format not supported yet!");
+	} else {
+		return luaL_error(L, "unsupported format for fetch");
+	}
+}
+
+// common functions
+int icelua_fn_common_fetch_start(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 2, 2);
+	const char *ftype = lua_tostring(L, 1);
+	const char *fname = lua_tostring(L, 2);
+	
+	if(L == lstate_server
+		? !path_type_server_readable(path_get_type(fname))
+		: !path_type_client_readable(path_get_type(fname)))
+	{
+		return luaL_error(L, "cannot read from there");
+	}
+	
+	return icelua_fnaux_common_fetch_immediate(L, ftype, fname);
+}
+
+int icelua_fn_common_fetch_poll(lua_State *L)
+{
+	// TODO!
+	return 0;
+}
+
+int icelua_fn_common_fetch_block(lua_State *L)
+{
+	// TODO: base this on common.fetch_*
+	// TODO: run this through a network
+	
+	int top = icelua_assert_stack(L, 2, 2);
+	const char *ftype = lua_tostring(L, 1);
+	const char *fname = lua_tostring(L, 2);
+	
+	if(L == lstate_server
+		? !path_type_server_readable(path_get_type(fname))
+		: !path_type_client_readable(path_get_type(fname)))
+	{
+		return luaL_error(L, "cannot read from there");
+	}
+	
+	// TODO: set up network fetching
+	return icelua_fnaux_common_fetch_immediate(L, ftype, fname);
 }

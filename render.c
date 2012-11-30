@@ -72,6 +72,17 @@ typedef struct rayblock {
 	float x,y,z;
 } rayblock_t;
 
+typedef struct edgebit {
+	int x1,x2;
+	float z1,u1,v1;
+	float z2,u2,v2;
+} edgebit_t;
+
+int elist_y1;
+int elist_y2;
+edgebit_t *elist = NULL;
+int elist_len = 0;
+
 int rayc_block_len, rayc_block_head;
 int rayc_data_len, rayc_data_head;
 raydata_t rayc_data[RAYC_MAX];
@@ -226,6 +237,98 @@ void render_rect_zbuf(uint32_t *ccolor, float *cdepth, int x1, int y1, int x2, i
 	int pitch = rtmp_pitch - stride;
 	int dpitch = rtmp_width - stride;
 	
+#ifdef __SSE__
+	if(x2-x1 >= 16)
+	{
+		int fpitch = cubemap_size - (((x2-x1)+7)&~7);
+		uint32_t *cfptr = cptr;
+		float *dfptr = dptr;
+		int xs;
+		
+		for(x = x1; x < x2; x += 8)
+		{
+			_mm_prefetch(cfptr, _MM_HINT_NTA);
+			cfptr += 8;
+			_mm_prefetch(dfptr, _MM_HINT_NTA);
+			dfptr += 8;
+		}
+		
+		cfptr += fpitch;
+		dfptr += fpitch;
+		
+		for(y = y1; y < y2-1; y++)
+		{
+			for(x = x1; x < x2-8; x += 8)
+			{
+				_mm_prefetch(cfptr, _MM_HINT_NTA);
+				for(xs = 0; xs < 8; xs++)
+				{
+					if(*dptr > depth)
+					{
+						*dptr = depth;
+						*cptr = color;
+					}
+					cptr++; dptr++;
+				}
+				_mm_prefetch(dfptr, _MM_HINT_NTA);
+				cfptr += 8;
+				dfptr += 8;
+			}
+			_mm_prefetch(cfptr, _MM_HINT_NTA);
+			cfptr += 8;
+			
+			for(x = x; x < x2; x++)
+			{
+				if(*dptr > depth)
+				{
+					*dptr = depth;
+					*cptr = color;
+				}
+				cptr++; dptr++;
+			}
+			
+			_mm_prefetch(dfptr, _MM_HINT_NTA);
+			dfptr += 8;
+			
+			cfptr += fpitch;
+			dfptr += fpitch;
+			
+			cptr += pitch;
+			dptr += pitch;
+		}
+		
+		{
+			for(x = x1; x < x2; x++)
+			{
+				if(*dptr > depth)
+				{
+					*dptr = depth;
+					*cptr = color;
+				}
+				cptr++; dptr++;
+			}
+			
+			dptr += dpitch;
+			cptr += pitch;
+		}
+	} else {
+		for(y = y1; y < y2; y++)
+		{
+			for(x = x1; x < x2; x++)
+			{
+				if(*dptr > depth)
+				{
+					*dptr = depth;
+					*cptr = color;
+				}
+				cptr++; dptr++;
+			}
+			
+			dptr += dpitch;
+			cptr += pitch;
+		}
+	}
+#else
 	for(y = y1; y < y2; y++)
 	{
 		for(x = x1; x < x2; x++)
@@ -241,6 +344,7 @@ void render_rect_zbuf(uint32_t *ccolor, float *cdepth, int x1, int y1, int x2, i
 		dptr += dpitch;
 		cptr += pitch;
 	}
+#endif
 }
 
 // TODO: fast ver?
@@ -276,6 +380,101 @@ void render_vxl_rect_ftb_fast(uint32_t *ccolor, float *cdepth, int x1, int y1, i
 	float *dptr = &cdepth[(y1<<cubemap_shift)+x1];
 	int pitch = cubemap_size - (x2-x1);
 	
+#ifdef __SSE__
+	// Because SSE was invented just so we could get the prefetch instructions.
+	// Anyhow, this makes mesa.vxl go from 41FPS to 42FPS. Totally Worth It
+	// (although with some tweaking I think it could go a bit further than this crap)
+	if(x2-x1 >= 16)
+	{
+		int fpitch = cubemap_size - (((x2-x1)+7)&~7);
+		uint32_t *cfptr = cptr;
+		float *dfptr = dptr;
+		int xs;
+		for(x = x1; x < x2; x += 8)
+		{
+			_mm_prefetch(cfptr, _MM_HINT_NTA);
+			cfptr += 8;
+			_mm_prefetch(dfptr, _MM_HINT_NTA);
+			dfptr += 8;
+		}
+		
+		cfptr += fpitch;
+		dfptr += fpitch;
+		
+		for(y = y1; y < y2-1; y++)
+		{
+			for(x = x1; x < x2-8; x += 8)
+			{
+				_mm_prefetch(cfptr, _MM_HINT_NTA);
+				for(xs = 0; xs < 8; xs++)
+				{
+					if(*cptr == fog_color)
+					{
+						*cptr = color;
+						*dptr = depth;
+					}
+					cptr++;
+					dptr++;
+				}
+				_mm_prefetch(dfptr, _MM_HINT_NTA);
+				cfptr += 8;
+				dfptr += 8;
+			}
+			_mm_prefetch(cfptr, _MM_HINT_NTA);
+			cfptr += 8;
+			
+			for(x = x; x < x2; x++)
+			{
+				if(*cptr == fog_color)
+				{
+					*cptr = color;
+					*dptr = depth;
+				}
+				cptr++;
+				dptr++;
+			}
+			
+			_mm_prefetch(dfptr, _MM_HINT_NTA);
+			dfptr += 8;
+			
+			cfptr += fpitch;
+			dfptr += fpitch;
+			
+			cptr += pitch;
+			dptr += pitch;
+		}
+		
+		{
+			for(x = x1; x < x2; x++)
+			{
+				if(*cptr == fog_color)
+				{
+					*cptr = color;
+					*dptr = depth;
+				}
+				cptr++;
+				dptr++;
+			}
+		}
+	} else {
+		for(y = y1; y < y2; y++)
+		{
+			for(x = x1; x < x2; x++)
+			{
+				if(*cptr == fog_color)
+				{
+					*cptr = color;
+					*dptr = depth;
+				}
+				cptr++;
+				dptr++;
+			}
+			
+			cptr += pitch;
+			dptr += pitch;
+		}
+	}
+#else
 	for(y = y1; y < y2; y++)
 	{
 		for(x = x1; x < x2; x++)
@@ -292,6 +491,7 @@ void render_vxl_rect_ftb_fast(uint32_t *ccolor, float *cdepth, int x1, int y1, i
 		cptr += pitch;
 		dptr += pitch;
 	}
+#endif
 }
 
 void render_vxl_cube_sides(uint32_t *ccolor, float *cdepth, int x1, int y1, int x2, int y2, uint32_t color, float depth)
@@ -769,6 +969,318 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 #endif
 }
 
+void render_cubemap_edge(
+	int face,
+	int x1, int y1, float z1, float u1, float v1,
+	int x2, int y2, float z2, float u2, float v2)
+{
+	int x,y;
+	
+	// if out of Y range, drop out early.
+	if(y1 < 0 && y2 < 0)
+		return;
+	if(y1 >= rtmp_height && y2 >= rtmp_height)
+		return;
+	
+	// if perfectly horizontal, drop out early.
+	if(y1 == y2)
+		return;
+	
+	// prep line drawer
+	int dx = x2-x1;
+	int dy = y2-y1;
+	int xadd = 0;
+	int xinc = 1;
+	int dc = 0;
+	
+	// ensure dy is positive
+	if(dy < 0)
+	{
+		dx = -dx;
+		dy = -dy;
+	}
+	
+	// ensure dx is positive
+	if(dx < 0)
+	{
+		dx = -dx;
+		xinc = -1;
+	}
+	
+	// calculate correct xadd,dx,dy
+	xadd = dx/dy;
+	xadd *= xinc;
+	dx %= dy;
+	
+	// we are going clockwise.
+	if(y1 < y2)
+	{
+		// right side
+		
+		// clip for y
+		if(y1 < 0)
+		{
+			y1 = -y1;
+			
+			dc = dx*y1;
+			z1 += (z2-z1)*y1;
+			u1 += (u2-u1)*y1;
+			v1 += (v2-v1)*y1;
+			
+			x1 += xinc*(dc/dy) + xadd*y1;
+			dc %= dy;
+			
+			y1 = 0;
+		}
+		
+		if(y2 > rtmp_height)
+			y2 = rtmp_height;
+		
+		// expand list top/bottom
+		if(y1 < elist_y1) elist_y1 = y1;
+		if(y2 > elist_y2) elist_y2 = y2;
+		
+		// calc deltas
+		float dz = z2-z1;
+		float du = u2-u1;
+		float dv = v2-v1;
+		
+		// apply
+		edgebit_t *eb = &elist[y1];
+		for(y = y1; y < y2; y++)
+		{
+			eb->x2 = x1;
+			eb->z2 = z1;
+			eb->u2 = u1;
+			eb->v2 = v1;
+			
+			z1 += dz;
+			u1 += du;
+			v1 += dv;
+			
+			x1 += xadd;
+			dc += dx;
+			if(dc >= dy)
+			{
+				x1 += xinc;
+				dc -= dy;
+			}
+			
+			eb++;
+		}
+	} else {
+		// left side
+		
+		// clip for y
+		if(y2 < 0)
+		{
+			y2 = -y2;
+			
+			dc = dx*y2;
+			z2 += (z1-z2)*y2;
+			u2 += (u1-u2)*y2;
+			v2 += (v1-v2)*y2;
+			
+			x2 += xinc*(dc/dy) + xadd*y1;
+			dc %= dy;
+			
+			y2 = 0;
+		}
+		
+		if(y1 > rtmp_height)
+			y1 = rtmp_height;
+		
+		// expand list top/bottom
+		if(y2 < elist_y1) elist_y1 = y2;
+		if(y1 > elist_y2) elist_y2 = y1;
+		
+		// calc deltas
+		float dz = z1-z2;
+		float du = u1-u2;
+		float dv = v1-v2;
+		
+		// apply
+		edgebit_t *eb = &elist[y1];
+		for(y = y2; y < y1; y++)
+		{
+			eb->x1 = x2;
+			eb->z1 = z2;
+			eb->u1 = u2;
+			eb->v1 = v2;
+			
+			z2 += dz;
+			u2 += du;
+			v2 += dv;
+			
+			x2 += xadd;
+			dc += dx;
+			if(dc >= dy)
+			{
+				x2 += xinc;
+				dc -= dy;
+			}
+			
+			eb++;
+		}
+	}
+	
+	// clamp y1,y2 to screen size
+	// NOTE: shouldn't be necessary if the algo is correct
+	if(elist_y1 < 0) elist_y1 = 0;
+	if(elist_y2 > rtmp_height) elist_y2 = rtmp_height;
+}
+
+void render_cubemap_quad(
+	int face,
+	float x1, float y1, float z1,
+	float x2, float y2, float z2,
+	float x3, float y3, float z3,
+	float x4, float y4, float z4)
+{
+	float u1,u2,u3,u4;
+	float v1,v2,v3,v4;
+	
+	// precalc 1/z
+	z1 = 1.0f/z1;
+	z2 = 1.0f/z2;
+	z3 = 1.0f/z3;
+	z4 = 1.0f/z4;
+	
+	// prep u/v values
+	u1 = -z1; v1 = -z1;
+	u2 =  z1; v2 = -z1;
+	u3 =  z1; v3 =  z1;
+	u4 = -z1; v4 =  z1;
+	
+	// copy to some "unclipped" things
+	float x1a,x1b,y1a,y1b,z1a,z1b,u1a,u1b,v1a,v1b;
+	float x2a,x2b,y2a,y2b,z2a,z2b,u2a,u2b,v2a,v2b;
+	float x3a,x3b,y3a,y3b,z3a,z3b,u3a,u3b,v3a,v3b;
+	float x4a,x4b,y4a,y4b,z4a,z4b,u4a,u4b,v4a,v4b;
+	
+	x1a=x1b=x1; y1a=y1b=y1; z1a=z1b=z1; u1a=u1b=u1; v1a=v1b=v1;
+	x2a=x2b=x2; y2a=y2b=y2; z2a=z2b=z2; u2a=u2b=u2; v2a=v2b=v2;
+	x3a=x3b=x3; y3a=y3b=y3; z3a=z3b=z3; u3a=u3b=u3; v3a=v3b=v3;
+	x4a=x4b=x4; y4a=y4b=y4; z4a=z4b=z4; u4a=u4b=u4; v4a=v4b=v4;
+	
+	// TODO: clip stuff
+	
+	// render edges
+	if(x1a != x1b || y1a != y1b)
+		render_cubemap_edge(face, x1a,y1a,z1a,u1a,v1a, x1b,y1b,z1b,u1b,v1b);
+	render_cubemap_edge(face, x1b,y1b,z1b,u1b,v1b, x2a,y2a,z2a,u2a,v2a);
+	
+	if(x2a != x2b || y2a != y2b)
+		render_cubemap_edge(face, x2a,y2a,z2a,u2a,v2a, x2b,y2b,z2b,u2b,v2b);
+	render_cubemap_edge(face, x2b,y2b,z2b,u2b,v2b, x3a,y3a,z3a,u3a,v3a);
+	
+	if(x3a != x3b || y3a != y3b)
+		render_cubemap_edge(face, x3a,y3a,z3a,u3a,v3a, x3b,y3b,z3b,u3b,v3b);
+	render_cubemap_edge(face, x3b,y3b,z3b,u3b,v3b, x4a,y4a,z4a,u4a,v4a);
+	
+	if(x4a != x4b || y4a != y4b)
+		render_cubemap_edge(face, x4a,y4a,z4a,u4a,v4a, x4b,y4b,z4b,u4b,v4b);
+	render_cubemap_edge(face, x4b,y4b,z4b,u4b,v4b, x1a,y1a,z1a,u1a,v1a);
+}
+
+void render_cubemap_face(int face, int gx, int gy, int gz)
+{
+	int x,y;
+	
+	// reset edge list
+	elist_y1 = rtmp_height;
+	elist_y2 = 0;
+	
+	// calculate corners
+	float cx1 = gx, cx2 = gx, cx3 = gx, cx4 = gx;
+	float cy1 = gy, cy2 = gy, cy3 = gy, cy4 = gy;
+	float cz1 = gz, cz2 = gz, cz3 = gz, cz4 = gz;
+	
+	// populate edge list
+	render_cubemap_quad(face,
+		cx1,cy1,cz1,
+		cx2,cy2,cz2,
+		cx3,cy3,cz3,
+		cx4,cy4,cz4);
+	
+	// render edge list
+	uint32_t *pb = rtmp_pixels + (rtmp_pitch*elist_y1);
+	float *db = dbuf + (rtmp_width*elist_y1);
+	
+	for(y = elist_y1; y < elist_y2; y++)
+	{
+		edgebit_t *eb = &elist[y];
+		
+		// get start/end
+		int x1 = eb->x1;
+		int x2 = eb->x2;
+		
+		// get start z/u/v
+		float zi = eb->z1;
+		float ui = eb->u1;
+		float vi = eb->v1;
+		
+		// get delta z/u/v
+		float dzi = eb->z2-eb->z1;
+		float dui = eb->u2-eb->u1;
+		float dvi = eb->v2-eb->v1;
+		
+		uint32_t *p = &pb[x1];
+		float *d = &db[x1];
+		for(x = x1; x < x2; x++)
+		{
+			// invert z
+			float z = 1/zi;
+			
+			// calculate u,v
+			float u = ui*z;
+			float v = vi*z;
+			
+			// TODO: fetch
+			// TODO: plot
+			//*(p++);
+			//*(d++);
+		}
+		
+		pb += rtmp_pitch;
+		db += rtmp_width;
+	}
+	
+}
+
+// TODO: get this working
+void render_cubemap_new(uint32_t *pixels, int width, int height, int pitch, camera_t *camera, map_t *map)
+{
+	// stash stuff in globals to prevent spamming the stack too much
+	// (and in turn thrashing the cache)
+	rtmp_pixels = pixels;
+	rtmp_width = width;
+	rtmp_height = height;
+	rtmp_pitch = pitch;
+	rtmp_camera = camera;
+	rtmp_map = map;
+	
+	// prep edge list
+	if(elist_len != height)
+	{
+		if(elist != NULL)
+			free(elist);
+		
+		elist_len = height;
+		elist = malloc(sizeof(edgebit_t)*elist_len);
+	}
+	
+	// do each face
+	// TODO? backface cull?
+	render_cubemap_face(CM_NX, -1,  0,  0);
+	render_cubemap_face(CM_NY,  0, -1,  0);
+	render_cubemap_face(CM_NZ,  0,  0, -1);
+	render_cubemap_face(CM_PX,  1,  0,  0);
+	render_cubemap_face(CM_PY,  0,  1,  0);
+	render_cubemap_face(CM_PZ,  0,  0,  1);
+}
+
+
 void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t *camera, map_t *map)
 {
 	int x,y,z;
@@ -999,110 +1511,6 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 	}
 }
 
-void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
-	img_t *src, int dx, int dy, int bw, int bh, int sx, int sy, uint32_t color)
-{
-	int x,y;
-	
-	// clip blit width/height
-	if(bw > src->head.width-sx)
-		bw = src->head.width-sx;
-	if(bh > src->head.height-sy)
-		bh = src->head.height-sy;
-	if(sx < 0)
-	{
-		bw -= -sx;
-		dx += -sx;
-		sx = 0;
-	}
-	if(sy < 0)
-	{
-		bh -= -sy;
-		dy += -sy;
-		sy = 0;
-	}
-	
-	// drop if completely out of range
-	if(dx >= width || dy >= height)
-		return;
-	if(dx+bw <= 0 || dy+bh <= 0)
-		return;
-	
-	// top-left clip
-	if(dx < 0)
-	{
-		sx += -dx;
-		bw -= -dx;
-		dx = 0;
-	}
-	if(dy < 0)
-	{
-		sy += -dy;
-		bh -= -dy;
-		dy = 0;
-	}
-	
-	// bottom-right clip
-	if(dx+bw > width)
-		bw = width-dx;
-	if(dy+bh > height)
-		bh = height-dy;
-	
-	// drop if width/height sucks
-	if(bw <= 0 || bh <= 0)
-		return;
-	
-	// get pointers
-	uint32_t *ps = src->pixels;
-	ps = &ps[sx+sy*src->head.width];
-	uint32_t *pd = &(pixels[dx+dy*pitch]);
-	int spitch = src->head.width - bw;
-	int dpitch = pitch - bw;
-	
-	// now blit!
-	for(y = 0; y < bh; y++)
-	{
-		for(x = 0; x < bw; x++)
-		{
-			// TODO: MMX/SSE2 version
-			uint32_t s = *(ps++);
-			uint32_t d = *pd;
-			
-			// apply base color
-			// DANGER! BRACKETITIS!
-			s = (((s&0xFF)*((color&0xFF))>>8)
-				| ((((s>>8)&0xFF)*(((color>>8)&0xFF)+1))&0xFF00)
-				| ((((s>>8)&0xFF00)*(((color>>16)&0xFF)+1))&0xFF0000)
-				| ((((s>>8)&0xFF0000)*(((color>>24)&0xFF)+1))&0xFF000000)
-			);
-			
-			uint32_t alpha = (s >> 24);
-			if(alpha >= 0x80) alpha++;
-			uint32_t ialpha = 0x100 - alpha;
-			
-			uint32_t sa = s & 0x00FF00FF;
-			uint32_t sb = s & 0x0000FF00;
-			uint32_t da = d & 0x00FF00FF;
-			uint32_t db = d & 0x0000FF00;
-			
-			sa *= alpha;
-			sb *= alpha;
-			da *= ialpha;
-			db *= ialpha;
-			
-			//printf("%i %i\n", alpha, ialpha);
-			
-			uint32_t va = ((sa + da)>>8) & 0x00FF00FF;
-			uint32_t vb = ((sb + db)>>8) & 0x0000FF00;
-			
-			*(pd++) = va + vb;
-		}
-		
-		ps += spitch;
-		pd += dpitch;
-	}
-}
-
 int render_init(int width, int height)
 {
 	int i;
@@ -1182,6 +1590,14 @@ void render_deinit(void)
 			free(cubemap_depth[i]);
 			cubemap_depth[i] = NULL;
 		}
+	}
+	
+	// deallocate edgelist
+	if(elist != NULL)
+	{
+		free(elist);
+		elist = NULL;
+		elist_len = 0;
 	}
 	
 	// deallocate depth buffer

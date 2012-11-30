@@ -38,13 +38,8 @@ lua base library stuff:
 	- dofile(x) = loadfile(x)()
 	- loadfile(x) = common.fetch_block("lua", x)
 	- common.fetch_block(ftype, x) =
-	    local f = common.fetch(ftype, x)
-	    while true do
-	      local val = f()
-	      if val == true then coroutine.yield()
-	      elseif val == nil then return nil
-	      else return f
-	    end
+	    if not common.fetch_start(ftype, x) then return nil end
+	    co
 	- just about every "load" function is based on common.fetch_block
 	  (TODO: make this true!)
 
@@ -109,7 +104,7 @@ client.mouse_lock_set(state) @
 client.mouse_visible_set(state) @
 	shows / hides the mouse depending on "state"
 
-(f()->obj, amount), csize, usize = common.fetch(ftype, fname)
+success = common.fetch_start(ftype, fname)
 	initiates a file fetch
 	
 	"ftype" is one of the following:
@@ -121,26 +116,49 @@ client.mouse_visible_set(state) @
 	- "tga": tga image
 	- "json": json data (TODO)
 	- "log": log data (TODO)
+	- "wav": wav sound (TODO)
 	
 	for the server, this just loads the file from the disk.
 	
 	for the client, all clsave/* stuff is taken from the disk,
 	but all other files are downloaded from the server.
 	
-	returns a function you can poll which returns:
-	- "obj", either:
-	  - "true" if still loading
-	  - "nil" if can't load (check "amount" for error message)
-	  - the object you're looking for
-	- 0 <= "amount" <= 1, how much is downloaded
+	returns true if the fetch has started,
+	or false if there is something already in the queue.
+
+obj, csize, usize, ftype, fname, amount = common.fetch_poll()
+	polls the 
+	"obj" is one of the following:
+	- "nil" if transfer aborted or nothing is being fetched
+	  - in this case, all other fields will be nil
+	- "false" if still downloading
+	- the object you requested
+	  - in this case, another poll will just return nils
 	
+	"amount" is in the range 0 <= "amount" <= 1,
+	and indicates how much is downloaded
 	"csize" is the compressed size of the file
 	"usize" is the uncompressed size
+	"ftype" is the type of the file being fetched:
+	- "lua": lua script
+	- "map": map
+	- "pmf": pmf model
+	- "tga": tga image
+	- "json": json data (TODO)
+	- "log": log data (TODO)
+	- "wav": wav sound (TODO)
+	"fname" is the name of the file being fetched
+	
+	note, all vxl maps will be converted to icemap before sending.
+	
 
 obj = common.fetch_block(ftype, fname) @
-	fetches a file using common.fetch(ftype, fname)
+	fetches a file using common.fetch_*
 	
 	simply returns "nil" on error
+	
+	if there is already something being fetched,
+	it will return "nil", too
 
 map = common.map_load(fname, fmt = "auto") @
 	loads a map, either "vxl" or "icemap"
