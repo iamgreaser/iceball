@@ -15,6 +15,16 @@
     along with Iceball.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+void *cfetch_cbuf = NULL;
+void *cfetch_ubuf = NULL;
+int cfetch_clen = 0;
+int cfetch_ulen = 0;
+int cfetch_udtype = UD_INVALID;
+
+void *sfetch_ubuf = NULL;
+int sfetch_ulen = 0;
+int sfetch_udtype = UD_INVALID;
+
 // aux helpers
 int icelua_fnaux_common_fetch_immediate(lua_State *L, const char *ftype, const char *fname)
 {

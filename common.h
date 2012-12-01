@@ -49,9 +49,36 @@ enum
 {
 	UD_INVALID = 0,
 	
+	//
+	// struct formats
+	//
+	
+	UD_MIN_STRUCT,
+	
 	UD_MAP,
 	UD_PMF,
 	UD_IMG,
+	
+	// TODO:
+	UD_WAV,
+	
+	UD_MAX_STRUCT,
+	
+	//
+	// table formats (also includes lua functions. whatever.)
+	//
+	
+	UD_MIN_TABLE,
+	
+	UD_LUA,
+	
+	// TODO:
+	UD_JSON,
+	UD_LOG,
+	
+	UD_MAX_TABLE,
+	
+	//
 	
 	UD_MAX
 };

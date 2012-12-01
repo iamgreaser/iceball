@@ -25,6 +25,7 @@
 #define DEBUG_HIDE_MAIN
 #endif
 
+#define CUBESUX_MARKER 20
 #define RAYC_MAX ((int)((FOG_MAX_DISTANCE+1)*(FOG_MAX_DISTANCE+1)*8+10))
 
 #define DF_NX 0x01
@@ -370,9 +371,9 @@ void render_vxl_rect_ftb_fast(uint32_t *ccolor, float *cdepth, int x1, int y1, i
 		return;
 	if(y1 >= cubemap_size)
 		return;
-	if(x1 == x2)
+	if(x1 >= x2)
 		return;
-	if(y1 == y2)
+	if(y1 >= y2)
 		return;
 	
 	// render
@@ -498,10 +499,30 @@ void render_vxl_cube_sides(uint32_t *ccolor, float *cdepth, int x1, int y1, int 
 {
 	int hsize = (cubemap_size>>1);
 	
+	
+	if(depth > CUBESUX_MARKER)
+	{
+		int x3 = ((x1-hsize)*depth)/(depth+1.0f)+hsize;
+		int y3 = ((y1-hsize)*depth)/(depth+1.0f)+hsize;
+		int x4 = ((x2-hsize+1)*depth)/(depth+1.0f)+hsize;
+		int y4 = ((y2-hsize+1)*depth)/(depth+1.0f)+hsize;
+		if(x1 > x3) x1 = x3;
+		if(y1 > y3) y1 = y3;
+		if(x2 < x4) x2 = x4;
+		if(y2 < y4) y2 = y4;
+		
+		render_vxl_rect_ftb_fast(ccolor, cdepth, x1, y1, x2, y2, color, depth+0.5f);
+		return;
+	}
+	
 	int x3 = ((x1-hsize)*depth)/(depth+0.5f)+hsize;
 	int y3 = ((y1-hsize)*depth)/(depth+0.5f)+hsize;
 	int x4 = ((x2-hsize)*depth)/(depth+0.5f)+hsize;
 	int y4 = ((y2-hsize)*depth)/(depth+0.5f)+hsize;
+	
+	render_vxl_rect_ftb_fast(ccolor, cdepth, x1, y1, x2, y2, color, depth);
+	
+	depth += 0.5f;
 	
 	// TODO: replace these with trapezium drawing routines
 	if(x3 < x1)
@@ -525,7 +546,6 @@ void render_vxl_cube_sides(uint32_t *ccolor, float *cdepth, int x1, int y1, int 
 
 void render_vxl_cube(uint32_t *ccolor, float *cdepth, int x1, int y1, int x2, int y2, uint32_t color, float depth)
 {
-	render_vxl_rect_ftb_fast(ccolor, cdepth, x1, y1, x2, y2, color, depth);
 	render_vxl_cube_sides(ccolor, cdepth, x1, y1, x2, y2, color, depth);
 }
 

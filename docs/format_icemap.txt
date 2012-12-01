@@ -23,6 +23,7 @@ yes, that's 7 spaces.
 for AoS compatibility, the "header" CAN be at the end, BUT:
 - MapData is NOT to be defined.
 - all non-air blocks are assumed to be type 1.
+- the map MUST be 512x64x512.
 
 now, here are the defined chunks as per version 1 of the format.
 	MapData:

@@ -1,0 +1,24 @@
+{
+	"__COMMENT_000": "
+		
+		This is the sort of place you set up your 'profile' and whatnot.
+		It can be read by all mods, but not writeable by any.
+		
+		By the way, don't store anything important in this comment.
+		It is possible that a hacked server might be able to read it.
+		
+		READ THIS FILE: docs/setup_json.txt
+		
+	",
+	
+	"name": null,
+	"kick_on_join": true,
+	
+	"skins" : {
+	
+	},
+	
+	"bio": {
+		"description": "I don't know how to edit my config. Laugh at me.",
+	}
+}
