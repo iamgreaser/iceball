@@ -253,6 +253,9 @@ enum
 void img_free(img_t *img);
 img_t *img_load_tga(const char *fname);
 
+// json.c
+int json_parse(lua_State *L, const char *p);
+
 // lua.c
 extern lua_State *lstate_client;
 extern lua_State *lstate_server;

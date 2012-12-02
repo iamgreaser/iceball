@@ -8,7 +8,7 @@
 	
 	"video" : {
 		"width": 800,
-		"height": 600,
+		"height": 600
 	},
 	
 	"audio" : {
@@ -26,8 +26,8 @@
 				"channels": [
 					{"name": "left",  "distance": -0.095, "angle": -90, "tilt": 0},
 					{"name": "right", "distance":  0.095, "angle":  90, "tilt": 0}
-				],
+				]
 			}
 		}
-	},
+	}
 }

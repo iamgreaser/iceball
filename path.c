@@ -27,7 +27,7 @@ char *path_filter(const char *instr)
 
 int path_get_type(const char *path)
 {
-	char *v;
+	const char *v;
 	
 	// check: is this null?
 	if(path == NULL)

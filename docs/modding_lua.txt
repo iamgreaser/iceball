@@ -384,6 +384,44 @@ client.img_blit(img, dx, dy, width = iwidth, height = iheight, sx = 0, sy = 0, c
 	
 	this is clipped to fit!
 
+tab = common.json_parse(str)
+	parses the JSON string "str"
+	
+	yes, this parser is anal-retentive,
+	and only allows one specific case where it breaks the rules!
+	it also errors if it encounters a char 0 in the middle of a string.
+	
+	returns nil on error
+
+tab = common.json_load(fname)
+	loads a JSON file and parses it
+	
+	returns nil on error
+
+str = common.json_pack(tab)
+	takes a table and spits out valid JSON
+	(aside from encoding details)
+	
+	the following types are supported:
+	- numbers
+	- strings
+	- true, false, nil
+	- tables with only string keys
+	- tables with only numeric keys from 1 through #
+	
+	and therefore the following types are NOT supported:
+	- functions/closures of ANY sort (C or Lua)
+	- tables with mixed hash/numeric keys
+	- userdata (light or otherwise)
+	
+	and i think that's about it for types really
+	
+	returns nil on error
+	
+common.json_save(fname, tab)
+
+	throws a lua error on failure
+
 wav = common.wav_load(fname)
 	loads a sound with filename "fname"
 	remember to free it when you're done

@@ -57,6 +57,7 @@ int icelua_force_get_integer(lua_State *L, int table, char *name)
 #include "lua_camera.h"
 #include "lua_image.h"
 #include "lua_input.h"
+#include "lua_json.h"
 #include "lua_map.h"
 #include "lua_model.h"
 
@@ -114,6 +115,7 @@ struct icelua_entry icelua_common[] = {
 	{icelua_fn_common_img_pixel_set, "img_pixel_set"},
 	{icelua_fn_common_img_free, "img_free"},
 	{icelua_fn_common_img_get_dims, "img_get_dims"},
+	{icelua_fn_common_json_parse, "json_parse"},
 	
 	{NULL, NULL}
 };

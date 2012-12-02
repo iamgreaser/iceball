@@ -35,20 +35,44 @@
 
 int json_line_count = 1;
 
-int json_parse_value(lua_State *L, char **p);
+int json_parse_value(lua_State *L, const char **p);
 
-void json_skip_whitespace(char **p)
+void json_skip_whitespace(const char **p)
 {
 	int lastwasr = 0;
 	
 	while(**p == ' ' || **p == '\t' || **p == '\n' || **p == '\r')
 	{
 		if((**p == '\n' && !lastwasr) || **p == '\r')
+		{
 			json_line_count++;
+			//printf("%i\n",json_line_count);
+		}
 		
 		lastwasr = (**p == '\r');
 		(*p)++;
 	}
+}
+
+int json_parse_hex4(lua_State *L, const char **p, int *uchr)
+{
+	int i;
+	*uchr = 0;
+	for(i = 0; i < 4; i++)
+	{
+		*uchr <<= 4;
+		if(**p >= '0' && **p <= '9')
+			*uchr += (**p - '0');
+		else if(**p >= 'a' && **p <= 'f')
+			*uchr += (**p - 'a') + 10;
+		else if(**p >= 'A' && **p <= 'F')
+			*uchr += (**p - 'A') + 10;
+		else {
+			fprintf(stderr, "%i: expected hex digit\n", json_line_count);
+			return 1;
+		}
+	}
+	return 0;
 }
 
 // string
@@ -70,7 +94,7 @@ void json_skip_whitespace(char **p)
 //     \r
 //     \t
 //     \u four-hex-digits 
-int json_parse_string(lua_State *L, char **p)
+int json_parse_string(lua_State *L, const char **p)
 {
 	if(*((*p)++) != '\"')
 	{
@@ -78,8 +102,109 @@ int json_parse_string(lua_State *L, char **p)
 		return 1;
 	}
 	
-	fprintf(stderr, "%i: TODO: string parsing\n", json_line_count);
-	return 1;
+	int sbuf_pos = 0;
+	int sbuf_len = 64;
+	char *sbuf = malloc(sbuf_len);
+	// TODO: throughout this code, check if sbuf is NULL
+	int uchr = 0;
+	int lastwasr = 0;
+	
+	while(**p != '\"')
+	{
+		if(**p == '\\')
+		{
+			switch(*(++(*p)))
+			{
+				case '\"':
+					uchr = '\"';
+					break;
+				case '\\':
+					uchr = '\\';
+					break;
+				case '/':
+					uchr = '/';
+					break;
+				case 'b':
+					uchr = '\b';
+					break;
+				case 'f':
+					uchr = '\f';
+					break;
+				case 'n':
+					uchr = '\n';
+					if(!lastwasr)
+						json_line_count++;
+					break;
+				case 'r':
+					uchr = '\r';
+					lastwasr = 2;
+					json_line_count++;
+					break;
+				case 't':
+					uchr = '\t';
+					break;
+				case 'u':
+					if(json_parse_hex4(L, p, &uchr))
+					{
+						free(sbuf);
+						return 1;
+					}
+					break;
+				default:
+					fprintf(stderr, "%i: invalid token after '\\'\n", json_line_count);
+					free(sbuf);
+					return 1;
+			}
+		} else if(**p == '\0') {
+			fprintf(stderr, "%i: unexpected NUL\n", json_line_count);
+			free(sbuf);
+			return 1;
+		} else {
+			uchr = (int)(unsigned char)(*((*p)++));
+			if(uchr == 10)
+			{
+				if(!lastwasr)
+					json_line_count++;
+			} else if(uchr == 13) {
+				lastwasr = 2;
+				json_line_count++;
+			}
+		}
+		
+		if(lastwasr > 0)
+			lastwasr--;
+		
+		if(sbuf_pos+4 >= sbuf_len)
+		{
+			sbuf_len <<= 1;
+			sbuf = realloc(sbuf, sbuf_len);
+			//printf("%i %016llX\n", sbuf_len, sbuf);
+		}
+		
+		if(uchr >= 0x01 && uchr <= 0x7F)
+		{
+			// 0xxxxxxx
+			sbuf[sbuf_pos++] = uchr;
+		} else if(uchr <= 0x7FF) {
+			// 110xxxxx
+			// 10xxxxxx
+			sbuf[sbuf_pos++] = 0xC0 | (uchr>>6);
+			sbuf[sbuf_pos++] = 0x80 | ((uchr)&0x3F);
+		} else if(uchr <= 0xFFFF) {
+			// 1110xxxx
+			// 10xxxxxx
+			// 10xxxxxx
+			sbuf[sbuf_pos++] = 0xE0 | (uchr>>12);
+			sbuf[sbuf_pos++] = 0x80 | ((uchr>>6)&0x3F);
+			sbuf[sbuf_pos++] = 0x80 | ((uchr)&0x3F);
+		}
+	}
+	
+	(*p)++;
+	lua_pushlstring(L, sbuf, sbuf_pos);
+	free(sbuf);
+	json_skip_whitespace(p);
+	return 0;
 }
 
 // number
@@ -106,10 +231,93 @@ int json_parse_string(lua_State *L, char **p)
 //     E
 //     E+
 //     E-
-int json_parse_number(lua_State *L, char **p)
+int json_parse_number(lua_State *L, const char **p)
 {
-	fprintf(stderr, "%i: TODO: number parsing\n", json_line_count);
-	return 1;
+	double n = 0.0;
+	double sign = 1.0;
+	
+	if(**p == '-')
+	{
+		sign = -1.0;
+		(*p)++;
+	}
+	
+	if(**p < '0' || **p > '9')
+	{
+		fprintf(stderr, "%i: expected digit\n", json_line_count);
+		return 1;
+	}
+	
+	if(**p == '0')
+	{
+		(*p)++;
+	} else {
+		while(**p >= '0' && **p <= '9')
+			n = n*10.0 + (*((*p)++) - '0');
+	}
+	
+	if(**p == '.')
+	{
+		(*p)++;
+		
+		if(**p < '0' || **p > '9')
+		{
+			fprintf(stderr, "%i: expected digit\n", json_line_count);
+			return 1;
+		}
+		
+		double sub = 0.1;
+		
+		while(**p >= '0' && **p <= '9')
+		{
+			n += (*((*p)++) - '0')*sub;
+			sub *= 0.1;
+		}
+	}
+	
+	if(**p == 'e' || **p == 'E')
+	{
+		(*p)++;
+		
+		int esign = 1;
+		int e = 0;
+		if(**p == '+')
+			(*p)++;
+		else if(**p == '-')
+		{
+			esign = -1;
+			(*p)++;
+		}
+		
+		if(**p < '0' || **p > '9')
+		{
+			fprintf(stderr, "%i: expected digit\n", json_line_count);
+			return 1;
+		}
+		
+		while(**p >= '0' && **p <= '9')
+			e = e*10 + (*((*p)++) - '0');
+		
+		if(esign < 0)
+		{
+			while(e > 0)
+			{
+				n *= 0.1;
+				e--;
+			}
+		} else {
+			while(e > 0)
+			{
+				n *= 10.0;
+				e--;
+			}
+		}
+	}
+	
+	json_skip_whitespace(p);
+	
+	lua_pushnumber(L, n);
+	return 0;
 }
 
 // array
@@ -118,8 +326,10 @@ int json_parse_number(lua_State *L, char **p)
 // elements
 //     value
 //     value , elements
-int json_parse_array(lua_State *L, char **p)
+int json_parse_array(lua_State *L, const char **p)
 {
+	int idx = 1;
+	
 	if(*((*p)++) != '[')
 	{
 		fprintf(stderr, "%i: expected '\"'\n", json_line_count);
@@ -132,6 +342,8 @@ int json_parse_array(lua_State *L, char **p)
 	
 	while(**p != ']')
 	{
+		lua_pushinteger(L, idx++);
+		
 		if(json_parse_value(L, p))
 		{
 			lua_pop(L, 2);
@@ -147,6 +359,10 @@ int json_parse_array(lua_State *L, char **p)
 			if(**p == ']')
 				fprintf(stderr, "%i: warning: trailing ',' in array; not compliant!\n"
 					, json_line_count);
+		} else if(**p != ']') {
+			fprintf(stderr, "%i: expected ',' or ']'\n", json_line_count);
+			lua_pop(L, 1);
+			return 1;
 		}
 	}
 	
@@ -155,7 +371,7 @@ int json_parse_array(lua_State *L, char **p)
 	
 }
 
-int json_parse_object(lua_State *L, char **p);
+int json_parse_object(lua_State *L, const char **p);
 
 // value
 //     string
@@ -165,7 +381,7 @@ int json_parse_object(lua_State *L, char **p);
 //     true
 //     false
 //     null
-int json_parse_value(lua_State *L, char **p)
+int json_parse_value(lua_State *L, const char **p)
 {
 	if(**p == 't')
 	{
@@ -193,7 +409,7 @@ int json_parse_value(lua_State *L, char **p)
 		*p += 4;
 		lua_pushnil(L);
 	} else if(**p == '{') {
-		if(json_parse_value(L, p))
+		if(json_parse_object(L, p))
 			return 1;
 	} else if(**p == '[') {
 		if(json_parse_array(L, p))
@@ -222,7 +438,7 @@ int json_parse_value(lua_State *L, char **p)
 //     pair , members
 // pair
 //     string : value
-int json_parse_object(lua_State *L, char **p)
+int json_parse_object(lua_State *L, const char **p)
 {
 	if(*((*p)++) != '{')
 	{
@@ -272,16 +488,18 @@ int json_parse_object(lua_State *L, char **p)
 		{
 			(*p)++;
 			json_skip_whitespace(p);
+			//printf("%s\n", luaL_typename(L, -1));
 			return 0;
 		}
 	}
+	printf("bail\n");
 	
 	lua_pop(L, 1);
 	fprintf(stderr, "%i: expected '\"' or '}'\n", json_line_count);
 	return 1;
 }
 
-int json_parse(lua_State *L, char *p)
+int json_parse(lua_State *L, const char *p)
 {
 	json_line_count = 1;
 	

@@ -20,6 +20,40 @@ print(...)
 
 dofile("pkg/base/common.lua")
 
+-- TODO: load this from a file
+userconf_test = [[
+{
+	"__COMMENT_000": "
+		
+		This is the sort of place you set up your 'profile' and whatnot.
+		It can be read by all mods, but not writeable by any.
+		
+		By the way, don't store anything important in this comment.
+		It is possible that a hacked server might be able to read it.
+		
+		READ THIS FILE: docs/setup_json.txt
+		
+	",
+	
+	"name": null,
+	"kick_on_join": true,
+	
+	"skins" : {
+	
+	},
+	
+	"bio": {
+		"description": "I don't know how to edit my config. Laugh at me."
+	}
+}
+]]
+
+user_config = common.json_parse(userconf_test)
+print("json done!")
+print("name:", user_config.name)
+print("kick on join:", user_config.kick_on_join)
+print("bio desc:", user_config.bio and user_config.bio.description)
+
 -- define keys
 BTSK_FORWARD = SDLK_w
 BTSK_BACK    = SDLK_s
