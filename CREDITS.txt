@@ -1,0 +1,18 @@
+DEVELOPERS DEVELOPERS DEVELOPERS DEVELOPERS.
+
+GreaseMonkey [Lead Developer]:
+	Everything other people didn't.
+
+
+
+And the rest in alphabetical order:
+
+topo:
+	FPS counter
+	Basic key binding system
+
+Triplefox:
+	Kindly let me use his map, mesa.vxl
+
+UnrealIncident:
+	Debug info (which is the reason I use string.format at all)
