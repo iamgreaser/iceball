@@ -1,0 +1,33 @@
+{
+	"__COMMENT_000": "
+		
+		This file contains configuration for the engine itself.
+		It cannot be read by any mods.
+		
+	",
+	
+	"video" : {
+		"width": 800,
+		"height": 600
+	},
+	
+	"audio" : {
+		"freq": 44100,
+		"channels": 2,
+		"bits": 16,
+		
+		"volume": 1.0,
+		
+		"setup_default": "headphones",
+		"setups" : {
+			"headphones": {
+				"head_width": 0.19,
+				"head_screen_distance": 0.50,
+				"channels": [
+					{"name": "left",  "distance": -0.095, "angle": -90, "tilt": 0},
+					{"name": "right", "distance":  0.095, "angle":  90, "tilt": 0}
+				]
+			}
+		}
+	}
+}

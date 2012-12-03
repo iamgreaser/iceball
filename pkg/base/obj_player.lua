@@ -35,6 +35,7 @@ function new_player(settings)
 	this.mdl_player = common.model_bone_new(this.mdl_player)
 	
 	local function prv_recolor_team(r,g,b)
+		if not client then return end
 		local mname,mdata
 		mname,mdata = common.model_bone_get(mdl_player, mdl_player_head)
 		recolor_component(r,g,b,mdata)
@@ -51,6 +52,7 @@ function new_player(settings)
 	end
 	
 	local function prv_recolor_block(r,g,b)
+		if not client then return end
 		local mname,mdata
 		mname,mdata = common.model_bone_get(mdl_block, mdl_block_bone)
 		recolor_component(r,g,b,mdata)

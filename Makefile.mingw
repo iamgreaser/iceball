@@ -11,9 +11,9 @@
 CFLAGS = -O2 -fno-strict-aliasing -g -Wall -Wextra \
 	-Wno-unused-variable -Wno-unused-parameter \
 	-Wno-unused-but-set-variable \
-	-Iwinlibs -Iwinlibs/SDL
+	-Iwinlibs -Iwinlibs/SDL $(CFLAGS_EXTRA)
 
-LDFLAGS = -g
+LDFLAGS = -g $(LDFLAGS_EXTRA)
 LIBS_SDL = -lSDLmain -lSDL
 LIBS_Lua = -llua
 # Lua is not an acronym. Get used to typing it with lower case u/a.

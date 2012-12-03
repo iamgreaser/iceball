@@ -133,9 +133,23 @@ For each tool, here is what each mouse button does:
 [ TODO: These will eventually be valid! ]
 
 A few notes:
-- If you left-click-dig with the spade, you can get blocks back.
+- If you left-click-dig with the spade, you can get blocks back which you can
+  build stuff with later.
 - Holding the grenade longer does not make it travel further.
   If you want that to happen, try jumping.
+- Going to your team's tent ( marked with a + on the map ) allows you to get
+  more blocks and grenades.
+  - You really should do this instead of just mining through everything.
+
+-------------------------------------------------------------------------------
+
+You MUST edit your config to start with.
+[ TODO: this will eventually be true! ]
+
+See docs/setup_json.txt for more information.
+
+There is at least one thing you'll need to do;
+  otherwise you will NOT be able to play!
 
 -------------------------------------------------------------------------------
 

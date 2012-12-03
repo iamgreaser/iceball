@@ -3,11 +3,12 @@ Notes:
 	"FATAL ERROR" means "terminate the damn connection".
 
 Base encapsulation:
+	/*
 	0x10 salt[32] version.u32 namelen name[namelen] 0x00:
 		C->S Authentication with server
 		"salt" is agreed on from some sort of master server
 		Currently ignored and should all be 0x00
-		"name" is also ignored at the moment
+		"name" is also ignored at the moment and should be all 0x00
 		"version" is the current protocol version
 		
 		current: 0x00000001
@@ -15,6 +16,7 @@ Base encapsulation:
 		TODO: add some sort of auth method
 	0x11:
 		S->C Authentication acknowledgement
+	
 	0x17 msglen msg[msglen] 0x00:
 		C->S Quit / S->C Kick
 		
@@ -22,6 +24,7 @@ Base encapsulation:
 		after sending/receiving this message
 	
 	0x30 flags namelen name[namelen] 0x00:
+		C->S ONLY
 		Request file to be transferred
 		"name" is the filename
 		"flags" has these bits:
@@ -38,38 +41,35 @@ Base encapsulation:
 				1001 = * RESERVED *
 				101x = * RESERVED *
 				11xx = * RESERVED *
-	0x31 flags clen.u32 ulen.u32 namelen name[namelen] 0x00:
+		
+		if the server is still sending a file, FATAL ERROR
+	0x31 flags clen.u32 ulen.u32 0x00:
+		S->C ONLY
 		Start file transfer
-		"name" is the filename
-		"flags" has these bits:
-			bits 0-3:
-				0000 = * RESERVED *
-				0001 = JSON data [ NOT SUPPORTED YET ]
-				0010 = log data [ NOT SUPPORTED YET ]
-				0011 = lua script
-				0100 = icemap data
-				0101 = vxl data
-				0110 = pmf model
-				0111 = tga image
-				1000 = wav audio [ NOT SUPPORTED YET ]
-				1001 = * RESERVED *
-				101x = * RESERVED *
-				11xx = * RESERVED *
 		"clen" is the compressed length
 		"ulen" is the uncompressed length
 		
-		"name" CAN be blank, and probably should be if it's a map
-		
 		All files are compressed as zlib streams
+		
+		if the client didn't request any files, IGNORE + SEND 0x34
 	0x32:
-		Cleanly end file transfer
+		S->C ONLY
+		Successfully end file transfer
+		
+		If it doesn't unpack correctly, FATAL ERROR
+		If no file transfer active, IGNORE
 	0x33: offset.u32 len.u16 data[len]
+		S->C ONLY
 		Send a block of data
 		Maximum length of len is 1024
+		
 		If offset+len > clen, FATAL ERROR
+		If no file transfer active, IGNORE + SEND 0x34
 	0x34:
+		C->S ONLY
 		Abort incoming file transfer
 	0x35:
+		S->C ONLY
 		Abort outgoing file transfer
 	
 	0x40..0x7E data[this-0x3F]:
@@ -78,6 +78,7 @@ Base encapsulation:
 		Lua packet of length "length"
 		Minimum length of a packet is 1
 		Maximum length of a packet is 1280
+		Exceeding these bounds is a FATAL ERROR
 
 Iceball Base Mod:
 	Notes:
@@ -101,12 +102,22 @@ Iceball Base Mod:
 		
 		note, for C->S pid MUST be 0x00
 	
-	0x04 pid ya.u8 xa.u8:
-		player set orientation
+	0x04 pid ya.u8 xa.u8 keys.u8:
+		player set orientation / keys
 		
 		angles are as defined:
 		for ya, -128->128 is full circle
 		for xa, -128->128 is half circle
+		
+		keys are:
+			0x01: up
+			0x02: down
+			0x04: left
+			0x08: right
+			0x10: sneak | scope
+			0x20: crouch
+			0x40: jump
+			0x80: * RESERVED *
 		
 		note, for C->S pid MUST be 0x00
 	
@@ -140,5 +151,17 @@ Iceball Base Mod:
 		
 		NOTE: will be IGNORED if the floodfill hits the bottom!
 	
-	0x0C pid x.fs y.fs z.fs ya.u8 xa.u8: (S->C)
+	0x0C msg.z (C->S)
+		send chat message
+	
+	0x0D msg.z (C->S)
+		send teamchat message
+	
+	0x0E bgra.u32 msg.z (S->C)
+		add text to chat
+	
+	0x0F bgra.u32 msg.z (S->C)
+		add text to killfeed
+	
+	0x10 pid x.fs y.fs z.fs ya.u8 xa.u8: (S->C)
 		player spawn

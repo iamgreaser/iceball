@@ -21,7 +21,7 @@
 ]]
 
 --[[
-	part of SDL_keysym.h, converted to Lua by GreaseMonkey
+	part of SDL_keysym.h, converted to Lua by GreaseMonkey in 2012
 	accurate as of libSDL-1.2.so.0.11.3
 ]]
 

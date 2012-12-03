@@ -27,7 +27,8 @@ int screen_height = 600;
 
 int force_redraw = 1;
 
-int boot_mode = 0; // bit 0 = client, bit 1 = server
+// bit 0 = client, bit 1 = server, bit 2 == main_client.lua has been loaded
+int boot_mode = 0;
 
 char *mod_basedir = NULL;
 
@@ -111,30 +112,9 @@ float ompx = -M_PI, ompy = -M_PI, ompz = -M_PI;
 
 int64_t usec_basetime;
 
-int update_client(void)
+int update_client_contpre1(void)
 {
 	int quitflag = 0;
-	
-	lua_getglobal(lstate_client, "client");
-	lua_getfield(lstate_client, -1, "hook_tick");
-	lua_remove(lstate_client, -2);
-	if(lua_isnil(lstate_client, -1))
-	{
-		lua_pop(lstate_client, 1);
-		return 1;
-	}
-	
-	lua_pushnumber(lstate_client, sec_curtime);
-	lua_pushnumber(lstate_client, sec_curtime - sec_lasttime);
-	if(lua_pcall(lstate_client, 2, 1, 0) != 0)
-	{
-		printf("Lua Client Error (tick): %s\n", lua_tostring(lstate_client, -1));
-		lua_pop(lstate_client, 1);
-		return 1;
-	}
-	if(!(boot_mode & 2))
-		sec_wait += lua_tonumber(lstate_client, -1);
-	lua_pop(lstate_client, 1);
 	
 	// redraw scene if necessary
 	if(force_redraw
@@ -178,8 +158,17 @@ int update_client(void)
 	render_cubemap(screen->pixels,
 		screen->w, screen->h, screen->pitch/4,
 		&tcam, clmap);
+	SDL_UnlockSurface(screen);
+	
+	return quitflag;
+}
+
+int update_client_cont1(void)
+{
+	int quitflag = 0;
 	
 	// apply Lua HUD / model stuff
+	SDL_LockSurface(screen);
 	lua_getglobal(lstate_client, "client");
 	lua_getfield(lstate_client, -1, "hook_render");
 	lua_remove(lstate_client, -2);
@@ -187,7 +176,6 @@ int update_client(void)
 	{
 		if(lua_pcall(lstate_client, 0, 0, 0) != 0)
 		{
-			SDL_UnlockSurface(screen);
 			printf("Lua Client Error (render): %s\n", lua_tostring(lstate_client, -1));
 			lua_pop(lstate_client, 1);
 			return 1;
@@ -289,6 +277,35 @@ int update_client(void)
 	return quitflag;
 }
 
+int update_client(void)
+{
+	int quitflag = update_client_contpre1();
+	
+	lua_getglobal(lstate_client, "client");
+	lua_getfield(lstate_client, -1, "hook_tick");
+	lua_remove(lstate_client, -2);
+	if(lua_isnil(lstate_client, -1))
+	{
+		lua_pop(lstate_client, 1);
+		return 1;
+	}
+	
+	lua_pushnumber(lstate_client, sec_curtime);
+	lua_pushnumber(lstate_client, sec_curtime - sec_lasttime);
+	if(lua_pcall(lstate_client, 2, 1, 0) != 0)
+	{
+		printf("Lua Client Error (tick): %s\n", lua_tostring(lstate_client, -1));
+		lua_pop(lstate_client, 1);
+		return 1;
+	}
+	if(!(boot_mode & 2))
+		sec_wait += lua_tonumber(lstate_client, -1);
+	lua_pop(lstate_client, 1);
+	
+	quitflag = quitflag || update_client_cont1();
+	return quitflag;
+}
+
 int update_server(void)
 {
 	// TODO: respect time returned
@@ -315,6 +332,40 @@ int update_server(void)
 	lua_pop(lstate_server, 1);
 	
 	return 0;
+}
+
+int run_game_cont1(void)
+{
+	int quitflag = update_client_cont1();
+	net_flush();
+	if(boot_mode & 2)
+		quitflag = quitflag || update_server();
+	net_flush();
+	
+	// update time
+	sec_lasttime = sec_curtime;
+	int64_t usec_curtime = platform_get_time_usec() - usec_basetime;
+	sec_curtime = ((float)usec_curtime)/1000000.0f;
+	
+	// update client/server
+	quitflag = quitflag || update_client_contpre1();
+	
+	return quitflag;
+}
+
+int run_game_cont2(void)
+{
+	int quitflag = 0;
+	if(boot_mode & 2)
+		quitflag = quitflag || update_server();
+	net_flush();
+	
+	// update time
+	sec_lasttime = sec_curtime;
+	int64_t usec_curtime = platform_get_time_usec() - usec_basetime;
+	sec_curtime = ((float)usec_curtime)/1000000.0f;
+	
+	return quitflag;
 }
 
 void run_game(void)
@@ -354,8 +405,10 @@ void run_game(void)
 		// update client/server
 		if(boot_mode & 1)
 			quitflag = quitflag || update_client();
+		net_flush();
 		if(boot_mode & 2)
 			quitflag = quitflag || update_server();
+		net_flush();
 	}
 	map_free(clmap);
 	clmap = NULL;
@@ -433,6 +486,12 @@ int main(int argc, char *argv[])
 	if(memcmp(mod_basedir,"pkg/",4))
 	{
 		fprintf(stderr, "ERROR: package base dir must start with \"pkg/\"!\n");
+		return 109;
+	}
+	
+	if(strlen(mod_basedir) < 5)
+	{
+		fprintf(stderr, "ERROR: package base dir can't actually be \"pkg/\"!\n");
 		return 109;
 	}
 	

@@ -1,0 +1,98 @@
+There are two files you'll need to look at.
+
+- clsave/config.json configures the game engine.
+- clsave/pub/user.json configures your profile.
+
+For more information on the JSON syntax, check out this website:
+	http://json.org/
+
+-------------------------------------------------------------------------------
+
+Basic introduction:
+
+clsave/config.json:
+	"video" section:
+		"width" and "height" define the width and height of the
+		screen/window.
+		
+		You must either use a 24bpp or 32bpp screen mode.
+		No 15/16bpp, sorry! And DEFINITELY NO 8BPP.
+		
+		"cubeshift" is for quality control.
+		Increase it one at a time if it's slow.
+		Decrease it one at a time if it looks awful.
+		"1" is recommended, although it looks pixelated when you zoom in.
+		
+		Currently, fullscreen is not supported.
+	
+	"audio" section:
+		"freq" is the master audio sampling frequency in Hz, as usual.
+		"channels" is how many channels you can output to;
+		  typically you'll leave this at 2 for stereo.
+		"bits" is how many bits per sample - must be 16 or 8.
+		
+		"volume" is a volume multiplier.
+		Best to leave this at 1.0.
+		
+		"setups" is explained later on in this document.
+		If you want a custom setup, get a tape measure ready.
+		(You may also want a protractor.)
+
+clsave/pub/user.json:
+	"name" should be set to something other than null;
+	otherwise, the game will give you a really demeaning name.
+	
+	"kick_on_join" should be false;
+	otherwise, you won't even be able to get in.
+	
+	"skins" is explained later in this document.
+	
+	"bio" is explained later in this document.
+
+-------------------------------------------------------------------------------
+
+Biography:
+
+These fields are defined:
+
+"description": 
+
+"location": Where you are from.
+
+"languages": What languages you speak (an array).
+	
+	Servers may choose to filter out by language.
+	
+	If you lie about these, expect to get blacklisted.
+	
+	Current defined languages:
+		"de": Deutsch
+		"en": English
+		"es": Espanol
+		"fr": Francais
+		"kr": Korean (todo: find the local name for this)
+		"pl": Polski
+		"pt": Portuguese (todo: find the local name for this)
+		"se": Svenska
+	
+
+-------------------------------------------------------------------------------
+
+Skins:
+
+This is not defined yet.
+
+-------------------------------------------------------------------------------
+
+Audio setup:
+
+All lengths are in metres!
+All angles are in degrees!
+
+
+
+-------------------------------------------------------------------------------
+
+TODO: all the things!
+
+-------------------------------------------------------------------------------

@@ -57,8 +57,10 @@ int icelua_force_get_integer(lua_State *L, int table, char *name)
 #include "lua_camera.h"
 #include "lua_image.h"
 #include "lua_input.h"
+#include "lua_json.h"
 #include "lua_map.h"
 #include "lua_model.h"
+#include "lua_net.h"
 
 // common functions
 
@@ -88,6 +90,9 @@ struct icelua_entry icelua_server[] = {
 	{NULL, NULL}
 };
 struct icelua_entry icelua_common[] = {
+	{icelua_fn_common_fetch_start, "fetch_start"},
+	{icelua_fn_common_fetch_poll, "fetch_poll"},
+	{icelua_fn_common_fetch_block, "fetch_block"},
 	{icelua_fn_common_map_load, "map_load"},
 	{icelua_fn_common_map_new, "map_new"},
 	{icelua_fn_common_map_free, "map_free"},
@@ -111,6 +116,12 @@ struct icelua_entry icelua_common[] = {
 	{icelua_fn_common_img_pixel_set, "img_pixel_set"},
 	{icelua_fn_common_img_free, "img_free"},
 	{icelua_fn_common_img_get_dims, "img_get_dims"},
+	{icelua_fn_common_json_parse, "json_parse"},
+	{icelua_fn_common_json_load, "json_load"},
+	{icelua_fn_common_net_pack, "net_pack"},
+	{icelua_fn_common_net_unpack, "net_unpack"},
+	{icelua_fn_common_net_send, "net_send"},
+	{icelua_fn_common_net_recv, "net_recv"},
 	
 	{NULL, NULL}
 };
@@ -265,10 +276,12 @@ int icelua_init(void)
 		if(lua_pcall(lstate_server, argct, 0, 0) != 0)
 		{
 			printf("ERROR running server Lua: %s\n", lua_tostring(lstate_server, -1));
-			lua_pop(lstate_server, 1);
+			lua_pop(lstate_server, 2);
+			return 1;
 		}
 		lua_pop(lstate_server, 1);
 	}
+	
 	
 	if(lstate_client != NULL)
 	{
@@ -277,9 +290,39 @@ int icelua_init(void)
 		if(lua_pcall(lstate_client, argct, 0, 0) != 0)
 		{
 			printf("ERROR running client Lua: %s\n", lua_tostring(lstate_client, -1));
-			lua_pop(lstate_client, 1);
+			lua_pop(lstate_client, 2);
+			return 1;
 		}
 		lua_pop(lstate_client, 1);
+		boot_mode |= 4;
+	}
+	
+	
+	// dispatch initial connect
+	if(lstate_server != NULL && lstate_client != NULL)
+	{
+		lua_getglobal(lstate_server, "server");
+		lua_getfield(lstate_server, -1, "hook_connect");
+		lua_remove(lstate_server, -2);
+		if(!lua_isnil(lstate_server, -1))
+		{
+			lua_pushboolean(lstate_server, 1);
+			lua_newtable(lstate_server);
+			
+			lua_pushstring(lstate_server, "local");
+			lua_setfield(lstate_server, -2, "proto");
+			lua_pushnil(lstate_server);
+			lua_setfield(lstate_server, -2, "addr");
+			
+			if(lua_pcall(lstate_server, 2, 0, 0) != 0)
+			{
+				printf("ERROR running server Lua (hook_connect): %s\n", lua_tostring(lstate_client, -1));
+				lua_pop(lstate_client, 2);
+				return 1;
+			}
+		} else {
+			lua_pop(lstate_server, 1);
+		}
 	}
 	
 	return 0;
