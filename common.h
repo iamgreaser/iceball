@@ -20,6 +20,9 @@
 #define PACKET_LEN_MAX 1280
 #define PATH_LEN_MAX 128
 
+// i wouldn't go near this limit if i were you...
+#define CLIENT_MAX 512
+
 #define WAV_MFREQ 44100
 
 //define RENDER_FACE_COUNT 2
@@ -203,6 +206,19 @@ struct packet
 	char data[];
 };
 
+// TODO USE THIS DAMN STRUCTURE
+typedef struct client
+{
+	packet_t *head, *tail;
+	packet_t *send_head, *send_tail;
+	int sockfd;
+	
+	char *fetch_ubuf;
+	char *fetch_cbuf;
+	int fetch_ulen, fetch_clen;
+	int fetch_cpos;
+} client_t;
+
 struct netdata
 {
 	int sockfd;
@@ -283,14 +299,9 @@ model_t *model_load_pmf(const char *fname);
 int model_save_pmf(model_t *pmf, const char *fname);
 
 // network.c
-extern packet_t *pkt_server_send_head;
-extern packet_t *pkt_server_send_tail;
-extern packet_t *pkt_server_recv_head;
-extern packet_t *pkt_server_recv_tail;
-extern packet_t *pkt_client_send_head;
-extern packet_t *pkt_client_send_tail;
-extern packet_t *pkt_client_recv_head;
-extern packet_t *pkt_client_recv_tail;
+extern client_t to_server;
+extern client_t to_clients[];
+extern client_t to_client_local;
 int net_packet_push(int len, const char *data, int sockfd, packet_t **head, packet_t **tail);
 int net_packet_push_lua(int len, const char *data, int sockfd, packet_t **head, packet_t **tail);
 packet_t *net_packet_pop(packet_t **head, packet_t **tail);

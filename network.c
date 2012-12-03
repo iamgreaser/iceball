@@ -17,14 +17,10 @@
 
 #include "common.h"
 
-packet_t *pkt_server_send_head = NULL;
-packet_t *pkt_server_send_tail = NULL;
-packet_t *pkt_server_recv_head = NULL;
-packet_t *pkt_server_recv_tail = NULL;
-packet_t *pkt_client_send_head = NULL;
-packet_t *pkt_client_send_tail = NULL;
-packet_t *pkt_client_recv_head = NULL;
-packet_t *pkt_client_recv_tail = NULL;
+client_t to_server;
+client_t to_client_local;
+client_t to_clients[CLIENT_MAX];
+// TODO: binary search tree
 
 char *cfetch_cbuf = NULL;
 char *cfetch_ubuf = NULL;
@@ -185,41 +181,53 @@ const char *net_aux_gettype_str(int ftype)
 	return NULL;
 }
 
-void net_flush(void)
+char *net_fetch_file(const char *fname, int *flen)
 {
-	// link-copy mode
-	while(pkt_server_send_head != NULL)
+	FILE *fp = fopen(fname, "rb");
+	if(fp == NULL)
 	{
-		if(pkt_client_recv_tail == NULL)
-		{
-			pkt_client_recv_tail = pkt_client_recv_head =
-				net_packet_pop(&pkt_server_send_head, &pkt_server_send_tail);
-		} else {
-			packet_t *p = pkt_client_recv_tail;
-			pkt_client_recv_tail = net_packet_pop(&pkt_server_send_head, &pkt_server_send_tail);
-			p->n = pkt_client_recv_tail;
-			pkt_client_recv_tail->p = p;
-		};
+		perror("net_fetch_file");
+		return NULL;
 	}
 	
-	while(pkt_client_send_head != NULL)
+	int buf_len = 512;
+	int buf_pos = 0;
+	char *buf = malloc(buf_len+1);
+	// TODO: check if NULL
+	int buf_cpy;
+	
+	while(!feof(fp))
 	{
-		if(pkt_server_recv_tail == NULL)
+		int fetch_len = buf_len-buf_pos;
+		buf_cpy = fread(&buf[buf_pos], 1, fetch_len, fp);
+		if(buf_cpy == -1)
 		{
-			pkt_server_recv_tail = pkt_server_recv_head =
-				net_packet_pop(&pkt_client_send_head, &pkt_client_send_tail);
-		} else {
-			packet_t *p = pkt_server_recv_tail;
-			pkt_server_recv_tail = net_packet_pop(&pkt_client_send_head, &pkt_client_send_tail);
-			p->n = pkt_server_recv_tail;
-			pkt_server_recv_tail->p = p;
-		};
+			fclose(fp);
+			free(buf);
+			return NULL;
+		}
+		
+		buf_pos += buf_cpy;
+		
+		if(feof(fp))
+			break;
+		
+		buf_len += (buf_len>>1)+1;
+		buf = realloc(buf, buf_len+1);
 	}
 	
-	// map transfer checks
+	fclose(fp);
+	
+	*flen = buf_pos;
+	buf[buf_pos] = '\0';
+	return buf;
+}
+
+void net_eat_c2s(client_t *cli)
+{
 	// TODO: sanity checks / handle fatal errors correctly
 	packet_t *pkt, *npkt;
-	for(pkt = pkt_server_recv_head; pkt != NULL; pkt = npkt)
+	for(pkt = cli->head; pkt != NULL; pkt = npkt)
 	{
 		npkt = pkt->n;
 		
@@ -230,77 +238,188 @@ void net_flush(void)
 				// file transfer request
 				char *fname = pkt->data + 3;
 				int udtype = pkt->data[1] & 15;
-				char *ftype = net_aux_gettype_str(udtype);
+				const char *ftype = net_aux_gettype_str(udtype);
 				
 				printf("file request: %02X %s \"%s\"\n",
 					udtype, (ftype == NULL ? "*ERROR*" : ftype), fname);
 				
-				net_packet_free(pkt, &pkt_server_recv_head, &pkt_server_recv_tail);
+				// check if we're allowed to fetch that
+				if(!path_type_server_readable(path_get_type(fname)))
+				{
+					// error! ignoring for now.
+					net_packet_free(pkt, &(cli->head), &(cli->tail));
+					break;
+				}
+				
+				// check if we have a file in the queue
+				if(sfetch_udtype != UD_INVALID)
+				{
+					// error! ignoring for now.
+					net_packet_free(pkt, &(cli->head), &(cli->tail));
+					break;
+				}
+				
+				// k let's give this a whirl
+				// TODO: allow transferring of objects
+				sfetch_ubuf = net_fetch_file(fname, &sfetch_ulen);
+				
+				if(sfetch_ubuf != NULL)
+				{
+					sfetch_udtype = udtype;
+					
+					// TODO: compression
+					sfetch_cbuf = malloc(sfetch_ulen);
+					memcpy(sfetch_cbuf, sfetch_ubuf, sfetch_ulen);
+					sfetch_clen = sfetch_ulen;
+					
+					// assemble packet
+					char buf[9];
+					buf[0] = 0x31;
+					*(uint32_t *)&buf[1] = sfetch_ulen;
+					*(uint32_t *)&buf[5] = sfetch_clen;
+					
+					net_packet_push(9, buf, pkt->sockfd,
+						&(cli->send_head), &(cli->send_tail));
+				} else {
+					// abort
+					char buf[] = "\x35";
+					net_packet_push(1, buf, pkt->sockfd,
+						&(cli->send_head), &(cli->send_tail));
+					
+				}
+				net_packet_free(pkt, &(cli->head), &(cli->tail));
 			} break;
 			case 0x34: {
 				// 0x34:
 				// abort incoming file transfer
-				net_packet_free(pkt, &pkt_server_recv_head, &pkt_server_recv_tail);
+				net_packet_free(pkt, &(cli->head), &(cli->tail));
 			} break;
 			default:
 				if(pkt->data[0] >= 0x40 && ((uint8_t)pkt->data[0]) <= 0x7F)
 					break;
 				
-				net_packet_free(pkt, &pkt_server_recv_head, &pkt_server_recv_tail);
+				net_packet_free(pkt, &(cli->head), &(cli->tail));
 				break;
 		}
 	}
-	
-	for(pkt = pkt_client_recv_head; pkt != NULL; pkt = npkt)
+}
+
+void net_eat_s2c(client_t *cli)
+{
+	// TODO: sanity checks / handle fatal errors correctly
+	packet_t *pkt, *npkt;
+	for(pkt = cli->head; pkt != NULL; pkt = npkt)
 	{
 		npkt = pkt->n;
 		
 		switch(pkt->data[0])
 		{
 			case 0x31: {
-				// 0x31 flags clen.u32 ulen.u32 0x00:
+				// 0x31 clen.u32 ulen.u32:
 				// file transfer initiation
-				net_packet_free(pkt, &pkt_server_recv_head, &pkt_client_recv_tail);
+				net_packet_free(pkt, &(cli->head), &(cli->tail));
 			} break;
 			case 0x32: {
 				// 0x32:
 				// file transfer end
-				net_packet_free(pkt, &pkt_server_recv_head, &pkt_client_recv_tail);
+				net_packet_free(pkt, &(cli->head), &(cli->tail));
 			} break;
 			case 0x33: {
 				// 0x33: offset.u32 len.u16 data[len]:
 				// file transfer data
-				net_packet_free(pkt, &pkt_server_recv_head, &pkt_client_recv_tail);
+				net_packet_free(pkt, &(cli->head), &(cli->tail));
 			} break;
 			case 0x35: {
 				// 0x35:
 				// abort outgoing file transfer
-				net_packet_free(pkt, &pkt_server_recv_head, &pkt_client_recv_tail);
+				net_packet_free(pkt, &(cli->head), &(cli->tail));
 			} break;
 			default:
 				if(pkt->data[0] >= 0x40 && ((uint8_t)pkt->data[0]) <= 0x7F)
 					break;
 				
-				net_packet_free(pkt, &pkt_server_recv_head, &pkt_client_recv_tail);
+				net_packet_free(pkt, &(cli->head), &(cli->tail));
 				break;
 		}
 	}
 }
 
+void net_flush(void)
+{
+	// link-copy mode
+	while(to_server.send_head != NULL)
+	{
+		packet_t *pfrom = to_server.send_head;
+		
+		// TODO: distinguish between local and network
+		if(to_client_local.tail == NULL)
+		{
+			to_client_local.tail = to_client_local.head =
+				net_packet_pop(&(to_server.send_head), &(to_server.send_tail));
+		} else {
+			packet_t *p2 = to_client_local.tail;
+			to_client_local.tail = net_packet_pop(&(to_server.send_head), &(to_server.send_tail));
+			p2->n = to_client_local.tail;
+			to_client_local.tail->p = p2;
+		};
+	}
+	
+	while(to_client_local.send_head != NULL)
+	{
+		if(to_server.tail == NULL)
+		{
+			to_server.tail = to_server.head =
+				net_packet_pop(&to_client_local.send_head, &to_client_local.send_tail);
+		} else {
+			packet_t *p = to_server.tail;
+			to_server.tail = net_packet_pop(&to_client_local.send_head, &to_client_local.send_tail);
+			p->n = to_server.tail;
+			to_server.tail->p = p;
+		};
+	}
+	
+	
+	net_eat_c2s(&to_server);
+	net_eat_s2c(&to_client_local);
+}
+
+void net_deinit_client(client_t *cli)
+{
+	while(cli->head != NULL)
+		net_packet_free(cli->head, &(cli->head), &(cli->tail));
+	while(cli->send_head != NULL)
+		net_packet_free(cli->send_head, &(cli->send_head), &(cli->send_tail));
+}
+
 int net_init(void)
 {
-	// TODO!
+	int i;
+	
+	for(i = 0; i < CLIENT_MAX; i++)
+	{
+		to_clients[i].sockfd = -1;
+		to_clients[i].head = to_clients[i].tail = NULL;
+		to_clients[i].send_head = to_clients[i].send_tail = NULL;
+	}
+	
+	to_server.sockfd = -1;
+	to_server.head = to_server.tail = NULL;
+	to_server.send_head = to_server.send_tail = NULL;
+	
+	to_client_local.sockfd = SOCKFD_LOCAL_LINKCOPY;
+	to_client_local.head = to_client_local.tail = NULL;
+	to_client_local.send_head = to_client_local.send_tail = NULL;
+	
 	return 0;
 }
 
 void net_deinit(void)
 {
-	while(pkt_server_send_head != NULL)
-		net_packet_free(net_packet_pop(&pkt_server_send_head, &pkt_server_send_tail), NULL, NULL);
-	while(pkt_server_recv_head != NULL)
-		net_packet_free(net_packet_pop(&pkt_server_recv_head, &pkt_server_recv_tail), NULL, NULL);
-	while(pkt_client_send_head != NULL)
-		net_packet_free(net_packet_pop(&pkt_client_send_head, &pkt_client_send_tail), NULL, NULL);
-	while(pkt_client_recv_head != NULL)
-		net_packet_free(net_packet_pop(&pkt_client_recv_head, &pkt_client_recv_tail), NULL, NULL);
+	int i;
+	
+	net_deinit_client(&to_server);
+	net_deinit_client(&to_client_local);
+	
+	for(i = 0; i < CLIENT_MAX; i++)
+		net_deinit_client(&(to_clients[i]));
 }
