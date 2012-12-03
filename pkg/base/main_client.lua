@@ -20,35 +20,7 @@ print(...)
 
 dofile("pkg/base/common.lua")
 
--- TODO: load this from a file
-userconf_test = [[
-{
-	"__COMMENT_000": "
-		
-		This is the sort of place you set up your 'profile' and whatnot.
-		It can be read by all mods, but not writeable by any.
-		
-		By the way, don't store anything important in this comment.
-		It is possible that a hacked server might be able to read it.
-		
-		READ THIS FILE: docs/setup_json.txt
-		
-	",
-	
-	"name": null,
-	"kick_on_join": true,
-	
-	"skins" : {
-	
-	},
-	
-	"bio": {
-		"description": "I don't know how to edit my config. Laugh at me."
-	}
-}
-]]
-
-user_config = common.json_parse(userconf_test)
+user_config = common.json_load("clsave/pub/user.json")
 print("json done!")
 print("name:", user_config.name)
 print("kick on join:", user_config.kick_on_join)
@@ -307,9 +279,11 @@ function h_tick_init(sec_current, sec_delta)
 		squads[1][i] = name_generate()
 	end]]
 	
+	players.current = math.floor(math.random()*32)+1
+	
 	for i=1,players.max do
 		players[i] = new_player({
-			name = name_generate(),
+			name = (players.current == i and user_config.name) or name_generate(),
 			--[[squad = squads[math.fmod(i-1,2)][
 				math.fmod(math.floor((i-1)/2),4)+1],]]
 			squad = nil,
@@ -322,8 +296,6 @@ function h_tick_init(sec_current, sec_delta)
 	intent[#intent+1] = new_tent({team = 0})
 	intent[#intent+1] = new_intel({team = 1})
 	intent[#intent+1] = new_tent({team = 1})
-	
-	players.current = math.floor(math.random()*32)+1
 	
 	chat_add(chat_text, sec_current, "Just testing the chat...", 0xFFFFFFFF)
 	chat_add(chat_text, sec_current, "BLUE MASTER RACE", 0xFF0000FF)
@@ -611,6 +583,8 @@ do
 end
 
 print("pkg/base/main_client.lua loaded.")
+
+print(common.net_unpack("bhiz44s",common.net_pack("bhiz44s",34,12345,455133,"hi","sup")))
 
 --dofile("pkg/base/plug_snow.lua")
 dofile("pkg/base/plug_pmfedit.lua")

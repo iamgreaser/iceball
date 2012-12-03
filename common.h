@@ -255,6 +255,7 @@ img_t *img_load_tga(const char *fname);
 
 // json.c
 int json_parse(lua_State *L, const char *p);
+int json_load(lua_State *L, const char *fname);
 
 // lua.c
 extern lua_State *lstate_client;

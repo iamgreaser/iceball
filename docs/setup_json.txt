@@ -51,6 +51,46 @@ clsave/pub/user.json:
 
 -------------------------------------------------------------------------------
 
+Biography:
+
+These fields are defined:
+
+"description": 
+
+"location": Where you are from.
+
+"languages": What languages you speak (an array).
+	
+	Servers may choose to filter out by language.
+	
+	If you lie about these, expect to get blacklisted.
+	
+	Current defined languages:
+		"de": Deutsch
+		"en": English
+		"es": Espanol
+		"fr": Francais
+		"kr": Korean (todo: find the local name for this)
+		"pl": Polski
+		"pt": Portuguese (todo: find the local name for this)
+		"se": Svenska
+	
+
+-------------------------------------------------------------------------------
+
+Skins:
+
+This is not defined yet.
+
+-------------------------------------------------------------------------------
+
+Audio setup:
+
+All lengths are in metres!
+All angles are in degrees!
+
+
+
 -------------------------------------------------------------------------------
 
 TODO: all the things!

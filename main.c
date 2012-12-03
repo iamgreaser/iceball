@@ -436,6 +436,12 @@ int main(int argc, char *argv[])
 		return 109;
 	}
 	
+	if(strlen(mod_basedir) < 5)
+	{
+		fprintf(stderr, "ERROR: package base dir can't actually be \"pkg/\"!\n");
+		return 109;
+	}
+	
 	if((!(boot_mode & 1)) || !platform_init()) {
 	if(!icelua_init()) {
 	if(!net_init()) {

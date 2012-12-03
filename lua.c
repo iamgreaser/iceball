@@ -60,6 +60,7 @@ int icelua_force_get_integer(lua_State *L, int table, char *name)
 #include "lua_json.h"
 #include "lua_map.h"
 #include "lua_model.h"
+#include "lua_net.h"
 
 // common functions
 
@@ -116,6 +117,9 @@ struct icelua_entry icelua_common[] = {
 	{icelua_fn_common_img_free, "img_free"},
 	{icelua_fn_common_img_get_dims, "img_get_dims"},
 	{icelua_fn_common_json_parse, "json_parse"},
+	{icelua_fn_common_json_load, "json_load"},
+	{icelua_fn_common_net_pack, "net_pack"},
+	{icelua_fn_common_net_unpack, "net_unpack"},
 	
 	{NULL, NULL}
 };

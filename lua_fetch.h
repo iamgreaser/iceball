@@ -65,60 +65,11 @@ int icelua_fnaux_common_fetch_immediate(lua_State *L, const char *ftype, const c
 		img_t *img = img_load_tga(fname);
 		if(img == NULL)
 			return 0;
-		if(!strcmp(ftype, "lua"))
-	{
-		if(luaL_loadfile(L, fname) != 0)
-			return luaL_error(L, "%s", lua_tostring(L, -1));
-		
-		return 1;
-	} else if(!strcmp(ftype, "map")) {
-		map_t *map = NULL;
-		
-		map = map_load_icemap(fname);
-		if(map == NULL)
-			map = map_load_aos(fname);
-		
-		lua_pushlightuserdata(L, map);
-		return 1;
-	} else if(!strcmp(ftype, "icemap")) {
-		map_t *map = map_load_icemap(fname);
-		
-		lua_pushlightuserdata(L, map);
-		return 1;
-	} else if(!strcmp(ftype, "vxl")) {
-		map_t *map = map_load_aos(fname);
-		
-		lua_pushlightuserdata(L, map);
-		return 1;
-	} else if(!strcmp(ftype, "pmf")) {
-		model_t *pmf = model_load_pmf(fname);
-		
-		if(pmf == NULL)
-			return 0;
-		
-		lua_pushlightuserdata(L, pmf);
-		return 1;
-	} else if(!strcmp(ftype, "tga")) {
-		img_t *img = img_load_tga(fname);
-		if(img == NULL)
-			return 0;
 		
 		lua_pushlightuserdata(L, img);
 		return 1;
 	} else if(!strcmp(ftype, "json")) {
-		// TODO!
-		return luaL_error(L, "format not supported yet!");
-	} else if(!strcmp(ftype, "log")) {
-		// TODO!
-		return luaL_error(L, "format not supported yet!");
-	} else {
-		return luaL_error(L, "unsupported format for fetch");
-	}
-		lua_pushlightuserdata(L, img);
-		return 1;
-	} else if(!strcmp(ftype, "json")) {
-		// TODO!
-		return luaL_error(L, "format not supported yet!");
+		return (json_load(L, fname) ? 0 : 1);
 	} else if(!strcmp(ftype, "log")) {
 		// TODO!
 		return luaL_error(L, "format not supported yet!");

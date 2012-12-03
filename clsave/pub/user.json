@@ -19,6 +19,7 @@
 	},
 	
 	"bio": {
-		"description": "I don't know how to edit my config. Laugh at me."
+		"description": "I don't know how to edit my config. Laugh at me.",
+		"languages": ["pt", "pl"]
 	}
 }

@@ -384,7 +384,7 @@ client.img_blit(img, dx, dy, width = iwidth, height = iheight, sx = 0, sy = 0, c
 	
 	this is clipped to fit!
 
-tab = common.json_parse(str)
+tab = common.json_parse(str) @
 	parses the JSON string "str"
 	
 	yes, this parser is anal-retentive,
@@ -393,7 +393,7 @@ tab = common.json_parse(str)
 	
 	returns nil on error
 
-tab = common.json_load(fname)
+tab = common.json_load(fname) @
 	loads a JSON file and parses it
 	
 	returns nil on error
@@ -418,9 +418,47 @@ str = common.json_pack(tab)
 	
 	returns nil on error
 	
-common.json_save(fname, tab)
+success = common.json_save(fname, tab)
+	takes a table and saves it to a file as JSON
+	
+	returns true on success, false on error
 
-	throws a lua error on failure
+str = common.net_pack(fmt, ...)
+	packs data into a string
+	
+	format is as such:
+	b/B = signed/unsigned 8-bit [def 0]
+	h/H = signed/unsigned 16-bit [def 0]
+	i/I = signed/unsigned 32-bit [def 0]
+	f = single-precision 32-bit float [def 0.0]
+	d = double-precision 64-bit float [def 0.0]
+	z = zero-terminated string [def ""]
+	#s = fixed-length string (replace # with a decimal number) [def ""]
+	
+	throws a lua error if the fmt syntax is invalid.
+	
+	spews defaults if not enough arguments are provided.
+
+..., remain = common.net_unpack(fmt, str)
+	unpacks data from a string
+	
+	will attempt to decode from start to end
+	
+	"remain" is the remainder of the string which was not decoded
+	
+	returns nil for fields that could not be decoded
+
+success = common.net_send(sockfd, str)
+	sends a packet
+	
+	"sockfd" is ignored C->S and should be nil
+
+str, sockfd = common.net_recv()
+	receives a packet
+	
+	for C->S "sockfd" is nil
+	
+	returns nil if nothing is there
 
 wav = common.wav_load(fname)
 	loads a sound with filename "fname"

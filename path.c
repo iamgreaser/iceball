@@ -53,8 +53,11 @@ int path_get_type(const char *path)
 	if(path[0] == '.' || strstr(path, "/.") != NULL)
 		return PATH_ERROR_ACCDENIED;
 	
+	int bp_hasslash = (mod_basedir[strlen(mod_basedir)-1] == '/');
+	
 	// now start checking paths
-	if(!memcmp(path,mod_basedir,strlen(mod_basedir)))
+	if((!memcmp(path,mod_basedir,strlen(mod_basedir)))
+		&& (bp_hasslash || path[strlen(mod_basedir)] == '/'))
 		return PATH_PKG_BASEDIR;
 	if(!memcmp(path,"pkg/",4))
 		return PATH_PKG;
@@ -63,7 +66,8 @@ int path_get_type(const char *path)
 	if(!memcmp(path,"clsave/vol/",11))
 		return PATH_CLSAVE_VOLATILE;
 	if((!memcmp(path,"clsave/",7))
-		&& (!memcmp(path+7,mod_basedir+4,strlen(mod_basedir+4))))
+		&& (!memcmp(path+7,mod_basedir+4,strlen(mod_basedir+4)))
+		&& (bp_hasslash || path[strlen(mod_basedir)+3] == '/'))
 	{
 		if((!memcmp(path+3+strlen(mod_basedir),"vol/",4))
 			|| (!memcmp(path+3+strlen(mod_basedir),"/vol/",5)))
@@ -77,7 +81,8 @@ int path_get_type(const char *path)
 	if(!memcmp(path,"svsave/vol/",11))
 		return PATH_SVSAVE_VOLATILE;
 	if((!memcmp(path,"svsave/",7))
-		&& (!memcmp(path+7,mod_basedir+4,strlen(mod_basedir+4))))
+		&& (!memcmp(path+7,mod_basedir+4,strlen(mod_basedir+4)))
+		&& (bp_hasslash || path[strlen(mod_basedir)+3] == '/'))
 	
 	{
 		if((!memcmp(path+3+strlen(mod_basedir),"vol/",4))

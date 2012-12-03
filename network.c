@@ -17,24 +17,59 @@
 
 #include "common.h"
 
-packet_t *net_packet_new(int len, uint8_t *data)
+packet_t *pkt_server_send_head = NULL;
+packet_t *pkt_server_send_tail = NULL;
+packet_t *pkt_server_recv_head = NULL;
+packet_t *pkt_server_recv_tail = NULL;
+packet_t *pkt_client_send_head = NULL;
+packet_t *pkt_client_send_tail = NULL;
+packet_t *pkt_client_recv_head = NULL;
+packet_t *pkt_client_recv_tail = NULL;
+
+int net_packet_push(int len, uint8_t *data, packet_t **head, packet_t **tail)
 {
 	if(len > PACKET_LEN_MAX)
 	{
 		fprintf(stderr, "net_packet_new: packet too large (%i > %i)\n"
 			, len, PACKET_LEN_MAX);
-		return NULL;
+		return 1;
 	}
 	
 	packet_t *pkt = malloc(sizeof(packet_t));
 	if(pkt == NULL)
 	{
 		error_perror("net_packet_new");
-		return NULL;
+		return 1;
 	}
 	
 	memcpy(pkt->data, data, len);
 	pkt->len = len;
+	if(*head == NULL)
+	{
+		pkt->p = pkt->n = NULL;
+		*head = *tail = pkt;
+	} else {
+		(*tail)->n = pkt;
+		pkt->p = (*tail);
+		pkt->n = NULL;
+		*tail = pkt;
+	}
+	
+	return 0;
+}
+
+packet_t *net_packet_pop(packet_t **head, packet_t **tail)
+{
+	if(*head == NULL)
+		return NULL;
+	
+	packet_t *pkt = *head;
+	*head = pkt->n;
+	if(*head == NULL)
+		*tail = NULL;
+	else
+		(*head)->p = NULL;
+	
 	pkt->p = pkt->n = NULL;
 	
 	return pkt;
@@ -58,5 +93,12 @@ int net_init(void)
 
 void net_deinit(void)
 {
-	// TODO!
+	while(pkt_server_send_head != NULL)
+		net_packet_free(net_packet_pop(&pkt_server_send_head, &pkt_server_send_tail));
+	while(pkt_server_recv_head != NULL)
+		net_packet_free(net_packet_pop(&pkt_server_recv_head, &pkt_server_recv_tail));
+	while(pkt_client_send_head != NULL)
+		net_packet_free(net_packet_pop(&pkt_client_send_head, &pkt_client_send_tail));
+	while(pkt_client_recv_head != NULL)
+		net_packet_free(net_packet_pop(&pkt_client_recv_head, &pkt_client_recv_tail));
 }

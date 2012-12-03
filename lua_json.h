@@ -29,3 +29,19 @@ int icelua_fn_common_json_parse(lua_State *L)
 	else
 		return 1;
 }
+
+int icelua_fn_common_json_load(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 1, 1);
+	const char *fname = lua_tostring(L, 1);
+	
+	if(fname == NULL)
+		return luaL_error(L, "not a string");
+	
+	lua_pushcfunction(L, icelua_fn_common_fetch_block);
+	lua_pushstring(L, "json");
+	lua_pushstring(L, fname);
+	lua_call(L, 2, 1);
+	
+	return 1;
+}

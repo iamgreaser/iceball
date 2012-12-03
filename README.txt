@@ -17,12 +17,17 @@ mesa.vxl is by Triplefox, and is currently being used to test load/render.
 LICENSING NOTES:
 Iceball is licensed under the regular GNU GPL version 3.
 Ice Lua Components is licensed under the LGPL version 3.
-Ice Lua Components contains some content from libSDL,
-  which is licensed under the LGPL version 2.1.
 All PMF/WAV/TGA assets are released under Creative Commons 3.0 BY-SA:
   http://creativecommons.org/licenses/by-sa/3.0/
-All VXL maps are (C) their respective owners.
 
+These are unless otherwise marked Copyright (C) 2012, Iceball contributors.
+See CREDITS.txt for the list, and my apologies if I've forgotten to update it.
+
+Ice Lua Components contains some content from libSDL,
+  which is licensed under the LGPL version 2.1.
+It is marked accordingly.
+
+All VXL maps are (C) their respective owners.
   
 REQUIREMENTS:
 - a C compiler that isn't crap (read: not MSVC++)
