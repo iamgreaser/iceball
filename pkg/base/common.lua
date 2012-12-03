@@ -28,6 +28,8 @@ DIR_PKG_MAP = DIR_PKG_MAP or "pkg/maps"
 MAP_DEFAULT = MAP_DEFAULT or DIR_PKG_MAP.."/mesa.vxl"
 
 LIB_LIST = LIB_LIST or {
+	DIR_PKG_LIB.."/icegui/widgets.lua",
+
 	DIR_PKG_LIB.."/lib_bits.lua",
 	DIR_PKG_LIB.."/lib_collect.lua",
 	DIR_PKG_LIB.."/lib_gui.lua",
@@ -39,7 +41,7 @@ LIB_LIST = LIB_LIST or {
 	DIR_PKG_LIB.."/lib_vector.lua",
 	
 	DIR_PKG_LIB.."/obj_player.lua",
-	DIR_PKG_LIB.."/obj_intent.lua",
+	DIR_PKG_LIB.."/obj_intent.lua",	
 }
 
 -- load libs
