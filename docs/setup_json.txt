@@ -55,13 +55,13 @@ Biography:
 
 These fields are defined:
 
-"description": 
+"description": How you would describe yourself.
 
 "location": Where you are from.
 
 "languages": What languages you speak (an array).
 	
-	Servers may choose to filter out by language.
+	Servers may choose to filter by language.
 	
 	If you lie about these, expect to get blacklisted.
 	

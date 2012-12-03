@@ -348,8 +348,6 @@ int icelua_fn_common_net_recv(lua_State *L)
 		if(pkt == NULL)
 			return 0;
 		
-		// TODO: filter / read the file transfer packets
-		
 		if(pkt->data[0] >= 0x40 && pkt->data[0] <= 0x7E)
 			lua_pushlstring(L, &pkt->data[1], pkt->len-1);
 		else if(pkt->data[0] == 0x7F)
@@ -372,7 +370,6 @@ int icelua_fn_common_net_recv(lua_State *L)
 		packet_t *pkt = net_packet_pop(&pkt_client_recv_head, &pkt_client_recv_tail);
 		if(pkt == NULL)
 			return 0;
-		
 		
 		if(pkt->data[0] >= 0x40 && pkt->data[0] <= 0x7E)
 			lua_pushlstring(L, &pkt->data[1], pkt->len-1);

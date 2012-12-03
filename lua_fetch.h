@@ -19,7 +19,31 @@ const char *cfetch_fname = NULL;
 const char *cfetch_ftype = NULL;
 
 // aux helpers
-int icelua_fnaux_common_fetch_immediate(lua_State *L, const char *ftype, const char *fname)
+int icelua_fnaux_fetch_gettype(lua_State *L, const char *ftype)
+{
+	if(!strcmp(ftype, "lua"))
+		return UD_LUA;
+	else if(!strcmp(ftype, "map"))
+		return UD_MAP;
+	else if(!strcmp(ftype, "icemap"))
+		return UD_MAP_ICEMAP;
+	else if(!strcmp(ftype, "vxl"))
+		return UD_MAP_VXL;
+	else if(!strcmp(ftype, "pmf"))
+		return UD_PMF;
+	else if(!strcmp(ftype, "tga"))
+		return UD_IMG_TGA;
+	else if(!strcmp(ftype, "json"))
+		return UD_JSON;
+	else if(!strcmp(ftype, "log")) {
+		// TODO!
+		return luaL_error(L, "format not supported yet!");
+	} else {
+		return luaL_error(L, "unsupported format for fetch");
+	}
+}
+
+int icelua_fnaux_fetch_immediate(lua_State *L, const char *ftype, const char *fname)
 {
 	if(!strcmp(ftype, "lua"))
 	{
@@ -72,29 +96,6 @@ int icelua_fnaux_common_fetch_immediate(lua_State *L, const char *ftype, const c
 }
 
 // common functions
-/*
-success = common.fetch_start(ftype, fname)
-	initiates a file fetch
-	
-	"ftype" is one of the following:
-	- "lua": lua script
-	- "map": map (autodetect)
-	- "icemap": map (icemap) - in-memory maps are serialised as THIS.
-	- "vxl": map (vxl) - CANNOT SAVE IN THIS FORMAT.
-	- "pmf": pmf model
-	- "tga": tga image
-	- "json": json data
-	- "log": log data (TODO)
-	- "wav": wav sound (TODO)
-	
-	for the server, this just loads the file from the disk.
-	
-	for the client, all clsave/% stuff is taken from the disk,
-	but all other files are downloaded from the server.
-	
-	returns true if the fetch has started,
-	or false if there is something already in the queue.
-*/
 int icelua_fn_common_fetch_start(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 2, 2);
@@ -110,39 +111,44 @@ int icelua_fn_common_fetch_start(lua_State *L)
 	
 	if(L == lstate_server || path_type_client_local(path_get_type(fname)))
 	{
-		return icelua_fnaux_common_fetch_immediate(L, ftype, fname);
+		return icelua_fnaux_fetch_immediate(L, ftype, fname);
 	} else {
-		// TODO: send a fetch request to the server
+		// 0x30 flags namelen name[namelen] 0x00
+		int blen = strlen(fname);
+		if(blen > PATH_LEN_MAX)
+			return luaL_error(L, "filename too long (%d > %d)"
+				, blen, PATH_LEN_MAX);
+		
+		char buf[PATH_LEN_MAX+3+1];
+		buf[0] = 0x30;
+		buf[1] = icelua_fnaux_fetch_gettype(L, ftype);
+		buf[2] = blen;
+		memcpy(buf+3, fname, blen);
+		buf[3+blen] = '\0';
+		
+		blen += 3+1;
+		
+		cfetch_ftype = ftype;
+		cfetch_fname = fname;
+		
+		net_packet_push(blen, buf, -1, &pkt_client_send_head, &pkt_client_send_tail);
 		
 		lua_pushboolean(L, 1);
 		return 1;
 	}
 }
 
-/*
-obj, csize, usize, amount = common.fetch_poll()
-	polls the 
-	"obj" is one of the following:
-	- "nil" if transfer aborted or nothing is being fetched
-	  - in this case, all other fields will be nil
-	- "false" if still downloading
-	- the object you requested
-	  - in this case, another poll will just return nils
-	
-	"amount" is in the range 0 <= "amount" <= 1,
-	and indicates how much is downloaded
-	"csize" is the compressed size of the file
-	"usize" is the uncompressed size
-	
-	note, all vxl maps will be converted to icemap before sending.
-*/
 int icelua_fn_common_fetch_poll(lua_State *L)
 {
 	if(L == lstate_server)
 		return luaL_error(L, "fetch_poll not supported for C->S transfers");
 	
+	// TODO: move this down a bit.
+	if((boot_mode & 4) ? run_game_cont1() : run_game_cont2())
+		return luaL_error(L, "quit flag asserted!");
+	
 	// TODO!
-	return icelua_fnaux_common_fetch_immediate(L, cfetch_ftype, cfetch_fname);
+	return icelua_fnaux_fetch_immediate(L, cfetch_ftype, cfetch_fname);
 	//lua_pushboolean(L, 0);
 	//return 1;
 }
@@ -157,9 +163,6 @@ int icelua_fn_common_fetch_block(lua_State *L)
 	lua_pushvalue(L, 2);
 	lua_call(L, 2, 1);
 	
-	cfetch_ftype = lua_tostring(L, 1);
-	cfetch_fname = lua_tostring(L, 2);
-	
 	// if obj ~= true then return obj end
 	if((!lua_isboolean(L, -1)) || !lua_toboolean(L, -1))
 		return 1;
@@ -169,11 +172,6 @@ int icelua_fn_common_fetch_block(lua_State *L)
 	// while true do
 	for(;;)
 	{
-		// TODO: move this to the bottom.
-		// yield()
-		if((boot_mode & 4) ? run_game_cont1() : run_game_cont2())
-			return luaL_error(L, "quit flag asserted!");
-		
 		// local obj = common.fetch_poll()
 		lua_pushcfunction(L, icelua_fn_common_fetch_poll);
 		lua_call(L, 0, 1);

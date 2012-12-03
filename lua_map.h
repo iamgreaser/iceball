@@ -114,6 +114,23 @@ int icelua_fn_common_map_set(lua_State *L)
 	return 0;
 }
 
+int icelua_fn_common_map_get(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 0, 0);
+	map_t *map = NULL;
+	
+	if(L == lstate_server)
+		map = svmap;
+	else if(L == lstate_client)
+		map = clmap;
+	
+	if(map == NULL)
+		return 0;
+	
+	lua_pushlightuserdata(L, map);
+	return 1;
+}
+
 int icelua_fn_common_map_save(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 2, 3);

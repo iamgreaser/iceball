@@ -167,6 +167,8 @@ obj, csize, usize, amount = common.fetch_poll()
 	"csize" is the compressed size of the file
 	"usize" is the uncompressed size
 	
+	the two sizes will be nil while unknown.
+	
 	note, all vxl maps will be converted to icemap before sending.
 
 obj = common.fetch_block(ftype, fname) @
@@ -205,6 +207,10 @@ common.map_free(map) @
 common.map_set(map) @
 	sets the "current" map to "map"
 	note, "map" can be nil to disable rendering anything
+
+map = common.map_get() @
+	sets the "current" map
+	may return "nil"
 
 common.map_save(map, fname, fmt = "icemap") @
 	saves a map to a file, either "vxl" or "icemap"
