@@ -49,36 +49,19 @@ enum
 {
 	UD_INVALID = 0,
 	
-	//
-	// struct formats
-	//
-	
-	UD_MIN_STRUCT,
-	
-	UD_MAP,
-	UD_PMF,
-	UD_IMG,
-	
-	// TODO:
-	UD_WAV,
-	
-	UD_MAX_STRUCT,
-	
-	//
-	// table formats (also includes lua functions. whatever.)
-	//
-	
-	UD_MIN_TABLE,
-	
-	UD_LUA,
-	
-	// TODO:
 	UD_JSON,
 	UD_LOG,
+	UD_LUA,
+	UD_MAP_ICEMAP,
+	UD_MAP_VXL,
+	UD_PMF,
+	UD_IMG_TGA,
+	UD_WAV,
 	
-	UD_MAX_TABLE,
+	UD_MAX_SUPPORTED,
 	
-	//
+	UD_MAP,
+	UD_IMG,
 	
 	UD_MAX
 };
@@ -311,7 +294,7 @@ extern packet_t *pkt_client_recv_tail;
 int net_packet_push(int len, const char *data, int sockfd, packet_t **head, packet_t **tail);
 int net_packet_push_lua(int len, const char *data, int sockfd, packet_t **head, packet_t **tail);
 packet_t *net_packet_pop(packet_t **head, packet_t **tail);
-void net_packet_free(packet_t *pkt);
+void net_packet_free(packet_t *pkt, packet_t **head, packet_t **tail);
 void net_flush(void);
 int net_init(void);
 void net_deinit(void);

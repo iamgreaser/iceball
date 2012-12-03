@@ -96,6 +96,7 @@ struct icelua_entry icelua_common[] = {
 	{icelua_fn_common_map_load, "map_load"},
 	{icelua_fn_common_map_new, "map_new"},
 	{icelua_fn_common_map_free, "map_free"},
+	{icelua_fn_common_map_get, "map_get"},
 	{icelua_fn_common_map_set, "map_set"},
 	{icelua_fn_common_map_save, "map_save"},
 	{icelua_fn_common_map_get_dims, "map_get_dims"},

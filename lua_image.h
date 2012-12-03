@@ -49,7 +49,9 @@ int icelua_fn_common_img_load(lua_State *L)
 	if(fname == NULL)
 		return luaL_error(L, "filename must be a string");
 	
-	lua_pushcfunction(L, icelua_fn_common_fetch_block);
+	lua_getglobal(L, "common");
+	lua_getfield(L, -1, "fetch_block");
+	lua_remove(L, -2);
 	lua_pushstring(L, "tga");
 	lua_pushvalue(L, 1);
 	lua_call(L, 2, 1);

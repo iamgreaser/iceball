@@ -28,7 +28,9 @@ int icelua_fn_base_loadfile(lua_State *L)
 		return luaL_error(L, "cannot read from there");
 	}
 	
-	lua_pushcfunction(L, icelua_fn_common_fetch_block);
+	lua_getglobal(L, "common");
+	lua_getfield(L, -1, "fetch_block");
+	lua_remove(L, -2);
 	lua_pushstring(L, "lua");
 	lua_pushvalue(L, 1);
 	lua_call(L, 2, 1);

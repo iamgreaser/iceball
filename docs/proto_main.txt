@@ -30,7 +30,7 @@ Base encapsulation:
 		"flags" has these bits:
 			bits 0-3:
 				0000 = * RESERVED *
-				0001 = JSON data [ NOT SUPPORTED YET ]
+				0001 = JSON data
 				0010 = log data [ NOT SUPPORTED YET ]
 				0011 = lua script
 				0100 = icemap data

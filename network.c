@@ -146,14 +146,43 @@ packet_t *net_packet_pop(packet_t **head, packet_t **tail)
 	return pkt;
 }
 
-void net_packet_free(packet_t *pkt)
+void net_packet_free(packet_t *pkt, packet_t **head, packet_t **tail)
 {
 	if(pkt->p != NULL)
 		pkt->p->n = pkt->n;
 	if(pkt->n != NULL)
 		pkt->n->p = pkt->p;
 	
+	if(head != NULL && pkt == *head)
+		*head = pkt->n;
+	if(tail != NULL && pkt == *tail)
+		*tail = pkt->p;
+	
 	free(pkt);
+}
+
+const char *net_aux_gettype_str(int ftype)
+{
+	switch(ftype)
+	{
+		case UD_LUA:
+			return "lua";
+		case UD_MAP:
+			return "map";
+		case UD_MAP_ICEMAP:
+			return "icemap";
+		case UD_MAP_VXL:
+			return "vxl";
+		case UD_PMF:
+			return "pmf";
+		case UD_IMG:
+		case UD_IMG_TGA:
+			return "tga";
+		case UD_JSON:
+			return "json";
+	}
+	
+	return NULL;
 }
 
 void net_flush(void)
@@ -199,18 +228,25 @@ void net_flush(void)
 			case 0x30: {
 				// 0x30 flags namelen name[namelen] 0x00
 				// file transfer request
-				net_packet_free(pkt);
+				char *fname = pkt->data + 3;
+				int udtype = pkt->data[1] & 15;
+				char *ftype = net_aux_gettype_str(udtype);
+				
+				printf("file request: %02X %s \"%s\"\n",
+					udtype, (ftype == NULL ? "*ERROR*" : ftype), fname);
+				
+				net_packet_free(pkt, &pkt_server_recv_head, &pkt_server_recv_tail);
 			} break;
 			case 0x34: {
 				// 0x34:
 				// abort incoming file transfer
-				net_packet_free(pkt);
+				net_packet_free(pkt, &pkt_server_recv_head, &pkt_server_recv_tail);
 			} break;
 			default:
 				if(pkt->data[0] >= 0x40 && ((uint8_t)pkt->data[0]) <= 0x7F)
 					break;
 				
-				net_packet_free(pkt);
+				net_packet_free(pkt, &pkt_server_recv_head, &pkt_server_recv_tail);
 				break;
 		}
 	}
@@ -224,28 +260,28 @@ void net_flush(void)
 			case 0x31: {
 				// 0x31 flags clen.u32 ulen.u32 0x00:
 				// file transfer initiation
-				net_packet_free(pkt);
+				net_packet_free(pkt, &pkt_server_recv_head, &pkt_client_recv_tail);
 			} break;
 			case 0x32: {
 				// 0x32:
 				// file transfer end
-				net_packet_free(pkt);
+				net_packet_free(pkt, &pkt_server_recv_head, &pkt_client_recv_tail);
 			} break;
 			case 0x33: {
 				// 0x33: offset.u32 len.u16 data[len]:
 				// file transfer data
-				net_packet_free(pkt);
+				net_packet_free(pkt, &pkt_server_recv_head, &pkt_client_recv_tail);
 			} break;
 			case 0x35: {
 				// 0x35:
 				// abort outgoing file transfer
-				net_packet_free(pkt);
+				net_packet_free(pkt, &pkt_server_recv_head, &pkt_client_recv_tail);
 			} break;
 			default:
 				if(pkt->data[0] >= 0x40 && ((uint8_t)pkt->data[0]) <= 0x7F)
 					break;
 				
-				net_packet_free(pkt);
+				net_packet_free(pkt, &pkt_server_recv_head, &pkt_client_recv_tail);
 				break;
 		}
 	}
@@ -260,11 +296,11 @@ int net_init(void)
 void net_deinit(void)
 {
 	while(pkt_server_send_head != NULL)
-		net_packet_free(net_packet_pop(&pkt_server_send_head, &pkt_server_send_tail));
+		net_packet_free(net_packet_pop(&pkt_server_send_head, &pkt_server_send_tail), NULL, NULL);
 	while(pkt_server_recv_head != NULL)
-		net_packet_free(net_packet_pop(&pkt_server_recv_head, &pkt_server_recv_tail));
+		net_packet_free(net_packet_pop(&pkt_server_recv_head, &pkt_server_recv_tail), NULL, NULL);
 	while(pkt_client_send_head != NULL)
-		net_packet_free(net_packet_pop(&pkt_client_send_head, &pkt_client_send_tail));
+		net_packet_free(net_packet_pop(&pkt_client_send_head, &pkt_client_send_tail), NULL, NULL);
 	while(pkt_client_recv_head != NULL)
-		net_packet_free(net_packet_pop(&pkt_client_recv_head, &pkt_client_recv_tail));
+		net_packet_free(net_packet_pop(&pkt_client_recv_head, &pkt_client_recv_tail), NULL, NULL);
 }

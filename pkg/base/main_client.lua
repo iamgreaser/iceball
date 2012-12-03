@@ -18,15 +18,87 @@
 print("pkg/base/main_client.lua starting")
 
 -- please excuse this hack.
-
 a1,a2,a3,a4,a5,a6,a7,a8,a9,a10 = ...
 
-hboot = loadfile("pkg/base/client_start.lua")
+dofile("pkg/base/lib_gui.lua")
+
+do
+	local fnlist = {}
+	function load_screen_fetch(ftype, fname)
+		fnlist[#fnlist+1] = fname
+		
+		local map,r,g,b,dist
+		map = common.map_get()
+		r,g,b,dist = client.map_fog_get()
+		
+		local old_tick = client.hook_tick
+		local old_render = client.hook_render
+		local old_key = client.hook_key
+		local old_mouse_button = client.hook_mouse_button
+		local old_mouse_motion = client.hook_mouse_motion
+		
+		function client.hook_key(key, state, modif)
+			-- TODO!
+		end
+		
+		function client.hook_mouse_button(button, state)
+			-- TODO!
+		end
+		
+		function client.hook_mouse_motion(x, y, dx, dy)
+			-- TODO!
+		end
+		
+		common.map_set(nil)
+		client.map_fog_set(85, 85, 85, 127.5)
+		local csize, usize, amount
+		local obj = common.fetch_start(ftype, fname)
+		
+		function client.hook_render()
+			local i
+			local sw,sh
+			sw,sh = client.screen_get_dims()
+			local koffs = math.max(#fnlist-10,1)
+			for i=koffs,#fnlist do
+				gui_print_mini(2, 2+(i-koffs)*8, 0xFFFFFFFF, "LOAD: "..fnlist[i])
+			end
+		end
+		
+		function client.hook_tick(sec_current, sec_delta)
+			-- TODO!
+			print("tick called.")
+			return 0.005
+		end
+		
+		csize = nil
+		usize = nil
+		amount = 0.0
+		if obj == true then
+			while true do
+				obj, csize, usize, amount = common.fetch_poll()
+				print("obj:", obj)
+				if obj ~= false then break end
+			end
+		end
+		
+		client.hook_tick = old_tick
+		client.hook_render = old_render
+		client.hook_key = old_key
+		client.hook_mouse_button = old_mouse_button
+		client.hook_mouse_motion = old_mouse_motion
+		
+		common.map_set(map)
+		client.map_fog_set(r,g,b,dist)
+		
+		return obj
+	end
+end
+
+common.fetch_block = load_screen_fetch
 
 function client.hook_tick()
 	client.hook_tick = nil
-	print(a1)
-	hboot(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+	loadfile("pkg/base/client_start.lua")(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	return 0.005
 end
 
