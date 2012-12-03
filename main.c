@@ -354,8 +354,10 @@ void run_game(void)
 		// update client/server
 		if(boot_mode & 1)
 			quitflag = quitflag || update_client();
+		net_flush();
 		if(boot_mode & 2)
 			quitflag = quitflag || update_server();
+		net_flush();
 	}
 	map_free(clmap);
 	clmap = NULL;

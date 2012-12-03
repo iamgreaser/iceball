@@ -423,7 +423,7 @@ success = common.json_save(fname, tab)
 	
 	returns true on success, false on error
 
-str = common.net_pack(fmt, ...)
+str = common.net_pack(fmt, ...) @
 	packs data into a string
 	
 	format is as such:
@@ -439,7 +439,7 @@ str = common.net_pack(fmt, ...)
 	
 	spews defaults if not enough arguments are provided.
 
-..., remain = common.net_unpack(fmt, str)
+..., remain = common.net_unpack(fmt, str) @
 	unpacks data from a string
 	
 	will attempt to decode from start to end
@@ -452,11 +452,13 @@ success = common.net_send(sockfd, str)
 	sends a packet
 	
 	"sockfd" is ignored C->S and should be nil
+	S->C local multiplayer should set "sockfd" to "true"
 
 str, sockfd = common.net_recv()
 	receives a packet
 	
 	for C->S "sockfd" is nil
+	S->C local multiplayer will result in "sockfd" being "true"
 	
 	returns nil if nothing is there
 

@@ -120,6 +120,8 @@ struct icelua_entry icelua_common[] = {
 	{icelua_fn_common_json_load, "json_load"},
 	{icelua_fn_common_net_pack, "net_pack"},
 	{icelua_fn_common_net_unpack, "net_unpack"},
+	{icelua_fn_common_net_send, "net_send"},
+	{icelua_fn_common_net_recv, "net_recv"},
 	
 	{NULL, NULL}
 };

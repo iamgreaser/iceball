@@ -215,8 +215,9 @@ typedef struct packet packet_t;
 struct packet
 {
 	packet_t *p, *n;
+	int sockfd;
 	int len;
-	uint8_t data[];
+	char data[];
 };
 
 struct netdata
@@ -225,7 +226,7 @@ struct netdata
 } netdata_t;
 
 #define SOCKFD_NONE -1
-#define SOCKFD_LOCAL_SWAPLIST -2
+#define SOCKFD_LOCAL_LINKCOPY -2
 #define SOCKFD_LOCAL_SERIAL -3
 
 enum
@@ -296,8 +297,18 @@ model_t *model_load_pmf(const char *fname);
 int model_save_pmf(model_t *pmf, const char *fname);
 
 // network.c
-packet_t *net_packet_new(int len, uint8_t *data);
+extern packet_t *pkt_server_send_head;
+extern packet_t *pkt_server_send_tail;
+extern packet_t *pkt_server_recv_head;
+extern packet_t *pkt_server_recv_tail;
+extern packet_t *pkt_client_send_head;
+extern packet_t *pkt_client_send_tail;
+extern packet_t *pkt_client_recv_head;
+extern packet_t *pkt_client_recv_tail;
+int net_packet_push(int len, const char *data, int sockfd, packet_t **head, packet_t **tail);
+packet_t *net_packet_pop(packet_t **head, packet_t **tail);
 void net_packet_free(packet_t *pkt);
+void net_flush(void);
 int net_init(void);
 void net_deinit(void);
 

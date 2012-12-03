@@ -26,7 +26,7 @@ packet_t *pkt_client_send_tail = NULL;
 packet_t *pkt_client_recv_head = NULL;
 packet_t *pkt_client_recv_tail = NULL;
 
-int net_packet_push(int len, uint8_t *data, packet_t **head, packet_t **tail)
+int net_packet_push(int len, const char *data, int sockfd, packet_t **head, packet_t **tail)
 {
 	if(len > PACKET_LEN_MAX)
 	{
@@ -35,7 +35,7 @@ int net_packet_push(int len, uint8_t *data, packet_t **head, packet_t **tail)
 		return 1;
 	}
 	
-	packet_t *pkt = malloc(sizeof(packet_t));
+	packet_t *pkt = malloc(sizeof(packet_t)+len);
 	if(pkt == NULL)
 	{
 		error_perror("net_packet_new");
@@ -44,6 +44,7 @@ int net_packet_push(int len, uint8_t *data, packet_t **head, packet_t **tail)
 	
 	memcpy(pkt->data, data, len);
 	pkt->len = len;
+	pkt->sockfd = sockfd;
 	if(*head == NULL)
 	{
 		pkt->p = pkt->n = NULL;
@@ -83,6 +84,38 @@ void net_packet_free(packet_t *pkt)
 		pkt->n->p = pkt->p;
 	
 	free(pkt);
+}
+
+void net_flush(void)
+{
+	// link-copy mode
+	while(pkt_server_send_head != NULL)
+	{
+		if(pkt_client_recv_tail == NULL)
+		{
+			pkt_client_recv_tail = pkt_client_recv_head =
+				net_packet_pop(&pkt_server_send_head, &pkt_server_send_tail);
+		} else {
+			packet_t *p = pkt_client_recv_tail;
+			pkt_client_recv_tail = net_packet_pop(&pkt_server_send_head, &pkt_server_send_tail);
+			p->n = pkt_client_recv_tail;
+			pkt_client_recv_tail->p = p;
+		};
+	}
+	
+	while(pkt_client_send_head != NULL)
+	{
+		if(pkt_server_recv_tail == NULL)
+		{
+			pkt_server_recv_tail = pkt_server_recv_head =
+				net_packet_pop(&pkt_client_send_head, &pkt_client_send_tail);
+		} else {
+			packet_t *p = pkt_server_recv_tail;
+			pkt_server_recv_tail = net_packet_pop(&pkt_client_send_head, &pkt_client_send_tail);
+			p->n = pkt_server_recv_tail;
+			pkt_server_recv_tail->p = p;
+		};
+	}
 }
 
 int net_init(void)

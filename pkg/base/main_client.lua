@@ -254,6 +254,28 @@ function h_tick_main(sec_current, sec_delta)
 	chat_prune(chat_text, sec_current)
 	chat_prune(chat_killfeed, sec_current)
 	
+	local pkt, sockfd
+	while true do
+		pkt, sockfd = common.net_recv()
+		if not pkt then break end
+		
+		local cid
+		cid, pkt = common.net_unpack("B", pkt)
+		print("pkt", cid)
+		
+		if cid == 0x0E then
+			-- add to chat
+			local color, msg
+			color, msg, pkt = common.net_unpack("Iz", pkt)
+			chat_add(chat_text, nil, msg, color)
+		elseif cid == 0x0F then
+			-- add to killfeed
+			local color, msg
+			color, msg, pkt = common.net_unpack("Iz", pkt)
+			chat_add(chat_killfeed, nil, msg, color)
+		end
+	end
+	
 	local i
 	for i=1,players.max do
 		local plr = players[i]
@@ -329,17 +351,15 @@ function client.hook_key(key, state, modif)
 			elseif key == SDLK_RETURN then
 				if typing_msg ~= "" then
 					if typing_type == "Chat: " then
-						local s = plr.name.." ("..teams[plr.team].name.."): "..typing_msg
 						if typing_msg == "/kill" then
 							plr.damage(100, 0xFFC00000, plr.name.." committed suicide")
 						end
 						
-						chat_add(chat_text, nil, s, 0xFFFFFFFF)
+						if not common.net_send(nil, common.net_pack("Bz", 0x0C, typing_msg)) then
+							print("ERR!")
+						end
 					elseif typing_type == "Team: " then
-						local s = plr.name..": "..typing_msg
-						local cb = teams[plr.team].color_chat
-						local c = argb_split_to_merged(cb[1],cb[2],cb[3])
-						chat_add(chat_text, nil, s, c)
+						common.net_send(nil, common.net_pack("Bz", 0x0D, typing_msg))
 					end
 				end
 				typing_type = nil
@@ -583,8 +603,6 @@ do
 end
 
 print("pkg/base/main_client.lua loaded.")
-
-print(common.net_unpack("bhiz44s",common.net_pack("bhiz44s",34,12345,455133,"hi","sup")))
 
 --dofile("pkg/base/plug_snow.lua")
 dofile("pkg/base/plug_pmfedit.lua")

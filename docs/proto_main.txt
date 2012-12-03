@@ -150,5 +150,17 @@ Iceball Base Mod:
 		
 		NOTE: will be IGNORED if the floodfill hits the bottom!
 	
-	0x0C pid x.fs y.fs z.fs ya.u8 xa.u8: (S->C)
+	0x0C msg.z (C->S)
+		send chat message
+	
+	0x0D msg.z (C->S)
+		send teamchat message
+	
+	0x0E bgra.u32 msg.z (S->C)
+		add text to chat
+	
+	0x0F bgra.u32 msg.z (S->C)
+		add text to killfeed
+	
+	0x10 pid x.fs y.fs z.fs ya.u8 xa.u8: (S->C)
 		player spawn

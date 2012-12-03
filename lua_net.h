@@ -302,3 +302,69 @@ int icelua_fn_common_net_unpack(lua_State *L)
 	lua_pushlstring(L, s, (size_t)(bsize-(int)(s-str)));
 	return p+1;
 }
+
+int icelua_fn_common_net_send(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 2, 2);
+	
+	size_t bsize;
+	const char *str = lua_tolstring(L, 2, &bsize);
+	if(str == NULL)
+		return luaL_error(L, "not a string");
+	
+	// TODO: incorporate the sockfd field
+	//net_packet_push(int len, uint8_t *data, packet_t **head, packet_t **tail);
+	if(L != lstate_server)
+	{
+		net_packet_push((int)bsize, str, -1, &pkt_client_send_head, &pkt_client_send_tail);
+		lua_pushboolean(L, 1);
+		return 1;
+	} else {
+		int sockfd = -1;
+		if(lua_isboolean(L, 1) && lua_toboolean(L, 1))
+		{
+			sockfd = -2;
+		} else if(lua_isnumber(L, 1)){
+			sockfd = lua_tonumber(L, 1);
+			if(sockfd < 0)
+				sockfd = -1;
+		}
+		if(sockfd == -1)
+			return 0;
+		
+		net_packet_push((int)bsize, str, sockfd, &pkt_server_send_head, &pkt_server_send_tail);
+		lua_pushboolean(L, 1);
+		return 1;
+	}
+}
+
+int icelua_fn_common_net_recv(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 0, 0);
+	
+	if(L == lstate_server)
+	{
+		packet_t *pkt = net_packet_pop(&pkt_server_recv_head, &pkt_server_recv_tail);
+		if(pkt == NULL)
+			return 0;
+		
+		lua_pushlstring(L, pkt->data, pkt->len);
+		
+		if(pkt->sockfd == -1)
+			lua_pushnil(L);
+		else if(pkt->sockfd < 0)
+			lua_pushboolean(L, 1);
+		else
+			lua_pushinteger(L, pkt->sockfd);
+		
+		return 2;
+	} else {
+		packet_t *pkt = net_packet_pop(&pkt_client_recv_head, &pkt_client_recv_tail);
+		if(pkt == NULL)
+			return 0;
+		
+		lua_pushlstring(L, pkt->data, pkt->len);
+		lua_pushnil(L);
+		return 2;
+	}
+}
