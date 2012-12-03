@@ -38,10 +38,14 @@ lua base library stuff:
 	- dofile(x) = loadfile(x)()
 	- loadfile(x) = common.fetch_block("lua", x)
 	- common.fetch_block(ftype, x) =
-	    if not common.fetch_start(ftype, x) then return nil end
-	    co
+	    local obj = common.fetch_start(ftype, x)
+	    if obj ~= true then return obj end
+	    while true do
+	      local obj = common.fetch_poll()
+	      if obj ~= false then return obj end
+	      yield()
+	    end
 	- just about every "load" function is based on common.fetch_block
-	  (TODO: make this true!)
 
 common.base_dir @
 	current base directory (minus the "pkg/" bit)
@@ -62,16 +66,13 @@ client/server.hook_tick = fn(sec_curtime, sec_delta)->sec_wait @
 	NOTE: DO NOT USE COMMON FOR THIS HOOK!
 	(only client/server is accepted)
 
-client/server.hook_file = fn(ftype, fname, clisock)->object
+server.hook_file = fn(ftype, fname, clisock)->object
 	sets a hook to intercept networked file requests
 	
 	"clisock" is the socket pertaining to the file request
 	
 	can return nil to cancel the request
 	can return true to perform the default request
-	
-	NOTE: DO NOT USE COMMON FOR THIS HOOK!
-	(only client/server is accepted)
 
 client.hook_render = fn() @
 	sets a hook called every frame
@@ -98,13 +99,35 @@ client.hook_mouse_motion = fn(x, y, dx, dy) @
 	you will probably use the latter pair if the mouse is "locked"
 	as x, y are not defined the same on all platforms!
 
+server.hook_connect = fn(sockfd, addrinfo) @
+	sets a hook called every time a client connects
+	
+	note, sockfd == true for "local multiplayer" mode
+	
+	"addrinfo" is a table which may or may not contain:
+	- "proto" / "addr": protocol / address used, one of the following:
+	  - "local" / nil
+	  - "tcp/ip" or "tcp/ip6" / {
+	    ["ip"] = address,
+	    ["host"] = hostname or nil,
+	    ["cport"] = client port,
+	    ["sport"] = server port,
+	  }
+	
+	note, not all of the features are supported.
+
+server.hook_disconnect = fn(sockfd, server_force, reason)
+	sets a hook called every time a client disconnects
+	
+	"server_force" is true where the server forces the disconnect
+
 client.mouse_lock_set(state) @
 	locks / unlocks the mouse depending on "state"
 
 client.mouse_visible_set(state) @
 	shows / hides the mouse depending on "state"
 
-success = common.fetch_start(ftype, fname)
+obj = common.fetch_start(ftype, fname)
 	initiates a file fetch
 	
 	"ftype" is one of the following:
@@ -114,7 +137,7 @@ success = common.fetch_start(ftype, fname)
 	- "vxl": map (vxl) - CANNOT SAVE IN THIS FORMAT.
 	- "pmf": pmf model
 	- "tga": tga image
-	- "json": json data (TODO)
+	- "json": json data
 	- "log": log data (TODO)
 	- "wav": wav sound (TODO)
 	
@@ -124,9 +147,13 @@ success = common.fetch_start(ftype, fname)
 	but all other files are downloaded from the server.
 	
 	returns true if the fetch has started,
-	or false if there is something already in the queue.
+	nil if there is an error,
+	or the object if this was an immediate load.
+	
+	if there is already a file in the queue,
+	this will return "nil".
 
-obj, csize, usize, ftype, fname, amount = common.fetch_poll()
+obj, csize, usize, amount = common.fetch_poll()
 	polls the 
 	"obj" is one of the following:
 	- "nil" if transfer aborted or nothing is being fetched
@@ -139,18 +166,8 @@ obj, csize, usize, ftype, fname, amount = common.fetch_poll()
 	and indicates how much is downloaded
 	"csize" is the compressed size of the file
 	"usize" is the uncompressed size
-	"ftype" is the type of the file being fetched:
-	- "lua": lua script
-	- "map": map
-	- "pmf": pmf model
-	- "tga": tga image
-	- "json": json data (TODO)
-	- "log": log data (TODO)
-	- "wav": wav sound (TODO)
-	"fname" is the name of the file being fetched
 	
 	note, all vxl maps will be converted to icemap before sending.
-	
 
 obj = common.fetch_block(ftype, fname) @
 	fetches a file using common.fetch_*
@@ -461,6 +478,14 @@ str, sockfd = common.net_recv()
 	S->C local multiplayer will result in "sockfd" being "true"
 	
 	returns nil if nothing is there
+
+server.net_kick(sockfd, reason)
+	kicks a client from the server
+	
+	fails silently if sockfd is invalid,
+	or sockfd is closed / errors out
+	
+	throws a lua error for other weird errors.
 
 wav = common.wav_load(fname)
 	loads a sound with filename "fname"

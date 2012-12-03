@@ -277,6 +277,9 @@ extern int main_argc;
 extern char **main_argv;
 extern int main_largstart;
 
+int run_game_cont1(void);
+int run_game_cont2(void);
+
 int error_sdl(char *msg);
 int error_perror(char *msg);
 
@@ -306,6 +309,7 @@ extern packet_t *pkt_client_send_tail;
 extern packet_t *pkt_client_recv_head;
 extern packet_t *pkt_client_recv_tail;
 int net_packet_push(int len, const char *data, int sockfd, packet_t **head, packet_t **tail);
+int net_packet_push_lua(int len, const char *data, int sockfd, packet_t **head, packet_t **tail);
 packet_t *net_packet_pop(packet_t **head, packet_t **tail);
 void net_packet_free(packet_t *pkt);
 void net_flush(void);

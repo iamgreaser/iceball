@@ -316,7 +316,7 @@ int icelua_fn_common_net_send(lua_State *L)
 	//net_packet_push(int len, uint8_t *data, packet_t **head, packet_t **tail);
 	if(L != lstate_server)
 	{
-		net_packet_push((int)bsize, str, -1, &pkt_client_send_head, &pkt_client_send_tail);
+		net_packet_push_lua((int)bsize, str, -1, &pkt_client_send_head, &pkt_client_send_tail);
 		lua_pushboolean(L, 1);
 		return 1;
 	} else {
@@ -332,7 +332,7 @@ int icelua_fn_common_net_send(lua_State *L)
 		if(sockfd == -1)
 			return 0;
 		
-		net_packet_push((int)bsize, str, sockfd, &pkt_server_send_head, &pkt_server_send_tail);
+		net_packet_push_lua((int)bsize, str, sockfd, &pkt_server_send_head, &pkt_server_send_tail);
 		lua_pushboolean(L, 1);
 		return 1;
 	}
@@ -348,7 +348,17 @@ int icelua_fn_common_net_recv(lua_State *L)
 		if(pkt == NULL)
 			return 0;
 		
-		lua_pushlstring(L, pkt->data, pkt->len);
+		// TODO: filter / read the file transfer packets
+		
+		if(pkt->data[0] >= 0x40 && pkt->data[0] <= 0x7E)
+			lua_pushlstring(L, &pkt->data[1], pkt->len-1);
+		else if(pkt->data[0] == 0x7F)
+			lua_pushlstring(L, &pkt->data[3], pkt->len-3);
+		else {
+			fprintf(stderr, "EDOOFUS: SYSTEM PACKET *MUST NOT* REACH common.net_recv!\n");
+			fflush(stderr);
+			abort();
+		}
 		
 		if(pkt->sockfd == -1)
 			lua_pushnil(L);
@@ -363,7 +373,17 @@ int icelua_fn_common_net_recv(lua_State *L)
 		if(pkt == NULL)
 			return 0;
 		
-		lua_pushlstring(L, pkt->data, pkt->len);
+		
+		if(pkt->data[0] >= 0x40 && pkt->data[0] <= 0x7E)
+			lua_pushlstring(L, &pkt->data[1], pkt->len-1);
+		else if(pkt->data[0] == 0x7F)
+			lua_pushlstring(L, &pkt->data[3], pkt->len-3);
+		else {
+			fprintf(stderr, "EDOOFUS: NON-Lua PACKET *MUST NOT* REACH common.net_recv!\n");
+			fflush(stderr);
+			abort();
+		}
+		
 		lua_pushnil(L);
 		return 2;
 	}

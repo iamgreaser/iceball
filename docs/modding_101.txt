@@ -95,11 +95,9 @@ loadfile("pkg/base/main_server.lua")(...)
 Format support:
 
 Maps:
+- *.icemap: Iceball map format
 - *.vxl: Ace of Spades headerless 512x512x64 VOXLAP map
   - well, why *wouldn't* we support that?
-- Aiming to support a modified + headered map format, too.
-  Y'know, smaller maps and whatnot.
-  Will probably designate *.icemap, because who uses DOS these days.
 
 Models:
 - *.pmf: Point Model Format, designed for this game
@@ -114,6 +112,10 @@ Graphics:
   - Per-pixel attributes are NOT SUPPORTED.
   - X/Y offsets are IGNORED.
   - Extended TGA information is IGNORED.
+
+Metadata:
+- *.json: JavaScript Oriented Notation
+- Hoping to support a simple line-by-line append-mode format, too.
 
 Sounds:
 - None yet! Aiming for *.wav.

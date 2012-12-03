@@ -20,6 +20,25 @@ print(...)
 
 dofile("pkg/base/common.lua")
 
+client_list = {}
+
+function server.hook_connect(sockfd, addrinfo)
+	-- TODO: enforce bans
+	client_list[sockfd] = {
+		addrinfo = addrinfo,
+		plrid = nil
+	}
+	print("connect:", sockfd, addrinfo.proto,
+		addrinfo.addr and addrinfo.addr.sport,
+		addrinfo.addr and addrinfo.addr.ip,
+		addrinfo.addr and addrinfo.addr.cport)
+end
+
+function server.hook_disconnect(sockfd, server_force, reason)
+	client_list[sockfd] = nil
+	print("disconnect:", sockfd, server_force, reason)
+end
+
 function server.hook_tick(sec_current, sec_delta)
 	--print("tick",sec_current,sec_delta)
 	
@@ -39,9 +58,7 @@ function server.hook_tick(sec_current, sec_delta)
 			-- TODO: broadcast
 			local s = plr.name.." ("..teams[plr.team].name.."): "..msg
 			--local s = "dummy: "..msg
-			if not common.net_send(true, common.net_pack("BIz", 0x0E, 0xFFFFFFFF, s)) then
-				print("err!")
-			end
+			common.net_send(true, common.net_pack("BIz", 0x0E, 0xFFFFFFFF, s))
 		elseif cid == 0x0D then
 			-- teamchat
 			local msg
@@ -67,6 +84,8 @@ map_loaded = common.map_load(map_fname, "auto")
 common.map_set(map_loaded)
 
 -- spam with players
+players.local_multi = math.floor(math.random()*32)+1
+
 for i=1,players.max do
 	players[i] = new_player({
 		name = name_generate(),
