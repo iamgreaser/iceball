@@ -38,6 +38,7 @@ REQUIREMENTS:
   - in the meantime, feel free to hack your way around the makefile
 - SDL 1.2 (not 1.3)
 - Lua 5.1 (not 5.2)
+- zlib (for file compression/decompression during fetching)
 - GNU make
   - if someone has BSD make, please tell us :)
 

@@ -48,6 +48,8 @@
 
 #include <SDL.h>
 
+#include <zlib.h>
+
 enum
 {
 	UD_INVALID = 0,

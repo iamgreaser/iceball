@@ -260,10 +260,28 @@ void net_eat_c2s(client_t *cli)
 				{
 					other->sfetch_udtype = udtype;
 					
-					// TODO: compression
-					other->sfetch_cbuf = malloc(other->sfetch_ulen);
-					memcpy(other->sfetch_cbuf, other->sfetch_ubuf, other->sfetch_ulen);
-					other->sfetch_clen = other->sfetch_ulen;
+					uLongf cbound = compressBound(other->sfetch_ulen);
+					other->sfetch_cbuf = malloc(cbound);
+					// TODO: check if NULL
+					if(compress((Bytef *)(other->sfetch_cbuf), &cbound,
+						(Bytef *)(other->sfetch_ubuf), other->sfetch_ulen))
+					{
+						// abort
+						fprintf(stderr, "S->C transfer error: could not compress!\n");
+						
+						if(other->sfetch_cbuf != NULL)
+							free(other->sfetch_cbuf);
+						free(other->sfetch_ubuf);
+						other->sfetch_cbuf = NULL;
+						other->sfetch_ubuf = NULL;
+						
+						char buf[] = "\x35";
+						net_packet_push(1, buf, pkt->sockfd,
+							&(cli->send_head), &(cli->send_tail));
+						net_packet_free(pkt, &(cli->head), &(cli->tail));
+						break;
+					}
+					other->sfetch_clen = (int)cbound;
 					free(other->sfetch_ubuf);
 					other->sfetch_ubuf = NULL;
 					
@@ -273,8 +291,8 @@ void net_eat_c2s(client_t *cli)
 					{
 						char buf[9];
 						buf[0] = 0x31;
-						*(uint32_t *)&buf[1] = other->sfetch_ulen;
-						*(uint32_t *)&buf[5] = other->sfetch_clen;
+						*(uint32_t *)&buf[1] = other->sfetch_clen;
+						*(uint32_t *)&buf[5] = other->sfetch_ulen;
 						
 						net_packet_push(9, buf, pkt->sockfd,
 							&(cli->send_head), &(cli->send_tail));
@@ -325,6 +343,7 @@ void net_eat_c2s(client_t *cli)
 			case 0x34: {
 				// 0x34:
 				// abort incoming file transfer
+				// TODO: actually abort
 				net_packet_free(pkt, &(cli->head), &(cli->tail));
 			} break;
 			default:
@@ -370,8 +389,20 @@ void net_eat_s2c(client_t *cli)
 				cli->cfetch_ubuf = malloc(cli->cfetch_ulen);
 				// TODO: check if NULL
 				
-				// TODO: decompression!
-				memcpy(cli->cfetch_ubuf, cli->cfetch_cbuf, cli->cfetch_clen);
+				uLongf dlen = cli->cfetch_ulen;
+				if(uncompress((Bytef *)(cli->cfetch_ubuf), &dlen,
+					(Bytef *)(cli->cfetch_cbuf), cli->cfetch_clen) != Z_OK)
+				{
+					fprintf(stderr, "FETCH ERROR: could not decompress!\n");
+					// TODO: make this fatal
+					
+					free(cli->cfetch_cbuf);
+					free(cli->cfetch_ubuf);
+					cli->cfetch_cbuf = NULL;
+					cli->cfetch_ubuf = NULL;
+					net_packet_free(pkt, &(cli->head), &(cli->tail));
+					break;
+				}
 				
 				free(cli->cfetch_cbuf);
 				cli->cfetch_cbuf = NULL;
@@ -401,6 +432,7 @@ void net_eat_s2c(client_t *cli)
 				// 0x35:
 				// abort outgoing file transfer
 				//printf("abort transfer\n");
+				// TODO: actually abort
 				net_packet_free(pkt, &(cli->head), &(cli->tail));
 			} break;
 			default:
