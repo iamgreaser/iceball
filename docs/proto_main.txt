@@ -35,10 +35,10 @@ Base encapsulation:
 				0011 = lua script
 				0100 = icemap data
 				0101 = vxl data
-				0110 = pmf model
-				0111 = tga image
-				1000 = wav audio [ NOT SUPPORTED YET ]
-				1001 = * RESERVED *
+				0110 = autodetected map data
+				0111 = pmf model
+				1000 = tga image
+				1001 = wav audio [ NOT SUPPORTED YET ]
 				101x = * RESERVED *
 				11xx = * RESERVED *
 		

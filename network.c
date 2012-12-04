@@ -354,12 +354,28 @@ void net_eat_s2c(client_t *cli)
 				int clen = (int)*(uint32_t *)&(pkt->data[1]);
 				int ulen = (int)*(uint32_t *)&(pkt->data[5]);
 				printf("clen=%i ulen=%i\n", clen, ulen);
+				cli->cfetch_clen = clen;
+				cli->cfetch_ulen = ulen;
+				cli->cfetch_cbuf = malloc(clen);
+				cli->cfetch_ubuf = NULL;
+				cli->cfetch_cpos = 0;
+				// TODO: check if NULL
+				
 				net_packet_free(pkt, &(cli->head), &(cli->tail));
 			} break;
 			case 0x32: {
 				// 0x32:
 				// file transfer end
 				//printf("transfer END\n");
+				cli->cfetch_ubuf = malloc(cli->cfetch_ulen);
+				// TODO: check if NULL
+				
+				// TODO: decompression!
+				memcpy(cli->cfetch_ubuf, cli->cfetch_cbuf, cli->cfetch_clen);
+				
+				free(cli->cfetch_cbuf);
+				cli->cfetch_cbuf = NULL;
+				
 				net_packet_free(pkt, &(cli->head), &(cli->tail));
 			} break;
 			case 0x33: {
@@ -368,6 +384,17 @@ void net_eat_s2c(client_t *cli)
 				int offs = (int)*(uint32_t *)&(pkt->data[1]);
 				int plen = (int)*(uint16_t *)&(pkt->data[5]);
 				//printf("pdata %08X: %i bytes\n", offs, plen);
+				if(plen <= 0 || plen > 1024)
+				{
+					fprintf(stderr, "FETCH ERROR: length too long/short!\n");
+				} else if(offs < 0 || offs+plen > cli->cfetch_clen) {
+					fprintf(stderr, "FETCH ERROR: buffer overrun!\n");
+					// TODO: make this fatal
+				} else {
+					memcpy(offs + cli->cfetch_cbuf, &(pkt->data[7]), plen);
+					cli->cfetch_cpos = offs + plen;
+				}
+				
 				net_packet_free(pkt, &(cli->head), &(cli->tail));
 			} break;
 			case 0x35: {
@@ -388,6 +415,8 @@ void net_eat_s2c(client_t *cli)
 
 void net_flush(void)
 {
+	int ctr = 3;
+	
 	// link-copy mode
 	while(to_server.send_head != NULL)
 	{
@@ -404,6 +433,9 @@ void net_flush(void)
 			p2->n = to_client_local.tail;
 			to_client_local.tail->p = p2;
 		};
+		ctr--;
+		if(ctr <= 0)
+			break;
 	}
 	
 	while(to_client_local.send_head != NULL)

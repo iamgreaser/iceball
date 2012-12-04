@@ -54,6 +54,8 @@ do
 		local csize, usize, amount
 		local obj = common.fetch_start(ftype, fname)
 		
+		local loadstr = "Fetching..."
+		
 		function client.hook_render()
 			local i
 			local sw,sh
@@ -62,6 +64,7 @@ do
 			for i=koffs,#fnlist do
 				gui_print_mini(2, 2+(i-koffs)*8, 0xFFFFFFFF, "LOAD: "..fnlist[i])
 			end
+			gui_print_mini(2, sh-10, 0xFFFFFFFF, loadstr)
 		end
 		
 		function client.hook_tick(sec_current, sec_delta)
@@ -76,8 +79,20 @@ do
 		if obj == true then
 			while true do
 				obj, csize, usize, amount = common.fetch_poll()
-				print("obj:", obj)
+				--print("obj:", obj, csize, usize, amount)
 				if obj ~= false then break end
+				
+				if csize then
+					loadstr = "Fetching... "
+						..(math.floor(amount*100.0))
+						.."% ("
+						..(math.floor(amount*csize))
+						.."/"
+						..csize
+						.." - uncompressed = "
+						..usize
+						..")"
+				end
 			end
 		end
 		

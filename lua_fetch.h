@@ -15,8 +15,8 @@
     along with Iceball.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-const char *cfetch_fname = NULL;
-const char *cfetch_ftype = NULL;
+char *cfetch_fname = NULL;
+char *cfetch_ftype = NULL;
 
 // aux helpers
 int icelua_fnaux_fetch_gettype(lua_State *L, const char *ftype)
@@ -36,6 +36,9 @@ int icelua_fnaux_fetch_gettype(lua_State *L, const char *ftype)
 	else if(!strcmp(ftype, "json"))
 		return UD_JSON;
 	else if(!strcmp(ftype, "log")) {
+		// TODO!
+		return luaL_error(L, "format not supported yet!");
+	} else if(!strcmp(ftype, "wav")) {
 		// TODO!
 		return luaL_error(L, "format not supported yet!");
 	} else {
@@ -90,6 +93,9 @@ int icelua_fnaux_fetch_immediate(lua_State *L, const char *ftype, const char *fn
 	} else if(!strcmp(ftype, "log")) {
 		// TODO!
 		return luaL_error(L, "format not supported yet!");
+	} else if(!strcmp(ftype, "wav")) {
+		// TODO!
+		return luaL_error(L, "format not supported yet!");
 	} else {
 		return luaL_error(L, "unsupported format for fetch");
 	}
@@ -112,6 +118,8 @@ int icelua_fn_common_fetch_start(lua_State *L)
 	if(L == lstate_server || path_type_client_local(path_get_type(fname)))
 	{
 		return icelua_fnaux_fetch_immediate(L, ftype, fname);
+	} else if(to_client_local.cfetch_udtype != UD_INVALID) {
+		return luaL_error(L, "already fetching a file");
 	} else {
 		// 0x30 flags namelen name[namelen] 0x00
 		int blen = strlen(fname);
@@ -119,17 +127,18 @@ int icelua_fn_common_fetch_start(lua_State *L)
 			return luaL_error(L, "filename too long (%d > %d)"
 				, blen, PATH_LEN_MAX);
 		
+		to_client_local.cfetch_udtype = icelua_fnaux_fetch_gettype(L, ftype);
 		char buf[PATH_LEN_MAX+3+1];
 		buf[0] = 0x30;
-		buf[1] = icelua_fnaux_fetch_gettype(L, ftype);
+		buf[1] = to_client_local.cfetch_udtype;
 		buf[2] = blen;
 		memcpy(buf+3, fname, blen);
 		buf[3+blen] = '\0';
 		
 		blen += 3+1;
 		
-		cfetch_ftype = ftype;
-		cfetch_fname = fname;
+		cfetch_ftype = strdup(ftype);
+		cfetch_fname = strdup(fname);
 		
 		net_packet_push(blen, buf, -1, &(to_client_local.send_head), &(to_client_local.send_tail));
 		
@@ -143,14 +152,142 @@ int icelua_fn_common_fetch_poll(lua_State *L)
 	if(L == lstate_server)
 		return luaL_error(L, "fetch_poll not supported for C->S transfers");
 	
-	// TODO: move this down a bit.
+	if(to_client_local.cfetch_ubuf != NULL)
+	{
+		int ret = 0;
+		
+		switch(to_client_local.cfetch_udtype)
+		{
+			case UD_JSON:
+			case UD_LUA:
+				ret = (luaL_loadbuffer (L,
+					to_client_local.cfetch_ubuf,
+					(size_t)to_client_local.cfetch_ulen,
+					cfetch_fname)
+						? 0
+						: 1);
+				break;
+				
+			case UD_MAP_ICEMAP: {
+				map_t *map = map_parse_icemap(
+					to_client_local.cfetch_ulen,
+					to_client_local.cfetch_ubuf);
+				
+				if(map == NULL)
+				{
+					ret = 0;
+					break;
+				}
+				
+				lua_pushlightuserdata(L, map);
+				ret = 1;
+			} break;
+			
+			case UD_MAP_VXL: {
+				map_t *map = map_parse_aos(
+					to_client_local.cfetch_ulen,
+					to_client_local.cfetch_ubuf);
+				
+				if(map == NULL)
+				{
+					ret = 0;
+					break;
+				}
+				
+				lua_pushlightuserdata(L, map);
+				ret = 1;
+			} break;
+			
+			case UD_MAP: {
+				map_t *map = map_parse_icemap(
+					to_client_local.cfetch_ulen,
+					to_client_local.cfetch_ubuf);
+				if(map == NULL)
+					map = map_parse_aos(
+						to_client_local.cfetch_ulen,
+						to_client_local.cfetch_ubuf);
+				
+				if(map == NULL)
+				{
+					ret = 0;
+					break;
+				}
+				
+				lua_pushlightuserdata(L, map);
+				ret = 1;
+			} break;
+			
+			case UD_PMF: {
+				model_t *pmf = model_parse_pmf(
+					to_client_local.cfetch_ulen,
+					to_client_local.cfetch_ubuf);
+				
+				if(pmf == NULL)
+				{
+					ret = 0;
+					break;
+				}
+				
+				lua_pushlightuserdata(L, pmf);
+				ret = 1;
+			} break;
+			
+			case UD_IMG_TGA: {
+				img_t *img = img_parse_tga(
+					to_client_local.cfetch_ulen,
+					to_client_local.cfetch_ubuf);
+				
+				if(img == NULL)
+				{
+					ret = 0;
+					break;
+				}
+				
+				lua_pushlightuserdata(L, img);
+				ret = 1;
+			} break;
+			
+			default:
+				fprintf(stderr, "EDOOFUS: invalid fetch type %i!\n",
+					to_client_local.cfetch_udtype);
+				fflush(stderr);
+				abort();
+				break;
+		}
+		
+		free(cfetch_fname);
+		free(cfetch_ftype);
+		free(to_client_local.cfetch_ubuf);
+		to_client_local.cfetch_ubuf = NULL;
+		to_client_local.cfetch_udtype = UD_INVALID;
+		
+		if(ret)
+		{
+			lua_pushinteger(L, to_client_local.cfetch_clen);
+			lua_pushinteger(L, to_client_local.cfetch_ulen);
+			lua_pushnumber(L, 1.0);
+			ret += 3;
+		}
+		
+		return ret;
+	}
+	
 	if((boot_mode & 4) ? run_game_cont1() : run_game_cont2())
 		return luaL_error(L, "quit flag asserted!");
 	
-	// TODO!
-	return icelua_fnaux_fetch_immediate(L, cfetch_ftype, cfetch_fname);
-	//lua_pushboolean(L, 0);
-	//return 1;
+	lua_pushboolean(L, 0);
+	if(to_client_local.cfetch_cbuf == NULL)
+	{
+		lua_pushnil(L);
+		lua_pushnil(L);
+		lua_pushnumber(L, 0.0);
+	} else {
+		lua_pushinteger(L, to_client_local.cfetch_clen);
+		lua_pushinteger(L, to_client_local.cfetch_ulen);
+		lua_pushnumber(L, ((double)to_client_local.cfetch_cpos)
+			/((double)to_client_local.cfetch_clen));
+	}
+	return 4;
 }
 
 int icelua_fn_common_fetch_block(lua_State *L)

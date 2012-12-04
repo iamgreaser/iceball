@@ -57,13 +57,13 @@ enum
 	UD_LUA,
 	UD_MAP_ICEMAP,
 	UD_MAP_VXL,
+	UD_MAP,
 	UD_PMF,
 	UD_IMG_TGA,
 	UD_WAV,
 	
 	UD_MAX_SUPPORTED,
 	
-	UD_MAP,
 	UD_IMG,
 	
 	UD_MAX
@@ -260,6 +260,7 @@ enum
 
 // img.c
 void img_free(img_t *img);
+img_t *img_parse_tga(int len, const char *data);
 img_t *img_load_tga(const char *fname);
 
 // json.c
@@ -292,6 +293,8 @@ int error_sdl(char *msg);
 int error_perror(char *msg);
 
 // map.c
+map_t *map_parse_aos(int len, const char *data);
+map_t *map_parse_icemap(int len, const char *data);
 map_t *map_load_aos(const char *fname);
 map_t *map_load_icemap(const char *fname);
 int map_save_icemap(map_t *map, const char *fname);
@@ -304,6 +307,7 @@ void model_bone_free(model_bone_t *bone);
 model_t *model_new(int bonemax);
 model_t *model_extend(model_t *pmf, int bonemax);
 void model_free(model_t *pmf);
+model_t *model_parse_pmf(int len, const char *data);
 model_t *model_load_pmf(const char *fname);
 int model_save_pmf(model_t *pmf, const char *fname);
 
