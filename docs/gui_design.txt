@@ -1,25 +1,25 @@
 
 Basic goals:
-    1. Layout compiler
-        Three stages of support:
-            Absolute positioning and alignment
-            Relative positioning and alignment
-            Packing + reflow
-        Packing is considerably more complex than the first two but has huge benefits.
-        Compilation on existing widgets should be allowed, and parameters should be adjustable via funcpointers
-            (so that tweening is possible)
-    2. Event model
-        Click (down+up)
-        Slide (down-hold-up)
-        Raw down, raw up
-        Rectangle collision detection
-    3. Widgets
-        Button
-        Modal button
-        Label text
-        Paragraph text
-        Markdown(or similar) text
-        Slider
-        Checkbox
-        Frame + clipping
-        Color picker
+	1. Layout compiler
+		Three stages of support:
+			Absolute positioning and alignment
+			Relative positioning and alignment
+			Packing + reflow
+		Packing is considerably more complex than the first two but has huge benefits.
+		Compilation on existing widgets should be allowed, and parameters should be adjustable via funcpointers
+			(so that tweening is possible)
+	2. Event model
+		Click (down+up)
+		Slide (down-hold-up)
+		Raw down, raw up
+		Rectangle collision detection
+	3. Widgets
+		Button
+		Modal button
+		Label text
+		Paragraph text
+		Markdown(or similar) text
+		Slider
+		Checkbox
+		Frame + clipping
+		Color picker
