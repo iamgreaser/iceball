@@ -213,10 +213,19 @@ typedef struct client
 	packet_t *send_head, *send_tail;
 	int sockfd;
 	
-	char *fetch_ubuf;
-	char *fetch_cbuf;
-	int fetch_ulen, fetch_clen;
-	int fetch_cpos;
+	// client only
+	char *cfetch_ubuf;
+	char *cfetch_cbuf;
+	int cfetch_ulen, cfetch_clen;
+	int cfetch_cpos;
+	int cfetch_udtype;
+	
+	// server only
+	char *sfetch_ubuf;
+	char *sfetch_cbuf;
+	int sfetch_ulen, sfetch_clen;
+	int sfetch_cpos;
+	int sfetch_udtype;
 } client_t;
 
 struct netdata
