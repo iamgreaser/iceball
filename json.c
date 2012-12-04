@@ -525,36 +525,10 @@ int json_load(lua_State *L, const char *fname)
 		return 1;
 	}
 	
-	int buf_len = 512;
-	int buf_pos = 0;
-	char *buf = malloc(buf_len+1);
-	// TODO: check if NULL
-	int buf_cpy;
-	
-	// TODO: ship this to a generic "load entire file" function
-	while(!feof(fp))
-	{
-		int fetch_len = buf_len-buf_pos;
-		buf_cpy = fread(&buf[buf_pos], 1, fetch_len, fp);
-		if(buf_cpy == -1)
-		{
-			fclose(fp);
-			free(buf);
-			return 1;
-		}
-		
-		buf_pos += buf_cpy;
-		
-		if(feof(fp))
-			break;
-		
-		buf_len += (buf_len>>1)+1;
-		buf = realloc(buf, buf_len+1);
-	}
-	
-	fclose(fp);
-	
-	buf[buf_pos] = '\0';
+	int flen;
+	char *buf = net_fetch_file(fname, &flen);
+	if(buf == NULL)
+		return 1;
 	int ret = json_parse(L, buf);
 	free(buf);
 	return ret;

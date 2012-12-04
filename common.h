@@ -302,6 +302,7 @@ int model_save_pmf(model_t *pmf, const char *fname);
 extern client_t to_server;
 extern client_t to_clients[];
 extern client_t to_client_local;
+char *net_fetch_file(const char *fname, int *flen);
 int net_packet_push(int len, const char *data, int sockfd, packet_t **head, packet_t **tail);
 int net_packet_push_lua(int len, const char *data, int sockfd, packet_t **head, packet_t **tail);
 packet_t *net_packet_pop(packet_t **head, packet_t **tail);

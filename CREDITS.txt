@@ -12,6 +12,7 @@ topo:
 	Basic key binding system
 
 Triplefox:
+	Widget system (in progress)
 	Kindly let me use his map, mesa.vxl
 
 UnrealIncident:
