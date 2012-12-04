@@ -1,0 +1,15 @@
+Style guide for developers:
+
+HARD TABS EVERYWHERE.
+Do not rely on tab width, other than "it won't be any more than 8".
+If you need to do ASCII art or whatnot, THEN you use spaces.
+
+C:
+- Braces start on a new line, except for:
+	- else if
+	- else
+	- optionally, array/struct data (but NOT the structs themselves).
+- Braces are by no means required.
+
+Lua:
+- All pretty loose really.
