@@ -601,6 +601,7 @@ function client.hook_render()
 	if players and players[players.current] then
 		players[players.current].show_hud()
 	end
+    gui_rect_frame_test()
 end
 
 client.hook_tick = h_tick_init

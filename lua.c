@@ -163,10 +163,12 @@ void icelua_loadbasefuncs(lua_State *L)
 	lua_pushcfunction(L, luaopen_base);
 	lua_call(L, 0, 0);
 	
-	// here's the other two
+	// here's the other three
 	lua_pushcfunction(L, luaopen_string);
 	lua_call(L, 0, 0);
 	lua_pushcfunction(L, luaopen_math);
+	lua_call(L, 0, 0);
+	lua_pushcfunction(L, luaopen_table);
 	lua_call(L, 0, 0);
 	
 	// overwrite dofile/loadfile.

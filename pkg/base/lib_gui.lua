@@ -105,4 +105,17 @@ function gui_string_edit(str, maxlen, key, modif)
 	
 	return str
 end
+
+function gui_rect_frame_test()
+    -- someday this will grow up to be a real rectangle renderer
+    local img = common.img_new(32, 32)
+    for x = 0, 31, 1 do
+        for y = 0, 31, 1 do
+            common.img_pixel_set(img, x, y, 0xFFFF0000)
+        end
+    end
+    client.img_blit(img, 0, 0)
+    common.img_free(img)
+end
+
 end
