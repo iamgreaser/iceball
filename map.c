@@ -16,73 +16,74 @@
 */
 
 #include "common.h"
-
-map_t *map_load_aos(const char *fname)
+map_t *map_parse_root(const char *dend, const char *data, int xlen, int ylen, int zlen, int wipe_lighting)
 {
-	uint8_t pillar_temp[(256+1)*4];
-	int x,z,pi;
-	int i;
+	// TODO: refactor a bit
 	
-	FILE *fp = fopen(fname, "rb");
-	if(fp == NULL)
-	{
-		error_perror("map_load_aos");
-		return NULL;
-	}
+	uint8_t pillar_temp[(256+1)*4];
+	int i,x,z,pi;
+	
+	int taglen = (int)(dend-data);
 	
 	map_t *map = malloc(sizeof(map_t));
 	if(map == NULL)
 	{
-		error_perror("map_load_aos: malloc(map)");
-		fclose(fp);
+		error_perror("map_parse_root: malloc");
 		return NULL;
 	}
+	
 	map->udtype = UD_MAP;
-	map->xlen = 512;
-	map->ylen = 64;
-	map->zlen = 512;
-	map->pillars = malloc(512*512*sizeof(uint8_t *));
+	
+	map->xlen = xlen;
+	map->ylen = ylen;
+	map->zlen = zlen;
+	
+	map->pillars = malloc(map->xlen*map->zlen*sizeof(uint8_t *));
 	if(map->pillars == NULL)
 	{
-		error_perror("map_load_aos: malloc(map->pillars)");
+		error_perror("map_parse_root: malloc(map->pillars)");
 		map_free(map);
-		fclose(fp);
 		return NULL;
 	}
-	// TODO: check if NULL
+	
+	printf("mapdata %i %ix%ix%i\n"
+		,taglen
+		,map->xlen,map->ylen,map->zlen);
 	
 	// load data
-	for(z = 0, pi = 0; z < 512; z++)
-	for(x = 0; x < 512; x++, pi++)
+	for(z = 0, pi = 0; z < map->zlen; z++)
+	for(x = 0; x < map->xlen; x++, pi++)
 	{
 		int ti = 4;
 		
 		// TODO: check if someone's trying to blow the size
 		for(;;)
 		{
-			uint8_t n = fgetc(fp);
-			uint8_t s = fgetc(fp);
-			uint8_t e = fgetc(fp);
-			uint8_t a = fgetc(fp);
+			uint8_t n = (uint8_t)*(data++);
+			uint8_t s = (uint8_t)*(data++);
+			uint8_t e = (uint8_t)*(data++);
+			uint8_t a = (uint8_t)*(data++);
 			
-			uint8_t xlen = (n == 0 ? e-s+1 : n-1);
+			uint8_t qlen = (n == 0 ? e-s+1 : n-1);
 			
 			pillar_temp[ti++] = n;
 			pillar_temp[ti++] = s;
 			pillar_temp[ti++] = e;
 			pillar_temp[ti++] = a;
 			
-			for(i = 0; i < xlen; i++)
+			for(i = 0; i < qlen; i++)
 			{
-				uint8_t b = fgetc(fp);
-				uint8_t g = fgetc(fp);
-				uint8_t r = fgetc(fp);
-				fgetc(fp); // skip lighting
+				uint8_t b = (uint8_t)*(data++);
+				uint8_t g = (uint8_t)*(data++);
+				uint8_t r = (uint8_t)*(data++);
+				uint8_t t = (uint8_t)*(data++);
+				
+				if(wipe_lighting) t = 1;
 				
 				pillar_temp[ti++] = b;
 				pillar_temp[ti++] = g;
 				pillar_temp[ti++] = r;
-				pillar_temp[ti++] = BT_SOLID_BREAKABLE;
+				pillar_temp[ti++] = t;
 			}
 			
 			if(n == 0)
@@ -95,164 +96,130 @@ map_t *map_load_aos(const char *fname)
 		memcpy(map->pillars[pi], pillar_temp, ti);
 	}
 	
-	fclose(fp);
-	
 	return map;
 }
 
-map_t *map_load_icemap(const char *fname)
+map_t *map_parse_aos(int len, const char *data)
 {
-	uint8_t pillar_temp[(256+1)*4];
-	int x,z,pi;
 	int i;
 	
-	FILE *fp = fopen(fname, "rb");
-	if(fp == NULL)
-	{
-		error_perror("map_load_icemap");
+	if(data == NULL)
 		return NULL;
-	}
 	
-	uint8_t tag[8];
-	tag[7] = 0;
+	const char *p = data;
+	const char *dend = data + len;
 	
-	fread(tag, 8, 1, fp);
-	if(memcmp(tag, "IceMap\x1A\x01", 8))
+	return map_parse_root(dend, data, 512, 64, 512, 1);
+}
+
+map_t *map_parse_icemap(int len, const char *data)
+{
+	// WARNING UNTESTED
+	
+	int i;
+	
+	if(data == NULL)
+		return NULL;
+	
+	const char *p = data;
+	const char *dend = data + len;
+	
+	if(memcmp(p, "IceMap\x1A\x01", 8))
 	{
 		// don't spew an error, this is useful for autodetection mode
 		//fprintf(stderr, "map_load_icemap: not an IceMap v1 file\n");
-		fclose(fp);
 		return NULL;
 	}
+	p += 8;
 	
-	map_t *map = malloc(sizeof(map_t));
-	if(map == NULL)
-	{
-		error_perror("map_load_icemap: malloc(map)");
-		fclose(fp);
-		return NULL;
-	}
-	map->udtype = UD_MAP;
-	map->pillars = NULL;
+	map_t *map = NULL;
 	
 	int taglen;
 	for(;;)
 	{
-		tag[7] = '\0';
-		fread(tag, 7, 1, fp);
-		
+		const char *tag = p;
 		if(!memcmp(tag,"       ",7))
 			break;
 		
-		taglen = fgetc(fp);
-		if(taglen == -1)
+		p += 7;
+		if(p >= dend)
 		{
 			fprintf(stderr, "map_load_icemap: premature end!\n");
 			map_free(map);
-			fclose(fp);
 			return NULL;
-		} else if(taglen == 255) {
-			if(fread(&taglen, 4, 1, fp) != 1)
+		}
+		
+		taglen = (uint8_t)*(p++);
+		if(taglen == 255) {
+			if(p+4 > dend)
 			{
 				fprintf(stderr, "map_load_icemap: premature end!\n");
 				map_free(map);
-				fclose(fp);
 				return NULL;
 			}
+			taglen = (int)*(uint32_t *)p;
+			p += 4;
 		}
 		
 		if(!memcmp(tag,"MapData",7))
 		{
-			if(map->pillars != NULL)
+			if(map != NULL && map->pillars != NULL)
 			{
 				fprintf(stderr, "map_load_icemap: more than one MapData!\n");
 				map_free(map);
-				fclose(fp);
 				return NULL;
 			}
 			
-			fread(&(map->xlen), 2, 1, fp);
-			fread(&(map->ylen), 2, 1, fp);
-			fread(&(map->zlen), 2, 1, fp);
-			map->pillars = malloc(map->xlen*map->zlen*sizeof(uint8_t *));
-			if(map->pillars == NULL)
-			{
-				error_perror("map_load_icemap: malloc(map->pillars)");
-				map_free(map);
-				fclose(fp);
-				return NULL;
-			}
+			int xlen = ((uint16_t *)p)[0];
+			int ylen = ((uint16_t *)p)[1];
+			int zlen = ((uint16_t *)p)[2];
+			p += 6;
 			
-			printf("mapdata %i %ix%ix%i\n"
-				,taglen
-				,map->xlen,map->ylen,map->zlen);
-			
-			// load data
-			for(z = 0, pi = 0; z < map->zlen; z++)
-			for(x = 0; x < map->xlen; x++, pi++)
-			{
-				int ti = 4;
-				
-				// TODO: check if someone's trying to blow the size
-				for(;;)
-				{
-					uint8_t n = fgetc(fp);
-					uint8_t s = fgetc(fp);
-					uint8_t e = fgetc(fp);
-					uint8_t a = fgetc(fp);
-					
-					uint8_t qlen = (n == 0 ? e-s+1 : n-1);
-					
-					pillar_temp[ti++] = n;
-					pillar_temp[ti++] = s;
-					pillar_temp[ti++] = e;
-					pillar_temp[ti++] = a;
-					
-					for(i = 0; i < qlen; i++)
-					{
-						uint8_t b = fgetc(fp);
-						uint8_t g = fgetc(fp);
-						uint8_t r = fgetc(fp);
-						uint8_t t = fgetc(fp);
-						
-						pillar_temp[ti++] = b;
-						pillar_temp[ti++] = g;
-						pillar_temp[ti++] = r;
-						pillar_temp[ti++] = t;
-					}
-					
-					if(n == 0)
-						break;
-				}
-				
-				pillar_temp[0] = (ti>>2)-2;
-				map->pillars[pi] = malloc(ti);
-				// TODO: check if NULL
-				memcpy(map->pillars[pi], pillar_temp, ti);
-			}
-			
-			
+			map = map_parse_root(p+taglen, p, xlen, ylen, zlen, 0);
+			p += taglen-6;
 		} else if(!memcmp(tag,"MetaInf",7)) {
 			// TODO!
 			if(taglen > 0)
-				fseek(fp, taglen, SEEK_CUR);
+				p += taglen;
 		} else {
 			if(taglen > 0)
-				fseek(fp, taglen, SEEK_CUR);
+				p += taglen;
 		}
 	}
 	
-	if(map->pillars == NULL)
+	if(map == NULL || map->pillars == NULL)
 	{
 		fprintf(stderr, "map_load_icemap: MapData missing!\n");
 		map_free(map);
-		fclose(fp);
 		return NULL;
 	}
 	
-	fclose(fp);
-	
+	printf("all good.\n");
 	return map;
+}
+
+map_t *map_load_aos(const char *fname)
+{
+	int flen;
+	char *data = net_fetch_file(fname, &flen);
+	if(data == NULL)
+		return NULL;
+	
+	map_t *ret = map_parse_aos(flen, data);
+	free(data);
+	return ret;
+}
+
+map_t *map_load_icemap(const char *fname)
+{
+	int flen;
+	char *data = net_fetch_file(fname, &flen);
+	if(data == NULL)
+		return NULL;
+	
+	map_t *ret = map_parse_icemap(flen, data);
+	free(data);
+	return ret;
 }
 
 int map_save_icemap(map_t *map, const char *fname)

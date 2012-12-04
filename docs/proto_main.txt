@@ -43,7 +43,7 @@ Base encapsulation:
 				11xx = * RESERVED *
 		
 		if the server is still sending a file, FATAL ERROR
-	0x31 flags clen.u32 ulen.u32 0x00:
+	0x31 clen.u32 ulen.u32:
 		S->C ONLY
 		Start file transfer
 		"clen" is the compressed length

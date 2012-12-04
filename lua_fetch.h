@@ -131,7 +131,7 @@ int icelua_fn_common_fetch_start(lua_State *L)
 		cfetch_ftype = ftype;
 		cfetch_fname = fname;
 		
-		net_packet_push(blen, buf, -1, &pkt_client_send_head, &pkt_client_send_tail);
+		net_packet_push(blen, buf, -1, &(to_client_local.send_head), &(to_client_local.send_tail));
 		
 		lua_pushboolean(L, 1);
 		return 1;

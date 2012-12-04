@@ -316,7 +316,7 @@ int icelua_fn_common_net_send(lua_State *L)
 	//net_packet_push(int len, uint8_t *data, packet_t **head, packet_t **tail);
 	if(L != lstate_server)
 	{
-		net_packet_push_lua((int)bsize, str, -1, &pkt_client_send_head, &pkt_client_send_tail);
+		net_packet_push_lua((int)bsize, str, -1, &(to_client_local.send_head), &(to_client_local.send_tail));
 		lua_pushboolean(L, 1);
 		return 1;
 	} else {
@@ -332,7 +332,7 @@ int icelua_fn_common_net_send(lua_State *L)
 		if(sockfd == -1)
 			return 0;
 		
-		net_packet_push_lua((int)bsize, str, sockfd, &pkt_server_send_head, &pkt_server_send_tail);
+		net_packet_push_lua((int)bsize, str, sockfd, &(to_server.send_head), &(to_server.send_tail));
 		lua_pushboolean(L, 1);
 		return 1;
 	}
@@ -344,7 +344,7 @@ int icelua_fn_common_net_recv(lua_State *L)
 	
 	if(L == lstate_server)
 	{
-		packet_t *pkt = net_packet_pop(&pkt_server_recv_head, &pkt_server_recv_tail);
+		packet_t *pkt = net_packet_pop(&(to_server.head), &(to_server.tail));
 		if(pkt == NULL)
 			return 0;
 		
@@ -367,7 +367,7 @@ int icelua_fn_common_net_recv(lua_State *L)
 		
 		return 2;
 	} else {
-		packet_t *pkt = net_packet_pop(&pkt_client_recv_head, &pkt_client_recv_tail);
+		packet_t *pkt = net_packet_pop(&(to_client_local.head), &(to_client_local.tail));
 		if(pkt == NULL)
 			return 0;
 		
