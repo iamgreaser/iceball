@@ -822,11 +822,14 @@ function new_player(settings)
 			
 			local i
 			
-			for i=1,8 do
+			for i=1,math.floor(oh/64+0.5) do
 				gui_print_mini(mx - 12, my + (i-0.5)*64,
 					0xFFFFFFFF, ""..i)
 				gui_print_mini(mx + ow + 12-6, my + (i-0.5)*64,
 					0xFFFFFFFF, ""..i)
+			end
+			
+			for i=1,math.floor(ow/64+0.5) do
 				gui_print_mini(mx + (i-0.5)*64, my - 12,
 					0xFFFFFFFF, ""..string.char(64+i))
 				gui_print_mini(mx + (i-0.5)*64, my + oh + 12-6,
