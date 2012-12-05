@@ -151,15 +151,6 @@ int update_client_contpre1(void)
 		frame_prev = SDL_GetTicks();
 	}
 	
-	//printf("%.2f",);
-	// draw scene to cubemap
-	SDL_LockSurface(screen);
-	//memset(screen->pixels, 0x51, screen->h*screen->pitch);
-	render_cubemap(screen->pixels,
-		screen->w, screen->h, screen->pitch/4,
-		&tcam, clmap);
-	SDL_UnlockSurface(screen);
-	
 	return quitflag;
 }
 
@@ -167,8 +158,15 @@ int update_client_cont1(void)
 {
 	int quitflag = 0;
 	
-	// apply Lua HUD / model stuff
+	//printf("%.2f",);
+	// draw scene to cubemap
 	SDL_LockSurface(screen);
+	//memset(screen->pixels, 0x51, screen->h*screen->pitch);
+	render_cubemap(screen->pixels,
+		screen->w, screen->h, screen->pitch/4,
+		&tcam, clmap);
+	
+	// apply Lua HUD / model stuff
 	lua_getglobal(lstate_client, "client");
 	lua_getfield(lstate_client, -1, "hook_render");
 	lua_remove(lstate_client, -2);
