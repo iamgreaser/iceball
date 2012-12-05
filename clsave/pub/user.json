@@ -13,6 +13,7 @@
 	
 	"name": null,
 	"kick_on_join": true,
+	"sensitivity": 1.0,
 	
 	"skins" : {
 	

@@ -224,6 +224,7 @@ int icelua_init(void)
 	icelua_loadbasefuncs(lstate_server);
 	
 	// shove some pathnames in
+	if(lstate_client != NULL)
 	{
 		lua_getglobal(lstate_client, "common");
 		lua_getglobal(lstate_client, "client");
@@ -233,7 +234,10 @@ int icelua_init(void)
 		lua_pushstring(lstate_client, mod_basedir+4);
 		lua_setfield(lstate_client, -2, "base_dir");
 		lua_pop(lstate_client, 1);
-		
+	}
+	
+	if(lstate_server != NULL)
+	{
 		lua_getglobal(lstate_server, "common");
 		lua_getglobal(lstate_server, "server");
 		lua_pushstring(lstate_server, mod_basedir+4);

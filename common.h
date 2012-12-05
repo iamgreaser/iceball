@@ -208,12 +208,12 @@ struct packet
 	char data[];
 };
 
-// TODO USE THIS DAMN STRUCTURE
 typedef struct client
 {
 	packet_t *head, *tail;
 	packet_t *send_head, *send_tail;
 	int sockfd;
+	int isfull;
 	
 	// client only
 	char *cfetch_ubuf;
@@ -228,6 +228,12 @@ typedef struct client
 	int sfetch_ulen, sfetch_clen;
 	int sfetch_cpos;
 	int sfetch_udtype;
+	
+	// serialisation
+	char rpkt_buf[PACKET_LEN_MAX*2];
+	int rpkt_len;
+	char spkt_buf[PACKET_LEN_MAX*2];
+	int spkt_ppos,spkt_len;
 } client_t;
 
 struct netdata
@@ -236,8 +242,7 @@ struct netdata
 } netdata_t;
 
 #define SOCKFD_NONE -1
-#define SOCKFD_LOCAL_LINKCOPY -2
-#define SOCKFD_LOCAL_SERIAL -3
+#define SOCKFD_LOCAL -2
 
 enum
 {

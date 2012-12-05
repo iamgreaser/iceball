@@ -32,13 +32,11 @@ All VXL maps are (C) their respective owners.
 REQUIREMENTS:
 - a C compiler that isn't crap (read: not MSVC++)
   - specifically, GCC
+  - MinGW is a port of GCC for Windows: http://mingw.org/
   - if you use something else we might consider compatibility with it
-- an OS that isn't Windows
-  - we'll be working on fixing that shortly
-  - in the meantime, feel free to hack your way around the makefile
-- SDL 1.2 (not 1.3)
-- Lua 5.1 (not 5.2)
-- zlib (for file compression/decompression during fetching)
+- SDL 1.2 (not 1.3) - http://libsdl.org/
+- Lua 5.1 (not 5.2) - http://lua.org/
+- zlib - http://zlib.net/
 - GNU make
   - if someone has BSD make, please tell us :)
 

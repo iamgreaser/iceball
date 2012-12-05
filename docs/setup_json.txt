@@ -45,6 +45,9 @@ clsave/pub/user.json:
 	"kick_on_join" should be false;
 	otherwise, you won't even be able to get in.
 	
+	"sensitivity" is mouse sensitivity.
+	it takes 1000/sensitivity pixels to rotate by 180 degrees.
+	
 	"skins" is explained later in this document.
 	
 	"bio" is explained later in this document.

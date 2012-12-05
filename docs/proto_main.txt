@@ -3,8 +3,19 @@ Notes:
 	"FATAL ERROR" means "terminate the damn connection".
 
 Base encapsulation:
+	0x0F baselen.u8 base[baselen] 0x00:
+		S->C Set base directory
+		
+		This is the first message sent from the server.
+		The client MUST wait for this message, and this message ONLY.
+		
+		The local client does NOT receive this message;
+		the base dir is already set.
+		
+		If the base dir is already set, FATAL ERROR
+	
 	/*
-	0x10 salt[32] version.u32 namelen name[namelen] 0x00:
+	0x10 salt[32] version.u32 namelen.u8 name[namelen] 0x00:
 		C->S Authentication with server
 		"salt" is agreed on from some sort of master server
 		Currently ignored and should all be 0x00
@@ -14,16 +25,20 @@ Base encapsulation:
 		current: 0x00000001
 		
 		TODO: add some sort of auth method
+	
 	0x11:
 		S->C Authentication acknowledgement
+		
+		Gives the package directory
+	*/
 	
-	0x17 msglen msg[msglen] 0x00:
+	0x17 msglen.u8 msg[msglen] 0x00:
 		C->S Quit / S->C Kick
 		
 		Connection MUST be terminated
 		after sending/receiving this message
 	
-	0x30 flags namelen name[namelen] 0x00:
+	0x30 flags.u8 namelen.u8 name[namelen] 0x00:
 		C->S ONLY
 		Request file to be transferred
 		"name" is the filename
@@ -77,7 +92,7 @@ Base encapsulation:
 	0x7F length.u16 data[length]:
 		Lua packet of length "length"
 		Minimum length of a packet is 1
-		Maximum length of a packet is 1280
+		Maximum length of a packet is 1276
 		Exceeding these bounds is a FATAL ERROR
 
 Iceball Base Mod:

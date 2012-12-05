@@ -64,10 +64,10 @@ int net_packet_push(int len, const char *data, int sockfd, packet_t **head, pack
 
 int net_packet_push_lua(int len, const char *data, int sockfd, packet_t **head, packet_t **tail)
 {
-	if(len > PACKET_LEN_MAX)
+	if(len+4 > PACKET_LEN_MAX)
 	{
 		fprintf(stderr, "net_packet_new: packet too large (%i > %i)\n"
-			, len, PACKET_LEN_MAX);
+			, len, PACKET_LEN_MAX-4);
 		return 1;
 	}
 	
@@ -300,9 +300,8 @@ void net_eat_c2s(client_t *cli)
 					
 					// data packets
 					{
-						char buf[1+4+2+1024+1];
+						char buf[1+4+2+1024];
 						buf[0] = 0x33;
-						buf[7+1024] = 0x00;
 						for(i = 0; i < other->sfetch_clen; i += 1024)
 						{
 							int plen = other->sfetch_clen - i;
@@ -313,7 +312,7 @@ void net_eat_c2s(client_t *cli)
 							
 							memcpy(&buf[7], &(other->sfetch_cbuf[i]), plen);
 							
-							net_packet_push(plen+8, buf, pkt->sockfd,
+							net_packet_push(plen+7, buf, pkt->sockfd,
 								&(cli->send_head), &(cli->send_tail));
 						}
 					}
@@ -372,7 +371,7 @@ void net_eat_s2c(client_t *cli)
 				// file transfer initiation
 				int clen = (int)*(uint32_t *)&(pkt->data[1]);
 				int ulen = (int)*(uint32_t *)&(pkt->data[5]);
-				printf("clen=%i ulen=%i\n", clen, ulen);
+				//printf("clen=%i ulen=%i\n", clen, ulen);
 				cli->cfetch_clen = clen;
 				cli->cfetch_ulen = ulen;
 				cli->cfetch_cbuf = malloc(clen);
@@ -445,48 +444,258 @@ void net_eat_s2c(client_t *cli)
 	}
 }
 
+int net_flush_parse_onepkt(const char *data, int len)
+{
+	if(len <= 0)
+		return 0;
+	
+	int cmd = data[0];
+	int ilen = 0;
+	
+	if(cmd >= 0x40 && cmd <= 0x7E)
+	{
+		ilen = cmd-0x3E;
+	} else if(cmd == 0x7F) {
+		if(len < 4)
+			return 0;
+		
+		ilen = (int)*(uint16_t *)&data[1];
+		ilen += 3;
+	} else switch(cmd) {
+		case 0x0F: // baselen base[baselen] 0x00:
+		case 0x17: // msglen msg[msglen] 0x00:
+		{
+			if(len < 2)
+				return 0;
+			
+			ilen = (int)(uint8_t)data[1];
+			ilen += 3;
+		} break;
+		case 0x30: // flags namelen name[namelen] 0x00:
+		{
+			if(len < 4)
+				return 0;
+			
+			ilen = (int)(uint8_t)data[2];
+			ilen += 4;
+		} break;
+		case 0x31: // clen.u32 ulen.u32:
+			ilen = 9;
+			break;
+		case 0x33: // offset.u32 len.u16 data[len]
+		{
+			if(len < 7)
+				return 0;
+			
+			ilen = (int)*(uint16_t *)&data[5];
+			ilen += 7;
+		} break;
+		case 0x32:
+		case 0x34:
+		case 0x35:
+			ilen = 1;
+			break;
+		default:
+			// TODO: terminate cleanly instead of locking
+			return 0;
+	}
+	
+	//printf("cmd=%02X ilen=%i blen=%i\n", cmd, ilen, len);
+	
+	if(ilen > PACKET_LEN_MAX)
+	{
+		// TODO: terminate cleanly instead of locking
+		return 0;
+	}
+	
+	return (ilen <= len ? ilen : 0);
+}
+
+void net_flush_parse_c2s(client_t *cli)
+{
+	// TODO!
+	int offs = 0;
+	int len;
+	char *data;
+	
+	len = cli->spkt_len;
+	data = cli->spkt_buf;
+	
+	while(offs < len)
+	{
+		int nlen = net_flush_parse_onepkt(data+offs, len-offs);
+		
+		//printf("nlen=%i\n",nlen);
+		if(nlen <= 0)
+			break;
+		
+		net_packet_push(nlen, data+offs,
+			cli->sockfd, &(to_server.head), &(to_server.tail));
+		
+		offs += nlen;
+	}
+	
+	if(offs != 0)
+	{
+		//printf("offs=%i len=%i\n", offs, len);
+		if(offs < len)
+			memmove(data, data+offs, len-offs);
+		
+		cli->spkt_len -= offs;
+	}
+}
+
+void net_flush_parse_s2c(client_t *cli)
+{
+	// TODO!
+	int offs = 0;
+	int len;
+	char *data;
+	
+	len = cli->rpkt_len;
+	data = cli->rpkt_buf;
+	
+	while(offs < len)
+	{
+		int nlen = net_flush_parse_onepkt(data+offs, len-offs);
+		
+		if(nlen <= 0)
+			break;
+		
+		//printf("nlen=%i\n",nlen);
+		
+		net_packet_push(nlen, data+offs,
+			cli->sockfd, &(cli->head), &(cli->tail));
+		
+		offs += nlen;
+	}
+	
+	if(offs != 0)
+	{
+		//printf("offs=%i len=%i\n", offs, len);
+		if(offs < len)
+		{
+			//printf("LET THE MOVE\n");
+			memmove(data, data+offs, len-offs);
+		}
+		cli->rpkt_len -= offs;
+		//printf("new len: %i\n", cli->rpkt_len);
+	}
+}
+
+int net_flush_transfer(client_t *cfrom, client_t *cto, packet_t *pfrom)
+{
+	if(cto->isfull)
+	{
+		//printf("still full!\n");
+		return 1;
+	}
+	
+	int len = (cto == &to_server ? cfrom->spkt_len : cto->rpkt_len);
+	
+	if(pfrom->len + len > PACKET_LEN_MAX*2)
+	{
+		// TODO: send this somehow
+		//printf("FULL!\n");
+		cto->isfull = 1;
+		return 1;
+	} else {
+		if(pfrom->p != NULL)
+			pfrom->p->n = pfrom->n;
+		else
+			cfrom->send_head = pfrom->n;
+		
+		if(pfrom->n != NULL)
+			pfrom->n->p = pfrom->p;
+		else
+			cfrom->send_tail = pfrom->p;
+		
+		// here's the linkcopy version
+		/*
+		pfrom->n = NULL;
+		pfrom->p = NULL;
+		
+		if(cto->tail == NULL)
+		{
+			cto->tail = cto->head = pfrom;
+		} else {
+			packet_t *p2 = cto->tail;
+			cto->tail = pfrom;
+			p2->n = pfrom;
+			pfrom->p = p2;
+		};
+		
+		return 0;
+		*/
+		
+		// and of course the serialised version:
+		// TODO: make this work over a network!
+		if(cto == &to_server)
+		{
+			memcpy(cfrom->spkt_buf + cfrom->spkt_len, pfrom->data, pfrom->len);
+			cfrom->spkt_len += pfrom->len;
+		} else {
+			memcpy(cto->rpkt_buf + cto->rpkt_len, pfrom->data, pfrom->len);
+			cto->rpkt_len += pfrom->len;
+		}
+	}
+	return 0;
+}
+
 void net_flush(void)
 {
-	int ctr = 3;
+	packet_t *pkt, *npkt;
+	int i;
 	
-	// link-copy mode
-	while(to_server.send_head != NULL)
+	if(boot_mode & 2)
 	{
-		packet_t *pfrom = to_server.send_head;
+		// clear full flags
+		for(i = 0; i < CLIENT_MAX; i++)
+			to_clients[i].isfull = 0;
+		to_client_local.isfull = 0;
+		to_server.isfull = 0;
 		
-		// TODO: distinguish between local and network
-		if(to_client_local.tail == NULL)
+		// serialise the packets
+		for(pkt = to_server.send_head; pkt != NULL; pkt = npkt)
 		{
-			to_client_local.tail = to_client_local.head =
-				net_packet_pop(&(to_server.send_head), &(to_server.send_tail));
-		} else {
-			packet_t *p2 = to_client_local.tail;
-			to_client_local.tail = net_packet_pop(&(to_server.send_head), &(to_server.send_tail));
-			p2->n = to_client_local.tail;
-			to_client_local.tail->p = p2;
-		};
-		ctr--;
-		if(ctr <= 0)
-			break;
+			npkt = pkt->n;
+			
+			//printf("pkt = %016llX\n", pkt);
+			
+			client_t *cli = NULL;
+			
+			// TODO: find correct client properly
+			cli = &to_client_local;
+			
+			net_flush_transfer(&to_server, cli, pkt);
+		}
+		
+		// parse the incoming stuff
+		for(i = 0; i < CLIENT_MAX; i++)
+			if(to_clients[i].sockfd != -1)
+				net_flush_parse_c2s(&to_clients[i]);
+		
+		net_flush_parse_c2s(&to_client_local);
 	}
 	
-	while(to_client_local.send_head != NULL)
+	if(boot_mode & 1)
 	{
-		if(to_server.tail == NULL)
+		to_server.isfull = 0;
+		
+		for(pkt = to_client_local.send_head; pkt != NULL; pkt = npkt)
 		{
-			to_server.tail = to_server.head =
-				net_packet_pop(&to_client_local.send_head, &to_client_local.send_tail);
-		} else {
-			packet_t *p = to_server.tail;
-			to_server.tail = net_packet_pop(&to_client_local.send_head, &to_client_local.send_tail);
-			p->n = to_server.tail;
-			to_server.tail->p = p;
-		};
+			npkt = pkt->n;
+			
+			net_flush_transfer(&to_client_local, &to_server, pkt);
+		}
+		
+		net_flush_parse_s2c(&to_client_local);
 	}
 	
-	
-	net_eat_c2s(&to_server);
-	net_eat_s2c(&to_client_local);
+	if(boot_mode & 2)
+		net_eat_c2s(&to_server);
+	if(boot_mode & 1)
+		net_eat_s2c(&to_client_local);
 }
 
 void net_deinit_client(client_t *cli)
@@ -512,7 +721,7 @@ int net_init(void)
 	to_server.head = to_server.tail = NULL;
 	to_server.send_head = to_server.send_tail = NULL;
 	
-	to_client_local.sockfd = SOCKFD_LOCAL_LINKCOPY;
+	to_client_local.sockfd = SOCKFD_LOCAL;
 	to_client_local.head = to_client_local.tail = NULL;
 	to_client_local.send_head = to_client_local.send_tail = NULL;
 	

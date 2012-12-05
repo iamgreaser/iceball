@@ -164,7 +164,8 @@ rotpos = 0.0
 debug_enabled = false
 mouse_released = false
 large_map = false
-sensitivity = 1.0/1000.0
+sensitivity = user_config.sensitivity or 1.0
+sensitivity = sensitivity/1000.0
 mouse_skip = 3
 
 typing_type = nil

@@ -478,26 +478,29 @@ int main(int argc, char *argv[])
 		main_largstart = 4;
 		
 		boot_mode = 2;
-		return 101;
+		//return 101;
 	} else {
 		return print_usage(argv[0]);
 	}
 	
-	if(memcmp(mod_basedir,"pkg/",4))
+	if(boot_mode & 2)
 	{
-		fprintf(stderr, "ERROR: package base dir must start with \"pkg/\"!\n");
-		return 109;
-	}
-	
-	if(strlen(mod_basedir) < 5)
-	{
-		fprintf(stderr, "ERROR: package base dir can't actually be \"pkg/\"!\n");
-		return 109;
+		if(memcmp(mod_basedir,"pkg/",4))
+		{
+			fprintf(stderr, "ERROR: package base dir must start with \"pkg/\"!\n");
+			return 109;
+		}
+		
+		if(strlen(mod_basedir) < 5)
+		{
+			fprintf(stderr, "ERROR: package base dir can't actually be \"pkg/\"!\n");
+			return 109;
+		}
 	}
 	
 	if((!(boot_mode & 1)) || !platform_init()) {
-	if(!icelua_init()) {
 	if(!net_init()) {
+	if(!icelua_init()) {
 	if((!(boot_mode & 1)) || !video_init()) {
 	if((!(boot_mode & 1)) || !wav_init()) {
 	if((!(boot_mode & 1)) || !render_init(screen->w, screen->h)) {
@@ -505,8 +508,8 @@ int main(int argc, char *argv[])
 		if(boot_mode & 1) render_deinit();
 	} if(boot_mode & 1) wav_deinit();
 	} if(boot_mode & 1) video_deinit();
-	} net_deinit();
 	} icelua_deinit();
+	} net_deinit();
 	} if(boot_mode & 1) platform_deinit();
 	}
 	
