@@ -83,12 +83,17 @@ If you're taking on this task, please do the following:
 
 A quick template for a mod that uses a custom set of PMFs:
 
--- main_client.lua
+-- client_start.lua
+loadfile("pkg/base/client_start.lua")(...)
+--stick in your plugins here
+
+-- main_client.lua (the actual client entry point)
 PKG_DIR_PMF = common.pkg_base.."/pmf"
 loadfile("pkg/base/main_client.lua")(...)
 
 -- main_server.lua
 loadfile("pkg/base/main_server.lua")(...)
+
 
  ------------------------------------------------------------------------------
 

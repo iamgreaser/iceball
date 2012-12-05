@@ -48,6 +48,8 @@
 
 #include <SDL.h>
 
+#include <zlib.h>
+
 enum
 {
 	UD_INVALID = 0,
@@ -57,13 +59,13 @@ enum
 	UD_LUA,
 	UD_MAP_ICEMAP,
 	UD_MAP_VXL,
+	UD_MAP,
 	UD_PMF,
 	UD_IMG_TGA,
 	UD_WAV,
 	
 	UD_MAX_SUPPORTED,
 	
-	UD_MAP,
 	UD_IMG,
 	
 	UD_MAX
@@ -206,17 +208,32 @@ struct packet
 	char data[];
 };
 
-// TODO USE THIS DAMN STRUCTURE
 typedef struct client
 {
 	packet_t *head, *tail;
 	packet_t *send_head, *send_tail;
 	int sockfd;
+	int isfull;
 	
-	char *fetch_ubuf;
-	char *fetch_cbuf;
-	int fetch_ulen, fetch_clen;
-	int fetch_cpos;
+	// client only
+	char *cfetch_ubuf;
+	char *cfetch_cbuf;
+	int cfetch_ulen, cfetch_clen;
+	int cfetch_cpos;
+	int cfetch_udtype;
+	
+	// server only
+	char *sfetch_ubuf;
+	char *sfetch_cbuf;
+	int sfetch_ulen, sfetch_clen;
+	int sfetch_cpos;
+	int sfetch_udtype;
+	
+	// serialisation
+	char rpkt_buf[PACKET_LEN_MAX*2];
+	int rpkt_len;
+	char spkt_buf[PACKET_LEN_MAX*2];
+	int spkt_ppos,spkt_len;
 } client_t;
 
 struct netdata
@@ -225,8 +242,7 @@ struct netdata
 } netdata_t;
 
 #define SOCKFD_NONE -1
-#define SOCKFD_LOCAL_LINKCOPY -2
-#define SOCKFD_LOCAL_SERIAL -3
+#define SOCKFD_LOCAL -2
 
 enum
 {
@@ -251,6 +267,7 @@ enum
 
 // img.c
 void img_free(img_t *img);
+img_t *img_parse_tga(int len, const char *data);
 img_t *img_load_tga(const char *fname);
 
 // json.c
@@ -283,6 +300,8 @@ int error_sdl(char *msg);
 int error_perror(char *msg);
 
 // map.c
+map_t *map_parse_aos(int len, const char *data);
+map_t *map_parse_icemap(int len, const char *data);
 map_t *map_load_aos(const char *fname);
 map_t *map_load_icemap(const char *fname);
 int map_save_icemap(map_t *map, const char *fname);
@@ -295,6 +314,7 @@ void model_bone_free(model_bone_t *bone);
 model_t *model_new(int bonemax);
 model_t *model_extend(model_t *pmf, int bonemax);
 void model_free(model_t *pmf);
+model_t *model_parse_pmf(int len, const char *data);
 model_t *model_load_pmf(const char *fname);
 int model_save_pmf(model_t *pmf, const char *fname);
 

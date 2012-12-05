@@ -85,49 +85,39 @@ void model_bone_free(model_bone_t *bone)
 	free(bone);
 }
 
-model_t *model_load_pmf(const char *fname)
+model_t *model_parse_pmf(int len, const char *data)
 {
 	int i,j;
 	
-	FILE *fp = fopen(fname, "rb");
-	
-	// check for errors
-	if(fp == NULL)
-	{
-		error_perror("model_load_pmf");
-		return NULL;
-	}
+	const char *p = data;
+	const char *dend = data + len;
 	
 	// and now we crawl through the spec.
 	
 	// start with the header of "PMF",0x1A,1,0,0,0
 	char head[8];
 	
-	fread(head, 8, 1, fp);
-	
-	if(memcmp(head, "PMF\x1A\x01\x00\x00\x00", 8))
+	if(memcmp(p, "PMF\x1A\x01\x00\x00\x00", 8))
 	{
 		fprintf(stderr, "model_load_pmf: not a valid PMF v1 file\n");
-		fclose(fp);
 		return NULL;
 	}
+	p += 8;
 	
 	// then there's a uint32_t denoting how many body parts there are
-	uint32_t bone_count;
-	fread(&bone_count, 4, 1, fp);
+	uint32_t bone_count = *(uint32_t *)p;
+	p += 4;
 	if(bone_count > MODEL_BONE_MAX)
 	{
-		fprintf(stderr, "model_load_pmf: too many bones (%i > %i)\n"
+		fprintf(stderr, "model_parse_pmf: too many bones (%i > %i)\n"
 			, bone_count, MODEL_BONE_MAX);
-		fclose(fp);
 		return NULL;
 	}
 	
 	model_t *pmf = model_new(bone_count);
 	if(pmf == NULL)
 	{
-		error_perror("model_load_pmf");
-		fclose(fp);
+		error_perror("model_parse_pmf");
 		return NULL;
 	}
 	pmf->udtype = UD_PMF;
@@ -136,20 +126,19 @@ model_t *model_load_pmf(const char *fname)
 	for(i = 0; i < (int)bone_count; i++)
 	{
 		// there's a null-terminated 16-byte string (max 15 chars) denoting the part
-		char namebuf[16];
-		fread(namebuf, 16, 1, fp);
+		const char *namebuf = p;
+		p += 16;
 		
 		if(namebuf[15] != '\x00')
 		{
 			fprintf(stderr, "model_load_pmf: name not null terminated\n");
 			model_free(pmf);
-			fclose(fp);
 			return NULL;
 		}
 		
 		// then there's a uint32_t denoting how many points there are in this body part
-		uint32_t pt_count;
-		fread(&pt_count, 4, 1, fp);
+		uint32_t pt_count = *(uint32_t *)p;
+		p += 4;
 		
 		// (just allocating the bone here)
 		model_bone_t *bone = model_bone_new(pmf, pt_count);
@@ -157,9 +146,8 @@ model_t *model_load_pmf(const char *fname)
 		memcpy(bone->name, namebuf, 16);
 		if(bone == NULL)
 		{
-			error_perror("model_load_pmf");
+			error_perror("model_parse_pmf");
 			model_free(pmf);
-			fclose(fp);
 			return NULL;
 		}
 		
@@ -167,7 +155,9 @@ model_t *model_load_pmf(const char *fname)
 		//   uint16_t radius;
 		//   int16_t x,y,z;
 		//   uint8_t b,g,r,reserved;
-		fread(bone->pts, sizeof(model_point_t), pt_count, fp);
+		int bonelen = sizeof(model_point_t)*pt_count;
+		memcpy(bone->pts, p, bonelen);
+		p += bonelen;
 		bone->ptlen = pt_count;
 		
 		// "reserved" needs to be 0 or else you suck
@@ -179,7 +169,6 @@ model_t *model_load_pmf(const char *fname)
 			{
 				fprintf(stderr, "model_load_pmf: file corrupted or made by a smartass\n");
 				model_free(pmf);
-				fclose(fp);
 				return NULL;
 			}
 		
@@ -188,9 +177,18 @@ model_t *model_load_pmf(const char *fname)
 		// units are 8:8 fixed point in terms of the vxl grid by default
 	}
 	
-	fclose(fp);
-	
 	return pmf;
+}
+
+model_t *model_load_pmf(const char *fname)
+{
+	int flen;
+	char *buf = net_fetch_file(fname, &flen);
+	if(buf == NULL)
+		return NULL;
+	model_t *ret = model_parse_pmf(flen, buf);
+	free(buf);
+	return ret;
 }
 
 int model_save_pmf(model_t *pmf, const char *fname)

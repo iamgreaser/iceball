@@ -224,6 +224,7 @@ int icelua_init(void)
 	icelua_loadbasefuncs(lstate_server);
 	
 	// shove some pathnames in
+	if(lstate_client != NULL)
 	{
 		lua_getglobal(lstate_client, "common");
 		lua_getglobal(lstate_client, "client");
@@ -233,7 +234,10 @@ int icelua_init(void)
 		lua_pushstring(lstate_client, mod_basedir+4);
 		lua_setfield(lstate_client, -2, "base_dir");
 		lua_pop(lstate_client, 1);
-		
+	}
+	
+	if(lstate_server != NULL)
+	{
 		lua_getglobal(lstate_server, "common");
 		lua_getglobal(lstate_server, "server");
 		lua_pushstring(lstate_server, mod_basedir+4);
@@ -261,13 +265,6 @@ int icelua_init(void)
 		return 1;
 	}
 	
-	snprintf(xpath, 128, "%s/main_client.lua", mod_basedir);
-	if((lstate_client != NULL) && luaL_loadfile(lstate_client, xpath) != 0)
-	{
-		printf("ERROR loading client Lua: %s\n", lua_tostring(lstate_client, -1));
-		return 1;
-	}
-	
 	argct = (main_largstart == -1 || (main_largstart >= main_argc)
 		? 0
 		: main_argc - main_largstart);
@@ -279,24 +276,37 @@ int icelua_init(void)
 		if(lua_pcall(lstate_server, argct, 0, 0) != 0)
 		{
 			printf("ERROR running server Lua: %s\n", lua_tostring(lstate_server, -1));
-			lua_pop(lstate_server, 2);
+			lua_pop(lstate_server, 1);
 			return 1;
 		}
-		lua_pop(lstate_server, 1);
 	}
 	
 	
 	if(lstate_client != NULL)
 	{
+		snprintf(xpath, 128, "%s/main_client.lua", mod_basedir);
+		lua_pushcfunction(lstate_client, icelua_fn_common_fetch_block);
+		lua_pushstring(lstate_client, "lua");
+		lua_pushstring(lstate_client, xpath);
+		printf("Now loading client; please wait!\n");
+		if(lua_pcall(lstate_client, 2, 1, 0) != 0)
+		{
+			printf("ERROR fetching client Lua: %s\n", lua_tostring(lstate_client, -1));
+			lua_pop(lstate_client, 1);
+			return 1;
+		}
+		
+		printf("Client loaded! Initialising...\n");
 		for(i = 0; i < argct; i++)
 			lua_pushstring(lstate_client, main_argv[i+main_largstart]);
 		if(lua_pcall(lstate_client, argct, 0, 0) != 0)
 		{
 			printf("ERROR running client Lua: %s\n", lua_tostring(lstate_client, -1));
-			lua_pop(lstate_client, 2);
+			lua_pop(lstate_client, 1);
 			return 1;
 		}
-		lua_pop(lstate_client, 1);
+		
+		printf("Done!\n");
 		boot_mode |= 4;
 	}
 	

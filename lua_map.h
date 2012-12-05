@@ -24,7 +24,9 @@ int icelua_fn_common_map_load(lua_State *L)
 	if(top >= 2)
 		type = lua_tostring(L, 2);
 	
-	lua_pushcfunction(L, icelua_fn_common_fetch_block);
+	lua_getglobal(L, "common");
+	lua_getfield(L, -1, "fetch_block");
+	lua_remove(L, -2);
 	if(!strcmp(type, "auto"))
 	{
 		lua_pushstring(L, "map");

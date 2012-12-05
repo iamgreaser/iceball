@@ -54,6 +54,8 @@ do
 		local csize, usize, amount
 		local obj = common.fetch_start(ftype, fname)
 		
+		local loadstr = "Fetching..."
+		
 		function client.hook_render()
 			local i
 			local sw,sh
@@ -62,6 +64,7 @@ do
 			for i=koffs,#fnlist do
 				gui_print_mini(2, 2+(i-koffs)*8, 0xFFFFFFFF, "LOAD: "..fnlist[i])
 			end
+			gui_print_mini(2, sh-10, 0xFFFFFFFF, loadstr)
 		end
 		
 		function client.hook_tick(sec_current, sec_delta)
@@ -76,8 +79,20 @@ do
 		if obj == true then
 			while true do
 				obj, csize, usize, amount = common.fetch_poll()
-				print("obj:", obj)
+				--print("obj:", obj, csize, usize, amount)
 				if obj ~= false then break end
+				
+				if csize then
+					loadstr = "Fetching... "
+						..(math.floor(amount*100.0))
+						.."% ("
+						..(math.floor(amount*csize))
+						.."/"
+						..csize
+						.." - uncompressed = "
+						..usize
+						..")"
+				end
 			end
 		end
 		
@@ -98,7 +113,7 @@ common.fetch_block = load_screen_fetch
 
 function client.hook_tick()
 	client.hook_tick = nil
-	loadfile("pkg/base/client_start.lua")(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+	loadfile("pkg/"..common.base_dir.."/client_start.lua")(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	return 0.005
 end
 

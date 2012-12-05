@@ -22,20 +22,6 @@ client_t to_client_local;
 client_t to_clients[CLIENT_MAX];
 // TODO: binary search tree
 
-char *cfetch_cbuf = NULL;
-char *cfetch_ubuf = NULL;
-int cfetch_clen = 0;
-int cfetch_ulen = 0;
-int cfetch_cpos = 0;
-int cfetch_udtype = UD_INVALID;
-
-char *sfetch_cbuf = NULL;
-char *sfetch_ubuf = NULL;
-int sfetch_clen = 0;
-int sfetch_ulen = 0;
-int sfetch_cpos = 0;
-int sfetch_udtype = UD_INVALID;
-
 int net_packet_push(int len, const char *data, int sockfd, packet_t **head, packet_t **tail)
 {
 	if(len > PACKET_LEN_MAX)
@@ -78,10 +64,10 @@ int net_packet_push(int len, const char *data, int sockfd, packet_t **head, pack
 
 int net_packet_push_lua(int len, const char *data, int sockfd, packet_t **head, packet_t **tail)
 {
-	if(len > PACKET_LEN_MAX)
+	if(len+4 > PACKET_LEN_MAX)
 	{
 		fprintf(stderr, "net_packet_new: packet too large (%i > %i)\n"
-			, len, PACKET_LEN_MAX);
+			, len, PACKET_LEN_MAX-4);
 		return 1;
 	}
 	
@@ -225,11 +211,16 @@ char *net_fetch_file(const char *fname, int *flen)
 
 void net_eat_c2s(client_t *cli)
 {
+	int i;
+	
 	// TODO: sanity checks / handle fatal errors correctly
 	packet_t *pkt, *npkt;
 	for(pkt = cli->head; pkt != NULL; pkt = npkt)
 	{
 		npkt = pkt->n;
+		
+		// TODO: actually discern the source
+		client_t *other = &to_client_local;
 		
 		switch(pkt->data[0])
 		{
@@ -247,39 +238,98 @@ void net_eat_c2s(client_t *cli)
 				if(!path_type_server_readable(path_get_type(fname)))
 				{
 					// error! ignoring for now.
+					fprintf(stderr, "S->C transfer error: access denied\n");
 					net_packet_free(pkt, &(cli->head), &(cli->tail));
 					break;
 				}
 				
 				// check if we have a file in the queue
-				if(sfetch_udtype != UD_INVALID)
+				if(other->sfetch_udtype != UD_INVALID)
 				{
 					// error! ignoring for now.
+					fprintf(stderr, "S->C transfer error: still sending file\n");
 					net_packet_free(pkt, &(cli->head), &(cli->tail));
 					break;
 				}
 				
 				// k let's give this a whirl
 				// TODO: allow transferring of objects
-				sfetch_ubuf = net_fetch_file(fname, &sfetch_ulen);
+				other->sfetch_ubuf = net_fetch_file(fname, &(other->sfetch_ulen));
 				
-				if(sfetch_ubuf != NULL)
+				if(other->sfetch_ubuf != NULL)
 				{
-					sfetch_udtype = udtype;
+					other->sfetch_udtype = udtype;
 					
-					// TODO: compression
-					sfetch_cbuf = malloc(sfetch_ulen);
-					memcpy(sfetch_cbuf, sfetch_ubuf, sfetch_ulen);
-					sfetch_clen = sfetch_ulen;
+					uLongf cbound = compressBound(other->sfetch_ulen);
+					other->sfetch_cbuf = malloc(cbound);
+					// TODO: check if NULL
+					if(compress((Bytef *)(other->sfetch_cbuf), &cbound,
+						(Bytef *)(other->sfetch_ubuf), other->sfetch_ulen))
+					{
+						// abort
+						fprintf(stderr, "S->C transfer error: could not compress!\n");
+						
+						if(other->sfetch_cbuf != NULL)
+							free(other->sfetch_cbuf);
+						free(other->sfetch_ubuf);
+						other->sfetch_cbuf = NULL;
+						other->sfetch_ubuf = NULL;
+						
+						char buf[] = "\x35";
+						net_packet_push(1, buf, pkt->sockfd,
+							&(cli->send_head), &(cli->send_tail));
+						net_packet_free(pkt, &(cli->head), &(cli->tail));
+						break;
+					}
+					other->sfetch_clen = (int)cbound;
+					free(other->sfetch_ubuf);
+					other->sfetch_ubuf = NULL;
 					
-					// assemble packet
-					char buf[9];
-					buf[0] = 0x31;
-					*(uint32_t *)&buf[1] = sfetch_ulen;
-					*(uint32_t *)&buf[5] = sfetch_clen;
+					// assemble packets...
 					
-					net_packet_push(9, buf, pkt->sockfd,
-						&(cli->send_head), &(cli->send_tail));
+					// initial packet
+					{
+						char buf[9];
+						buf[0] = 0x31;
+						*(uint32_t *)&buf[1] = other->sfetch_clen;
+						*(uint32_t *)&buf[5] = other->sfetch_ulen;
+						
+						net_packet_push(9, buf, pkt->sockfd,
+							&(cli->send_head), &(cli->send_tail));
+					}
+					
+					// data packets
+					{
+						char buf[1+4+2+1024];
+						buf[0] = 0x33;
+						for(i = 0; i < other->sfetch_clen; i += 1024)
+						{
+							int plen = other->sfetch_clen - i;
+							if(plen > 1024)
+								plen = 1024;
+							*(uint32_t *)&buf[1] = (uint32_t)i;
+							*(uint16_t *)&buf[5] = (uint16_t)plen;
+							
+							memcpy(&buf[7], &(other->sfetch_cbuf[i]), plen);
+							
+							net_packet_push(plen+7, buf, pkt->sockfd,
+								&(cli->send_head), &(cli->send_tail));
+						}
+					}
+					
+					// success packet
+					{
+						char buf[1];
+						buf[0] = 0x32;
+						
+						net_packet_push(1, buf, pkt->sockfd,
+							&(cli->send_head), &(cli->send_tail));
+					}
+					
+					// all good!
+					free(other->sfetch_cbuf);
+					other->sfetch_cbuf = NULL;
+					other->sfetch_udtype = UD_INVALID;
 				} else {
 					// abort
 					char buf[] = "\x35";
@@ -292,6 +342,7 @@ void net_eat_c2s(client_t *cli)
 			case 0x34: {
 				// 0x34:
 				// abort incoming file transfer
+				// TODO: actually abort
 				net_packet_free(pkt, &(cli->head), &(cli->tail));
 			} break;
 			default:
@@ -308,6 +359,7 @@ void net_eat_s2c(client_t *cli)
 {
 	// TODO: sanity checks / handle fatal errors correctly
 	packet_t *pkt, *npkt;
+	client_t *other = &to_server;
 	for(pkt = cli->head; pkt != NULL; pkt = npkt)
 	{
 		npkt = pkt->n;
@@ -317,21 +369,69 @@ void net_eat_s2c(client_t *cli)
 			case 0x31: {
 				// 0x31 clen.u32 ulen.u32:
 				// file transfer initiation
+				int clen = (int)*(uint32_t *)&(pkt->data[1]);
+				int ulen = (int)*(uint32_t *)&(pkt->data[5]);
+				//printf("clen=%i ulen=%i\n", clen, ulen);
+				cli->cfetch_clen = clen;
+				cli->cfetch_ulen = ulen;
+				cli->cfetch_cbuf = malloc(clen);
+				cli->cfetch_ubuf = NULL;
+				cli->cfetch_cpos = 0;
+				// TODO: check if NULL
+				
 				net_packet_free(pkt, &(cli->head), &(cli->tail));
 			} break;
 			case 0x32: {
 				// 0x32:
 				// file transfer end
+				//printf("transfer END\n");
+				cli->cfetch_ubuf = malloc(cli->cfetch_ulen);
+				// TODO: check if NULL
+				
+				uLongf dlen = cli->cfetch_ulen;
+				if(uncompress((Bytef *)(cli->cfetch_ubuf), &dlen,
+					(Bytef *)(cli->cfetch_cbuf), cli->cfetch_clen) != Z_OK)
+				{
+					fprintf(stderr, "FETCH ERROR: could not decompress!\n");
+					// TODO: make this fatal
+					
+					free(cli->cfetch_cbuf);
+					free(cli->cfetch_ubuf);
+					cli->cfetch_cbuf = NULL;
+					cli->cfetch_ubuf = NULL;
+					net_packet_free(pkt, &(cli->head), &(cli->tail));
+					break;
+				}
+				
+				free(cli->cfetch_cbuf);
+				cli->cfetch_cbuf = NULL;
+				
 				net_packet_free(pkt, &(cli->head), &(cli->tail));
 			} break;
 			case 0x33: {
 				// 0x33: offset.u32 len.u16 data[len]:
 				// file transfer data
+				int offs = (int)*(uint32_t *)&(pkt->data[1]);
+				int plen = (int)*(uint16_t *)&(pkt->data[5]);
+				//printf("pdata %08X: %i bytes\n", offs, plen);
+				if(plen <= 0 || plen > 1024)
+				{
+					fprintf(stderr, "FETCH ERROR: length too long/short!\n");
+				} else if(offs < 0 || offs+plen > cli->cfetch_clen) {
+					fprintf(stderr, "FETCH ERROR: buffer overrun!\n");
+					// TODO: make this fatal
+				} else {
+					memcpy(offs + cli->cfetch_cbuf, &(pkt->data[7]), plen);
+					cli->cfetch_cpos = offs + plen;
+				}
+				
 				net_packet_free(pkt, &(cli->head), &(cli->tail));
 			} break;
 			case 0x35: {
 				// 0x35:
 				// abort outgoing file transfer
+				//printf("abort transfer\n");
+				// TODO: actually abort
 				net_packet_free(pkt, &(cli->head), &(cli->tail));
 			} break;
 			default:
@@ -344,43 +444,258 @@ void net_eat_s2c(client_t *cli)
 	}
 }
 
+int net_flush_parse_onepkt(const char *data, int len)
+{
+	if(len <= 0)
+		return 0;
+	
+	int cmd = data[0];
+	int ilen = 0;
+	
+	if(cmd >= 0x40 && cmd <= 0x7E)
+	{
+		ilen = cmd-0x3E;
+	} else if(cmd == 0x7F) {
+		if(len < 4)
+			return 0;
+		
+		ilen = (int)*(uint16_t *)&data[1];
+		ilen += 3;
+	} else switch(cmd) {
+		case 0x0F: // baselen base[baselen] 0x00:
+		case 0x17: // msglen msg[msglen] 0x00:
+		{
+			if(len < 2)
+				return 0;
+			
+			ilen = (int)(uint8_t)data[1];
+			ilen += 3;
+		} break;
+		case 0x30: // flags namelen name[namelen] 0x00:
+		{
+			if(len < 4)
+				return 0;
+			
+			ilen = (int)(uint8_t)data[2];
+			ilen += 4;
+		} break;
+		case 0x31: // clen.u32 ulen.u32:
+			ilen = 9;
+			break;
+		case 0x33: // offset.u32 len.u16 data[len]
+		{
+			if(len < 7)
+				return 0;
+			
+			ilen = (int)*(uint16_t *)&data[5];
+			ilen += 7;
+		} break;
+		case 0x32:
+		case 0x34:
+		case 0x35:
+			ilen = 1;
+			break;
+		default:
+			// TODO: terminate cleanly instead of locking
+			return 0;
+	}
+	
+	//printf("cmd=%02X ilen=%i blen=%i\n", cmd, ilen, len);
+	
+	if(ilen > PACKET_LEN_MAX)
+	{
+		// TODO: terminate cleanly instead of locking
+		return 0;
+	}
+	
+	return (ilen <= len ? ilen : 0);
+}
+
+void net_flush_parse_c2s(client_t *cli)
+{
+	// TODO!
+	int offs = 0;
+	int len;
+	char *data;
+	
+	len = cli->spkt_len;
+	data = cli->spkt_buf;
+	
+	while(offs < len)
+	{
+		int nlen = net_flush_parse_onepkt(data+offs, len-offs);
+		
+		//printf("nlen=%i\n",nlen);
+		if(nlen <= 0)
+			break;
+		
+		net_packet_push(nlen, data+offs,
+			cli->sockfd, &(to_server.head), &(to_server.tail));
+		
+		offs += nlen;
+	}
+	
+	if(offs != 0)
+	{
+		//printf("offs=%i len=%i\n", offs, len);
+		if(offs < len)
+			memmove(data, data+offs, len-offs);
+		
+		cli->spkt_len -= offs;
+	}
+}
+
+void net_flush_parse_s2c(client_t *cli)
+{
+	// TODO!
+	int offs = 0;
+	int len;
+	char *data;
+	
+	len = cli->rpkt_len;
+	data = cli->rpkt_buf;
+	
+	while(offs < len)
+	{
+		int nlen = net_flush_parse_onepkt(data+offs, len-offs);
+		
+		if(nlen <= 0)
+			break;
+		
+		//printf("nlen=%i\n",nlen);
+		
+		net_packet_push(nlen, data+offs,
+			cli->sockfd, &(cli->head), &(cli->tail));
+		
+		offs += nlen;
+	}
+	
+	if(offs != 0)
+	{
+		//printf("offs=%i len=%i\n", offs, len);
+		if(offs < len)
+		{
+			//printf("LET THE MOVE\n");
+			memmove(data, data+offs, len-offs);
+		}
+		cli->rpkt_len -= offs;
+		//printf("new len: %i\n", cli->rpkt_len);
+	}
+}
+
+int net_flush_transfer(client_t *cfrom, client_t *cto, packet_t *pfrom)
+{
+	if(cto->isfull)
+	{
+		//printf("still full!\n");
+		return 1;
+	}
+	
+	int len = (cto == &to_server ? cfrom->spkt_len : cto->rpkt_len);
+	
+	if(pfrom->len + len > PACKET_LEN_MAX*2)
+	{
+		// TODO: send this somehow
+		//printf("FULL!\n");
+		cto->isfull = 1;
+		return 1;
+	} else {
+		if(pfrom->p != NULL)
+			pfrom->p->n = pfrom->n;
+		else
+			cfrom->send_head = pfrom->n;
+		
+		if(pfrom->n != NULL)
+			pfrom->n->p = pfrom->p;
+		else
+			cfrom->send_tail = pfrom->p;
+		
+		// here's the linkcopy version
+		/*
+		pfrom->n = NULL;
+		pfrom->p = NULL;
+		
+		if(cto->tail == NULL)
+		{
+			cto->tail = cto->head = pfrom;
+		} else {
+			packet_t *p2 = cto->tail;
+			cto->tail = pfrom;
+			p2->n = pfrom;
+			pfrom->p = p2;
+		};
+		
+		return 0;
+		*/
+		
+		// and of course the serialised version:
+		// TODO: make this work over a network!
+		if(cto == &to_server)
+		{
+			memcpy(cfrom->spkt_buf + cfrom->spkt_len, pfrom->data, pfrom->len);
+			cfrom->spkt_len += pfrom->len;
+		} else {
+			memcpy(cto->rpkt_buf + cto->rpkt_len, pfrom->data, pfrom->len);
+			cto->rpkt_len += pfrom->len;
+		}
+	}
+	return 0;
+}
+
 void net_flush(void)
 {
-	// link-copy mode
-	while(to_server.send_head != NULL)
+	packet_t *pkt, *npkt;
+	int i;
+	
+	if(boot_mode & 2)
 	{
-		packet_t *pfrom = to_server.send_head;
+		// clear full flags
+		for(i = 0; i < CLIENT_MAX; i++)
+			to_clients[i].isfull = 0;
+		to_client_local.isfull = 0;
+		to_server.isfull = 0;
 		
-		// TODO: distinguish between local and network
-		if(to_client_local.tail == NULL)
+		// serialise the packets
+		for(pkt = to_server.send_head; pkt != NULL; pkt = npkt)
 		{
-			to_client_local.tail = to_client_local.head =
-				net_packet_pop(&(to_server.send_head), &(to_server.send_tail));
-		} else {
-			packet_t *p2 = to_client_local.tail;
-			to_client_local.tail = net_packet_pop(&(to_server.send_head), &(to_server.send_tail));
-			p2->n = to_client_local.tail;
-			to_client_local.tail->p = p2;
-		};
+			npkt = pkt->n;
+			
+			//printf("pkt = %016llX\n", pkt);
+			
+			client_t *cli = NULL;
+			
+			// TODO: find correct client properly
+			cli = &to_client_local;
+			
+			net_flush_transfer(&to_server, cli, pkt);
+		}
+		
+		// parse the incoming stuff
+		for(i = 0; i < CLIENT_MAX; i++)
+			if(to_clients[i].sockfd != -1)
+				net_flush_parse_c2s(&to_clients[i]);
+		
+		net_flush_parse_c2s(&to_client_local);
 	}
 	
-	while(to_client_local.send_head != NULL)
+	if(boot_mode & 1)
 	{
-		if(to_server.tail == NULL)
+		to_server.isfull = 0;
+		
+		for(pkt = to_client_local.send_head; pkt != NULL; pkt = npkt)
 		{
-			to_server.tail = to_server.head =
-				net_packet_pop(&to_client_local.send_head, &to_client_local.send_tail);
-		} else {
-			packet_t *p = to_server.tail;
-			to_server.tail = net_packet_pop(&to_client_local.send_head, &to_client_local.send_tail);
-			p->n = to_server.tail;
-			to_server.tail->p = p;
-		};
+			npkt = pkt->n;
+			
+			net_flush_transfer(&to_client_local, &to_server, pkt);
+		}
+		
+		net_flush_parse_s2c(&to_client_local);
 	}
 	
-	
-	net_eat_c2s(&to_server);
-	net_eat_s2c(&to_client_local);
+	if(boot_mode & 2)
+		net_eat_c2s(&to_server);
+	if(boot_mode & 1)
+		net_eat_s2c(&to_client_local);
 }
 
 void net_deinit_client(client_t *cli)
@@ -406,7 +721,7 @@ int net_init(void)
 	to_server.head = to_server.tail = NULL;
 	to_server.send_head = to_server.send_tail = NULL;
 	
-	to_client_local.sockfd = SOCKFD_LOCAL_LINKCOPY;
+	to_client_local.sockfd = SOCKFD_LOCAL;
 	to_client_local.head = to_client_local.tail = NULL;
 	to_client_local.send_head = to_client_local.send_tail = NULL;
 	

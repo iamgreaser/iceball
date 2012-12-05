@@ -164,7 +164,8 @@ rotpos = 0.0
 debug_enabled = false
 mouse_released = false
 large_map = false
-sensitivity = 1.0/1000.0
+sensitivity = user_config.sensitivity or 1.0
+sensitivity = sensitivity/1000.0
 mouse_skip = 3
 
 typing_type = nil
@@ -522,8 +523,8 @@ function h_mouse_motion(x, y, dx, dy)
 	
 	local plr = players[players.current]
 	
-	plr.angy = plr.angy - dx*math.pi*sensitivity/plr.zoom
-	plr.angx = plr.angx + dy*math.pi*sensitivity/plr.zoom
+	plr.dangy = plr.dangy - dx*math.pi*sensitivity/plr.zoom
+	plr.dangx = plr.dangx + dy*math.pi*sensitivity/plr.zoom
 end
 
 -- load map

@@ -118,6 +118,7 @@ function new_player(settings)
 		
 		this.vx, this.vy, this.vz = 0, 0, 0
 		this.angy, this.angx = math.pi/2.0, 0.0
+		this.dangx, this.dangy = 0, 0
 		if this.team == 1 then this.angy = this.angy-math.pi end
 		
 		this.blx1, this.bly1, this.blz1 = nil, nil, nil
@@ -300,6 +301,12 @@ function new_player(settings)
 				this.arm_rest_right = math.max(0.0,delta/0.2)
 			end
 		end
+		
+		-- apply delta angle
+		this.angx = this.angx + this.dangx
+		this.angy = this.angy + this.dangy
+		this.dangx = 0
+		this.dangy = 0
 		
 		-- clamp angle, YOU MUST NOT LOOK DIRECTLY UP OR DOWN!
 		if this.angx > math.pi*0.499 then
@@ -815,11 +822,14 @@ function new_player(settings)
 			
 			local i
 			
-			for i=1,8 do
+			for i=1,math.floor(oh/64+0.5) do
 				gui_print_mini(mx - 12, my + (i-0.5)*64,
 					0xFFFFFFFF, ""..i)
 				gui_print_mini(mx + ow + 12-6, my + (i-0.5)*64,
 					0xFFFFFFFF, ""..i)
+			end
+			
+			for i=1,math.floor(ow/64+0.5) do
 				gui_print_mini(mx + (i-0.5)*64, my - 12,
 					0xFFFFFFFF, ""..string.char(64+i))
 				gui_print_mini(mx + (i-0.5)*64, my + oh + 12-6,

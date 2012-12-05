@@ -518,13 +518,6 @@ int json_parse(lua_State *L, const char *p)
 
 int json_load(lua_State *L, const char *fname)
 {
-	FILE *fp = fopen(fname, "rb");
-	if(fp == NULL)
-	{
-		perror("json_load");
-		return 1;
-	}
-	
 	int flen;
 	char *buf = net_fetch_file(fname, &flen);
 	if(buf == NULL)

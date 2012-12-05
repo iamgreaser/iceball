@@ -116,6 +116,26 @@ int update_client_contpre1(void)
 {
 	int quitflag = 0;
 	
+	// update FPS counter
+	frame_now = SDL_GetTicks();
+	fps++;
+	
+	if(frame_now - frame_prev > 1000)
+	{
+		char buf[64]; // topo how the hell did this not crash at 16 --GM
+		sprintf(buf, "iceball | FPS: %d", fps);
+		SDL_WM_SetCaption(buf, NULL);
+		fps = 0;
+		frame_prev = SDL_GetTicks();
+	}
+	
+	return quitflag;
+}
+
+int update_client_cont1(void)
+{
+	int quitflag = 0;
+	
 	// redraw scene if necessary
 	if(force_redraw
 		|| fabsf(tcam.mpx-ompx) > 0.001f
@@ -138,19 +158,6 @@ int update_client_contpre1(void)
 		render_vxl_redraw(&tcam, clmap);
 #endif
 	
-	// update FPS counter
-	frame_now = SDL_GetTicks();
-	fps++;
-	
-	if(frame_now - frame_prev > 1000)
-	{
-		char buf[64]; // topo how the hell did this not crash at 16 --GM
-		sprintf(buf, "iceball | FPS: %d", fps);
-		SDL_WM_SetCaption(buf, NULL);
-		fps = 0;
-		frame_prev = SDL_GetTicks();
-	}
-	
 	//printf("%.2f",);
 	// draw scene to cubemap
 	SDL_LockSurface(screen);
@@ -158,17 +165,8 @@ int update_client_contpre1(void)
 	render_cubemap(screen->pixels,
 		screen->w, screen->h, screen->pitch/4,
 		&tcam, clmap);
-	SDL_UnlockSurface(screen);
-	
-	return quitflag;
-}
-
-int update_client_cont1(void)
-{
-	int quitflag = 0;
 	
 	// apply Lua HUD / model stuff
-	SDL_LockSurface(screen);
 	lua_getglobal(lstate_client, "client");
 	lua_getfield(lstate_client, -1, "hook_render");
 	lua_remove(lstate_client, -2);
@@ -478,26 +476,29 @@ int main(int argc, char *argv[])
 		main_largstart = 4;
 		
 		boot_mode = 2;
-		return 101;
+		//return 101;
 	} else {
 		return print_usage(argv[0]);
 	}
 	
-	if(memcmp(mod_basedir,"pkg/",4))
+	if(boot_mode & 2)
 	{
-		fprintf(stderr, "ERROR: package base dir must start with \"pkg/\"!\n");
-		return 109;
-	}
-	
-	if(strlen(mod_basedir) < 5)
-	{
-		fprintf(stderr, "ERROR: package base dir can't actually be \"pkg/\"!\n");
-		return 109;
+		if(memcmp(mod_basedir,"pkg/",4))
+		{
+			fprintf(stderr, "ERROR: package base dir must start with \"pkg/\"!\n");
+			return 109;
+		}
+		
+		if(strlen(mod_basedir) < 5)
+		{
+			fprintf(stderr, "ERROR: package base dir can't actually be \"pkg/\"!\n");
+			return 109;
+		}
 	}
 	
 	if((!(boot_mode & 1)) || !platform_init()) {
-	if(!icelua_init()) {
 	if(!net_init()) {
+	if(!icelua_init()) {
 	if((!(boot_mode & 1)) || !video_init()) {
 	if((!(boot_mode & 1)) || !wav_init()) {
 	if((!(boot_mode & 1)) || !render_init(screen->w, screen->h)) {
@@ -505,8 +506,8 @@ int main(int argc, char *argv[])
 		if(boot_mode & 1) render_deinit();
 	} if(boot_mode & 1) wav_deinit();
 	} if(boot_mode & 1) video_deinit();
-	} net_deinit();
 	} icelua_deinit();
+	} net_deinit();
 	} if(boot_mode & 1) platform_deinit();
 	}
 	

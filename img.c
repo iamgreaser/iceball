@@ -41,26 +41,22 @@ void img_free(img_t *img)
 	free(img);
 }
 
-img_t *img_load_tga(const char *fname)
+img_t *img_parse_tga(int len, const char *data)
 {
 	// TODO: make this routine safer
 	// it's possible to crash this in a whole bunch of ways
 	
+	const char *p = data;
+	const char *dend = data+len;
 	int x,y,i;
 	img_tgahead_t head;
 	
-	FILE *fp = fopen(fname, "rb");
-	if(fp == NULL)
-	{
-		perror("img_load_tga");
-		return NULL;
-	}
-	
 	// read header
-	fread(&head, sizeof(img_tgahead_t), 1, fp);
+	memcpy(&head, p, sizeof(img_tgahead_t));
+	p += sizeof(img_tgahead_t);
 	
 	// skip ID field
-	fseek(fp, head.idlen, SEEK_CUR);
+	p += head.idlen;
 	
 	// jump to palette
 	
@@ -72,7 +68,9 @@ img_t *img_load_tga(const char *fname)
 	{
 		// TODO check what happens when the offset is different
 		uint32_t tmp_col;
-		fread(&tmp_col, ((head.cmbpp-1)>>3)+1, 1, fp);
+		int tclen = ((head.cmbpp-1)>>3)+1;
+		memcpy(&tmp_col, p, tclen);
+		p += tclen;
 		palette[i] = img_convert_color_to_32(tmp_col, head.cmbpp);
 		//printf("%6i %08X\n", i, palette[i]);
 	}
@@ -84,6 +82,7 @@ img_t *img_load_tga(const char *fname)
 	img->udtype = UD_IMG;
 	
 	// copy stuff
+	int bplen = ((head.bpp-1)>>3)+1;
 	int idx = (head.flags & 32 ? 0 : head.height-1)*head.width;
 	for(y = 0; y < head.height; y++)
 	{
@@ -94,12 +93,14 @@ img_t *img_load_tga(const char *fname)
 			uint32_t tmp_col;
 			while(x < head.width)
 			{
-				int rle = fgetc(fp);
+				int rle = (int)(uint8_t)(*p++);
 				if(rle & 0x80)
 				{
 					rle &= 0x7F;
 					
-					fread(&tmp_col, ((head.bpp-1)>>3)+1, 1, fp);
+					memcpy(&tmp_col, p, bplen);
+					p += bplen;
+					
 					// TODO: clip at width
 					for(i = 0; i <= rle; i++, x++)
 						img->pixels[idx++] = tmp_col;
@@ -107,7 +108,9 @@ img_t *img_load_tga(const char *fname)
 					// TODO: clip at width
 					for(i = 0; i <= rle; i++, x++)
 					{
-						fread(&tmp_col, ((head.bpp-1)>>3)+1, 1, fp);
+						memcpy(&tmp_col, p, bplen);
+						p += bplen;
+						
 						img->pixels[idx++] = tmp_col;
 					}
 				}
@@ -117,7 +120,8 @@ img_t *img_load_tga(const char *fname)
 			uint32_t tmp_col;
 			for(x = 0; x < head.width; x++)
 			{
-				fread(&tmp_col, ((head.bpp-1)>>3)+1, 1, fp);
+				memcpy(&tmp_col, p, bplen);
+				p += bplen;
 				img->pixels[idx++] = tmp_col;
 			}
 		}
@@ -140,7 +144,17 @@ img_t *img_load_tga(const char *fname)
 	// free palette
 	free(palette);
 	
-	// close and return!
-	fclose(fp);
+	// now return!
 	return img;
+}
+
+img_t *img_load_tga(const char *fname)
+{
+	int flen;
+	char *buf = net_fetch_file(fname, &flen);
+	if(buf == NULL)
+		return NULL;
+	img_t *ret = img_parse_tga(flen, buf);
+	free(buf);
+	return ret;
 }
