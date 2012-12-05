@@ -1,0 +1,29 @@
+Map editing guide
+
+Use pkg/iceball/mapedit.
+
+Arguments should be one of the following:
+
+iceball -s 0 pkg/iceball/mapedit pkg/maps/inmap.icemap clsave/vol/outmap.icemap
+iceball -s 0 pkg/iceball/mapedit 512 64 512 clsave/vol/outmap.icemap
+
+You can optionally not specify that last filename,
+but it is not a recommended practice.
+
+For the first format, it is totally OK if the first two filenames are the same.
+
+It is recommended that your maps are AT LEAST 128x(whatever)x128.
+
+
+Default keys:
+
+WASD = move around
+SPACE/LCTRL = move up/down
+
+left click = break
+right click = build
+
+F10 = quicksave map
+
+F5 = release mouse
+ESC = quit

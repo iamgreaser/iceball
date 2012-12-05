@@ -15,6 +15,4 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
--- Example mod. NOT RELIABLE.
-
-loadfile("pkg/base/main_client.lua")(...)
+-- not used atm!

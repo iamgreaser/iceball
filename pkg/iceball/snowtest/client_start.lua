@@ -17,4 +17,5 @@
 
 -- Example mod. NOT RELIABLE.
 
-loadfile("pkg/base/main_client.lua")(...)
+loadfile("pkg/base/client_start.lua")(...)
+dofile("pkg/base/plug_snow.lua")

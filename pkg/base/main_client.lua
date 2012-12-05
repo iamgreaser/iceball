@@ -113,7 +113,7 @@ common.fetch_block = load_screen_fetch
 
 function client.hook_tick()
 	client.hook_tick = nil
-	loadfile("pkg/base/client_start.lua")(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+	loadfile("pkg/"..common.base_dir.."/client_start.lua")(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	return 0.005
 end
 

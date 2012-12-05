@@ -15,6 +15,8 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
--- Example mod. NOT RELIABLE.
+print("Map editor is purely clientside.")
 
-loadfile("pkg/base/main_client.lua")(...)
+function server.hook_tick(sec_current, sec_delta)
+	return 0.005
+end
