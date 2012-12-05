@@ -116,6 +116,26 @@ int update_client_contpre1(void)
 {
 	int quitflag = 0;
 	
+	// update FPS counter
+	frame_now = SDL_GetTicks();
+	fps++;
+	
+	if(frame_now - frame_prev > 1000)
+	{
+		char buf[64]; // topo how the hell did this not crash at 16 --GM
+		sprintf(buf, "iceball | FPS: %d", fps);
+		SDL_WM_SetCaption(buf, NULL);
+		fps = 0;
+		frame_prev = SDL_GetTicks();
+	}
+	
+	return quitflag;
+}
+
+int update_client_cont1(void)
+{
+	int quitflag = 0;
+	
 	// redraw scene if necessary
 	if(force_redraw
 		|| fabsf(tcam.mpx-ompx) > 0.001f
@@ -137,26 +157,6 @@ int update_client_contpre1(void)
 	if(render_face_remain > 0)
 		render_vxl_redraw(&tcam, clmap);
 #endif
-	
-	// update FPS counter
-	frame_now = SDL_GetTicks();
-	fps++;
-	
-	if(frame_now - frame_prev > 1000)
-	{
-		char buf[64]; // topo how the hell did this not crash at 16 --GM
-		sprintf(buf, "iceball | FPS: %d", fps);
-		SDL_WM_SetCaption(buf, NULL);
-		fps = 0;
-		frame_prev = SDL_GetTicks();
-	}
-	
-	return quitflag;
-}
-
-int update_client_cont1(void)
-{
-	int quitflag = 0;
 	
 	//printf("%.2f",);
 	// draw scene to cubemap
