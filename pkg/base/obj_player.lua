@@ -96,7 +96,7 @@ function new_player(settings)
 			this.z = math.floor(math.random()*zlen)+0.5
 			if this.team == 1 then this.x = xlen - this.x end
 			this.y = (common.map_pillar_get(this.x, this.z))[1+1]
-			if this.y < 63 then break end
+			if this.y < ylen-1 then break end
 		end
 		this.y = this.y - 3.0
 		
@@ -270,6 +270,9 @@ function new_player(settings)
 	end
 	
 	function this.tick(sec_current, sec_delta)
+		local xlen,ylen,zlen
+		xlen,ylen,zlen = common.map_get_dims()
+		
 		if (not this.alive) and (not this.t_respawn) then
 			this.t_respawn = sec_current + MODE_RESPAWN_TIME
 			this.input_reset()
@@ -375,7 +378,7 @@ function new_player(settings)
 			mvz = mvz * 0.6
 			mvchange = mvchange * 0.3
 		end
-		if this.y > 61.0 then
+		if this.y > ylen-3 then
 			mvx = mvx * 0.6
 			mvz = mvz * 0.6
 		end

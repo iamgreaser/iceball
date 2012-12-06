@@ -123,7 +123,7 @@ function new_intel(settings)
 			this.z = math.floor(math.random()*zlen)+0.5
 			if this.team == 1 then this.x = xlen - this.x end
 			this.y = (common.map_pillar_get(this.x, this.z))[1+1]
-			if this.y < 63 then break end
+			if this.y < ylen-1 then break end
 		end
 		
 		this.alive = true
@@ -218,7 +218,7 @@ function new_tent(settings)
 			this.z = math.floor(math.random()*zlen)+0.5
 			if this.team == 1 then this.x = xlen - this.x end
 			this.y = (common.map_pillar_get(this.x, this.z))[1+1]
-			if this.y < 63 then break end
+			if this.y < ylen-1 then break end
 		end
 		
 		this.alive = true
