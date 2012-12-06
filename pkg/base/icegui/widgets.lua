@@ -94,14 +94,14 @@ function P.widget(options)
 	function getter_keys.relx()
 		local pos = this.x - (this.width * this.align_x)
 		if this.parent == nil then return pos
-		else return this.parent.relx + pos end
+		else return this.parent.relx + this.parent.width * this.parent.align_x + pos end
 	end
 	function setter_keys.relx(v) error("cannot set widget.relx externally") end
 	
 	function getter_keys.rely()
 		local pos = this.y - (this.height * this.align_y)
 		if this.parent == nil then return pos
-		else return this.parent.rely + pos end
+		else return this.parent.rely + this.parent.height * this.parent.align_y + pos end
 	end
 	function setter_keys.rely(v) error("cannot set widget.rely externally") end
 	

@@ -118,7 +118,8 @@ function gui_create_scene(width, height)
 	function scene.display_object(options)
 		local this = widgets.widget(options)
 		this.visible = true -- draws this node and children
-		this.drawable = false -- allocates a img buffer to this node
+		this.drawable = true -- calls the draw method
+		this.use_img = false -- allocates a img buffer to this node
 		this.img = nil
 		this.dirty = true -- whether drawing needs to be updated
 		function this.free()
@@ -130,12 +131,16 @@ function gui_create_scene(width, height)
 		function this.draw()
 			if this.visible then
 				if this.drawable then
-					this.detect_bufsize_change()
-					if this.dirty then
+					if this.use_img then -- draw using img buffer
+						this.detect_bufsize_change()
+						if this.dirty then
+							this.draw_update()
+							this.dirty = false
+						end
+						client.img_blit(this.img, this.relx, this.rely)
+					else -- draw using some other method?
 						this.draw_update()
-						this.dirty = false
 					end
-					client.img_blit(this.img, this.relx, this.rely)
 				end
 				for k,v in pairs(this.children) do v.draw() end
 			end
@@ -169,7 +174,7 @@ function gui_create_scene(width, height)
 		this.frame_col = options.frame_col or 0xFF888888
 		this.fill_col = options.fill_col or 0xFFAAAAAA
 		
-		this.drawable = true
+		this.use_img = true
 		
 		function this.draw_update()
 			local w = math.ceil(this.width)
@@ -198,7 +203,7 @@ function gui_create_scene(width, height)
 	
 	-- TEST CODE
 	--local frame = scene.rect_frame{width=320,height=320, x=width/2, y=height/2}
-	--local frame2 = scene.rect_frame{width=32,height=32, x=32, y=32}
+	--local frame2 = scene.rect_frame{width=32,height=32, x=0, y=0}
 	--local frame3 = scene.rect_frame{width=32,height=32, x=64, y=96}
 	--root.add_child(frame)
 	--frame.add_child(frame2)
