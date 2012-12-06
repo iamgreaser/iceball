@@ -14,14 +14,34 @@ For the first format, it is totally OK if the first two filenames are the same.
 
 It is recommended that your maps are AT LEAST 128x(whatever)x128.
 
-
 Default keys:
 
 WASD = move around
 SPACE/LCTRL = move up/down
 
-left click = break
-right click = build
+LSHIFT = high speed movement
+V = low speed movement
+
+mouse depends on tool used:
+	"Minecraft" tool (press 1):
+		L = break
+		R = build
+		M = pick
+	"Select" tool (press 2):
+		L = corner 1
+		R = corner 2
+	"Paint" tool (press 3):
+		R = paint
+		M = pick
+
+INS = fill selection
+DEL = clear selection
+P = paint selection
+LALT+S = stack in direction + move selection
+LALT+A = stack in direction + move selection (don't replace anything with air)
+
+TAB = colour picker
+[/] = change block type
 
 F10 = quicksave map
 
