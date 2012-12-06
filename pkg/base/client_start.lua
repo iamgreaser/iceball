@@ -330,6 +330,8 @@ function h_tick_init(sec_current, sec_delta)
 	client.mouse_lock_set(true)
 	client.mouse_visible_set(false)
 	
+	client.gui_scene = gui_create_scene(client.screen_get_dims())
+	
 	client.hook_tick = h_tick_main
 	return client.hook_tick(sec_current, sec_delta)
 end
@@ -602,7 +604,9 @@ function client.hook_render()
 	if players and players[players.current] then
 		players[players.current].show_hud()
 	end
-	gui_render_rect_frame(0, 0, 32, 32)
+	if client.gui_scene then
+		client.gui_scene.draw()
+	end
 end
 
 client.hook_tick = h_tick_init

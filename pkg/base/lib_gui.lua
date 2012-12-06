@@ -106,29 +106,112 @@ function gui_string_edit(str, maxlen, key, modif)
 	return str
 end
 
-function gui_render_rect_frame(x, y, w, h, frame_col, fill_col)
-	x = x or 0
-	y = y or 0
-	w = w or 32
-	h = h or 32
-	local img = common.img_new(w, h)
-	frame_col = frame_col or 0xFF888888
-	fill_col = fill_col or 0xFFAAAAAA
-	for ix = 0, w-1, 1 do
-		common.img_pixel_set(img, ix, 0, frame_col)
-		common.img_pixel_set(img, ix, h-1, frame_col)
-	end
-	for iy = 0, h-1, 1 do
-		common.img_pixel_set(img, 0, iy, frame_col)
-		common.img_pixel_set(img, w-1, iy, frame_col)
-	end
-	for ix = 1, w-2, 1 do
-		for iy = 1, h-2, 1 do
-			common.img_pixel_set(img, ix, iy, fill_col)
+-- &*(^$#($*@&)$&(@)$&@()$&@)($&@)$&@()$&@)$(@&)(@&)@$&()@$&)@$&@()$&)(@$&Y*LHEWIGR*(WRY
+-- When I come back:
+-- find out why my rectangle isn't displaying :(
+-- look into getting a gui scene set up during the loader too
+
+function gui_create_scene(width, height)
+	
+	local scene = {}
+	
+	function scene.display_object(options)
+		local this = widgets.widget(options)
+		this.visible = true -- draws this node and children
+		this.drawable = false -- allocates a img buffer to this node
+		this.img = nil
+		this.dirty = true -- whether drawing needs to be updated
+		function this.free()
+			common.img_free(this.img) for k,v in pairs(this.children) do v.free() end
 		end
+		-- stub for actual drawing
+		function this.draw_update() end
+		-- draw this and the child, if possible.
+		function this.draw()
+			if this.visible then
+				if this.drawable then
+					this.detect_bufsize_change()
+					if this.dirty then
+						this.draw_update()
+						this.dirty = false
+					end
+					client.img_blit(this.img, this.relx, this.rely)
+				end
+				for k,v in pairs(this.children) do v.draw() end
+			end
+		end
+		function this.detect_bufsize_change()
+			local cw, ch = math.ceil(this.width), math.ceil(this.height)
+			if this.img == nil then
+				this.img = common.img_new(cw, ch)
+			else 
+				pw, ph = common.img_get_dims(this.img)
+				pw, ph = math.ceil(pw), math.ceil(ph)
+				if not (pw == cw and ph == ch) then
+					common.img_free(this.img)
+					this.img = common.img_new(cw, ch)
+				end
+			end
+		end
+		return this
 	end
-	client.img_blit(img, x, y)
-	common.img_free(img)
+	
+	local root = scene.display_object{x=0, y=0, 
+		width=width, height=height, align_x=0, align_y=0}
+	
+	function scene.draw() root.draw() end
+	function scene.free() root.free() end
+	
+	function scene.rect_frame(options)
+		
+		local this = scene.display_object(options)
+		
+		this.frame_col = options.frame_col or 0xFF888888
+		this.fill_col = options.fill_col or 0xFFAAAAAA
+		
+		this.drawable = true
+		
+		function this.draw_update()
+			local w = math.ceil(this.width)
+			local h = math.ceil(this.height)
+			local img = this.img
+			local frame_col = this.frame_col
+			local fill_col = this.fill_col
+			for ix = 0, w-1, 1 do
+				common.img_pixel_set(img, ix, 0, frame_col)
+				common.img_pixel_set(img, ix, h-1, frame_col)
+			end
+			for iy = 0, h-1, 1 do
+				common.img_pixel_set(img, 0, iy, frame_col)
+				common.img_pixel_set(img, w-1, iy, frame_col)
+			end
+			for ix = 1, w-2, 1 do
+				for iy = 1, h-2, 1 do
+					common.img_pixel_set(this.img, ix, iy, fill_col)
+				end
+			end
+		end
+		
+		return this
+		
+	end
+	
+	-- TEST CODE
+	--local frame = scene.rect_frame{width=320,height=320, x=width/2, y=height/2}
+	--local frame2 = scene.rect_frame{width=32,height=32, x=32, y=32}
+	--local frame3 = scene.rect_frame{width=32,height=32, x=64, y=96}
+	--root.add_child(frame)
+	--frame.add_child(frame2)
+	--frame.add_child(frame3)
+	
+	return scene
+	
+end
+
+function gui_free_scene(scene)
+	for k in 1, #scene.buffers, 1 do
+		common.img_free(buffers[k])
+	end
 end
 
 end
