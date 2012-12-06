@@ -120,7 +120,7 @@ int icelua_fn_common_img_pixel_set(lua_State *L)
 	if(x < 0 || y < 0 || x >= img->head.width || y >= img->head.height)
 		return 0;
 	
-	img->pixels[y*img->head.height+x] = color;
+	img->pixels[y*img->head.width+x] = color;
 	
 	return 0;
 }

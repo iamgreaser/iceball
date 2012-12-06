@@ -354,7 +354,7 @@ function map_chkdisbrk(x,y,z)
 	end
 end
 
-function map_block_get(x,y,z,typ)
+function map_block_get(x,y,z)
 	local xlen,ylen,zlen 
 	xlen,ylen,zlen = common.map_get_dims()
 	if y < 0 or y >= ylen then return end
