@@ -41,6 +41,7 @@ LALT+S = stack in direction + move selection
 LALT+A = stack in direction + move selection (don't replace anything with air)
 
 TAB = colour picker
+[/] = change block type
 
 F10 = quicksave map
 

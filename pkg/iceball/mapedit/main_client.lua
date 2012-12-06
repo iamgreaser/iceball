@@ -18,6 +18,7 @@
 print("Starting map editor...")
 
 map_loaded = nil
+fname = nil
 do
 	args = {...}
 	if #args == 3 or #args == 4 then
@@ -28,6 +29,95 @@ do
 		fname = args[1]
 		map_loaded = common.map_load(fname)
 		fname = args[2] or fname
+	elseif #args == 0 then
+		menu_main = {title="Main Menu", sel=2, "New Map", "Load Map"}
+		menu_select = {title="Select Save Slot", sel=1, 0,1,2,3,4,5,6,7,8,9}
+		menu_size_xlen = {title="Select Horiz Length", sel=7, 128, 192, 256, 320, 384, 448, 512}
+		menu_size_zlen = {title="Select Vert Length", sel=7, 128, 192, 256, 320, 384, 448, 512}
+		menu_size_ylen = {title="Select Height", sel=8, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128}
+		
+		menu_current = nil
+		
+		local function set_menu(menu)
+			menu_current = menu
+			menu_current.sel = menu_current.sel or 1
+		end
+		
+		local function handle_menu()
+			local menu = menu_current
+			if menu == menu_main then
+				set_menu(menu_select)
+			elseif menu == menu_select then
+				fname = "clsave/vol/save"..menu_select[menu_select.sel]..".icemap"
+				if menu_main.sel == 1 then
+					set_menu(menu_size_xlen)
+				else
+					map_loaded = common.map_load(fname)
+					initiate_everything()
+				end
+			elseif menu == menu_size_xlen then
+				set_menu(menu_size_zlen)
+			elseif menu == menu_size_zlen then
+				set_menu(menu_size_ylen)
+			elseif menu == menu_size_ylen then
+				xlen = menu_size_xlen[menu_size_xlen.sel]
+				ylen = menu_size_ylen[menu_size_ylen.sel]
+				zlen = menu_size_zlen[menu_size_zlen.sel]
+				map_loaded = common.map_new(xlen, ylen, zlen)
+				initiate_everything()
+			else
+				error("menu doesn't have a handler!")
+			end
+		end
+		
+		set_menu(menu_main)
+		
+		function client.hook_tick(sec_current, sec_delta)
+			return 0.001
+		end
+		
+		function client.hook_render()
+			local sw,sh
+			sw,sh = client.screen_get_dims()
+			
+			local i, s
+			
+			s = menu_current.title
+			gui_print_mini(math.floor((sw-6*#s)/2), math.floor(sh/2-12),
+				0xFF000000, s)
+			
+			for i=1,#menu_current do
+				s = ""..menu_current[i]
+				if menu_current.sel == i then
+					s = "> "..s.." <"
+				end
+				
+				gui_print_mini(math.floor((sw-6*#s)/2), math.floor(sh/2+(i-1)*6),
+					0xFF000000, s)
+			end
+		end
+		
+		function client.hook_key(key, state, modif)
+			if state then
+				if key == SDLK_UP then
+					menu_current.sel = menu_current.sel - 1
+					if menu_current.sel < 1 then
+						menu_current.sel = #menu_current
+					end
+				elseif key == SDLK_DOWN then
+					menu_current.sel = menu_current.sel + 1
+					if menu_current.sel > #menu_current then
+						menu_current.sel = 1
+					end
+				elseif key == SDLK_RETURN then
+					handle_menu()
+				end
+			else
+				if key == SDLK_ESCAPE then
+					client.hook_tick = nil
+				end
+			end
+		end
 	else
 		print("usage:")
 		print("  iceball -s 0 pkg/iceball/mapedit loadmap.vxl/icemap savemap.icemap")
@@ -37,15 +127,18 @@ do
 	end
 end
 
-common.map_set(map_loaded)
-xlen, ylen, zlen = common.map_get_dims()
-
 dofile("pkg/base/lib_bits.lua")
 dofile("pkg/base/lib_gui.lua")
 dofile("pkg/base/lib_sdlkey.lua")
 dofile("pkg/base/lib_map.lua")
 dofile("pkg/base/lib_util.lua")
 dofile("pkg/base/lib_vector.lua")
+
+function initiate_everything()
+-- *** START INITIATION FUNCTION *** --
+
+common.map_set(map_loaded)
+xlen, ylen, zlen = common.map_get_dims()
 
 mdl_test = client.model_load_pmf("pkg/base/pmf/test.pmf")
 mdl_test_bone = client.model_bone_find(mdl_test, "test")
@@ -149,6 +242,12 @@ function client.hook_key(key, state, modif)
 			released = true
 			client.mouse_lock_set(false)
 			client.mouse_visible_set(true)
+		elseif key == SDLK_LEFTBRACKET then
+			colt = colt - 1
+			if colt < 1 then colt = 1 end
+		elseif key == SDLK_RIGHTBRACKET then
+			colt = colt + 1
+			if colt > 255 then colt = 255 end
 		elseif key == SDLK_INSERT then
 			if selx1 and selx2 then
 				local x,y,z
@@ -475,5 +574,10 @@ do
 	end
 	print("Done")
 end
+
+-- *** END INITIATION FUNCTION *** --
+end
+
+if map_loaded then initiate_everything() end
 
 print("Loaded map editor.")
