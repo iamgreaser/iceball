@@ -364,7 +364,14 @@ function client.hook_key(key, state, modif)
 		end
 	else
 		if key == SDLK_ESCAPE then
-			client.hook_tick = nil
+			if cpick then
+				client.mouse_lock_set(true)
+				client.mouse_visible_set(false)
+				released = false
+				cpick = false
+			else
+				client.hook_tick = nil
+			end
 		elseif key == SDLK_F10 then
 			common.map_save(map_loaded, fname)
 			print("map saved to: "..fname)
