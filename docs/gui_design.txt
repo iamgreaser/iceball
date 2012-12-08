@@ -1,24 +1,48 @@
+Copied from Triplefox forum post Dec 07 2012:
 
-Basic goals:
-	1. Layout compiler
-		Three stages of support:
-			Absolute positioning and alignment
-			Relative positioning and alignment
-			Packing + reflow
-		Packing is considerably more complex than the first two but has huge benefits.
-		Compilation on existing widgets should be allowed, and parameters should be adjustable via funcpointers
-			(so that tweening is possible)
+The "display list" is a hierarchical structure of nodes. Each node can have any number of children(that's why it's a "list", I think) and the order of the list determines draw order.
+
+Every node on the display list inherits "DisplayObject", which contains positioning (using matrix math) a large variety of compositing directives - things like color blending, additive drawing or filters. Children inherit all the transformation parameters of parents, and to some extent the compositing parameters. At the user end this is made mostly transparent through getter/setter properties in the built-in API, so that you just set properties like "x", "y", "rotation" or "alpha" and read things like "width" or "height" when you need to get data.
+
+In practice most nodes don't use DisplayObject, but a child class of it. For example, "Shape" contains a graphics property which allows you to define some immediate-mode vector graphics. The top level node is called "Stage" and defines the screen boundaries.
+
+DisplayObject implements a method called hitTest() which is a collision detector primarily meant for mouse movements like clicking and dragging shapes. It uses pixel-perfect collision and applies all transformations.
+
+Nodes that implement DisplayObject also inherit InteractiveObject, which attaches the Flash events system. In this system you call "displayobject_instance.addEventListener()" with an enumerated event(for example MouseEvent.CLICK) and an associated callback; Flash will automatically pick up and call the events once a listener is attached. Top-level program flow is always controlled through events(even timing, through TimerEvent.TIMER or the render-locked Event.ENTER_FRAME). There are some additional rules for prioritization, capturing phases, and whether the listener reference is weak or strong.
+
+And my system:
+
+I only have AABB shapes right now. I don't use a matrix to transform objects, the positioning is only done along x and y, width and height. Likewise I don't have anything as fancy as hitTest(). There is a collider that is also AABB-only, and it doesn't have customized prioritization, it just takes the "first and deepest" child(i.e. the one that is being drawn at the top).
+
+I don't assume you want the area of the whole hierarchy; that is, if you have a small parent with children that are large and stick out at the sides, Flash will say the "width" of the parent is as big as the total area of parent+children, while I'll say it's the width of the parent only. This is done because I found that it was actually really annoying to not be able to get the parent's "base width" anymore after adding children. I will add a separate method for getting the total area.
+
+I added an "align_x" and "align_y" attribute to address my #1 complaint about the Flash display list: It equates the top-left to be the pivot point of DisplayObjects...mostly. I added an align_x and align_y property to fix the common "I want it aligned differently" case by allowing you to pick a pivot point as a percentage of the shape's size: 0 is the top or left, 0.5 is the center, 1 is the bottom or right. Then, if you want to see the boundaries, you can look at the t/l/r/b properties, and if you want to see the pivot you can use x and y.
+
+Now, this isn't the only tool you're going to get for GUI - I consider the whole Flash-like architecture to be groundwork, appropriate for making heavily customized stuff but not ideal for "everyday" layouts. You are also going to get a packing layout engine at some point. What that means is that, as in something like Qt or Tk, you create "spacing" elements that describe how to allocate space amongst a list of children, and will automatically manipulate the positioning of the child objects. Depending on how you configure each spacer, the elements can either be spread out to cover all of the available area in the spacer, packed to their minimum size, or given customized spacing.
+
+Upshot: You don't have to worry much about alignment anymore. Just say "here's how much space I want these elements to take up and where they should fit" and then call scene.pack() and it'll walk through every element and update it based on the current parameters. The widgets are designed to use a getter/setter pattern everywhere, so if you want very customized sizing/positioning behaviors you should be able to get them without going around the layout architecture. And there will be standard widgets to go along with this so that it's easy to throw together a buttons-and-menus interface.
+
+However, this is all going to take a few weeks(somewhere between two weeks and two months depending on how much time I find to work on it) - and first I need to flesh out the basic system in a practical context and find any missing pain points.
+
+
+Task list:
+	1. Layout engine
+		Prove it works
+		Start adding packing functionality
 	2. Event model
+		Method of releasing mouse cursor
 		Click (down+up)
 		Slide (down-hold-up)
 		Raw down, raw up
 		Rectangle collision detection
 	3. Widgets
+		PMF Model
 		Button
 		Modal button
 		Label text
 		Paragraph text
-		Markdown(or similar) text
+		Selectable text
+		Markdown(or similar) text (colorization per character is possible now)
 		Slider
 		Checkbox
 		Frame + clipping
