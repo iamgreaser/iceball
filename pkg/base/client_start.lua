@@ -101,7 +101,7 @@ function chat_draw(ctab, fn_pos)
 		local x,y
 		local ri = i-ctab.head
 		x,y = fn_pos(ri,ctab[i].msg,w,h)
-		gui_print_mini(x,y,ctab[i].color,ctab[i].msg)
+		font_mini.print(x,y,ctab[i].color,ctab[i].msg)
 	end
 end
 

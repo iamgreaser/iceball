@@ -62,9 +62,9 @@ do
 			sw,sh = client.screen_get_dims()
 			local koffs = math.max(#fnlist-10,1)
 			for i=koffs,#fnlist do
-				gui_print_mini(2, 2+(i-koffs)*8, 0xFFFFFFFF, "LOAD: "..fnlist[i])
+				font_mini.print(2, 2+(i-koffs)*8, 0xFFFFFFFF, "LOAD: "..fnlist[i])
 			end
-			gui_print_mini(2, sh-10, 0xFFFFFFFF, loadstr)
+			font_mini.print(2, sh-10, 0xFFFFFFFF, loadstr)
 		end
 		
 		function client.hook_tick(sec_current, sec_delta)

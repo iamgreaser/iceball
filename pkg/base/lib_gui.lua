@@ -55,95 +55,100 @@ local DIGIT_HEIGHT = 48
 local MINI_WIDTH = 6
 local MINI_HEIGHT = 8
 
--- print "mini font" text with topleft at x, y, color c, string str
-function gui_print_mini(x, y, c, str)
-	local i
-	for i=1,#str do
-		local idx = (string.byte(str,i)-32)
-		client.img_blit(img_font_mini, x, y, MINI_WIDTH, MINI_HEIGHT, idx*MINI_WIDTH, 0, c)
-		x = x + MINI_WIDTH
-	end
-end
+function gui_index_mini(str, i) return (string.byte(str,i)-32) end
+function gui_index_digit(str, i) return digit_map[string.sub(str,i,i)] end
 
--- print "digit font" text with topleft at x, y, color c, string str
-function gui_print_digits(x, y, c, str)
-	local i
-	for i=1,#str do
-		local idx = digit_map[string.sub(str,i,i)]
-		client.img_blit(img_font_numbers, x, y, DIGIT_WIDTH, DIGIT_HEIGHT, idx*DIGIT_WIDTH, 0, c)
-		x = x + DIGIT_WIDTH
-	end
-end
-
--- print "mini font" text with minimum-space wordwrapping, pixelwidth wp, topleft at x, y, color c, string str
-function gui_print_mini_wrap(wp, x, y, c, str)
+-- create a new fixed-width font using the bitmap image, character width and height, and char indexing function
+function gui_create_fixwidth_font(image, char_width, char_height, indexing_fn)
+	local this = {image=image, width=char_width, height=char_height,
+		indexing_fn=indexing_fn}
 	
-	-- 1. find whitespace
-	
-	local i
-	local j
-	local toks = {}
-	local cur_tok = 1
-	local line_charwidth = math.floor(wp / MINI_WIDTH)
-	
-	for i=1,#str do
-		local idx = (string.byte(str,i)-32)
-		if idx == 13-32 or idx == 10-32 then -- CR/LF
-			if toks[cur_tok] == nil then 
-				toks[cur_tok] = {newlines=1}
-			elseif toks[cur_tok].newlines == nil then 
-				cur_tok = cur_tok + 1; toks[cur_tok] = {newlines=1}
-			else
-				toks[cur_tok].newlines = toks[cur_tok].newlines + 1
-			end
-		elseif idx == 0 then -- space
-			if toks[cur_tok] == nil then 
-				toks[cur_tok] = {spaces=1}
-			elseif toks[cur_tok].spaces == nil then 
-				cur_tok = cur_tok + 1; toks[cur_tok] = {spaces=1}
-			else
-				toks[cur_tok].spaces = toks[cur_tok].spaces + 1
-			end
-		else -- word
-			if toks[cur_tok] == nil then 
-				toks[cur_tok] = {word={idx}}
-			elseif toks[cur_tok].word == nil or 
-				#toks[cur_tok].word+1 > line_charwidth -- split if word is larger than a line
-				then 
-				cur_tok = cur_tok + 1; toks[cur_tok] = {word={idx}}
-			else
-				toks[cur_tok].word[#toks[cur_tok].word+1] = idx
-			end
+	-- print text with topleft at x, y, color c, string str
+	function this.print(x, y, c, str)
+		local i
+		for i=1,#str do
+			local idx = this.indexing_fn(str, i)
+			client.img_blit(this.image, x, y, this.width, this.height, idx*this.width, 0, c)
+			x = x + this.width
 		end
 	end
 	
-	-- 2. render as many words as possible per line
-	
-	local begin_x = x
-	local end_x = x + wp
-	
-	local function endline()
-		x = begin_x; y = y + MINI_HEIGHT
+	-- print text with minimum-space wordwrapping, pixelwidth wp, topleft at x, y, color c, string str
+	function this.print_wrap(wp, x, y, c, str)
+		
+		-- 1. find whitespace
+		
+		local i
+		local j
+		local toks = {}
+		local cur_tok = 1
+		local line_charwidth = math.floor(wp / this.width)
+		
+		for i=1,#str do
+			local idx = string.byte(str, i)
+			if idx == 13 or idx == 10 then -- CR/LF
+				if toks[cur_tok] == nil then 
+					toks[cur_tok] = {newlines=1}
+				elseif toks[cur_tok].newlines == nil then 
+					cur_tok = cur_tok + 1; toks[cur_tok] = {newlines=1}
+				else
+					toks[cur_tok].newlines = toks[cur_tok].newlines + 1
+				end
+			elseif idx == 32 then -- space
+				if toks[cur_tok] == nil then 
+					toks[cur_tok] = {spaces=1}
+				elseif toks[cur_tok].spaces == nil then 
+					cur_tok = cur_tok + 1; toks[cur_tok] = {spaces=1}
+				else
+					toks[cur_tok].spaces = toks[cur_tok].spaces + 1
+				end
+			else -- word
+				if toks[cur_tok] == nil then 
+					toks[cur_tok] = {word={idx}}
+				elseif toks[cur_tok].word == nil or 
+					#toks[cur_tok].word+1 > line_charwidth -- split if word is larger than a line
+					then 
+					cur_tok = cur_tok + 1; toks[cur_tok] = {word={idx}}
+				else
+					toks[cur_tok].word[#toks[cur_tok].word+1] = idx
+				end
+			end
+		end
+		
+		-- 2. render as many words as possible per line
+		
+		local begin_x = x
+		local end_x = x + wp
+		
+		local function endline()
+			x = begin_x; y = y + this.height
+		end
+		
+		for i=1,#toks do
+			local tok = toks[i]
+			if tok.word ~= nil then
+				if x + #tok.word * this.width > end_x then endline() end
+				for j=1,#tok.word do
+					idx = tok.word[j]
+					client.img_blit(this.image, x, y, this.width, this.height, 
+						this.indexing_fn(idx)*this.width, 0, c)
+					x = x + this.width
+				end
+			elseif tok.spaces ~= nil then
+				x = x + this.width * tok.spaces
+			elseif tok.newlines ~= nil then 
+				for j=1,tok.newlines do endline() end 
+			end
+			if x > end_x then endline() end
+		end	
+		
 	end
 	
-	for i=1,#toks do
-		local tok = toks[i]
-		if tok.word ~= nil then
-			if x + #tok.word * MINI_WIDTH > end_x then endline() end
-			for j=1,#tok.word do
-				idx = tok.word[j]
-				client.img_blit(img_font_mini, x, y, MINI_WIDTH, MINI_HEIGHT, idx*MINI_WIDTH, 0, c)
-				x = x + MINI_WIDTH
-			end
-		elseif tok.spaces ~= nil then
-			x = x + MINI_WIDTH * tok.spaces
-		elseif tok.newlines ~= nil then 
-			for j=1,tok.newlines do endline() end 
-		end
-		if x > end_x then endline() end
-	end	
-	
+	return this
 end
+
+font_mini = gui_create_fixwidth_font(img_font_mini, MINI_WIDTH, MINI_HEIGHT, gui_index_mini)
+font_digits = gui_create_fixwidth_font(img_font_numbers, MINI_WIDTH, MINI_HEIGHT, gui_index_digit)
 
 function gui_get_char(key, modif)
 	if key >= 32 and key <= 126 then

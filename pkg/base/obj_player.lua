@@ -700,7 +700,7 @@ function new_player(settings)
 							s_name = s_name.." ["..plr.squad.."]"
 						end
 						
-						gui_print_mini(px-(6*#s_name)/2,py-7
+						font_mini.print(px-(6*#s_name)/2,py-7
 							,argb_split_to_merged(c[1],c[2],c[3]
 								,math.floor(fatt*255))
 							,s_name)
@@ -732,13 +732,13 @@ function new_player(settings)
 		local bstr = ""..this.blocks
 		local gstr = ""..this.grenades
 		
-		gui_print_digits((w-32*#hstr)/2, h-48, hcolor, hstr)
+		font_digits.print((w-32*#hstr)/2, h-48, hcolor, hstr)
 		if this.tool == TOOL_GUN then
-			gui_print_digits(-16+w-32*#astr, h-48, acolor, astr)
+			font_digits.print(-16+w-32*#astr, h-48, acolor, astr)
 		elseif this.tool == TOOL_NADE then
-			gui_print_digits(-16+w-32*#gstr, h-48, gcolor, gstr)
+			font_digits.print(-16+w-32*#gstr, h-48, gcolor, gstr)
 		else
-			gui_print_digits(-16+w-32*#bstr, h-48, bcolor+0xFF000000, bstr)
+			font_digits.print(-16+w-32*#bstr, h-48, bcolor+0xFF000000, bstr)
 		end
 		local i
 		
@@ -748,7 +748,7 @@ function new_player(settings)
 			local cam_pos_str = string.format("x: %f y: %f z: %f j: %f c: %i"
 				, camx, camy, camz, this.jerkoffs, (this.crouching and 1) or 0)
 			
-			gui_print_mini(4, 4, 0x80FFFFFF, cam_pos_str)
+			font_mini.print(4, 4, 0x80FFFFFF, cam_pos_str)
 		end
 		
 		client.img_blit(img_crosshair, w/2 - 8, h/2 - 8)
@@ -826,16 +826,16 @@ function new_player(settings)
 			local i
 			
 			for i=1,math.floor(oh/64+0.5) do
-				gui_print_mini(mx - 12, my + (i-0.5)*64,
+				font_mini.print(mx - 12, my + (i-0.5)*64,
 					0xFFFFFFFF, ""..i)
-				gui_print_mini(mx + ow + 12-6, my + (i-0.5)*64,
+				font_mini.print(mx + ow + 12-6, my + (i-0.5)*64,
 					0xFFFFFFFF, ""..i)
 			end
 			
 			for i=1,math.floor(ow/64+0.5) do
-				gui_print_mini(mx + (i-0.5)*64, my - 12,
+				font_mini.print(mx + (i-0.5)*64, my - 12,
 					0xFFFFFFFF, ""..string.char(64+i))
-				gui_print_mini(mx + (i-0.5)*64, my + oh + 12-6,
+				font_mini.print(mx + (i-0.5)*64, my + oh + 12-6,
 					0xFFFFFFFF, ""..string.char(64+i))
 			end
 		elseif MODE_ENABLE_MINIMAP then
@@ -864,7 +864,7 @@ function new_player(settings)
 			local s = "Location: "
 				..string.char(65+math.floor(this.x/64))
 				..(1+math.floor(this.z/64))
-			gui_print_mini(w - mw/2 - 3*#s, mh + 2, 0xFFFFFFFF, s)
+			font_mini.print(w - mw/2 - 3*#s, mh + 2, 0xFFFFFFFF, s)
 		end
 		client.img_blit(img_cpal, 0, h-64)
 		client.img_blit(img_cpal_rect,
@@ -883,7 +883,7 @@ function new_player(settings)
 		
 		if typing_type then
 			local s = typing_type..typing_msg.."_"
-			gui_print_mini(4, h-80, 0xFFFFFFFF, s)
+			font_mini.print(4, h-80, 0xFFFFFFFF, s)
 		end
 	end
 	

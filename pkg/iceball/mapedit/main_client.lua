@@ -83,7 +83,7 @@ do
 			local i, s
 			
 			s = menu_current.title
-			gui_print_mini(math.floor((sw-6*#s)/2), math.floor(sh/2-12),
+			font_mini.print(math.floor((sw-6*#s)/2), math.floor(sh/2-12),
 				0xFF000000, s)
 			
 			for i=1,#menu_current do
@@ -92,7 +92,7 @@ do
 					s = "> "..s.." <"
 				end
 				
-				gui_print_mini(math.floor((sw-6*#s)/2), math.floor(sh/2+(i-1)*6),
+				font_mini.print(math.floor((sw-6*#s)/2), math.floor(sh/2+(i-1)*6),
 					0xFF000000, s)
 			end
 		end
@@ -516,30 +516,30 @@ function client.hook_render()
 	s = string.format("EDITOR: %d %d %d - tool = %s"
 		,camx,camy,camz
 		,tool_getname())
-	gui_print_mini(3, 3, 0xFF000000, s)
-	gui_print_mini(2, 2, 0xFFFFFFFF, s)
+	font_mini.print(3, 3, 0xFF000000, s)
+	font_mini.print(2, 2, 0xFFFFFFFF, s)
 	
 	s = string.format("COLOUR %d %d %d (#%02X%02X%02X)"
 		,colr,colg,colb
 		,colr,colg,colb)
-	gui_print_mini(sw-(2+6*#s), 2, argb_split_to_merged(colr, colg, colb, 255), s)
+	font_mini.print(sw-(2+6*#s), 2, argb_split_to_merged(colr, colg, colb, 255), s)
 	
 	s = string.format("Select: %d %d %d -> %d %d %d"
 		,selx1 or -1,sely1 or -1,selz1 or -1
 		,selx2 or -1,sely2 or -1,selz2 or -1)
-	gui_print_mini(sw-(2+6*#s)+1, 19, 0xFF000000, s)
-	gui_print_mini(sw-(2+6*#s), 18, 0xFFFFFFFF, s)
+	font_mini.print(sw-(2+6*#s)+1, 19, 0xFF000000, s)
+	font_mini.print(sw-(2+6*#s), 18, 0xFFFFFFFF, s)
 	
 	s = string.format("Type = %d (%02X)"
 		,colt,colt)
-	gui_print_mini(sw-(2+6*#s)+1, 11, 0xFF000000, s)
-	gui_print_mini(sw-(2+6*#s), 10, 0xFFFFFFFF, s)
+	font_mini.print(sw-(2+6*#s)+1, 11, 0xFF000000, s)
+	font_mini.print(sw-(2+6*#s), 10, 0xFFFFFFFF, s)
 	
 	if trx2 then
 		s = string.format("point %d %d %d"
 			,trx2,try2,trz2)
-		gui_print_mini(3, 11, 0xFF000000, s)
-		gui_print_mini(2, 10, 0xFFFFFFFF, s)
+		font_mini.print(3, 11, 0xFF000000, s)
+		font_mini.print(2, 10, 0xFFFFFFFF, s)
 	end
 	
 	if trx1 then

@@ -170,7 +170,7 @@ local old_renderhook = client.hook_render
 -- I still believe the "Old Kenderhook" explanation for the meaning of O.K. is a load of crap. --GM
 function client.hook_render()
 	if pmfedit_enabled then
-		gui_print_mini(4,40,0x80FFFFFF,string.format(
+		font_mini.print(4,40,0x80FFFFFF,string.format(
 			"PMF - size: %-6i x: %-6i y: %6i z: %-6i - COUNT: %6i / rot: %3f"
 			,pmfedit_size
 			,pmfedit_x

@@ -225,7 +225,7 @@ end
 
 function client.hook_render()
 	local c = 0xFF000000+256*(256*blk_color[3]+blk_color[2])+blk_color[1]
-	gui_print_mini(4,40,c,string.format(
+	font_mini.print(4,40,c,string.format(
 		"PMF - size: %-6i x: %-6i y: %6i z: %-6i - COUNT: %6i / rot: %3f"
 		,pmfedit_size
 		,pmfedit_x
