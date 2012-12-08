@@ -74,6 +74,7 @@ function P.widget(options)
 	-- align 0.5 = center
 	
 	-- FIXME: some of the things that are disallowed as setters could be made settable with more effort.
+	-- FIXME: I don't have swap children methods
 	
 	function setter_keys.x(v) rawset(this, 'x', v) this.dirty = true end
 	function setter_keys.y(v) rawset(this, 'y', v) this.dirty = true end
@@ -129,6 +130,34 @@ function P.widget(options)
 	
 	function this.aabb(x, y, w, h)
 		return not (this.l>x or this.r<x+w or this.t>y or this.b<y+h)
+	end
+	
+	function this.child_boundaries()
+		local child_boundaries = {}
+		local ct = 1
+		for c_k, child in pairs(this.children) do
+			for b_k, boundary in pairs(child.child_boundaries) do
+				child_boundaries[ct] = boundary
+				ct = ct + 1
+			end
+		end
+		child_boundaries[ct] = {l=this.l, t=this.t, r=this.r, b=this.b}
+		return child_boundaries
+	end
+	
+	function getter_keys.full_dimensions()
+		local boundaries = this.child_boundaries()
+		local left = boundaries[1].l
+		local top = boundaries[1].t
+		local right = boundaries[1].r
+		local bottom = boundaries[1].b
+		for k, v in pairs(boundaries) do
+			left = math.min(v.l, left)
+			top = math.min(v.t, top)
+			right = math.max(v.r, right)
+			bottom = math.max(v.b, bottom)
+		end
+		return {l=left, t=top, r=right, b=bottom}
 	end
 	
 	-- very simple aabb collision for mousing. returns the "first and deepest child".

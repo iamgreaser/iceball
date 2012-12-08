@@ -50,26 +50,99 @@ local shift_map = {
 	[","] = "<", ["."] = ">", ["/"] = "?",
 }
 
+local DIGIT_WIDTH = 32
+local DIGIT_HEIGHT = 48
+local MINI_WIDTH = 6
+local MINI_HEIGHT = 8
+
+-- print "mini font" text with topleft at x, y, color c, string str
 function gui_print_mini(x, y, c, str)
 	local i
 	for i=1,#str do
-		client.img_blit(img_font_mini, x, y, 6, 8, (string.byte(str,i)-32)*6, 0, c)
-		x = x + 6
+		local idx = (string.byte(str,i)-32)
+		client.img_blit(img_font_mini, x, y, MINI_WIDTH, MINI_HEIGHT, idx*MINI_WIDTH, 0, c)
+		x = x + MINI_WIDTH
 	end
 end
 
+-- print "digit font" text with topleft at x, y, color c, string str
 function gui_print_digits(x, y, c, str)
 	local i
 	for i=1,#str do
-		client.img_blit(img_font_numbers, x, y, 32, 48, digit_map[string.sub(str,i,i)]*32, 0, c)
-		x = x + 32
+		local idx = digit_map[string.sub(str,i,i)]
+		client.img_blit(img_font_numbers, x, y, DIGIT_WIDTH, DIGIT_HEIGHT, idx*DIGIT_WIDTH, 0, c)
+		x = x + DIGIT_WIDTH
 	end
 end
 
+-- print "mini font" text with minimum-space wordwrapping, pixelwidth wp, topleft at x, y, color c, string str
 function gui_print_mini_wrap(wp, x, y, c, str)
-	-- TODO!
-	-- note: [W]idth in [P]ixels
-	gui_print_mini(x, y, c, str)
+	
+	-- 1. find whitespace
+	
+	local i
+	local j
+	local toks = {}
+	local cur_tok = 1
+	local line_charwidth = math.floor(wp / MINI_WIDTH)
+	
+	for i=1,#str do
+		local idx = (string.byte(str,i)-32)
+		if idx == 13-32 or idx == 10-32 then -- CR/LF
+			if toks[cur_tok] == nil then 
+				toks[cur_tok] = {newlines=1}
+			elseif toks[cur_tok].newlines == nil then 
+				cur_tok = cur_tok + 1; toks[cur_tok] = {newlines=1}
+			else
+				toks[cur_tok].newlines = toks[cur_tok].newlines + 1
+			end
+		elseif idx == 0 then -- space
+			if toks[cur_tok] == nil then 
+				toks[cur_tok] = {spaces=1}
+			elseif toks[cur_tok].spaces == nil then 
+				cur_tok = cur_tok + 1; toks[cur_tok] = {spaces=1}
+			else
+				toks[cur_tok].spaces = toks[cur_tok].spaces + 1
+			end
+		else -- word
+			if toks[cur_tok] == nil then 
+				toks[cur_tok] = {word={idx}}
+			elseif toks[cur_tok].word == nil or 
+				#toks[cur_tok].word+1 > line_charwidth -- split if word is larger than a line
+				then 
+				cur_tok = cur_tok + 1; toks[cur_tok] = {word={idx}}
+			else
+				toks[cur_tok].word[#toks[cur_tok].word+1] = idx
+			end
+		end
+	end
+	
+	-- 2. render as many words as possible per line
+	
+	local begin_x = x
+	local end_x = x + wp
+	
+	local function endline()
+		x = begin_x; y = y + MINI_HEIGHT
+	end
+	
+	for i=1,#toks do
+		local tok = toks[i]
+		if tok.word ~= nil then
+			if x + #tok.word * MINI_WIDTH > end_x then endline() end
+			for j=1,#tok.word do
+				idx = tok.word[j]
+				client.img_blit(img_font_mini, x, y, MINI_WIDTH, MINI_HEIGHT, idx*MINI_WIDTH, 0, c)
+				x = x + MINI_WIDTH
+			end
+		elseif tok.spaces ~= nil then
+			x = x + MINI_WIDTH * tok.spaces
+		elseif tok.newlines ~= nil then 
+			for j=1,tok.newlines do endline() end 
+		end
+		if x > end_x then endline() end
+	end	
+	
 end
 
 function gui_get_char(key, modif)
@@ -105,11 +178,6 @@ function gui_string_edit(str, maxlen, key, modif)
 	
 	return str
 end
-
--- &*(^$#($*@&)$&(@)$&@()$&@)($&@)$&@()$&@)$(@&)(@&)@$&()@$&)@$&@()$&)(@$&Y*LHEWIGR*(WRY
--- When I come back:
--- find out why my rectangle isn't displaying :(
--- look into getting a gui scene set up during the loader too
 
 function gui_create_scene(width, height)
 	
