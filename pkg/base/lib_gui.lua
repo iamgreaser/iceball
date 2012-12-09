@@ -224,7 +224,7 @@ function gui_create_fixwidth_font(image, char_width, char_height, indexing_fn)
 end
 
 font_mini = gui_create_fixwidth_font(img_font_mini, MINI_WIDTH, MINI_HEIGHT, gui_index_mini)
-font_digits = gui_create_fixwidth_font(img_font_numbers, MINI_WIDTH, MINI_HEIGHT, gui_index_digit)
+font_digits = gui_create_fixwidth_font(img_font_numbers, DIGIT_WIDTH, DIGIT_HEIGHT, gui_index_digit)
 
 function gui_get_char(key, modif)
 	if key >= 32 and key <= 126 then
