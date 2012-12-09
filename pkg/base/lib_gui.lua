@@ -163,25 +163,28 @@ function gui_create_fixwidth_font(image, char_width, char_height, indexing_fn)
 	-- get the AABB dimensions of text given precomputed text data
 	function this.dimensions(data)
 		
-		local result = {l=0, r=0, t=0, b=0, width=0, height=0}
+		local result = {l=data[1][1][3], 
+						r=data[1][1][3] + this.width,
+						t=data[1][1][4], 
+						b=data[1][1][4] + this.height, 
+						width=0, height=0}
 		
-		-- TODO complete this thingy properly, my use of lengths is wrong and it's 3 am
+		local row = 1
+		local col = 1
 		
-		if #data[1]<1 then return {l=0, r=0, t=0, b=0, width=0, height=0} end
-		
-		result.l = data[1][1][3]
-		result.t = data[1][1][4]
-		result.r = data[1][1][3] + this.width
-		result.b = data[1][1][4] + this.height
-		result.width = this.width
-		result.height = this.height
-		
-		if #data[1]<2 then return {l=l, r=r, t=t, b=b, width=r-l, height=b-t} end
-		local y = 2
-		local x = 2
-		for i=2, #data[1] do
-		
+		for row=1,#data do
+			for col=1,#data[row] do
+				result.l = math.min(result.l, data[row][col][3])
+				result.r = math.max(result.r, data[row][col][3] + this.width)
+				result.t = math.min(result.t, data[row][col][4])
+				result.b = math.max(result.b, data[row][col][4] + this.height)
+			end
 		end
+		
+		result.width = result.r - result.l
+		result.height = result.b - result.t
+		
+		return result
 		
 	end
 	
@@ -347,6 +350,18 @@ function gui_create_scene(width, height)
 		end
 		
 		return this
+		
+	end
+	
+	function scene.textfield(options)
+		-- store a text buffer in here and its last render state in here...
+		-- define the width and height to be the width and height of the text...
+		-- additional formatting?
+		
+		local this = scene.display_object(options)
+		
+		-- if we specified width and height in options, we are implicitly using wordwrapping?
+		-- no... 
 		
 	end
 	
