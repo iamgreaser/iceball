@@ -187,6 +187,18 @@ int icelua_initfetch(void)
 		? 0
 		: main_argc - main_largstart);
 	
+	if(to_client_local.sockfd == -1)
+		to_client_local.sockfd = SOCKFD_LOCAL;
+	
+	lua_getglobal(lstate_client, "common");
+	lua_getglobal(lstate_client, "client");
+	lua_pushstring(lstate_client, mod_basedir+4);
+	lua_setfield(lstate_client, -2, "base_dir");
+	lua_pop(lstate_client, 1);
+	lua_pushstring(lstate_client, mod_basedir+4);
+	lua_setfield(lstate_client, -2, "base_dir");
+	lua_pop(lstate_client, 1);
+	
 	snprintf(xpath, 128, "%s/main_client.lua", mod_basedir);
 	lua_pushcfunction(lstate_client, icelua_fn_common_fetch_block);
 	lua_pushstring(lstate_client, "lua");
@@ -261,18 +273,6 @@ int icelua_init(void)
 	icelua_loadbasefuncs(lstate_server);
 	
 	// shove some pathnames in
-	if(lstate_client != NULL && mod_basedir != NULL)
-	{
-		lua_getglobal(lstate_client, "common");
-		lua_getglobal(lstate_client, "client");
-		lua_pushstring(lstate_client, mod_basedir+4);
-		lua_setfield(lstate_client, -2, "base_dir");
-		lua_pop(lstate_client, 1);
-		lua_pushstring(lstate_client, mod_basedir+4);
-		lua_setfield(lstate_client, -2, "base_dir");
-		lua_pop(lstate_client, 1);
-	}
-	
 	if(lstate_server != NULL)
 	{
 		lua_getglobal(lstate_server, "common");

@@ -29,6 +29,80 @@ client_t to_client_local;
 client_t to_clients[CLIENT_MAX];
 // TODO: binary search tree
 
+// SNIP: http://www.eyrie.org/~eagle/software/rra-c-util/
+/*
+ * Replacement for a missing inet_ntop.
+ *
+ * Provides an implementation of inet_ntop that only supports IPv4 addresses
+ * for hosts that are missing it.  If you want IPv6 support, you need to have
+ * a real inet_ntop function; this function is only provided so that code can
+ * call inet_ntop unconditionally without needing to worry about whether the
+ * host supports IPv6.
+ *
+ * The canonical version of this file is maintained in the rra-c-util package,
+ * which can be found at <http://www.eyrie.org/~eagle/software/rra-c-util/>.
+ *
+ * Written by Russ Allbery <rra@stanford.edu>
+ *
+ * The authors hereby relinquish any claim to any copyright that they may have
+ * in this work, whether granted under contract or by operation of law or
+ * international treaty, and hereby commit to the public, at large, that they
+ * shall not, at any time in the future, seek to enforce any copyright in this
+ * work against any person or entity, or prevent any person or entity from
+ * copying, publishing, distributing or creating derivative works of this
+ * work.
+ */
+
+// Modified by GreaseMonkey, to support IPv6 and also to glue in nicely.
+// This is also to be treated as public domain.
+// ANYHOW, let's go.
+
+// This may already be defined by the system headers.
+#ifndef INET_ADDRSTRLEN
+# define INET_ADDRSTRLEN 16
+#endif
+
+// Systems old enough to not support inet_ntop may not have this either.
+#ifndef EAFNOSUPPORT
+# define EAFNOSUPPORT EDOM
+#endif
+
+#if WIN32
+const char *inet_ntop(int af, const void *src, char *dst, socklen_t cnt)
+{
+	const uint8_t *p;
+	
+	if (af == AF_INET)
+	{
+		if (cnt < INET_ADDRSTRLEN)
+			return NULL;
+		
+		p = src;
+		snprintf(dst, cnt, "%u.%u.%u.%u",
+			(unsigned int) (p[0] & 0xff), (unsigned int) (p[1] & 0xff),
+			(unsigned int) (p[2] & 0xff), (unsigned int) (p[3] & 0xff));
+	} else if (af == AF_INET6) {
+		if (cnt < 5*8)
+			return NULL;
+		
+		p = src;
+		snprintf(dst, cnt, "%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x",
+			(unsigned int) (p[0] & 0xff), (unsigned int) (p[1] & 0xff),
+			(unsigned int) (p[2] & 0xff), (unsigned int) (p[3] & 0xff),
+			(unsigned int) (p[4] & 0xff), (unsigned int) (p[5] & 0xff),
+			(unsigned int) (p[6] & 0xff), (unsigned int) (p[7] & 0xff),
+			(unsigned int) (p[8] & 0xff), (unsigned int) (p[9] & 0xff),
+			(unsigned int) (p[10] & 0xff), (unsigned int) (p[11] & 0xff),
+			(unsigned int) (p[12] & 0xff), (unsigned int) (p[13] & 0xff),
+			(unsigned int) (p[14] & 0xff), (unsigned int) (p[15] & 0xff));
+	} else {
+		return NULL;
+	}
+	return dst;
+}
+#endif
+// END SNIP
+
 int net_packet_push(int len, const char *data, int sockfd, packet_t **head, packet_t **tail)
 {
 	if(len > PACKET_LEN_MAX)
@@ -148,6 +222,50 @@ void net_packet_free(packet_t *pkt, packet_t **head, packet_t **tail)
 		*tail = pkt->p;
 	
 	free(pkt);
+}
+
+void net_deinit_client(client_t *cli)
+{
+	while(cli->head != NULL)
+		net_packet_free(cli->head, &(cli->head), &(cli->tail));
+	while(cli->send_head != NULL)
+		net_packet_free(cli->send_head, &(cli->send_head), &(cli->send_tail));
+	
+	cli->sockfd = -1;
+}
+
+void net_kick_sockfd_immediate(int sockfd, char *msg)
+{
+	char buf[260];
+	buf[0] = 0x17;
+	buf[1] = strlen(msg);
+	memcpy(buf+2, msg, (int)(uint8_t)buf[1]);
+	buf[2+(int)(uint8_t)buf[1]] = 0x00;
+	
+	fprintf(stderr, "KICK: %i \"%s\"\n", sockfd, msg);
+	// only send what's necessary
+	send(sockfd, buf, ((int)(uint8_t)buf[1])+1, 0);
+	
+	// nuke it
+	close(sockfd);
+}
+
+void net_kick_client_immediate(client_t *cli, char *msg)
+{
+	if(cli == &to_client_local)
+	{
+		fprintf(stderr, "KICK: local \"%s\"\n", msg);
+		fprintf(stderr, "PANIC: I don't know how to handle a local client kick yet!\n");
+		fflush(stderr);
+		abort();
+	}
+	
+	if(cli == NULL)
+		return;
+	
+	net_kick_sockfd_immediate(cli->sockfd, msg);
+	cli->sockfd = -1;
+	net_deinit_client(cli);
 }
 
 const char *net_aux_gettype_str(int ftype)
@@ -378,12 +496,15 @@ void net_eat_s2c(client_t *cli)
 				{
 					fprintf(stderr, "ERROR: string not zero-terminated!\n");
 				} else if(mod_basedir == NULL) {
-					mod_basedir = strdup(1+pkt->data);
+					mod_basedir = strdup(2+pkt->data);
 					boot_mode |= 8;
+					printf("base dir = \"%s\"\n", mod_basedir);
 				} else {
 					fprintf(stderr, "ERROR: base dir already defined!\n");
 					// TODO: make this fatal
 				}
+				
+				net_packet_free(pkt, &(cli->head), &(cli->tail));
 			} break;
 			case 0x31: {
 				// 0x31 clen.u32 ulen.u32:
@@ -566,7 +687,6 @@ void net_flush_parse_c2s(client_t *cli)
 
 void net_flush_parse_s2c(client_t *cli)
 {
-	// TODO!
 	int offs = 0;
 	int len;
 	char *data;
@@ -600,6 +720,45 @@ void net_flush_parse_s2c(client_t *cli)
 		cli->rpkt_len -= offs;
 		//printf("new len: %i\n", cli->rpkt_len);
 	}
+}
+
+client_t *net_find_sockfd(int sockfd)
+{
+	int i;
+	client_t *cli;
+	
+	if(sockfd == SOCKFD_LOCAL)
+	{
+		return &to_client_local;
+	} else if(sockfd >= 0) {
+		for(i = 0; i < CLIENT_MAX; i++)
+			if(to_clients[i].sockfd == sockfd)
+				return &to_clients[i];
+	} else {
+		return NULL;
+	}
+	
+	return NULL;
+}
+
+client_t *net_alloc_sockfd(int sockfd)
+{
+	int i;
+	client_t *cli = net_find_sockfd(sockfd);
+	
+	if(cli != NULL)
+		return cli;
+	
+	for(i = 0; i < CLIENT_MAX; i++)
+	{
+		if(to_clients[i].sockfd == -1)
+		{
+			to_clients[i].sockfd = sockfd;
+			return &to_clients[i];
+		}
+	}
+	
+	return NULL;
 }
 
 int net_flush_transfer(client_t *cfrom, client_t *cto, packet_t *pfrom)
@@ -648,7 +807,6 @@ int net_flush_transfer(client_t *cfrom, client_t *cto, packet_t *pfrom)
 		*/
 		
 		// and of course the serialised version:
-		// TODO: make this work over a network!
 		if(cto == &to_server)
 		{
 			memcpy(cfrom->spkt_buf + cfrom->spkt_len, pfrom->data, pfrom->len);
@@ -663,7 +821,67 @@ int net_flush_transfer(client_t *cfrom, client_t *cto, packet_t *pfrom)
 
 void net_flush_accept_one(int sockfd, struct sockaddr_storage *ss, socklen_t slen)
 {
+	char xstr[128];
+	xstr[0] = '?';
+	xstr[1] = '\0';
+	int cport = 0;
+	switch(ss->ss_family)
+	{
+		case AF_INET:
+			inet_ntop(AF_INET, &(((struct sockaddr_in *)(ss))->sin_addr)
+				, xstr, 127);
+			cport = ((struct sockaddr_in *)(ss))->sin_port;
+			break;
+		case AF_INET6:
+			inet_ntop(AF_INET6, &(((struct sockaddr_in6 *)(ss))->sin6_addr)
+				, xstr, 127);
+			cport = ((struct sockaddr_in6 *)(ss))->sin6_port;
+			break;
+	}
 	
+	printf("connection from %s, port %i, family %i\n", xstr, cport, ss->ss_family);
+	
+	// disable Nagle's algo
+	int yes = 1;
+	if(setsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, (void *)&yes, sizeof(yes)) == -1)
+	{
+		net_kick_sockfd_immediate(sockfd, "Could not disable Nagle's algorithm!"
+			" Kicked because gameplay will be complete shit otherwise.");
+		return;
+	}
+	
+	// set connection nonblocking
+	yes = 1;
+#ifdef WIN32
+	if(ioctlsocket(sockfd,FIONBIO,(void *)&yes) == -1) {
+#else
+	if(fcntl(sockfd, F_SETFL,
+			fcntl(sockfd, F_GETFL) | O_NONBLOCK) == -1) {
+#endif
+		net_kick_sockfd_immediate(sockfd, "Could not set up a nonblocking connection!");
+		return;
+	}
+	
+	// get a slot
+	client_t *cli = net_alloc_sockfd(sockfd);
+	
+	if(cli == NULL)
+	{
+		net_kick_sockfd_immediate(sockfd, "Server ran out of free slots!");
+		return;
+	}
+	
+	// send pkg basedir packet
+	{
+		char buf[260];
+		buf[0] = 0x0F;
+		buf[1] = strlen(mod_basedir);
+		memcpy(buf+2, mod_basedir, (int)(uint8_t)buf[1]);
+		buf[2+(int)(uint8_t)buf[1]] = 0x00;
+		
+		net_packet_push(2+((int)(uint8_t)buf[1])+1, buf, sockfd,
+			&(to_server.send_head), &(to_server.send_tail));
+	}
 }
 
 void net_flush_accept(void)
@@ -676,10 +894,11 @@ void net_flush_accept(void)
 		
 		if(sockfd == -1)
 		{
-			int err = errno;
 #ifdef WIN32
+			int err = WSAGetLastError();
 			if(err != WSAEWOULDBLOCK)
 #else
+			int err = errno;
 			if(err != EAGAIN && err != EWOULDBLOCK)
 #endif
 			{
@@ -698,10 +917,11 @@ void net_flush_accept(void)
 		
 		if(sockfd == -1)
 		{
-			int err = errno;
 #ifdef WIN32
+			int err = WSAGetLastError();
 			if(err != WSAEWOULDBLOCK)
 #else
+			int err = errno;
 			if(err != EAGAIN && err != EWOULDBLOCK)
 #endif
 			{
@@ -713,6 +933,125 @@ void net_flush_accept(void)
 	}
 }
 
+void net_flush_snr(client_t *cli)
+{
+	if(cli == &to_client_local)
+	{
+		if(boot_mode & 2)
+		{
+			// don't do anything, it's already in the buffer
+			return;
+		} else {
+			{
+			int bs = send(cli->sockfd, cli->spkt_buf,
+				cli->spkt_len, 0);
+				
+				if(bs == -1)
+				{
+#ifdef WIN32
+					int err = WSAGetLastError();
+					if(err != WSAEWOULDBLOCK)
+#else
+					int err = errno;
+					if(err != EAGAIN && err != EWOULDBLOCK)
+#endif
+					{
+						perror("net_flush_snr(client.send)");
+						net_kick_client_immediate(cli, "Error sending packet!");
+						return;
+					}
+				} else if(bs > 0) {
+					//printf("sent data! %i\n", bs);
+					cli->spkt_len -= bs;
+					memmove(cli->spkt_buf, cli->spkt_buf+bs, cli->spkt_len);
+				}
+			}
+			
+			{
+				int bs = recv(cli->sockfd, cli->rpkt_buf+cli->rpkt_len,
+					PACKET_LEN_MAX*2-cli->rpkt_len, 0);
+				
+				if(bs == -1)
+				{
+#ifdef WIN32
+					int err = WSAGetLastError();
+					if(err != WSAEWOULDBLOCK)
+#else
+					int err = errno;
+					if(err != EAGAIN && err != EWOULDBLOCK)
+#endif
+					{
+						perror("net_flush_snr(client.recv)");
+						net_kick_client_immediate(cli, "Error receiving packet!");
+						return;
+					}
+				} else if(bs == 0) {
+					fprintf(stderr, "%i: recv: connection axed\n", cli->sockfd);
+					net_kick_client_immediate(cli, "Connection axed.");
+					return;
+				} else {
+					//printf("got data! %i\n", bs);
+					cli->rpkt_len += bs;
+				}
+			}
+		}
+	} else {
+		//printf("send sockfd %i %i %i\n", cli->sockfd, cli->rpkt_len, cli->rpkt_len);
+		{
+			int bs = send(cli->sockfd, cli->rpkt_buf,
+				cli->rpkt_len, 0);
+			
+			if(bs == -1)
+			{
+#ifdef WIN32
+				int err = WSAGetLastError();
+				if(err != WSAEWOULDBLOCK)
+#else
+				int err = errno;
+				if(err != EAGAIN && err != EWOULDBLOCK)
+#endif
+				{
+					perror("net_flush_snr(server.send)");
+					net_kick_client_immediate(cli, "Error sending packet!");
+					return;
+				}
+			} else if(bs > 0) {
+				//printf("server sent data! %i\n", bs);
+				cli->rpkt_len -= bs;
+				memmove(cli->rpkt_buf, cli->rpkt_buf+bs, cli->rpkt_len);
+			}
+		}
+		
+		{
+			int bs = recv(cli->sockfd, cli->spkt_buf+cli->spkt_len,
+				PACKET_LEN_MAX*2-cli->spkt_len, 0);
+			
+			if(bs == -1)
+			{
+#ifdef WIN32
+				int err = WSAGetLastError();
+				if(err != WSAEWOULDBLOCK)
+#else
+				int err = errno;
+				if(err != EAGAIN && err != EWOULDBLOCK)
+#endif
+				{
+					perror("net_flush_snr(server.recv)");
+					net_kick_client_immediate(cli, "Error receiving packet!");
+					return;
+				}
+			} else if(bs == 0) {
+				fprintf(stderr, "%i: recv: connection axed\n", cli->sockfd);
+				net_kick_client_immediate(cli, "Connection axed.");
+				return;
+			} else {
+				//printf("server got data! %i\n", bs);
+				cli->spkt_len += bs;
+			}
+		}
+	}
+}
+
 void net_flush(void)
 {
 	packet_t *pkt, *npkt;
@@ -720,6 +1059,8 @@ void net_flush(void)
 	
 	if(boot_mode & 2)
 	{
+		net_flush_accept();
+		
 		// clear full flags
 		for(i = 0; i < CLIENT_MAX; i++)
 			to_clients[i].isfull = 0;
@@ -733,13 +1074,22 @@ void net_flush(void)
 			
 			//printf("pkt = %016llX\n", pkt);
 			
-			client_t *cli = NULL;
+			client_t *cli = net_find_sockfd(pkt->sockfd);
 			
-			// TODO: find correct client properly
-			cli = &to_client_local;
-			
-			net_flush_transfer(&to_server, cli, pkt);
+			if(cli == NULL)
+			{
+				fprintf(stderr, "EDOOFUS: given sockfd %i could not be found!\n"
+					, pkt->sockfd);
+				fflush(stderr);
+				abort();
+			} else {
+				net_flush_transfer(&to_server, cli, pkt);
+			}
 		}
+		
+		for(i = 0; i < CLIENT_MAX; i++)
+			if(to_clients[i].sockfd != -1)
+				net_flush_snr(&to_clients[i]);
 		
 		// parse the incoming stuff
 		for(i = 0; i < CLIENT_MAX; i++)
@@ -759,6 +1109,8 @@ void net_flush(void)
 			
 			net_flush_transfer(&to_client_local, &to_server, pkt);
 		}
+		
+		net_flush_snr(&to_client_local);
 		
 		net_flush_parse_s2c(&to_client_local);
 	}
@@ -794,25 +1146,22 @@ int net_gethost(char *name, int port, struct sockaddr *sa, size_t alen)
 	best = NULL;
 	for(fol = res; fol != NULL; fol = fol->ai_next)
 	{
-#ifdef WIN32
-		printf("lookup: Family %i - Not giving IP because WINDOWS SUCKS ASS\n", fol->ai_family);
-#else
 		char xstr[128];
 		xstr[0] = '?';
 		xstr[1] = '\0';
 		switch(fol->ai_family)
 		{
-			case AF_INET:
+			case AF_INET: {
 				inet_ntop(AF_INET, &(((struct sockaddr_in *)(fol->ai_addr))->sin_addr)
 					, xstr, 127);
-				break;
-			case AF_INET6:
+			} break;
+			case AF_INET6: {
 				inet_ntop(AF_INET6, &(((struct sockaddr_in6 *)(fol->ai_addr))->sin6_addr)
 					, xstr, 127);
-				break;
+			} break;
 		}
 		printf("lookup: %s\n", xstr);
-#endif
+		
 		// NOTE: prioritising IPv4 over IPv6.
 		if(best == NULL)
 		{
@@ -846,6 +1195,18 @@ int net_connect(void)
 			
 			if(connect(sockfd, (struct sockaddr *)&sa, sizeof(sa)) == -1)
 				return error_perror("net_connect(connect)");
+			
+			int yes = 1;
+#ifdef WIN32
+			if(ioctlsocket(sockfd, FIONBIO, (void *)&yes))
+#else
+			if(fcntl(sockfd, F_SETFL,
+				fcntl(sockfd, F_GETFL) | O_NONBLOCK))
+#endif
+				return error_perror("net_connect(nonblock)");
+			
+			if(setsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, (void *)&yes, sizeof(yes)) == -1)
+				return error_perror("net_connect(nodelay)");
 			
 			to_client_local.sockfd = sockfd;
 		} break;
@@ -985,14 +1346,6 @@ void net_unbind(void)
 		close(server_sockfd_ipv6);
 		server_sockfd_ipv6 = -1;
 	}
-}
-
-void net_deinit_client(client_t *cli)
-{
-	while(cli->head != NULL)
-		net_packet_free(cli->head, &(cli->head), &(cli->tail));
-	while(cli->send_head != NULL)
-		net_packet_free(cli->send_head, &(cli->send_head), &(cli->send_tail));
 }
 
 int net_init(void)
