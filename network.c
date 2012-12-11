@@ -17,6 +17,13 @@
 
 #include "common.h"
 
+#ifdef WIN32
+WSADATA windows_sucks;
+#endif
+
+int server_sockfd_ipv4 = -1;
+int server_sockfd_ipv6 = -1;
+
 client_t to_server;
 client_t to_client_local;
 client_t to_clients[CLIENT_MAX];
@@ -366,6 +373,18 @@ void net_eat_s2c(client_t *cli)
 		
 		switch(pkt->data[0])
 		{
+			case 0x0F: {
+				if(pkt->data[pkt->len-1] != '\x00')
+				{
+					fprintf(stderr, "ERROR: string not zero-terminated!\n");
+				} else if(mod_basedir == NULL) {
+					mod_basedir = strdup(1+pkt->data);
+					boot_mode |= 8;
+				} else {
+					fprintf(stderr, "ERROR: base dir already defined!\n");
+					// TODO: make this fatal
+				}
+			} break;
 			case 0x31: {
 				// 0x31 clen.u32 ulen.u32:
 				// file transfer initiation
@@ -642,6 +661,58 @@ int net_flush_transfer(client_t *cfrom, client_t *cto, packet_t *pfrom)
 	return 0;
 }
 
+void net_flush_accept_one(int sockfd, struct sockaddr_storage *ss, socklen_t slen)
+{
+	
+}
+
+void net_flush_accept(void)
+{
+	if(server_sockfd_ipv6 != -1)
+	{
+		struct sockaddr_storage ss;
+		socklen_t slen = sizeof(ss);
+		int sockfd = accept(server_sockfd_ipv6, (struct sockaddr *)&ss, &slen);
+		
+		if(sockfd == -1)
+		{
+			int err = errno;
+#ifdef WIN32
+			if(err != WSAEWOULDBLOCK)
+#else
+			if(err != EAGAIN && err != EWOULDBLOCK)
+#endif
+			{
+				perror("net_flush_accept(accept.6)");
+			}
+		} else {
+			net_flush_accept_one(sockfd, &ss, slen);
+		}
+	}
+	
+	if(server_sockfd_ipv4 != -1)
+	{
+		struct sockaddr_storage ss;
+		socklen_t slen = sizeof(ss);
+		int sockfd = accept(server_sockfd_ipv4, (struct sockaddr *)&ss, &slen);
+		
+		if(sockfd == -1)
+		{
+			int err = errno;
+#ifdef WIN32
+			if(err != WSAEWOULDBLOCK)
+#else
+			if(err != EAGAIN && err != EWOULDBLOCK)
+#endif
+			{
+				perror("net_flush_accept(accept.4)");
+			}
+		} else {
+			net_flush_accept_one(sockfd, &ss, slen);
+		}
+	}
+}
+
 void net_flush(void)
 {
 	packet_t *pkt, *npkt;
@@ -698,6 +769,224 @@ void net_flush(void)
 		net_eat_s2c(&to_client_local);
 }
 
+int net_gethost(char *name, int port, struct sockaddr *sa, size_t alen)
+{
+	char port_str[32];
+	struct addrinfo ainf;
+	
+	memset(&ainf, 0, sizeof(ainf));
+	ainf.ai_flags = 0;
+	ainf.ai_family = AF_UNSPEC;
+	ainf.ai_socktype = SOCK_STREAM;
+	ainf.ai_protocol = 0;
+	
+	snprintf(port_str, 31, "%i", net_port);
+	
+	struct addrinfo *res;
+	int err = getaddrinfo(name, port_str, &ainf, &res);
+	if(err != 0)
+	{
+		fprintf(stderr, "net_gethost: %s\n", gai_strerror(err));
+		return 1;
+	}
+	
+	struct addrinfo *best,*fol;
+	best = NULL;
+	for(fol = res; fol != NULL; fol = fol->ai_next)
+	{
+#ifdef WIN32
+		printf("lookup: Family %i - Not giving IP because WINDOWS SUCKS ASS\n", fol->ai_family);
+#else
+		char xstr[128];
+		xstr[0] = '?';
+		xstr[1] = '\0';
+		switch(fol->ai_family)
+		{
+			case AF_INET:
+				inet_ntop(AF_INET, &(((struct sockaddr_in *)(fol->ai_addr))->sin_addr)
+					, xstr, 127);
+				break;
+			case AF_INET6:
+				inet_ntop(AF_INET6, &(((struct sockaddr_in6 *)(fol->ai_addr))->sin6_addr)
+					, xstr, 127);
+				break;
+		}
+		printf("lookup: %s\n", xstr);
+#endif
+		// NOTE: prioritising IPv4 over IPv6.
+		if(best == NULL)
+		{
+			best = fol;
+		} else {
+			if(fol->ai_family == AF_INET && best->ai_family == AF_INET6)
+				best = fol;
+		}
+	}
+	
+	memcpy(sa, best->ai_addr, best->ai_addrlen);
+	
+	freeaddrinfo(res);
+	return 0;
+}
+
+int net_connect(void)
+{
+	switch(boot_mode & 3)
+	{
+		case 1: {
+			// client only
+			struct sockaddr_storage sa;
+			if(net_gethost(net_addr, net_port, (struct sockaddr *)&sa, sizeof(sa)))
+				return 1;
+			
+			int sockfd = socket(sa.ss_family, SOCK_STREAM, 0);
+			
+			if(sockfd == -1)
+				return error_perror("net_connect(socket)");
+			
+			if(connect(sockfd, (struct sockaddr *)&sa, sizeof(sa)) == -1)
+				return error_perror("net_connect(connect)");
+			
+			to_client_local.sockfd = sockfd;
+		} break;
+		
+		case 3: {
+			// client + server
+			to_client_local.sockfd = SOCKFD_LOCAL;
+		} break;
+	}
+	
+	return 0;
+}
+
+void net_disconnect(void)
+{
+	int i;
+	
+	if(to_client_local.sockfd >= 0)
+	{
+#ifdef WIN32
+		closesocket(to_client_local.sockfd);
+#else
+		close(to_client_local.sockfd);
+#endif
+		to_client_local.sockfd = -1;
+	}
+	
+	for(i = 0; i < CLIENT_MAX; i++)
+		if(to_clients[i].sockfd >= 0)
+		{
+#ifdef WIN32
+			closesocket(to_clients[i].sockfd);
+#else
+			close(to_clients[i].sockfd);
+#endif
+			to_clients[i].sockfd = -1;
+		}
+}
+
+int net_bind(void)
+{
+	if(net_port == 0)
+		return 0;
+	
+	struct sockaddr_in6 sa6;
+	struct sockaddr_in  sa4;
+	
+	server_sockfd_ipv6 = socket(AF_INET6, SOCK_STREAM, 0);
+	server_sockfd_ipv4 = socket(AF_INET,  SOCK_STREAM, 0);
+	
+	sa6.sin6_family = AF_INET6;
+	sa6.sin6_port = htons(net_port);
+	sa6.sin6_addr = in6addr_any;
+	sa6.sin6_flowinfo = 0;
+	sa6.sin6_scope_id = 0;
+	
+	sa4.sin_family = AF_INET;
+	sa4.sin_port = htons(net_port);
+	sa4.sin_addr.s_addr = INADDR_ANY;
+	
+	int yes = 1; // who the hell uses solaris anyway
+	int tflags;
+	if(setsockopt(server_sockfd_ipv6, SOL_SOCKET, SO_REUSEADDR, (void *)&yes, sizeof(yes)) == -1)
+	{
+		perror("net_bind(reuseaddr.6)");
+		server_sockfd_ipv6 = -1;
+	}
+	yes = 1;
+	if(setsockopt(server_sockfd_ipv4, SOL_SOCKET, SO_REUSEADDR, (void *)&yes, sizeof(yes)) == -1)
+	{
+		perror("net_bind(reuseaddr.4)");
+		server_sockfd_ipv4 = -1;
+	}
+	
+	yes = 1;
+	if(server_sockfd_ipv6 != -1)
+	{
+		if(bind(server_sockfd_ipv6, (void *)&sa6, sizeof(sa6)) == -1)
+		{
+			perror("net_bind(bind.6)");
+			server_sockfd_ipv6 = -1;
+		} else if(listen(server_sockfd_ipv6, 5) == -1) {
+			perror("net_bind(listen.6)");
+			server_sockfd_ipv6 = -1;
+#ifdef WIN32
+		} else if(ioctlsocket(server_sockfd_ipv6,FIONBIO,(void *)&yes)) {
+#else
+		} else if(fcntl(server_sockfd_ipv6, F_SETFL,
+			fcntl(server_sockfd_ipv6, F_GETFL) | O_NONBLOCK)) {
+#endif
+			perror("net_bind(nonblock.6)");
+			server_sockfd_ipv6 = -1;
+		}
+	}
+	
+	yes = 1;
+	if(server_sockfd_ipv4 != -1)
+	{
+		if(bind(server_sockfd_ipv4, (void *)&sa4, sizeof(sa4)) == -1)
+		{
+			perror("net_bind(bind.4)");
+			server_sockfd_ipv4 = -1;
+		} else if(listen(server_sockfd_ipv4, 5) == -1) {
+			perror("net_bind(listen.4)");
+			server_sockfd_ipv4 = -1;
+#ifdef WIN32
+		} else if(ioctlsocket(server_sockfd_ipv4,FIONBIO,(void *)&yes)) {
+#else
+		} else if(fcntl(server_sockfd_ipv4, F_SETFL,
+			fcntl(server_sockfd_ipv4, F_GETFL) | O_NONBLOCK)) {
+#endif
+			perror("net_bind(nonblock.4)");
+			server_sockfd_ipv4 = -1;
+		}
+	}
+	
+	if(server_sockfd_ipv4 == -1 && server_sockfd_ipv6 == -1)
+		return 1;
+	
+	printf("sockfds: IPv4 = %i, IPv6 = %i\n"
+		, server_sockfd_ipv4
+		, server_sockfd_ipv6);
+	
+	return 0;
+}
+
+void net_unbind(void)
+{
+	if(server_sockfd_ipv4 != -1)
+	{
+		close(server_sockfd_ipv4);
+		server_sockfd_ipv4 = -1;
+	}
+	
+	if(server_sockfd_ipv6 != -1)
+	{
+		close(server_sockfd_ipv6);
+		server_sockfd_ipv6 = -1;
+	}
+}
+
 void net_deinit_client(client_t *cli)
 {
 	while(cli->head != NULL)
@@ -710,6 +999,15 @@ int net_init(void)
 {
 	int i;
 	
+#ifdef WIN32
+	// complete hackjob
+	if(WSAStartup(MAKEWORD(2,0), &windows_sucks) != 0)
+	{
+		fprintf(stderr, "net_init: WSAStartup failed\n");
+		return 1;
+	}
+#endif
+	
 	for(i = 0; i < CLIENT_MAX; i++)
 	{
 		to_clients[i].sockfd = -1;
@@ -721,7 +1019,7 @@ int net_init(void)
 	to_server.head = to_server.tail = NULL;
 	to_server.send_head = to_server.send_tail = NULL;
 	
-	to_client_local.sockfd = SOCKFD_LOCAL;
+	to_client_local.sockfd = -1;
 	to_client_local.head = to_client_local.tail = NULL;
 	to_client_local.send_head = to_client_local.send_tail = NULL;
 	
@@ -737,4 +1035,8 @@ void net_deinit(void)
 	
 	for(i = 0; i < CLIENT_MAX; i++)
 		net_deinit_client(&(to_clients[i]));
+	
+#ifdef WIN32
+	WSACleanup();
+#endif
 }

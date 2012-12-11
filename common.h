@@ -50,6 +50,27 @@
 
 #include <zlib.h>
 
+#ifdef WIN32
+
+// just so we can get getaddrinfo
+// you will need Windows 2000 at least!
+#define _WIN32_WINNT 0x0501
+#include <winsock2.h>
+#include <ws2tcpip.h>
+extern WSADATA windows_sucks;
+
+#else
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+#include <fcntl.h>
+
+#endif
+
 enum
 {
 	UD_INVALID = 0,
@@ -277,6 +298,7 @@ int json_load(lua_State *L, const char *fname);
 // lua.c
 extern lua_State *lstate_client;
 extern lua_State *lstate_server;
+int icelua_initfetch(void);
 int icelua_init(void);
 void icelua_deinit(void);
 
@@ -286,6 +308,8 @@ extern map_t *clmap, *svmap;
 extern SDL_Surface *screen;
 extern int force_redraw;
 
+extern int net_port;
+extern char *net_addr;
 extern int boot_mode;
 extern char *mod_basedir;
 
@@ -328,6 +352,10 @@ int net_packet_push_lua(int len, const char *data, int sockfd, packet_t **head, 
 packet_t *net_packet_pop(packet_t **head, packet_t **tail);
 void net_packet_free(packet_t *pkt, packet_t **head, packet_t **tail);
 void net_flush(void);
+int net_connect(void);
+void net_disconnect(void);
+int net_bind(void);
+void net_unbind(void);
 int net_init(void);
 void net_deinit(void);
 

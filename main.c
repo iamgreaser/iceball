@@ -31,6 +31,8 @@ int force_redraw = 1;
 int boot_mode = 0;
 
 char *mod_basedir = NULL;
+char *net_addr;
+int net_port;
 
 int main_argc;
 char **main_argv;
@@ -279,26 +281,36 @@ int update_client(void)
 {
 	int quitflag = update_client_contpre1();
 	
-	lua_getglobal(lstate_client, "client");
-	lua_getfield(lstate_client, -1, "hook_tick");
-	lua_remove(lstate_client, -2);
-	if(lua_isnil(lstate_client, -1))
+	if(mod_basedir == NULL)
 	{
+		// do nothing
+	} else if(boot_mode & 8) {
+		if(icelua_initfetch())
+			return 1;
+		
+		boot_mode &= ~8;
+	} else {
+		lua_getglobal(lstate_client, "client");
+		lua_getfield(lstate_client, -1, "hook_tick");
+		lua_remove(lstate_client, -2);
+		if(lua_isnil(lstate_client, -1))
+		{
+			lua_pop(lstate_client, 1);
+			return 1;
+		}
+		
+		lua_pushnumber(lstate_client, sec_curtime);
+		lua_pushnumber(lstate_client, sec_curtime - sec_lasttime);
+		if(lua_pcall(lstate_client, 2, 1, 0) != 0)
+		{
+			printf("Lua Client Error (tick): %s\n", lua_tostring(lstate_client, -1));
+			lua_pop(lstate_client, 1);
+			return 1;
+		}
+		if(!(boot_mode & 2))
+			sec_wait += lua_tonumber(lstate_client, -1);
 		lua_pop(lstate_client, 1);
-		return 1;
 	}
-	
-	lua_pushnumber(lstate_client, sec_curtime);
-	lua_pushnumber(lstate_client, sec_curtime - sec_lasttime);
-	if(lua_pcall(lstate_client, 2, 1, 0) != 0)
-	{
-		printf("Lua Client Error (tick): %s\n", lua_tostring(lstate_client, -1));
-		lua_pop(lstate_client, 1);
-		return 1;
-	}
-	if(!(boot_mode & 2))
-		sec_wait += lua_tonumber(lstate_client, -1);
-	lua_pop(lstate_client, 1);
 	
 	quitflag = quitflag || update_client_cont1();
 	return quitflag;
@@ -449,20 +461,21 @@ int main(int argc, char *argv[])
 		if(argc <= 3)
 			return print_usage(argv[0]);
 		
-		char *net_addr = argv[2];
-		int net_port = atoi(argv[3]);
-		printf("TODO: connect to \"%s\" port %i\n", net_addr, net_port);
+		net_addr = argv[2];
+		net_port = atoi(argv[3]);
+		printf("Connecting to \"%s\" port %i\n", net_addr, net_port);
+		mod_basedir = NULL;
 		main_largstart = 4;
 		
 		boot_mode = 1;
-		return 101;
+		//return 101;
 	} else if(!strcmp(argv[1], "-s")) {
 		if(argc <= 3)
 			return print_usage(argv[0]);
 		
-		int net_port = atoi(argv[2]);
+		net_port = atoi(argv[2]);
 		mod_basedir = argv[3];
-		printf("TODO: run a server on port %i, mod \"%s\"\n", net_port, mod_basedir);
+		printf("Starting server on port %i, mod \"%s\"\n", net_port, mod_basedir);
 		main_largstart = 4;
 		
 		boot_mode = 3;
@@ -470,9 +483,9 @@ int main(int argc, char *argv[])
 		if(argc <= 3)
 			return print_usage(argv[0]);
 		
-		int net_port = atoi(argv[2]);
+		net_port = atoi(argv[2]);
 		mod_basedir = argv[3];
-		printf("TODO: run a ded server on port %i, mod \"%s\"\n", net_port, mod_basedir);
+		printf("Starting headless/dedicated server on port %i, mod \"%s\"\n", net_port, mod_basedir);
 		main_largstart = 4;
 		
 		boot_mode = 2;
@@ -499,6 +512,8 @@ int main(int argc, char *argv[])
 	if((!(boot_mode & 1)) || !platform_init()) {
 	if(!net_init()) {
 	if(!icelua_init()) {
+	if((!(boot_mode & 2)) || !net_bind()) {
+	if((!(boot_mode & 1)) || !net_connect()) {
 	if((!(boot_mode & 1)) || !video_init()) {
 	if((!(boot_mode & 1)) || !wav_init()) {
 	if((!(boot_mode & 1)) || !render_init(screen->w, screen->h)) {
@@ -506,6 +521,8 @@ int main(int argc, char *argv[])
 		if(boot_mode & 1) render_deinit();
 	} if(boot_mode & 1) wav_deinit();
 	} if(boot_mode & 1) video_deinit();
+	} if(boot_mode & 1) net_disconnect();
+	} if(boot_mode & 2) net_unbind();
 	} icelua_deinit();
 	} net_deinit();
 	} if(boot_mode & 1) platform_deinit();
