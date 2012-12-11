@@ -246,6 +246,33 @@ void net_kick_sockfd_immediate(int sockfd, char *msg)
 	// only send what's necessary
 	send(sockfd, buf, ((int)(uint8_t)buf[1])+1, 0);
 	
+	// call hook_disconnect
+	if(lstate_server != NULL && lstate_client != NULL)
+	{
+		lua_getglobal(lstate_server, "server");
+		lua_getfield(lstate_server, -1, "hook_disconnect");
+		lua_remove(lstate_server, -2);
+		if(!lua_isnil(lstate_server, -1))
+		{
+			if(sockfd >= 0)
+				lua_pushinteger(lstate_server, sockfd);
+			else
+				lua_pushboolean(lstate_server, 1);
+			
+			lua_pushboolean(lstate_server, 1);
+			lua_pushstring(lstate_server, msg);
+			
+			if(lua_pcall(lstate_server, 3, 0, 0) != 0)
+			{
+				printf("ERROR running server Lua (hook_disconnect): %s\n", lua_tostring(lstate_server, -1));
+				lua_pop(lstate_server, 1);
+				return 1;
+			}
+		} else {
+			lua_pop(lstate_server, 1);
+		}
+	}
+	
 	// nuke it
 	close(sockfd);
 }
@@ -869,6 +896,51 @@ void net_flush_accept_one(int sockfd, struct sockaddr_storage *ss, socklen_t sle
 	{
 		net_kick_sockfd_immediate(sockfd, "Server ran out of free slots!");
 		return;
+	}
+	
+	// call hook_connect
+	lua_getglobal(lstate_server, "server");
+	lua_getfield(lstate_server, -1, "hook_connect");
+	lua_remove(lstate_server, -2);
+	if(!lua_isnil(lstate_server, -1))
+	{
+		lua_pushinteger(lstate_server, sockfd);
+		lua_newtable(lstate_server);
+		
+		switch(ss->ss_family)
+		{
+			case AF_INET:
+			case AF_INET6:
+				if(ss->ss_family == AF_INET6)
+					lua_pushstring(lstate_server, "tcp/ip6");
+				else
+					lua_pushstring(lstate_server, "tcp/ip");
+				
+				lua_setfield(lstate_server, -2, "proto");
+				
+				lua_newtable(lstate_server);
+				lua_pushstring(lstate_server, xstr);
+				lua_setfield(lstate_server, -2, "ip");
+				lua_pushnil(lstate_server); // not supported yet!
+				lua_setfield(lstate_server, -2, "host");
+				lua_pushinteger(lstate_server, cport);
+				lua_setfield(lstate_server, -2, "cport");
+				lua_pushinteger(lstate_server, net_port);
+				lua_setfield(lstate_server, -2, "sport");
+				
+				lua_setfield(lstate_server, -2, "addr");
+				break;
+		}
+		
+		if(lua_pcall(lstate_server, 2, 0, 0) != 0)
+		{
+			printf("ERROR running server Lua (hook_connect): %s\n", lua_tostring(lstate_server, -1));
+			lua_pop(lstate_server, 2);
+			net_kick_sockfd_immediate(sockfd, "hook_connect failed on server");
+			return;
+		}
+	} else {
+		lua_pop(lstate_server, 1);
 	}
 	
 	// send pkg basedir packet

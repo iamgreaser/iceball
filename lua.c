@@ -340,8 +340,8 @@ int icelua_init(void)
 			
 			if(lua_pcall(lstate_server, 2, 0, 0) != 0)
 			{
-				printf("ERROR running server Lua (hook_connect): %s\n", lua_tostring(lstate_client, -1));
-				lua_pop(lstate_client, 2);
+				printf("ERROR running server Lua (hook_connect): %s\n", lua_tostring(lstate_server, -1));
+				lua_pop(lstate_server, 2);
 				return 1;
 			}
 		} else {

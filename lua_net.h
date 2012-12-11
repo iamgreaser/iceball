@@ -316,7 +316,8 @@ int icelua_fn_common_net_send(lua_State *L)
 	//net_packet_push(int len, uint8_t *data, packet_t **head, packet_t **tail);
 	if(L != lstate_server)
 	{
-		net_packet_push_lua((int)bsize, str, -1, &(to_client_local.send_head), &(to_client_local.send_tail));
+		net_packet_push_lua((int)bsize, str, to_client_local.sockfd,
+			&(to_client_local.send_head), &(to_client_local.send_tail));
 		lua_pushboolean(L, 1);
 		return 1;
 	} else {

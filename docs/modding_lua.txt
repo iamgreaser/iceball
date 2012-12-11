@@ -116,7 +116,7 @@ server.hook_connect = fn(sockfd, addrinfo) @
 	
 	note, not all of the features are supported.
 
-server.hook_disconnect = fn(sockfd, server_force, reason)
+server.hook_disconnect = fn(sockfd, server_force, reason) @
 	sets a hook called every time a client disconnects
 	
 	"server_force" is true where the server forces the disconnect

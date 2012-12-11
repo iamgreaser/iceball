@@ -20,11 +20,28 @@ print(...)
 
 dofile("pkg/base/common.lua")
 
-client_list = {}
+client_list = {fdlist={}}
+
+function net_broadcast(sockfd, msg)
+	local i
+	for i=1,#(client_list.fdlist) do
+		if client_list.fdlist[i] ~= sockfd then
+			--print("to", client_list.fdlist[i], type(msg))
+			common.net_send(client_list.fdlist[i], msg)
+		end
+	end
+end
+
+function net_broadcast_team(sockfd, msg)
+	-- TODO!
+	return net_broadcast(sockfd, msg)
+end
 
 function server.hook_connect(sockfd, addrinfo)
 	-- TODO: enforce bans
+	client_list.fdlist[#(client_list.fdlist)+1] = sockfd
 	client_list[sockfd] = {
+		fdidx = #(client_list.fdlist),
 		addrinfo = addrinfo,
 		plrid = nil
 	}
@@ -32,11 +49,25 @@ function server.hook_connect(sockfd, addrinfo)
 		addrinfo.addr and addrinfo.addr.sport,
 		addrinfo.addr and addrinfo.addr.ip,
 		addrinfo.addr and addrinfo.addr.cport)
+	
+	local ss = (sockfd == true and "(local)") or sockfd
+	net_broadcast(nil, common.net_pack("BIz", 0x0E, 0xFFFF0000,
+		"Connected: player on sockfd "..ss))
 end
 
 function server.hook_disconnect(sockfd, server_force, reason)
+	-- just in case we get any stray disconnect messages
+	if not client_list[sockfd] then return end
+	
+	local fdidx = client_list[sockfd].fdidx
+	client_list.fdlist[fdidx] = client_list.fdlist[#(client_list.fdlist)]
+	client_list.fdlist[#(client_list.fdlist)] = nil
 	client_list[sockfd] = nil
 	print("disconnect:", sockfd, server_force, reason)
+	
+	local ss = (sockfd == true and "(local)") or sockfd
+	net_broadcast(nil, common.net_pack("BIz", 0x0E, 0xFFFF0000,
+		"Disconnected: player on sockfd "..ss))
 end
 
 function server.hook_tick(sec_current, sec_delta)
@@ -46,6 +77,7 @@ function server.hook_tick(sec_current, sec_delta)
 	while true do
 		pkt, sockfd = common.net_recv()
 		if not pkt then break end
+		--print("in",sockfd)
 		
 		local cid
 		cid, pkt = common.net_unpack("B", pkt)
@@ -58,7 +90,8 @@ function server.hook_tick(sec_current, sec_delta)
 			-- TODO: broadcast
 			local s = plr.name.." ("..teams[plr.team].name.."): "..msg
 			--local s = "dummy: "..msg
-			common.net_send(true, common.net_pack("BIz", 0x0E, 0xFFFFFFFF, s))
+			
+			net_broadcast(nil, common.net_pack("BIz", 0x0E, 0xFFFFFFFF, s))
 		elseif cid == 0x0D then
 			-- teamchat
 			local msg
@@ -69,7 +102,7 @@ function server.hook_tick(sec_current, sec_delta)
 			local cb = teams[plr.team].color_chat
 			local cb = {0,0,255}
 			local c = argb_split_to_merged(cb[1],cb[2],cb[3])
-			common.net_send(true, common.net_pack("BIz", 0x0E, c, s))
+			net_broadcast_team(nil, common.net_pack("BIz", 0x0E, c, s))
 		end
 		-- TODO!
 	end
