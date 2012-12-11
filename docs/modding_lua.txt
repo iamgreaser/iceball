@@ -407,6 +407,13 @@ client.img_blit(img, dx, dy, width = iwidth, height = iheight, sx = 0, sy = 0, c
 	
 	this is clipped to fit!
 
+client.img_blit_to(target, img, dx, dy, width = iwidth, height = iheight, sx = 0, sy = 0, color = 0xFFFFFFFF) @
+	blits an image onto another image at position dx, dy
+	
+	"color" indicates a base 0xAARRGGBB colour to use
+	
+	this is clipped to fit!
+
 tab = common.json_parse(str) @
 	parses the JSON string "str"
 	

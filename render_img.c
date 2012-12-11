@@ -76,7 +76,10 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 	uint32_t *pd = &(pixels[dx+dy*pitch]);
 	int spitch = src->head.width - bw;
 	int dpitch = pitch - bw;
-
+	
+	//printf("[%i %i] [%i %i] %016llX %016llX %i %i %08X\n"
+	//	, bw, bh, dx, dy, (long long)ps, (long long)pd, dpitch, spitch, color);
+	
 #ifdef __SSE2__
 	// TODO: improve prefetching
 	
@@ -105,7 +108,7 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 			
 			// do the left part first
 			// TODO: look for a mask instruction
-			for(x = 0; (((intptr_t)pd)&15) != 0 && x < bw; x++)
+			for(x = 0; x < bw; x++)
 			{
 				uint32_t s = *(ps++);
 				uint32_t d = *pd;
@@ -124,21 +127,23 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 				uint32_t ialpha = 0x100 - alpha;
 				
 				uint32_t sa = s & 0x00FF00FF;
-				uint32_t sb = s & 0x0000FF00;
+				uint32_t sb = (s & 0xFF00FF00)>>8;
 				uint32_t da = d & 0x00FF00FF;
-				uint32_t db = d & 0x0000FF00;
+				uint32_t db = (d & 0xFF00FF00)>>8;
 				
 				sa *= alpha;
 				sb *= alpha;
 				da *= ialpha;
 				db *= ialpha;
 				
-				//printf("%i %i\n", alpha, ialpha);
-				
 				uint32_t va = ((sa + da)>>8) & 0x00FF00FF;
-				uint32_t vb = ((sb + db)>>8) & 0x0000FF00;
+				uint32_t vb = (sb + db) & 0xFF00FF00;
+				uint32_t vv = va+vb;
 				
-				*(pd++) = va + vb;
+				//if(((uint64_t)pd) < 0x00000000FFFFFFFFL)
+				//	printf("%i %i %08X\n", alpha, ialpha, vv);
+				
+				*(pd++) = vv;
 			}
 			
 			// do the middle
@@ -290,21 +295,23 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 				uint32_t ialpha = 0x100 - alpha;
 				
 				uint32_t sa = s & 0x00FF00FF;
-				uint32_t sb = s & 0x0000FF00;
+				uint32_t sb = (s & 0xFF00FF00)>>8;
 				uint32_t da = d & 0x00FF00FF;
-				uint32_t db = d & 0x0000FF00;
+				uint32_t db = (d & 0xFF00FF00)>>8;
 				
 				sa *= alpha;
 				sb *= alpha;
 				da *= ialpha;
 				db *= ialpha;
 				
-				//printf("%i %i\n", alpha, ialpha);
-				
 				uint32_t va = ((sa + da)>>8) & 0x00FF00FF;
-				uint32_t vb = ((sb + db)>>8) & 0x0000FF00;
+				uint32_t vb = (sb + db) & 0xFF00FF00;
+				uint32_t vv = va+vb;
 				
-				*(pd++) = va + vb;
+				//if(((uint64_t)pd) < 0x00000000FFFFFFFFL)
+				//	printf("%i %i %08X\n", alpha, ialpha, vv);
+				
+				*(pd++) = vv;
 			}
 			
 			ps += spitch;
@@ -404,21 +411,23 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 			uint32_t ialpha = 0x100 - alpha;
 			
 			uint32_t sa = s & 0x00FF00FF;
-			uint32_t sb = s & 0x0000FF00;
+			uint32_t sb = (s & 0xFF00FF00)>>8;
 			uint32_t da = d & 0x00FF00FF;
-			uint32_t db = d & 0x0000FF00;
+			uint32_t db = (d & 0xFF00FF00)>>8;
 			
 			sa *= alpha;
 			sb *= alpha;
 			da *= ialpha;
 			db *= ialpha;
 			
-			//printf("%i %i\n", alpha, ialpha);
-			
 			uint32_t va = ((sa + da)>>8) & 0x00FF00FF;
-			uint32_t vb = ((sb + db)>>8) & 0x0000FF00;
+			uint32_t vb = (sb + db) & 0xFF00FF00;
+			uint32_t vv = va+vb;
 			
-			*(pd++) = va + vb;
+			//if(((uint64_t)pd) < 0x00000000FFFFFFFFL)
+			//	printf("%i %i %08X\n", alpha, ialpha, vv);
+			
+			*(pd++) = vv;
 		}
 		
 		ps += spitch;
