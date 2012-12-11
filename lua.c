@@ -83,6 +83,7 @@ struct icelua_entry icelua_client[] = {
 	{icelua_fn_client_model_render_bone_global, "model_render_bone_global"},
 	{icelua_fn_client_model_render_bone_local, "model_render_bone_local"},
 	{icelua_fn_client_img_blit, "img_blit"},
+	{icelua_fn_client_img_blit_to, "img_blit_to"},
 	{NULL, NULL}
 };
 

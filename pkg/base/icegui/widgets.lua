@@ -1,12 +1,4 @@
--- look into actual drawing functionality!~
--- the client drawing code requires manual memory management:
--- we have to allocate a buffer and draw pixels to it
--- this code can't deal with that problem...
--- lib_gui will have to provide a layer that takes the abstract APIs here and adds drawing functions
--- on top. the abstract API can assist by adding a "dirty" flag so that cache management is straightforward.
-
 -- sketch listener and collision system:
---    rect and layers detection (derive layers from hierarchy)
 --    onDown onUp onMove onClick(down+up inside collision) onDrag(down inside collision, movement) onKeyboard
 --    when will mouse cursor be visible? important engine consideration!
 

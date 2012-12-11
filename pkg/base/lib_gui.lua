@@ -190,19 +190,26 @@ function gui_create_fixwidth_font(image, char_width, char_height, indexing_fn)
 	
 	-- print text with topleft at x, y, color c, string str
 	function this.print(x, y, c, str, buffer)
-		buffer = buffer or client
-		local i
 		for i=1,#str do
 			local idx = this.indexing_fn(string.byte(str, i))
-			buffer.img_blit(this.image, x, y, this.width, this.height, idx*this.width, 0, c)
+			if buffer == nil then
+				local temp = common.img_new(this.width, this.height)
+				client.img_blit_to(temp, this.image, 0, 0, this.width, this.height, 
+					idx*this.width, 0, c)
+				common.img_pixel_set(temp, 0, 0, 0xFFFF0000)
+				client.img_blit(temp, x, y)
+				common.img_free(temp)
+				--client.img_blit(this.image, x, y, this.width, this.height, idx*this.width, 0, c)
+			else
+				client.img_blit_to(buffer, this.image, x, y, this.width, this.height, idx*this.width, 0, c)
+			end
 			x = x + this.width
 		end
+		local i
 	end
 	
 	-- print a selection of precomputed text
 	function this.print_precomputed(data, offx, offy, buffer)
-		
-		buffer = buffer or client
 		
 		for y=1,#data do
 			for x=1,#data[y] do
@@ -211,8 +218,13 @@ function gui_create_fixwidth_font(image, char_width, char_height, indexing_fn)
 				local px = data[y][x][3] + offx
 				local py = data[y][x][4] + offy
 				local c = data[y][x][5]
-				buffer.img_blit(this.image, px, py, this.width, this.height, 
-					idx*this.width, 0, c)
+				if buffer == nil then
+					client.img_blit(this.image, px, py, this.width, this.height, 
+						idx*this.width, 0, c)
+				else
+					client.img_blit_to(buffer, this.image, px, py, this.width, this.height, 
+						idx*this.width, 0, c)
+				end
 			end
 		end
 		
@@ -354,24 +366,83 @@ function gui_create_scene(width, height)
 	end
 	
 	function scene.textfield(options)
-		-- store a text buffer in here and its last render state in here...
-		-- define the width and height to be the width and height of the text...
-		-- additional formatting?
 		
 		local this = scene.display_object(options)
 		
-		-- if we specified width and height in options, we are implicitly using wordwrapping?
-		-- no... 
+		this.wordwrap = options.wordwrap or true
+		this.color = options.color or 0xFF88FF88
+		this.autosize = options.autosize or true
+		this.font = options.font or font_mini
+		this.use_img = true
+		
+		-- so, we are computing the text around offset 0, 0
+		-- but when we go to display or collide with it, we're going to have to
+		-- apply the widget offsets on top.
+		
+		-- TODO: cursor + text selection collision, data structure, rendering
+		-- TODO: compute_unwrapped should allow new lines...
+		-- TODO: check to see if the draw-to-buffer method I made is actually any good
+		
+		function this.setter_keys.width(w)
+			if this.autosize == false then
+				rawset(this, 'width', w)
+			end
+		end
+		
+		function this.setter_keys.height(h)
+			if this.autosize == false then
+				rawset(this, 'height', h)
+			end
+		end
+		
+		function this._recalc_size()
+			if this.wordwrap == true then
+				this.text_cache = this.font.compute_wordwrap(this.width,
+					0, 0, this.color, this._text)
+			else
+				this.text_cache = this.font.compute_unwrapped(0, 0, 
+					this.color, this._text)
+			end
+			if this.autosize then
+				local dim = this.font.dimensions(this.text_cache)
+				rawset(this, 'width', dim.width)
+				rawset(this, 'height', dim.height)
+			end
+			this.dirty = true
+		end
+		
+		function this.getter_keys.text()
+			return this._text
+		end
+		
+		function this.setter_keys.text(str)
+			this._text = str
+			this._recalc_size()
+		end
+		
+		function this.draw_update()
+			this.font.print_precomputed(this.text_cache, 0, 0, this.img)
+			common.img_pixel_set(this.img, 0, 0, 0xFFFF0000)
+			common.img_pixel_set(this.img, 1, 0, 0xFFFF0000)
+			common.img_pixel_set(this.img, 0, 1, 0xFFFF0000)
+			common.img_pixel_set(this.img, 1, 1, 0xFFFF0000)
+		end
+		
+		this.text = options.text or ""
+		
+		return this
 		
 	end
 	
 	-- TEST CODE
-	--local frame = scene.rect_frame{width=320,height=320, x=width/2, y=height/2}
-	--local frame2 = scene.rect_frame{width=32,height=32, x=0, y=0}
-	--local frame3 = scene.rect_frame{width=32,height=32, x=64, y=96}
+	local frame = scene.rect_frame{width=320,height=320, x=width/2, y=height/2}
+	local frame2 = scene.rect_frame{width=32,height=32, x=0, y=0}
+	local frame3 = scene.rect_frame{width=32,height=32, x=64, y=96}
+	local text1 = scene.textfield{width=400,height=100, text="hello world"}
 	--root.add_child(frame)
 	--frame.add_child(frame2)
 	--frame.add_child(frame3)
+	root.add_child(text1)
 	
 	return scene
 	
