@@ -40,6 +40,34 @@ int icelua_fn_client_img_blit(lua_State *L)
 	return 0;
 }
 
+int icelua_fn_client_img_blit_to(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 4, 9);
+	int dx, dy, bw, bh, sx, sy;
+	uint32_t color;
+	
+	img_t *dest = lua_touserdata(L, 1);
+	if(dest == NULL || dest->udtype != UD_IMG)
+		return luaL_error(L, "not an image");
+	img_t *source = lua_touserdata(L, 2);
+	if(source == NULL || source->udtype != UD_IMG)
+		return luaL_error(L, "not an image");
+	
+	dx = lua_tointeger(L, 3);
+	dy = lua_tointeger(L, 4);
+	bw = (top < 5 ? source->head.width : lua_tointeger(L, 5));
+	bh = (top < 6 ? source->head.height : lua_tointeger(L, 6));
+	sx = (top < 7 ? 0 : lua_tointeger(L, 7));
+	sy = (top < 8 ? 0 : lua_tointeger(L, 8));
+	color = (top < 9 ? 0xFFFFFFFF : (uint32_t)lua_tointeger(L, 9));
+	
+	render_blit_img(dest->pixels, dest->head.width, dest->head.height, 
+		dest->head.width,
+		source, dx, dy, bw, bh, sx, sy, color);
+	
+	return 0;
+}
+
 // common functions
 int icelua_fn_common_img_load(lua_State *L)
 {
@@ -150,32 +178,4 @@ int icelua_fn_common_img_get_dims(lua_State *L)
 	lua_pushinteger(L, img->head.height);
 	
 	return 2;
-}
-
-int icelua_fn_client_img_blit_to(lua_State *L)
-{
-	int top = icelua_assert_stack(L, 4, 9);
-	int dx, dy, bw, bh, sx, sy;
-	uint32_t color;
-	
-	img_t *dest = lua_touserdata(L, 1);
-	if(dest == NULL || dest->udtype != UD_IMG)
-		return luaL_error(L, "not an image");
-	img_t *source = lua_touserdata(L, 2);
-	if(source == NULL || source->udtype != UD_IMG)
-		return luaL_error(L, "not an image");
-	
-	dx = lua_tointeger(L, 3);
-	dy = lua_tointeger(L, 4);
-	bw = (top < 5 ? source->head.width : lua_tointeger(L, 5));
-	bh = (top < 6 ? source->head.height : lua_tointeger(L, 6));
-	sx = (top < 7 ? 0 : lua_tointeger(L, 7));
-	sy = (top < 8 ? 0 : lua_tointeger(L, 8));
-	color = (top < 9 ? 0xFFFFFFFF : (uint32_t)lua_tointeger(L, 9));
-	
-	render_blit_img(dest->pixels, dest->head.width, dest->head.height, 
-        dest->head.width,
-		source, dx, dy, bw, bh, sx, sy, color);
-	
-	return 0;
 }

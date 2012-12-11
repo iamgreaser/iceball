@@ -193,13 +193,14 @@ function gui_create_fixwidth_font(image, char_width, char_height, indexing_fn)
 		for i=1,#str do
 			local idx = this.indexing_fn(string.byte(str, i))
 			if buffer == nil then
-				local temp = common.img_new(this.width, this.height)
-				client.img_blit_to(temp, this.image, 0, 0, this.width, this.height, 
-					idx*this.width, 0, c)
-				common.img_pixel_set(temp, 0, 0, 0xFFFF0000)
-				client.img_blit(temp, x, y)
-				common.img_free(temp)
-				--client.img_blit(this.image, x, y, this.width, this.height, idx*this.width, 0, c)
+				-- FIXME why does this not work
+				--local pw, ph = common.img_get_dims(this.image)
+				--local temp = common.img_new(pw, ph)
+				--client.img_blit_to(temp, this.image, 0, 0)
+				--common.img_pixel_set(temp, 0, 0, 0xFFFF0000) -- this gives spaces a red dot
+				--client.img_blit(temp, x, y, this.width, this.height, idx*this.width, 0, c)
+				--common.img_free(temp)
+				client.img_blit(this.image, x, y, this.width, this.height, idx*this.width, 0, c)
 			else
 				client.img_blit_to(buffer, this.image, x, y, this.width, this.height, idx*this.width, 0, c)
 			end
@@ -435,14 +436,14 @@ function gui_create_scene(width, height)
 	end
 	
 	-- TEST CODE
-	local frame = scene.rect_frame{width=320,height=320, x=width/2, y=height/2}
-	local frame2 = scene.rect_frame{width=32,height=32, x=0, y=0}
-	local frame3 = scene.rect_frame{width=32,height=32, x=64, y=96}
-	local text1 = scene.textfield{width=400,height=100, text="hello world"}
+	--local frame = scene.rect_frame{width=320,height=320, x=width/2, y=height/2}
+	--local frame2 = scene.rect_frame{width=32,height=32, x=0, y=0}
+	--local frame3 = scene.rect_frame{width=32,height=32, x=64, y=96}
+	--local text1 = scene.textfield{width=400,height=100, text="hello world"}
 	--root.add_child(frame)
 	--frame.add_child(frame2)
 	--frame.add_child(frame3)
-	root.add_child(text1)
+	--root.add_child(text1)
 	
 	return scene
 	
