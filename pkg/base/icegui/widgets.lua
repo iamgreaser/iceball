@@ -44,7 +44,7 @@ function P.widget(options)
 	
 	local this = { x = options.x or 0, y = options.y or 0, 
 			 parent = options.parent or nil, 
-			 children = options.children or {}, 
+			 children = options.children or {},
 			 align_x = options.align_x or 0.5, 
 			 align_y = options.align_y or 0.5,
 			 width = options.width or 0,
@@ -55,18 +55,12 @@ function P.widget(options)
 			 margin_bottom = options.margin_bottom or 0,
 			 getter_keys = getter_keys, setter_keys = setter_keys }
 	
-	function this.num_children()
-		local ct = 0
-		for k, v in pairs(this.children) do ct = ct + 1 end
-		return ct
-	end
-	
 	-- align 0 = top-left
 	-- align 1 = bottom-right
 	-- align 0.5 = center
 	
 	-- FIXME: some of the things that are disallowed as setters could be made settable with more effort.
-	-- FIXME: I don't have swap children methods
+	-- FIXME: Test all the child add/swap/drop methods properly(do they leak?)
 	
 	function setter_keys.x(v) rawset(this, 'x', v) this.dirty = true end
 	function setter_keys.y(v) rawset(this, 'y', v) this.dirty = true end
@@ -169,19 +163,53 @@ function P.widget(options)
 	-- stub method for graphics resource management
 	function this.free() end 
 	-- remove the parent-child connection but do not deallocate the object
-	function this.detach() if this.parent then table.remove(this.children, this) this.parent = nil end end
+	function this.detach() 
+		if this.parent then 
+			local pos = this.parent.get_child_position(this)
+			table.remove(this.parent.children, pos)
+			this.parent = nil
+			return pos
+		end 
+		return nil
+	end
 	-- remove the parent-child connection but do not deallocate the object
-	function this.remove_child(child) child.detach() end
+	function 
+		this.remove_child(child) child.detach() 
+	end
 	-- remove the parent-child connection but do not deallocate the objects
 	function this.remove_all_children() for k,child in pairs(this.children) do this.remove_child(child) end end
-	-- create a relationship between the parent and child's size and coordinates
-	function this.add_child(child) child.detach(); child.parent = this; this.children[child] = child end
+	-- create a relationship between the parent and child's size and coordinates (with optional sort position)
+	function this.add_child(child, position) 
+		position = position or #this.children+1 
+		child.detach(); child.parent = this; 
+		table.insert(this.children, position, child)
+	end
 	-- create a relationship between the parent and child's size and coordinates
 	function this.set_parent(parent) parent.add_child(this) end
 	-- remove the object and its children and deallocate all memory
 	function this.despawn() 
-		this.detach(); for k,child in pairs(this.children) do child.despawn() end this.free()
+		this.detach(); while #this.children>0 do this.children[1].despawn() end this.free()
 	end
+	-- get the index of the child, or nil if it's not in this node
+	function this.get_child_position(child)
+		local i
+		for i=1, #this.children do if this.children[i] == child then return i end end
+		return nil
+	end
+	-- swap the children at the indicated index values
+	function this.swap_indices(a, b)
+		local tmp = this.children[a]
+		this.children[a] = this.children[b]
+		this.children[b] = tmp
+	end
+	-- swap the child objects (assuming they exist and are searchable in the children table)
+	function this.swap_children(a, b)
+		this.swap_children(this.get_child_position(a), this.get_child_position(b))
+	end
+	-- make the child the top-most element without disturbing other ordering
+	function this.child_to_top(child) child.detach() this.add_child(child) end
+	-- make the child the bottom-most element without disturbing other ordering
+	function this.child_to_bottom(child) child.detach() this.add_child(child, 1) end
 
 	return this
 end

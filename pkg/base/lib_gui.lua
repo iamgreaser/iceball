@@ -193,18 +193,6 @@ function gui_create_fixwidth_font(image, char_width, char_height, indexing_fn)
 		for i=1,#str do
 			local idx = this.indexing_fn(string.byte(str, i))
 			if buffer == nil then
-				-- test case, finally works
-				--[[
-				local pw, ph = common.img_get_dims(this.image)
-				local temp = common.img_new(pw, ph)
-				-- note, the dropshadow might not be a good idea
-				client.img_blit_to(temp, this.image, 1, 1, pw, ph, 0, 0, 0x80000000)
-				client.img_blit_to(temp, this.image, 0, 0)
-				common.img_pixel_set(temp, 0, 0, 0xFFFF0000) -- this gives spaces a red dot
-				client.img_blit(temp, x, y, this.width, this.height, idx*this.width, 0, c)
-				common.img_free(temp)
-				]]
-				
 				client.img_blit(this.image, x, y, this.width, this.height, idx*this.width, 0, c)
 			else
 				client.img_blit_to(buffer, this.image, x, y, this.width, this.height, idx*this.width, 0, c)
@@ -376,7 +364,7 @@ function gui_create_scene(width, height)
 		local this = scene.display_object(options)
 		
 		this.wordwrap = options.wordwrap or true
-		this.color = options.color or 0xFF88FF88
+		this.color = options.color or 0xFF880088
 		this.autosize = options.autosize or true
 		this.font = options.font or font_mini
 		this.use_img = true
@@ -387,17 +375,18 @@ function gui_create_scene(width, height)
 		
 		-- TODO: cursor + text selection collision, data structure, rendering
 		-- TODO: compute_unwrapped should allow new lines...
-		-- TODO: check to see if the draw-to-buffer method I made is actually any good
 		
 		function this.setter_keys.width(w)
 			if this.autosize == false then
 				rawset(this, 'width', w)
+				this.dirty = true
 			end
 		end
 		
 		function this.setter_keys.height(h)
 			if this.autosize == false then
 				rawset(this, 'height', h)
+				this.dirty = true
 			end
 		end
 		
@@ -428,10 +417,6 @@ function gui_create_scene(width, height)
 		
 		function this.draw_update()
 			this.font.print_precomputed(this.text_cache, 0, 0, this.img)
-			common.img_pixel_set(this.img, 0, 0, 0xFFFF0000)
-			common.img_pixel_set(this.img, 1, 0, 0xFFFF0000)
-			common.img_pixel_set(this.img, 0, 1, 0xFFFF0000)
-			common.img_pixel_set(this.img, 1, 1, 0xFFFF0000)
 		end
 		
 		this.text = options.text or ""
@@ -441,14 +426,15 @@ function gui_create_scene(width, height)
 	end
 	
 	-- TEST CODE
-	--local frame = scene.rect_frame{width=320,height=320, x=width/2, y=height/2}
-	--local frame2 = scene.rect_frame{width=32,height=32, x=0, y=0}
-	--local frame3 = scene.rect_frame{width=32,height=32, x=64, y=96}
-	--local text1 = scene.textfield{width=400,height=100, text="hello world"}
-	--root.add_child(frame)
-	--frame.add_child(frame2)
-	--frame.add_child(frame3)
-	--root.add_child(text1)
+	--[=[local frame = scene.rect_frame{width=320,height=320, x=width/2, y=height/2}
+	local frame2 = scene.rect_frame{width=32,height=32, x=0, y=0}
+	local frame3 = scene.rect_frame{width=32,height=32, x=64, y=96}
+	local text1 = scene.textfield{width=400,height=100, text="hello world"}
+	root.add_child(frame)
+	frame.add_child(text1)
+	frame.add_child(frame2)
+	frame.add_child(frame3)
+	frame.child_to_top(text1)]=]
 	
 	return scene
 	
