@@ -63,6 +63,7 @@ STUFF TO DO:
   - I have made some of these already.
 - Actually implement sound support.
 - Network it up. (UnrealIncident has offered to work on this.)
+  - This is underway.
 - Make the physics less crap.
 - Speed up the render a bit.
   - Fix the raycaster.

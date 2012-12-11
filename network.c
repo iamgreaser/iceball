@@ -266,7 +266,7 @@ void net_kick_sockfd_immediate(int sockfd, char *msg)
 			{
 				printf("ERROR running server Lua (hook_disconnect): %s\n", lua_tostring(lstate_server, -1));
 				lua_pop(lstate_server, 1);
-				return 1;
+				return;
 			}
 		} else {
 			lua_pop(lstate_server, 1);

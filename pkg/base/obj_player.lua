@@ -87,21 +87,9 @@ function new_player(settings)
 	
 	this.t_rcirc = nil
 	
-	function this.spawn()
-		local xlen,ylen,zlen
-		xlen,ylen,zlen = common.map_get_dims()
-		
-		while true do
-			this.x = math.floor(math.random()*xlen/4.0)+0.5
-			this.z = math.floor(math.random()*zlen)+0.5
-			if this.team == 1 then this.x = xlen - this.x end
-			this.y = (common.map_pillar_get(this.x, this.z))[1+1]
-			if this.y < ylen-1 then break end
-		end
-		this.y = this.y - 3.0
-		
-		this.alive = true
-		this.spawned = true
+	function this.prespawn()
+		this.alive = false
+		this.spawned = false
 		
 		this.grounded = false
 		this.crouching = false
@@ -110,16 +98,14 @@ function new_player(settings)
 		this.arm_rest_left = 1.0
 		
 		this.t_respawn = nil
-		this.t_switch = true
+		this.t_switch = nil
 		this.t_newnade = nil
 		this.t_newblock = nil
 		this.t_newspade1 = nil
 		this.t_newspade2 = nil
 		
-		this.vx, this.vy, this.vz = 0, 0, 0
-		this.angy, this.angx = math.pi/2.0, 0.0
 		this.dangx, this.dangy = 0, 0
-		if this.team == 1 then this.angy = this.angy-math.pi end
+		this.vx, this.vy, this.vz = 0, 0, 0
 		
 		this.blx1, this.bly1, this.blz1 = nil, nil, nil
 		this.blx2, this.bly2, this.blz2 = nil, nil, nil
@@ -144,8 +130,48 @@ function new_player(settings)
 		this.has_intel = nil
 	end
 	
+	function prv_spawn_cont1()
+		this.prespawn()
+		
+		this.alive = true
+		this.spawned = true
+		this.t_switch = true
+	end
+	
+	function this.spawn_at(x,y,z,ya,xa)
+		this.x = x
+		this.y = y
+		this.z = z
+		this.angy = ya
+		this.angx = xa
+		
+		return prv_spawn_cont1()
+	end
+	
+	function this.spawn()
+		local xlen,ylen,zlen
+		xlen,ylen,zlen = common.map_get_dims()
+		
+		while true do
+			this.x = math.floor(math.random()*xlen/4.0)+0.5
+			this.z = math.floor(math.random()*zlen)+0.5
+			if this.team == 1 then this.x = xlen - this.x end
+			this.y = (common.map_pillar_get(this.x, this.z))[1+1]
+			if this.y < ylen-1 then break end
+		end
+		this.y = this.y - 3.0
+		this.angy, this.angx = math.pi/2.0, 0.0
+		if this.team == 1 then this.angy = this.angy-math.pi end
+		
+		return prv_spawn_cont1()
+	end
+	
 	this.name = settings.name or "Noob"
-	this.spawn()
+	if server then
+		this.spawn()
+	else
+		this.prespawn()
+	end
 	
 	function this.tool_switch(tool)
 		if this.tool == TOOL_GUN then
@@ -158,6 +184,56 @@ function new_player(settings)
 		end
 		this.t_switch = true
 		this.tool = tool
+	end
+	
+	--[[
+		keys are:
+			0x01: up
+			0x02: down
+			0x04: left
+			0x08: right
+			0x10: sneak | scope
+			0x20: crouch
+			0x40: jump
+			0x80: * RESERVED *
+	]]
+	
+	function this.get_pos()
+		return this.x, this.y, this.z
+	end
+	
+	function this.set_pos_recv(x, y, z)
+		this.x = x
+		this.y = y
+		this.z = z
+	end
+	
+	function this.get_orient()
+		local keys = 0
+		if this.ev_forward then keys = keys + 0x01 end
+		if this.ev_back then keys = keys + 0x02 end
+		if this.ev_left then keys = keys + 0x04 end
+		if this.ev_right then keys = keys + 0x08 end
+		if this.ev_sneak or this.zooming then keys = keys + 0x10 end
+		if this.ev_crouch then keys = keys + 0x20 end
+		if this.ev_jump then keys = keys + 0x40 end
+		--if this.ev_aimbot then keys = keys + 0x80 end
+		
+		return this.angy, this.angx, keys
+	end
+	
+	function this.set_orient_recv(ya, xa, keys)
+		this.angy = ya
+		this.angx = xa
+		
+		this.ev_forward = bit_and(keys,0x01) ~= 0
+		this.ev_back = bit_and(keys,0x02) ~= 0
+		this.ev_left = bit_and(keys,0x04) ~= 0
+		this.ev_right = bit_and(keys,0x08) ~= 0
+		this.ev_sneak = bit_and(keys,0x10) ~= 0
+		this.ev_crouch = bit_and(keys,0x20) ~= 0
+		this.ev_jump = bit_and(keys,0x40) ~= 0
+		--this.ev_aimbot = bit_and(keys,0x80) ~= 0
 	end
 	
 	function this.recoil(sec_current, recoil_y, recoil_x)
@@ -272,6 +348,10 @@ function new_player(settings)
 	function this.tick(sec_current, sec_delta)
 		local xlen,ylen,zlen
 		xlen,ylen,zlen = common.map_get_dims()
+		
+		if not this.spawned then
+			return
+		end
 		
 		if (not this.alive) and (not this.t_respawn) then
 			this.t_respawn = sec_current + MODE_RESPAWN_TIME

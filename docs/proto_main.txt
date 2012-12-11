@@ -136,7 +136,7 @@ Iceball Base Mod:
 		
 		note, for C->S pid MUST be 0x00
 	
-	0x05 pid team weapon namelen name[namelen] score.s16 kills.s16 deaths.s16: (S->C)
+	0x05 pid team weapon score.s16 kills.s16 deaths.s16 namelen name[namelen]: (S->C)
 		adds player to server
 		
 		note, this can be used to update a player on the server
@@ -180,3 +180,7 @@ Iceball Base Mod:
 	
 	0x10 pid x.fs y.fs z.fs ya.u8 xa.u8: (S->C)
 		player spawn
+	
+	0x11 team.s8 weapon.u8 name.z (C->S)
+		offer player
+		if team == -1, server autoselects

@@ -59,6 +59,11 @@ BTSK_MAP = SDLK_m
 chat_killfeed = {head = 1, scroll = nil, queue = {}}
 chat_text = {head = 1, scroll = nil, queue = {}}
 
+NET_MOVE_DELAY = 0.5
+NET_ORIENT_DELAY = 0.1
+t_net_move = nil
+t_net_orient = nil
+
 function chat_add(ctab, mtime, msg, color)
 	local l = {
 		mtime = mtime,
@@ -264,7 +269,51 @@ function h_tick_main(sec_current, sec_delta)
 		cid, pkt = common.net_unpack("B", pkt)
 		print("pkt", cid)
 		
-		if cid == 0x0E then
+		if cid == 0x03 then
+			local pid, x, y, z
+			pid, x, y, z, pkt = common.net_unpack("Bhhh", pkt)
+			x = x/32.0
+			y = y/32.0
+			z = z/32.0
+			
+			local plr = players[pid]
+			
+			if plr then
+				plr.set_pos_recv(x, y, z)
+			end
+		elseif cid == 0x04 then
+			local pid, ya, xa, keys
+			pid, ya, xa, keys = common.net_unpack("BbbB", pkt)
+			ya = ya*math.pi/128
+			xa = xa*math.pi/256
+			
+			local plr = players[pid]
+			
+			if plr then
+				plr.set_orient_recv(ya, xa, keys)
+			end
+		elseif cid == 0x05 then
+			-- 0x05 pid team weapon score.s16 kills.s16 deaths.s16 namelen name[namelen]: (S->C)
+			local pid, tidx, wpn, score, kills, deaths, name
+			pid, tidx, wpn, score, kills, deaths, name, pkt
+				= common.net_unpack("Bbbhhhz", pkt)
+			
+			players[pid] = new_player({
+				name = name,
+				--[=[squad = squads[math.fmod(i-1,2)][
+					math.fmod(math.floor((i-1)/2),4)+1],]=]
+				squad = nil,
+				team = tidx,
+				weapon = wpn,
+			})
+			
+			players[pid].score = score
+			players[pid].kills = kills
+			players[pid].deaths = deaths
+		elseif cid == 0x06 then
+			local pid, pkt = common.net_unpack("B", pkt)
+			players.current = pid
+		elseif cid == 0x0E then
 			-- add to chat
 			local color, msg
 			color, msg, pkt = common.net_unpack("Iz", pkt)
@@ -274,6 +323,13 @@ function h_tick_main(sec_current, sec_delta)
 			local color, msg
 			color, msg, pkt = common.net_unpack("Iz", pkt)
 			chat_add(chat_killfeed, nil, msg, color)
+		elseif cid == 0x10 then
+			local pid, x,y,z, ya,xa
+			pid, x,y,z, ya,xa, pkt = common.net_unpack("Bfffbb", pkt)
+			local plr = players[pid]
+			if plr then
+				plr.spawn_at(x,y,z,ya*math.pi/128,xa*math.pi/256)
+			end
 		end
 	end
 	
@@ -289,7 +345,37 @@ function h_tick_main(sec_current, sec_delta)
 		intent[i].tick(sec_current, sec_delta)
 	end
 	
-	players[players.current].camera_firstperson()
+	if players.current and players[players.current] then
+		local plr = players[players.current]
+		
+		if t_net_move and sec_current >= t_net_move then t_net_move = nil end
+		if t_net_orient and sec_current >= t_net_orient then t_net_orient = nil end
+		if not t_net_move then
+			t_net_move = sec_current + NET_MOVE_DELAY
+			local x,y,z
+			x,y,z = plr.get_pos()
+			x = x * 32.0
+			y = y * 32.0
+			z = z * 32.0
+			common.net_send(nil, common.net_pack("BBhhh"
+				, 0x03, 0x00, x, y, z))
+		end
+		if not t_net_orient then
+			t_net_orient = sec_current + NET_ORIENT_DELAY
+			local ya,xa,keys
+			ya,xa,keys = plr.get_orient()
+			ya = ya*128/math.pi
+			xa = xa*256/math.pi
+			
+			common.net_send(nil, common.net_pack("BBbbB"
+				, 0x04, 0x00, ya, xa, keys))
+		end
+		
+		plr.camera_firstperson()
+	else
+		-- TODO: idle camera
+	end
+	
 	-- wait a bit
 	return 0.005
 end
@@ -302,18 +388,20 @@ function h_tick_init(sec_current, sec_delta)
 		squads[1][i] = name_generate()
 	end]]
 	
-	players.current = math.floor(math.random()*32)+1
+	players.current = nil
 	
+	--[[
 	for i=1,players.max do
 		players[i] = new_player({
 			name = (players.current == i and user_config.name) or name_generate(),
-			--[[squad = squads[math.fmod(i-1,2)][
-				math.fmod(math.floor((i-1)/2),4)+1],]]
+			--[=[squad = squads[math.fmod(i-1,2)][
+				math.fmod(math.floor((i-1)/2),4)+1],]=]
 			squad = nil,
 			team = math.fmod(i-1,2), -- 0 == blue, 1 == green
 			weapon = WPN_RIFLE,
 		})
 	end
+	]]
 	
 	intent[#intent+1] = new_intel({team = 0})
 	intent[#intent+1] = new_tent({team = 0})
@@ -332,19 +420,29 @@ function h_tick_init(sec_current, sec_delta)
 	
 	client.gui_scene = gui_create_scene(client.screen_get_dims())
 	
+	common.net_send(nil, common.net_pack("Bbbz", 0x11, -1, WPN_RIFLE, user_config.name or ""))
+	
 	client.hook_tick = h_tick_main
 	return client.hook_tick(sec_current, sec_delta)
 end
 
 function h_key(key, state, modif)
-	if not players[players.current] then return end
-	local plr = players[players.current]
-	
-	if key == SDLK_F5 then
+	if state and key == SDLK_F5 then
 		mouse_released = true
 		client.mouse_lock_set(false)
 		client.mouse_visible_set(true)
-	elseif typing_type then
+	end
+	
+	if not players[players.current] then
+		if state and key == SDLK_ESCAPE then
+			client.hook_tick = nil
+		end
+		
+		return
+	end
+	local plr = players[players.current]
+	
+	if typing_type then
 		if state then
 			if key == SDLK_ESCAPE then
 				typing_type = nil
@@ -455,6 +553,7 @@ function h_mouse_button(button, state)
 	end
 	
 	local plr = players[players.current]
+	if not plr then return end
 	
 	local xlen, ylen, zlen
 	xlen, ylen, zlen = common.map_get_dims()
