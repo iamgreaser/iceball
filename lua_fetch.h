@@ -155,6 +155,7 @@ int icelua_fn_common_fetch_poll(lua_State *L)
 	
 	if(to_client_local.cfetch_ubuf != NULL)
 	{
+		//printf("Decompressed!\n");
 		int ret = 0;
 		
 		switch(to_client_local.cfetch_udtype)
@@ -297,7 +298,11 @@ int icelua_fn_common_fetch_poll(lua_State *L)
 
 int icelua_fn_common_fetch_block(lua_State *L)
 {
+	//printf("fetch block\n");
+	
 	int top = icelua_assert_stack(L, 2, 2);
+	
+	//printf("fetch block\n");
 	
 	// local obj = common.fetch_start(ftype, x)
 	lua_pushcfunction(L, icelua_fn_common_fetch_start);

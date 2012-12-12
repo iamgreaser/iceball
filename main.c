@@ -348,7 +348,20 @@ int update_server(void)
 		lua_pop(lstate_server, 1);
 		return 1;
 	}
-	//sec_wait += lua_tonumber(lstate_server, -1);
+#ifndef WIN32
+	if(!(boot_mode & 1))
+	{
+		sec_wait += lua_tonumber(lstate_server, -1);
+		int usec_wait = (int)(sec_wait*1000000.0f+0.5f);
+		if(usec_wait > 0)
+		{
+			sec_wait -= usec_wait;
+			while(usec_wait > 1000000)
+				sleep(1);
+			usleep(usec_wait);
+		}
+	}
+#endif
 	lua_pop(lstate_server, 1);
 	
 	return 0;
