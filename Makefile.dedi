@@ -1,0 +1,16 @@
+# I personally don't care if you steal this makefile. --GM
+
+CFLAGS = -DDEDI -pg -O2 -fno-strict-aliasing -g -Wall -Wextra \
+	-Wno-unused-variable -Wno-unused-parameter \
+	-Wno-unused-but-set-variable $(CFLAGS_EXTRA)
+
+LDFLAGS = -pg -g $(LDFLAGS_EXTRA)
+LIBS_Lua = -llua
+# Lua is not an acronym. Get used to typing it with lower case u/a.
+LIBS_zlib = -lz
+LIBS = -lm $(LIBS_Lua) $(LIBS_zlib)
+BINNAME = dedi_iceball
+
+OBJDIR = build/dedi
+
+include main.make
