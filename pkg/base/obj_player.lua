@@ -21,6 +21,7 @@ function new_player(settings)
 	this.team = settings.team or math.floor(math.random()*2)
 	this.squad = settings.squad or nil
 	this.weapon = settings.weapon or WPN_RIFLE
+	this.pid = settings.pid or error("pid must be set when creating player!")
 	this.alive = false
 	this.spawned = false
 	this.zooming = false
@@ -67,6 +68,10 @@ function new_player(settings)
 		prv_recolor_team(r,g,b)
 	end
 	
+	function this.block_recolor()
+		prv_recolor_block(this.blk_color[1],this.blk_color[2],this.blk_color[3])
+	end
+	
 	function this.input_reset()
 		this.ev_forward = false
 		this.ev_back = false
@@ -111,6 +116,7 @@ function new_player(settings)
 		this.blx2, this.bly2, this.blz2 = nil, nil, nil
 		
 		this.blk_color = {0x7F,0x7F,0x7F}
+		this.block_recolor()
 		this.blk_color_x = 3
 		this.blk_color_y = 0
 		
@@ -130,7 +136,7 @@ function new_player(settings)
 		this.has_intel = nil
 	end
 	
-	function prv_spawn_cont1()
+	local function prv_spawn_cont1()
 		this.prespawn()
 		
 		this.alive = true
@@ -183,6 +189,10 @@ function new_player(settings)
 			this.arm_rest_right = 0
 		end
 		this.t_switch = true
+		if client and this == players[players.current] and this.tool ~= tool then
+			common.net_send(nil, common.net_pack("BBB"
+				, 0x17, 0x00, tool))
+		end
 		this.tool = tool
 	end
 	
@@ -246,14 +256,27 @@ function new_player(settings)
 		this.angx = math.asin(yrec/ydist)
 	end
 	
-	function this.damage(amt, kcol, kmsg)
-		this.health = this.health - amt
+	function this.set_health_damage(amt, kcol, kmsg)
+		this.health = amt
+		
 		if this.health <= 0 then
 			this.intel_drop()
-			chat_add(chat_killfeed, nil, kmsg, kcol)
+			if server then
+				net_broadcast(nil, common.net_pack("BIz", 0x0F, kcol, kmsg))
+			end
+			--chat_add(chat_killfeed, nil, kmsg, kcol)
 			this.health = 0
 			this.alive = false
 		end
+		
+		if server then
+			net_broadcast(nil, common.net_pack("BBB", 0x14, this.pid, this.health))
+		end
+	end
+	
+	function this.damage(amt, kcol, kmsg)
+		return this.set_health_damage(
+			this.health - amt, kcol, kmsg)
 	end
 	
 	function this.fall_damage(amt)
@@ -269,6 +292,11 @@ function new_player(settings)
 	
 	function this.gun_damage(part, amt, enemy)
 		--print("damage",this.name,part,amt)
+		
+		if not server then
+			return
+		end
+		
 		local midmsg = " killed "
 		if this.team == enemy.team then
 			midmsg = " teamkilled "
@@ -359,9 +387,14 @@ function new_player(settings)
 		end
 		
 		if this.t_respawn then
-			if this.t_respawn <= sec_current then
+			if server and this.t_respawn <= sec_current then
+				--print("server respawn!")
 				this.t_respawn = nil
 				this.spawn()
+				net_broadcast(nil, common.net_pack("BBfffBB",
+					0x10, this.pid,
+					this.x, this.y, this.z,
+					this.angy*128/math.pi, this.angx*256/math.pi))
 			else
 				-- any last requests?
 			end

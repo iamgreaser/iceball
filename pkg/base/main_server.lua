@@ -37,6 +37,7 @@ function slot_add(sockfd, tidx, wpn, name)
 				squad = nil,
 				team = tidx, -- 0 == blue, 1 == green
 				weapon = WPN_RIFLE,
+				pid = i,
 			})
 			return i
 		end
@@ -84,6 +85,8 @@ function server.hook_connect(sockfd, addrinfo)
 	--[[net_broadcast(nil, common.net_pack("BIz", 0x0E, 0xFF800000,
 		"Connected: player on sockfd "..ss))]]
 	print("Connected: player on sockfd "..ss)
+	
+	common.net_send(sockfd, common.net_pack("Bz", 0xE0, map_fname))
 end
 
 function server.hook_disconnect(sockfd, server_force, reason)
@@ -111,6 +114,9 @@ function server.hook_disconnect(sockfd, server_force, reason)
 			"* Player "..plr.name.." disconnected"))
 		net_broadcast(sockfd, common.net_pack("BB",
 			0x07, plrid))
+			
+		-- TODO fix crash bug
+		--plr.free()
 		players[plrid] = nil
 	end
 end
@@ -201,6 +207,11 @@ function server.hook_tick(sec_current, sec_delta)
 							0x10, i,
 							plr.x, plr.y, plr.z,
 							plr.angy*128/math.pi, plr.angx*256/math.pi))
+						common.net_send(sockfd, common.net_pack("BBB",
+							0x17, i, plr.tool))
+						common.net_send(sockfd, common.net_pack("BBBBB",
+							0x18, i,
+							plr.blk_color[1],plr.blk_color[2],plr.blk_color[3]))
 					end
 				end
 				
@@ -222,8 +233,47 @@ function server.hook_tick(sec_current, sec_delta)
 				net_broadcast(nil, common.net_pack("BIz", 0x0E, 0xFF800000,
 					"* Player "..name.." has joined the "..teams[plr.team].name.." team"))
 			end
+		elseif cid == 0x13 and plr then
+			local tpid, styp
+			tpid, styp, pkt = common.net_unpack("BB", pkt)
+			--print("hit", tpid, styp)
+			
+			local tplr = players[tpid]
+			if tplr and styp >= 1 and styp <= 3 then
+				if tplr.wpn then
+					local dmg = tplr.wpn.cfg.dmg[({"head","body","legs"})[styp]]
+					--print("dmg",dmg,tplr.wpn.cfg.dmg)
+					tplr.gun_damage(styp, dmg, plr)
+				end
+			end
+		elseif cid == 0x17 and plr then
+			local tpid, tool
+			tpid, tool, pkt = common.net_unpack("BB", pkt)
+			
+			if tool >= 0 and tool <= 3 then
+				net_broadcast(sockfd, common.net_pack("BBB"
+					, 0x17, cli.plrid, tool))
+			end
+		elseif cid == 0x18 and plr then
+			local tpid, cr,cg,cb
+			tpid, cr,cg,cb, pkt = common.net_unpack("BBBB", pkt)
+			
+			net_broadcast(sockfd, common.net_pack("BBBBB"
+				, 0x18, cli.plrid, cr, cg, cb))
 		end
 		-- TODO!
+	end
+	
+	local i
+	for i=1,players.max do
+		local plr = players[i]
+		if plr then
+			plr.tick(sec_current, sec_delta)
+		end
+	end
+	
+	for i=1,#intent do
+		intent[i].tick(sec_current, sec_delta)
 	end
 	
 	return 0.005
@@ -251,5 +301,10 @@ for i=1,players.max do
 	print("player", i, players[i].name)
 end
 ]=]
+
+intent[#intent+1] = new_intel({team = 0})
+intent[#intent+1] = new_tent({team = 0})
+intent[#intent+1] = new_intel({team = 1})
+intent[#intent+1] = new_tent({team = 1})
 
 print("pkg/base/main_server.lua loaded.")
