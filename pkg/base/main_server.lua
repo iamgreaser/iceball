@@ -65,8 +65,6 @@ function net_broadcast_team(tidx, msg)
 			common.net_send(client_list.fdlist[i], msg)
 		end
 	end
-	-- TODO!
-	return net_broadcast(sockfd, msg)
 end
 
 function server.hook_connect(sockfd, addrinfo)
@@ -109,6 +107,8 @@ function server.hook_disconnect(sockfd, server_force, reason)
 	if plr then
 		net_broadcast(nil, common.net_pack("BIz", 0x0E, 0xFF800000,
 			"* Player "..plr.name.." disconnected"))
+		net_broadcast(sockfd, common.net_pack("BB",
+			0x07, plrid))
 		players[plrid] = nil
 	end
 end

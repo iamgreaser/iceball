@@ -267,7 +267,7 @@ function h_tick_main(sec_current, sec_delta)
 		
 		local cid
 		cid, pkt = common.net_unpack("B", pkt)
-		print("pkt", cid)
+		--print("pkt", cid)
 		
 		if cid == 0x03 then
 			local pid, x, y, z
@@ -313,6 +313,9 @@ function h_tick_main(sec_current, sec_delta)
 		elseif cid == 0x06 then
 			local pid, pkt = common.net_unpack("B", pkt)
 			players.current = pid
+		elseif cid == 0x07 then
+			local pid, pkt = common.net_unpack("B", pkt)
+			players[pid] = nil
 		elseif cid == 0x0E then
 			-- add to chat
 			local color, msg

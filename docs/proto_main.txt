@@ -109,7 +109,7 @@ Iceball Base Mod:
 		if the gap between the server and client time
 		extends by 10 seconds, client is probably using CE speedhack
 	
-	0x03 pid x.s16 y.s16 z.s16:
+	0x03 pid x.s16 y.s16 z.s16: @
 		player set position
 		
 		positions are 11.5 fixed point,
@@ -117,7 +117,7 @@ Iceball Base Mod:
 		
 		note, for C->S pid MUST be 0x00
 	
-	0x04 pid ya.u8 xa.u8 keys.u8:
+	0x04 pid ya.u8 xa.u8 keys.u8: @
 		player set orientation / keys
 		
 		angles are as defined:
@@ -136,7 +136,7 @@ Iceball Base Mod:
 		
 		note, for C->S pid MUST be 0x00
 	
-	0x05 pid team weapon score.s16 kills.s16 deaths.s16 namelen name[namelen]: (S->C)
+	0x05 pid team weapon score.s16 kills.s16 deaths.s16 namelen name[namelen]: (S->C) @
 		adds player to server
 		
 		note, this can be used to update a player on the server
@@ -146,10 +146,10 @@ Iceball Base Mod:
 		
 		yeah that's it really.
 	
-	0x06 pid: (S->C)
+	0x06 pid: (S->C) @
 		sets client player id to "pid"
 	
-	0x07 pid: (S->C)
+	0x07 pid: (S->C) @
 		removes player from server
 	
 	0x08 x.u16 y.u16 z.u16 b g r typ:
@@ -166,21 +166,21 @@ Iceball Base Mod:
 		
 		NOTE: will be IGNORED if the floodfill hits the bottom!
 	
-	0x0C msg.z (C->S)
+	0x0C msg.z (C->S) @
 		send chat message
 	
-	0x0D msg.z (C->S)
+	0x0D msg.z (C->S) @
 		send teamchat message
 	
-	0x0E bgra.u32 msg.z (S->C)
+	0x0E bgra.u32 msg.z (S->C) @
 		add text to chat
 	
-	0x0F bgra.u32 msg.z (S->C)
+	0x0F bgra.u32 msg.z (S->C) @
 		add text to killfeed
 	
-	0x10 pid x.fs y.fs z.fs ya.u8 xa.u8: (S->C)
+	0x10 pid x.fs y.fs z.fs ya.u8 xa.u8: (S->C) @
 		player spawn
 	
-	0x11 team.s8 weapon.u8 name.z (C->S)
+	0x11 team.s8 weapon.u8 name.z (C->S) @
 		offer player
 		if team == -1, server autoselects

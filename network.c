@@ -1152,8 +1152,9 @@ void net_flush(void)
 			{
 				fprintf(stderr, "EDOOFUS: given sockfd %i could not be found!\n"
 					, pkt->sockfd);
-				fflush(stderr);
-				abort();
+				net_packet_free(pkt, &(to_server.send_head), &(to_server.send_tail));
+				//fflush(stderr);
+				//abort();
 			} else {
 				net_flush_transfer(&to_server, cli, pkt);
 			}
