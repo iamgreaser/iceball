@@ -152,11 +152,13 @@ Iceball Base Mod:
 	0x07 pid: (S->C) @
 		removes player from server
 	
-	0x08 x.u16 y.u16 z.u16 b g r typ:
+	0x08 x.u16 y.u16 z.u16 b g r typ: @
 		place a block
 	
-	0x09 x.u16 y.u16 z.u16:
+	0x09 x.u16 y.u16 z.u16: @
 		destroy a block
+	
+	(TODO: not just use the above two!)
 	
 	0x0A x.u16 y.u16 z.u16:
 		destroy a 3 high pillar

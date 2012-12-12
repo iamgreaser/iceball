@@ -337,6 +337,14 @@ function h_tick_main(sec_current, sec_delta)
 			-- TODO fix crash bug
 			--players[pid].free()
 			players[pid] = nil
+		elseif cid == 0x08 then
+			local x,y,z,cb,cg,cr,ct
+			x,y,z,cb,cg,cr,ct,pkt = common.net_unpack("HHHBBBB", pkt)
+			map_block_set(x,y,z,ct,cr,cg,cb)
+		elseif cid == 0x09 then
+			local x,y,z
+			x,y,z = common.net_unpack("HHH", pkt)
+			map_block_break(x,y,z)
 		elseif cid == 0x0E then
 			-- add to chat
 			local color, msg
@@ -504,9 +512,11 @@ function h_key(key, state, modif)
 			elseif key == SDLK_RETURN then
 				if typing_msg ~= "" then
 					if typing_type == "Chat: " then
+						-- TODO: get this supported - needs to be serverside!
+						--[[
 						if typing_msg == "/kill" then
 							plr.damage(100, 0xFFC00000, plr.name.." committed suicide")
-						end
+						end]]
 						
 						if not common.net_send(nil, common.net_pack("Bz", 0x0C, typing_msg)) then
 							print("ERR!")
@@ -624,7 +634,7 @@ function h_mouse_button(button, state)
 	local xlen, ylen, zlen
 	xlen, ylen, zlen = common.map_get_dims()
 	
-	if plr.tool == TOOL_GUN then
+	if plr.tool == TOOL_GUN and plr.alive then
 		plr.wpn.click(button, state)
 	end
 	
@@ -641,6 +651,13 @@ function h_mouse_button(button, state)
 						plr.blk_color[1],
 						plr.blk_color[2],
 						plr.blk_color[3])
+					common.net_send(nil, common.net_pack("BHHHBBBB",
+						0x08,
+						plr.blx1, plr.bly1, plr.blz1,
+						plr.blk_color[3],
+						plr.blk_color[2],
+						plr.blk_color[1],
+						1))
 					plr.blocks = plr.blocks - 1
 				end
 				end
@@ -649,6 +666,9 @@ function h_mouse_button(button, state)
 				if plr.blx1 >= 0 and plr.blx1 < xlen and plr.blz1 >= 0 and plr.blz1 < zlen then
 				if plr.bly2 <= ylen-3 then
 					map_block_break(plr.blx2, plr.bly2, plr.blz2)
+					common.net_send(nil, common.net_pack("BHHH",
+						0x09,
+						plr.blx2, plr.bly2, plr.blz2))
 					if plr.blocks < 100 then
 						plr.blocks = plr.blocks + 1
 					end
@@ -668,12 +688,21 @@ function h_mouse_button(button, state)
 				if plr.blx1 >= 0 and plr.blx1 < xlen and plr.blz1 >= 0 and plr.blz1 < zlen then
 				if plr.bly2-1 <= ylen-3 then
 					map_block_break(plr.blx2, plr.bly2-1, plr.blz2)
+					common.net_send(nil, common.net_pack("BHHH",
+						0x09,
+						plr.blx2, plr.bly2-1, plr.blz2))
 				end
 				if plr.bly2 <= ylen-3 then
 					map_block_break(plr.blx2, plr.bly2, plr.blz2)
+					common.net_send(nil, common.net_pack("BHHH",
+						0x09,
+						plr.blx2, plr.bly2, plr.blz2))
 				end
 				if plr.bly2+1 <= ylen-3 then
 					map_block_break(plr.blx2, plr.bly2+1, plr.blz2)
+					common.net_send(nil, common.net_pack("BHHH",
+						0x09,
+						plr.blx2, plr.bly2+1, plr.blz2))
 				end
 				end
 			end

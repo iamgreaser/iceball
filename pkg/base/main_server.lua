@@ -145,11 +145,9 @@ function server.hook_tick(sec_current, sec_delta)
 			local y = y2/32.0
 			local z = z2/32.0
 			
-			if plr then
-				plr.set_pos_recv(x, y, z)
-				net_broadcast(sockfd, common.net_pack("BBhhh",
-					0x03, cli.plrid, x2, y2, z2))
-			end
+			plr.set_pos_recv(x, y, z)
+			net_broadcast(sockfd, common.net_pack("BBhhh",
+				0x03, cli.plrid, x2, y2, z2))
 		elseif cid == 0x04 and plr then
 			-- TODO: throttle this
 			local pid, ya2, xa2, keys
@@ -157,11 +155,21 @@ function server.hook_tick(sec_current, sec_delta)
 			local ya = ya2*math.pi/128
 			local xa = xa2*math.pi/256
 			
-			if plr then
-				plr.set_orient_recv(ya, xa, keys)
-				net_broadcast(sockfd, common.net_pack("BBbbB",
-					0x04, cli.plrid, ya2, xa2, keys))
-			end
+			plr.set_orient_recv(ya, xa, keys)
+			net_broadcast(sockfd, common.net_pack("BBbbB",
+				0x04, cli.plrid, ya2, xa2, keys))
+		elseif cid == 0x08 and plr then
+			local x,y,z,cb,cg,cr,ct
+			x,y,z,cb,cg,cr,ct,pkt = common.net_unpack("HHHBBBB", pkt)
+			map_block_set(x,y,z,ct,cr,cg,cb)
+			net_broadcast(sockfd, common.net_pack("BHHHBBBB",
+					0x08,x,y,z,cb,cg,cr,ct))
+		elseif cid == 0x09 and plr then
+			local x,y,z
+			x,y,z = common.net_unpack("HHH", pkt)
+			map_block_break(x,y,z)
+			net_broadcast(sockfd, common.net_pack("BHHH",
+					0x09,x,y,z))
 		elseif cid == 0x0C and plr then
 			-- chat
 			local msg
