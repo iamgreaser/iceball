@@ -17,12 +17,15 @@
 
 function argb_split_to_merged(r,g,b,a)
 	a = a or 0xFF
+	r = math.min(math.max(0,math.floor(r+0.5)),255)
+	g = math.min(math.max(0,math.floor(g+0.5)),255)
+	b = math.min(math.max(0,math.floor(b+0.5)),255)
+	a = math.min(math.max(0,math.floor(a+0.5)),255)
 	return 256*(256*(256*a+r)+g)+b
 end
 
 function abgr_split_to_merged(r,g,b,a)
-	a = a or 0xFF
-	return 256*(256*(256*a+b)+g)+r
+	return argb_split_to_merged(b,g,r,a)
 end
 
 function argb_merged_to_split(c)
@@ -32,6 +35,7 @@ function argb_merged_to_split(c)
 	local r = math.floor(c / (2 ^ 16) % (2 ^ 8))
 	local a = math.floor(c / (2 ^ 24))
 	if a < 0 then a = 0 end
+	--print(string.format("%08X %d %d %d %d", c, r, g, b, a))
 	return a, r, g, b
 end
 
