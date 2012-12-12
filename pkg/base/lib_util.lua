@@ -25,6 +25,15 @@ function abgr_split_to_merged(r,g,b,a)
 	return 256*(256*(256*a+b)+g)+r
 end
 
+function argb_merged_to_split(c)
+	-- yuck
+	local b = c % (2 ^ 8)
+	local g = math.floor(c / (2 ^ 8) % (2 ^ 8))
+	local r = math.floor(c / (2 ^ 16) % (2 ^ 8))
+	local a = math.floor(c / (2 ^ 24))
+	if a < 0 then a = 0 end
+	return a, r, g, b
+end
 
 function recolor_component(r,g,b,mdata)
 	for i=1,#mdata do

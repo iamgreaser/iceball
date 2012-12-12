@@ -16,6 +16,9 @@
 ]]
 
 if client then
+
+dofile("pkg/base/lib_util.lua")
+
 -- load images
 local img_font_numbers = common.img_load("pkg/base/gfx/font-numbers.tga")
 local img_font_mini = common.img_load("pkg/base/gfx/font-mini.tga")
@@ -59,9 +62,9 @@ function gui_index_mini(idx) return idx-32 end
 function gui_index_digit(idx) return digit_map[idx] end
 
 -- create a new fixed-width font using the bitmap image, character width and height, and char indexing function
-function gui_create_fixwidth_font(image, char_width, char_height, indexing_fn)
+function gui_create_fixwidth_font(image, char_width, char_height, indexing_fn, shadow)
 	local this = {image=image, width=char_width, height=char_height,
-		indexing_fn=indexing_fn}
+		indexing_fn=indexing_fn, shadow=shadow}
 	
 	-- compute a non-wrapped characters + positions output suitable for usage in text selections as well as render
 	function this.compute_unwrapped(x, y, c, str)
@@ -188,15 +191,34 @@ function gui_create_fixwidth_font(image, char_width, char_height, indexing_fn)
 		
 	end
 	
+	function this._blit(buffer, x, y, idx, c)
+		if this.shadow then
+			if buffer == nil then
+				client.img_blit(this.image, x+1, y+1, this.width, this.height, idx*this.width, 0, this.shadow)
+			else
+				client.img_blit_to(buffer, this.image, x+1, y+1, this.width, this.height, idx*this.width, 0, this.shadow)
+			end
+		end
+		if buffer == nil then
+			client.img_blit(this.image, x, y, this.width, this.height, idx*this.width, 0, c)
+		else
+			client.img_blit_to(buffer, this.image, x, y, this.width, this.height, idx*this.width, 0, c)
+		end
+	end
+	
+	-- calculate the shadow strength from the percieved luminance of the font; brighter color = darker shadow
+	function this.calc_shadow(c)
+		local a, r, g, b = argb_merged_to_split(c)
+		local luminance = (0.2126 * r/256 + 0.7152 * g/256 + 0.0722 * b/256) -- Photometric/digital ITU-R
+		this.shadow = argb_split_to_merged(0,0,0,(luminance)*256)
+	end
+	
 	-- print text with topleft at x, y, color c, string str
 	function this.print(x, y, c, str, buffer)
+		this.calc_shadow(c)
 		for i=1,#str do
 			local idx = this.indexing_fn(string.byte(str, i))
-			if buffer == nil then
-				client.img_blit(this.image, x, y, this.width, this.height, idx*this.width, 0, c)
-			else
-				client.img_blit_to(buffer, this.image, x, y, this.width, this.height, idx*this.width, 0, c)
-			end
+			this._blit(buffer, x, y, idx, c)
 			x = x + this.width
 		end
 		local i
@@ -212,13 +234,7 @@ function gui_create_fixwidth_font(image, char_width, char_height, indexing_fn)
 				local px = data[y][x][3] + offx
 				local py = data[y][x][4] + offy
 				local c = data[y][x][5]
-				if buffer == nil then
-					client.img_blit(this.image, px, py, this.width, this.height, 
-						idx*this.width, 0, c)
-				else
-					client.img_blit_to(buffer, this.image, px, py, this.width, this.height, 
-						idx*this.width, 0, c)
-				end
+				this._blit(buffer, px, py, idx, c)
 			end
 		end
 		
@@ -232,7 +248,7 @@ function gui_create_fixwidth_font(image, char_width, char_height, indexing_fn)
 	return this
 end
 
-font_mini = gui_create_fixwidth_font(img_font_mini, MINI_WIDTH, MINI_HEIGHT, gui_index_mini)
+font_mini = gui_create_fixwidth_font(img_font_mini, MINI_WIDTH, MINI_HEIGHT, gui_index_mini, true)
 font_digits = gui_create_fixwidth_font(img_font_numbers, DIGIT_WIDTH, DIGIT_HEIGHT, gui_index_digit)
 
 function gui_get_char(key, modif)
