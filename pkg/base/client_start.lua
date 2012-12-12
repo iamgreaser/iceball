@@ -38,7 +38,14 @@ if not map_fname then
 	error("server should have sent map name by now")
 end
 
-user_config = common.json_load("clsave/pub/user.json")
+local loose, user_toggles, user_settings = parse_commandline_options({...})
+
+local user_config_filename = 	user_settings['user'] or 
+								"clsave/pub/user.json"
+
+-- FIXME: we don't expose documentation for valid user settings anywhere
+
+user_config = common.json_load(user_config_filename)
 print("json done!")
 print("name:", user_config.name)
 print("kick on join:", user_config.kick_on_join)
