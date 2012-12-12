@@ -46,7 +46,9 @@
 #include <lualib.h>
 #include <lauxlib.h>
 
+#ifndef DEDI
 #include <SDL.h>
+#endif
 
 #include <zlib.h>
 
@@ -306,7 +308,9 @@ void icelua_deinit(void);
 // main.c
 extern camera_t tcam;
 extern map_t *clmap, *svmap;
+#ifndef DEDI
 extern SDL_Surface *screen;
+#endif
 extern int force_redraw;
 
 extern int net_port;

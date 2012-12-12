@@ -110,8 +110,12 @@ int icelua_fn_client_screen_get_dims(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 0, 0);
 	
+#ifdef DEDI
+	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
+#else
 	lua_pushinteger(L, screen->w);
 	lua_pushinteger(L, screen->h);
+#endif
 	
 	return 2;
 }

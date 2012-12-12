@@ -20,9 +20,13 @@ int icelua_fn_client_mouse_lock_set(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 1, 1);
 	
+#ifdef DEDI
+	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
+#else
 	SDL_WM_GrabInput(lua_toboolean(L, 1)
 		? SDL_GRAB_ON
 		: SDL_GRAB_OFF);
+#endif
 	
 	return 0;
 }
@@ -31,7 +35,11 @@ int icelua_fn_client_mouse_visible_set(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 1, 1);
 	
+#ifdef DEDI
+	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
+#else
 	SDL_ShowCursor(lua_toboolean(L, 1));
+#endif
 	
 	return 0;
 }

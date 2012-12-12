@@ -21,7 +21,9 @@ camera_t tcam;
 map_t *clmap = NULL;
 map_t *svmap = NULL;
 
+#ifndef DEDI
 SDL_Surface *screen = NULL;
+#endif
 int screen_width = 800;
 int screen_height = 600;
 
@@ -38,11 +40,13 @@ int main_argc;
 char **main_argv;
 int main_largstart = -1;
 
+#ifndef DEDI
 int error_sdl(char *msg)
 {
 	fprintf(stderr, "%s: %s\n", msg, SDL_GetError());
 	return 1;
 }
+#endif
 
 int error_perror(char *msg)
 {
@@ -50,6 +54,7 @@ int error_perror(char *msg)
 	return 1;
 }
 
+#ifndef DEDI
 int platform_init(void)
 {
 	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_NOPARACHUTE))
@@ -84,21 +89,24 @@ void platform_deinit(void)
 {
 	SDL_Quit();
 }
+#endif
 
 int64_t platform_get_time_usec(void)
 {
-	/*
+#ifdef WIN32
+	int64_t msec = SDL_GetTicks();
+	return msec*1000;
+#else
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
 	
 	int64_t usec = tv.tv_usec;
 	int64_t sec = tv.tv_sec;
+	sec = (int64_t)(((int64_t)sec)*((int64_t)1000000));
 	usec += sec;
 	
 	return usec;
-	*/
-	int64_t msec = SDL_GetTicks();
-	return msec*1000;
+#endif
 }
 
 int frame_prev = 0;
@@ -114,6 +122,7 @@ float ompx = -M_PI, ompy = -M_PI, ompz = -M_PI;
 
 int64_t usec_basetime;
 
+#ifndef DEDI
 int update_client_contpre1(void)
 {
 	int quitflag = 0;
@@ -315,6 +324,7 @@ int update_client(void)
 	quitflag = quitflag || update_client_cont1();
 	return quitflag;
 }
+#endif
 
 int update_server(void)
 {
@@ -344,6 +354,7 @@ int update_server(void)
 	return 0;
 }
 
+#ifndef DEDI
 int run_game_cont1(void)
 {
 	int quitflag = update_client_cont1();
@@ -377,6 +388,7 @@ int run_game_cont2(void)
 	
 	return quitflag;
 }
+#endif
 
 void run_game(void)
 {
@@ -413,9 +425,11 @@ void run_game(void)
 		sec_curtime = ((float)usec_curtime)/1000000.0f;
 		
 		// update client/server
+#ifndef DEDI
 		if(boot_mode & 1)
 			quitflag = quitflag || update_client();
 		net_flush();
+#endif
 		if(boot_mode & 2)
 			quitflag = quitflag || update_server();
 		net_flush();
@@ -427,23 +441,36 @@ void run_game(void)
 int print_usage(char *rname)
 {
 	fprintf(stderr, "usage:\n"
+#ifndef DEDI
 			"\tfor clients:\n"
 			"\t\t%s -c address port {clargs}\n"
 			"\tfor servers (quick-start, not recommended for anything serious!):\n"
 			"\t\t%s -s port mod {args}\n"
+#endif
 			"\tfor dedicated servers:\n"
 			"\t\t%s -d port mod {args}\n"
 			"\n"
 			"quick start:\n"
+#ifdef DEDI
+			"\t%s -d 0 pkg/base pkg/maps/mesa.vxl\n"
+#else
 			"\t%s -s 0 pkg/base pkg/maps/mesa.vxl\n"
+#endif
 			"\n"
 			"options:\n"
+#ifndef DEDI
 			"\taddress:  hostname / IP address to connect to\n"
+#endif
 			"\tport:     TCP port number (recommended: 20737, can be 0 for localhost)\n"
 			"\tmod:      mod to run\n"
+#ifndef DEDI
 			"\tclargs:   arguments to send to the client Lua script\n"
+#endif
 			"\targs:     arguments to send to the server Lua script\n"
-			,rname,rname,rname,rname);
+#ifndef DEDI
+			,rname,rname
+#endif
+			,rname,rname);
 	
 	return 99;
 }
@@ -455,7 +482,7 @@ int main(int argc, char *argv[])
 	
 	main_argc = argc;
 	main_argv = argv;
-	
+#ifndef DEDI
 	if(!strcmp(argv[1], "-c"))
 	{
 		if(argc <= 3)
@@ -479,7 +506,9 @@ int main(int argc, char *argv[])
 		main_largstart = 4;
 		
 		boot_mode = 3;
-	} else if(!strcmp(argv[1], "-d")) {
+	} else
+#endif
+	if(!strcmp(argv[1], "-d")) {
 		if(argc <= 3)
 			return print_usage(argv[0]);
 		
@@ -509,24 +538,32 @@ int main(int argc, char *argv[])
 		}
 	}
 	
+#ifndef DEDI
 	if((!(boot_mode & 1)) || !platform_init()) {
+#endif
 	if(!net_init()) {
 	if(!icelua_init()) {
 	if((!(boot_mode & 2)) || !net_bind()) {
+#ifndef DEDI
 	if((!(boot_mode & 1)) || !net_connect()) {
 	if((!(boot_mode & 1)) || !video_init()) {
 	if((!(boot_mode & 1)) || !wav_init()) {
 	if((!(boot_mode & 1)) || !render_init(screen->w, screen->h)) {
+#endif
 		run_game();
+#ifndef DEDI
 		if(boot_mode & 1) render_deinit();
 	} if(boot_mode & 1) wav_deinit();
 	} if(boot_mode & 1) video_deinit();
 	} if(boot_mode & 1) net_disconnect();
+#endif
 	} if(boot_mode & 2) net_unbind();
 	} icelua_deinit();
 	} net_deinit();
+#ifndef DEDI
 	} if(boot_mode & 1) platform_deinit();
 	}
+#endif
 	
 	return 0;
 }

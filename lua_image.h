@@ -34,8 +34,12 @@ int icelua_fn_client_img_blit(lua_State *L)
 	sy = (top < 7 ? 0 : lua_tointeger(L, 7));
 	color = (top < 8 ? 0xFFFFFFFF : (uint32_t)lua_tointeger(L, 8));
 	
+#ifdef DEDI
+	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
+#else
 	render_blit_img(screen->pixels, screen->w, screen->h, screen->pitch/4,
 		img, dx, dy, bw, bh, sx, sy, color);
+#endif
 	
 	return 0;
 }
