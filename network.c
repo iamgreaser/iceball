@@ -247,7 +247,6 @@ void net_kick_sockfd_immediate(int sockfd, char *msg)
 	send(sockfd, buf, ((int)(uint8_t)buf[1])+1, 0);
 	
 	// call hook_disconnect
-	if(lstate_server != NULL && lstate_client != NULL)
 	{
 		lua_getglobal(lstate_server, "server");
 		lua_getfield(lstate_server, -1, "hook_disconnect");

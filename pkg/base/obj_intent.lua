@@ -29,9 +29,14 @@ function new_intel(settings)
 		
 		this.rotpos = sec_current*2
 		
+		if not this.spawned then return end
+		
 		if this.player then
 			-- anything to do here?
 		else
+			
+			if not server then return end
+			
 			-- set position
 			local l = common.map_pillar_get(
 				math.floor(this.x),
@@ -114,6 +119,18 @@ function new_intel(settings)
 		this.spawn()
 	end
 	
+	function this.prespawn()
+		this.alive = false
+		this.spawned = false
+		this.visible = false
+	end
+	
+	local function prv_spawn_cont1()
+		this.alive = true
+		this.spawned = true
+		this.visible = true
+	end
+	
 	function this.spawn()
 		local xlen,ylen,zlen
 		xlen,ylen,zlen = common.map_get_dims()
@@ -126,21 +143,39 @@ function new_intel(settings)
 			if this.y < ylen-1 then break end
 		end
 		
-		this.alive = true
-		this.spawned = true
-		this.visible = true
+		prv_spawn_cont1()
+	end
+	
+	function this.spawn_at(x,y,z)
+		this.x = x
+		this.y = y
+		this.z = z
+		
+		prv_spawn_cont1()
+	end
+	
+	function this.get_pos()
+		return this.x, this.y, this.z
+	end
+	
+	function this.set_pos_recv(x,y,z)
+		this.x = x
+		this.y = y
+		this.z = z
 	end
 	
 	local _
 	local l = teams[this.team].color_mdl
 	local mbone,mname,mdata
-	this.mdl_intel = client.model_new(1)
-	this.mdl_intel, mbone = client.model_bone_new(this.mdl_intel,1)
-	mname,mdata = common.model_bone_get(mdl_intel, 0)
-	recolor_component(l[1],l[2],l[3],mdata)
-	common.model_bone_set(this.mdl_intel, 0, mname, mdata)
+	if client then
+		this.mdl_intel = client.model_new(1)
+		this.mdl_intel, mbone = client.model_bone_new(this.mdl_intel,1)
+		mname,mdata = common.model_bone_get(mdl_intel, 0)
+		recolor_component(l[1],l[2],l[3],mdata)
+		common.model_bone_set(this.mdl_intel, 0, mname, mdata)
+	end
 	
-	this.spawn()
+	this.prespawn()
 	
 	return this
 end
@@ -153,6 +188,10 @@ function new_tent(settings)
 	
 	function this.tick(sec_current, sec_delta)
 		local i
+		
+		if not server then return end
+		
+		if not this.spawned then return end
 		
 		-- set position
 		local l = common.map_pillar_get(
@@ -209,6 +248,18 @@ function new_tent(settings)
 			0, 0, 0, 3)
 	end
 	
+	function this.prespawn()
+		this.alive = false
+		this.spawned = false
+		this.visible = false
+	end
+	
+	local function prv_spawn_cont1()
+		this.alive = true
+		this.spawned = true
+		this.visible = true
+	end
+	
 	function this.spawn()
 		local xlen,ylen,zlen
 		xlen,ylen,zlen = common.map_get_dims()
@@ -221,21 +272,39 @@ function new_tent(settings)
 			if this.y < ylen-1 then break end
 		end
 		
-		this.alive = true
-		this.spawned = true
-		this.visible = true
+		prv_spawn_cont1()
+	end
+	
+	function this.spawn_at(x,y,z)
+		this.x = x
+		this.y = y
+		this.z = z
+		
+		prv_spawn_cont1()
+	end
+	
+	function this.get_pos()
+		return this.x, this.y, this.z
+	end
+	
+	function this.set_pos_recv(x,y,z)
+		this.x = x
+		this.y = y
+		this.z = z
 	end
 	
 	local _
 	local l = teams[this.team].color_mdl
 	local mbone,mname,mdata
-	this.mdl_tent = client.model_new(1)
-	this.mdl_tent, mbone = client.model_bone_new(this.mdl_tent,1)
-	mname,mdata = common.model_bone_get(mdl_tent, 0)
-	recolor_component(l[1],l[2],l[3],mdata)
-	common.model_bone_set(this.mdl_tent, 0, mname, mdata)
+	if client then
+		this.mdl_tent = client.model_new(1)
+		this.mdl_tent, mbone = client.model_bone_new(this.mdl_tent,1)
+		mname,mdata = common.model_bone_get(mdl_tent, 0)
+		recolor_component(l[1],l[2],l[3],mdata)
+		common.model_bone_set(this.mdl_tent, 0, mname, mdata)
+	end
 	
-	this.spawn()
+	this.prespawn()
 	
 	return this
 end

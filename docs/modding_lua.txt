@@ -478,13 +478,13 @@ str = common.net_pack(fmt, ...) @
 	
 	returns nil for fields that could not be decoded
 
-success = common.net_send(sockfd, str)
+success = common.net_send(sockfd, str) @
 	sends a packet
 	
 	"sockfd" is ignored C->S and should be nil
 	S->C local multiplayer should set "sockfd" to "true"
 
-str, sockfd = common.net_recv()
+str, sockfd = common.net_recv() @
 	receives a packet
 	
 	for C->S "sockfd" is nil

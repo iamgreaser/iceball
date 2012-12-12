@@ -152,11 +152,13 @@ Iceball Base Mod:
 	0x07 pid: (S->C) @
 		removes player from server
 	
-	0x08 x.u16 y.u16 z.u16 b g r typ:
+	0x08 x.u16 y.u16 z.u16 b g r typ: @
 		place a block
 	
-	0x09 x.u16 y.u16 z.u16:
+	0x09 x.u16 y.u16 z.u16: @
 		destroy a block
+	
+	(TODO: not just use the above two!)
 	
 	0x0A x.u16 y.u16 z.u16:
 		destroy a 3 high pillar
@@ -180,7 +182,77 @@ Iceball Base Mod:
 	
 	0x10 pid x.fs y.fs z.fs ya.u8 xa.u8: (S->C) @
 		player spawn
+		
+		health is set to 100
+		blocks is set to 25
+		grenades is set to 2
+		
+		ammo is set to full
 	
 	0x11 team.s8 weapon.u8 name.z (C->S) @
 		offer player
 		if team == -1, server autoselects
+	
+	0x12 iid.u16 x.s16 y.s16 z.s16
+		set item position
+		
+		these are hardcoded as follows:
+		1 = blue intel
+		2 = blue tent
+		3 = green intel
+		4 = green tent
+	
+	0x13 tpid.u8 type.u8 (C->S) @
+		fire shot, hitting target player
+		yes, do this EVERY shot.
+		
+		if tpid == 0 and type == 0, shot didn't hit anyone
+		
+		types are as follows:
+			0 = none
+			1 = head
+			2 = body
+			3 = limb
+	
+	0x14 pid.u8 newhealth.u8 (S->C) @
+		set health due to damage
+		
+		if newhealth is 0, player is dead
+	
+	0x15 (S->C)
+		tent restock
+		
+		health is set to 100
+		blocks is set to 100
+		grenades is set to 4
+		
+		ammo is set to full
+	
+	0x16 pid.u8 iid.u16 (S->C)
+		possess item
+		
+		if uid == 0, depossess instead
+		
+		these are hardcoded as follows:
+		1 = blue intel
+		2 = blue tent
+		3 = green intel
+		4 = green tent
+	
+	0x17 pid.u8 tool.u8 @
+		set tool
+		
+		TOOL_SPADE = 0
+		TOOL_BLOCK = 1
+		TOOL_GUN = 2
+		TOOL_NADE = 3
+	
+	0x18 pid.u8 r.u8 g.u8 b.u8 @
+		set block colour
+	
+	0xE0 map.z (S->C) @
+		name of map to fetch
+		
+		NOTE: will be deprecated eventually
+		this is just a simple hack to start with
+		while i procrastinate server.hook_file

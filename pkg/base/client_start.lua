@@ -18,7 +18,25 @@
 print("pkg/base/client_start.lua starting")
 print(...)
 
+map_fname = nil
+
 dofile("pkg/base/common.lua")
+
+while true do
+	local pkt, sockfd, cid
+	pkt, sockfd = common.net_recv()
+	cid, pkt = common.net_unpack("B", pkt)
+	if cid == 0xE0 then
+		map_fname, pkt = common.net_unpack("z", pkt)
+		break
+	else
+		error("should not receive non-map-filename packets until map filename arrives!")
+	end
+end
+
+if not map_fname then
+	error("server should have sent map name by now")
+end
 
 user_config = common.json_load("clsave/pub/user.json")
 print("json done!")
@@ -305,6 +323,7 @@ function h_tick_main(sec_current, sec_delta)
 				squad = nil,
 				team = tidx,
 				weapon = wpn,
+				pid = pid,
 			})
 			
 			players[pid].score = score
@@ -315,7 +334,17 @@ function h_tick_main(sec_current, sec_delta)
 			players.current = pid
 		elseif cid == 0x07 then
 			local pid, pkt = common.net_unpack("B", pkt)
+			-- TODO fix crash bug
+			--players[pid].free()
 			players[pid] = nil
+		elseif cid == 0x08 then
+			local x,y,z,cb,cg,cr,ct
+			x,y,z,cb,cg,cr,ct,pkt = common.net_unpack("HHHBBBB", pkt)
+			map_block_set(x,y,z,ct,cr,cg,cb)
+		elseif cid == 0x09 then
+			local x,y,z
+			x,y,z = common.net_unpack("HHH", pkt)
+			map_block_break(x,y,z)
 		elseif cid == 0x0E then
 			-- add to chat
 			local color, msg
@@ -330,8 +359,38 @@ function h_tick_main(sec_current, sec_delta)
 			local pid, x,y,z, ya,xa
 			pid, x,y,z, ya,xa, pkt = common.net_unpack("Bfffbb", pkt)
 			local plr = players[pid]
+			--print("client respawn!", players.current, pid, plr)
 			if plr then
 				plr.spawn_at(x,y,z,ya*math.pi/128,xa*math.pi/256)
+			end
+		elseif cid == 0x14 then
+			local pid, amt
+			pid, amt, pkt = common.net_unpack("BB", pkt)
+			
+			local plr = players[pid]
+			--print("hit pkt", pid, amt)
+			if plr then
+				plr.set_health_damage(amt, nil, nil)
+			end
+		elseif cid == 0x17 then
+			local pid, tool
+			pid, tool, pkt = common.net_unpack("BB", pkt)
+			
+			local plr = players[pid]
+			
+			if plr then
+				plr.tool_switch(tool)
+			end
+		elseif cid == 0x18 then
+			local pid, cr,cg,cb
+			pid, cr,cg,cb, pkt = common.net_unpack("BBBB", pkt)
+			
+			local plr = players[pid]
+			
+			print("recol",cr,cg,cb)
+			if plr then
+				plr.blk_color = {cr,cg,cb}
+				plr.block_recolor()
 			end
 		end
 	end
@@ -453,9 +512,11 @@ function h_key(key, state, modif)
 			elseif key == SDLK_RETURN then
 				if typing_msg ~= "" then
 					if typing_type == "Chat: " then
+						-- TODO: get this supported - needs to be serverside!
+						--[[
 						if typing_msg == "/kill" then
 							plr.damage(100, 0xFFC00000, plr.name.." committed suicide")
-						end
+						end]]
 						
 						if not common.net_send(nil, common.net_pack("Bz", 0x0C, typing_msg)) then
 							print("ERR!")
@@ -525,24 +586,36 @@ function h_key(key, state, modif)
 				plr.blk_color_x = 7
 			end
 			plr.blk_color = cpalette[plr.blk_color_x+plr.blk_color_y*8+1]
+			common.net_send(nil, common.net_pack("BBBBB",
+				0x18, 0x00,
+				plr.blk_color[1],plr.blk_color[2],plr.blk_color[3]))
 		elseif key == BTSK_COLORRIGHT then
 			plr.blk_color_x = plr.blk_color_x + 1
 			if plr.blk_color_x > 7 then
 				plr.blk_color_x = 0
 			end
 			plr.blk_color = cpalette[plr.blk_color_x+plr.blk_color_y*8+1]
+			common.net_send(nil, common.net_pack("BBBBB",
+				0x18, 0x00,
+				plr.blk_color[1],plr.blk_color[2],plr.blk_color[3]))
 		elseif key == BTSK_COLORUP then
 			plr.blk_color_y = plr.blk_color_y - 1
 			if plr.blk_color_y < 0 then
 				plr.blk_color_y = 7
 			end
 			plr.blk_color = cpalette[plr.blk_color_x+plr.blk_color_y*8+1]
+			common.net_send(nil, common.net_pack("BBBBB",
+				0x18, 0x00,
+				plr.blk_color[1],plr.blk_color[2],plr.blk_color[3]))
 		elseif key == BTSK_COLORDOWN then
 			plr.blk_color_y = plr.blk_color_y + 1
 			if plr.blk_color_y > 7 then
 				plr.blk_color_y = 0
 			end
 			plr.blk_color = cpalette[plr.blk_color_x+plr.blk_color_y*8+1]
+			common.net_send(nil, common.net_pack("BBBBB",
+				0x18, 0x00,
+				plr.blk_color[1],plr.blk_color[2],plr.blk_color[3]))
 		end
 	end
 end
@@ -561,7 +634,7 @@ function h_mouse_button(button, state)
 	local xlen, ylen, zlen
 	xlen, ylen, zlen = common.map_get_dims()
 	
-	if plr.tool == TOOL_GUN then
+	if plr.tool == TOOL_GUN and plr.alive then
 		plr.wpn.click(button, state)
 	end
 	
@@ -578,6 +651,13 @@ function h_mouse_button(button, state)
 						plr.blk_color[1],
 						plr.blk_color[2],
 						plr.blk_color[3])
+					common.net_send(nil, common.net_pack("BHHHBBBB",
+						0x08,
+						plr.blx1, plr.bly1, plr.blz1,
+						plr.blk_color[3],
+						plr.blk_color[2],
+						plr.blk_color[1],
+						1))
 					plr.blocks = plr.blocks - 1
 				end
 				end
@@ -586,6 +666,9 @@ function h_mouse_button(button, state)
 				if plr.blx1 >= 0 and plr.blx1 < xlen and plr.blz1 >= 0 and plr.blz1 < zlen then
 				if plr.bly2 <= ylen-3 then
 					map_block_break(plr.blx2, plr.bly2, plr.blz2)
+					common.net_send(nil, common.net_pack("BHHH",
+						0x09,
+						plr.blx2, plr.bly2, plr.blz2))
 					if plr.blocks < 100 then
 						plr.blocks = plr.blocks + 1
 					end
@@ -598,16 +681,28 @@ function h_mouse_button(button, state)
 				local ct,cr,cg,cb
 				ct,cr,cg,cb = map_block_pick(plr.blx3, plr.bly3, plr.blz3)
 				plr.blk_color = {cr,cg,cb}
+				common.net_send(nil, common.net_pack("BBBBB",
+					0x18, 0x00,
+					plr.blk_color[1],plr.blk_color[2],plr.blk_color[3]))
 			elseif plr.tool == TOOL_SPADE and plr.blx2 then
 				if plr.blx1 >= 0 and plr.blx1 < xlen and plr.blz1 >= 0 and plr.blz1 < zlen then
 				if plr.bly2-1 <= ylen-3 then
 					map_block_break(plr.blx2, plr.bly2-1, plr.blz2)
+					common.net_send(nil, common.net_pack("BHHH",
+						0x09,
+						plr.blx2, plr.bly2-1, plr.blz2))
 				end
 				if plr.bly2 <= ylen-3 then
 					map_block_break(plr.blx2, plr.bly2, plr.blz2)
+					common.net_send(nil, common.net_pack("BHHH",
+						0x09,
+						plr.blx2, plr.bly2, plr.blz2))
 				end
 				if plr.bly2+1 <= ylen-3 then
 					map_block_break(plr.blx2, plr.bly2+1, plr.blz2)
+					common.net_send(nil, common.net_pack("BHHH",
+						0x09,
+						plr.blx2, plr.bly2+1, plr.blz2))
 				end
 				end
 			end
@@ -632,8 +727,6 @@ function h_mouse_motion(x, y, dx, dy)
 end
 
 -- load map
-map_fname = ...
-map_fname = map_fname or MAP_DEFAULT
 map_loaded = common.map_load(map_fname, "auto")
 common.map_set(map_loaded)
 

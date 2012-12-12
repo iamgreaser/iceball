@@ -145,6 +145,7 @@ weapons = {
 			-- see if there's anyone we can kill
 			local hurt_idx = nil
 			local hurt_part = nil
+			local hurt_part_idx = 0
 			local hurt_dist = d*d
 			local i,j
 			
@@ -163,6 +164,7 @@ weapons = {
 						if dot < 0.55 and dd < hurt_dist then
 							hurt_idx = i
 							hurt_dist = dd
+							hurt_part_idx = j
 							hurt_part = ({"head","body","legs"})[j]
 							
 							break
@@ -174,11 +176,23 @@ weapons = {
 			
 			if hurt_idx then
 				-- TODO: ship this off to the server!
-				players[hurt_idx].gun_damage(
-					hurt_part, this.cfg.dmg[hurt_part], plr)
-			elseif cx2 then
-				-- TODO: block health rather than instant block removal
-				map_block_break(cx2,cy2,cz2)
+				if server then
+					players[hurt_idx].gun_damage(
+						hurt_part, this.cfg.dmg[hurt_part], plr)
+				else
+					common.net_send(nil, common.net_pack("BBB"
+						, 0x13, hurt_idx, hurt_part_idx))
+				end
+			else
+				if client then
+					common.net_send(nil, common.net_pack("BBB"
+						, 0x13, 0, 0))
+				end
+				
+				if cx2 then
+					-- TODO: block health rather than instant block removal
+					map_block_break(cx2,cy2,cz2)
+				end
 			end
 			
 			-- TODO: fire a tracer
