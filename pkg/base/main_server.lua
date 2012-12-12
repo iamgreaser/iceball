@@ -94,6 +94,8 @@ function server.hook_disconnect(sockfd, server_force, reason)
 	local plr = players[plrid]
 	
 	local fdidx = client_list[sockfd].fdidx
+	local cli2 = client_list[client_list.fdlist[#(client_list.fdlist)]]
+	cli2.fdidx = fdidx
 	client_list.fdlist[fdidx] = client_list.fdlist[#(client_list.fdlist)]
 	client_list.fdlist[#(client_list.fdlist)] = nil
 	client_list[sockfd] = nil

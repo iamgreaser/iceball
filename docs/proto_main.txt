@@ -184,3 +184,24 @@ Iceball Base Mod:
 	0x11 team.s8 weapon.u8 name.z (C->S) @
 		offer player
 		if team == -1, server autoselects
+	
+	0x12 iid.u16 x.s16 y.s16 z.s16
+		set item position
+		
+		these are hardcoded as follows:
+		1 = blue tent
+		2 = blue intel
+		3 = green tent
+		4 = green intel
+	
+	0x13 pid.u8 tpid.u8 type.u8 (C->S)
+		fire shot, hitting target player
+		yes, do this EVERY shot.
+		
+		if tpid == 0 and type == 0, shot didn't hit anyone
+		
+		types are as follows:
+			0 = none
+			1 = head
+			2 = body
+			3 = limb
