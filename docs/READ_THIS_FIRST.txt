@@ -85,6 +85,31 @@ If you have any questions, use your preferred search engine.
 
 -------------------------------------------------------------------------------
 
+If you have a Windows build and it crashes on you under all circumstances,
+CHECK IF YOUR CPU SUPPORTS SSE2.
+
+If it doesn't, it'll be too slow anyway.
+
+(All x86_64 CPUs support SSE2 as a minimum requirement.)
+
+-------------------------------------------------------------------------------
+
+While we're on the topic of Windows builds, check if you have a pkg/ folder.
+If you don't have one, you cannot run a server.
+(Go pull the latest pkg/ folder from github. DO IT.)
+
+Once you've set your nickname in clsave/pub/user.json,
+set your nickname in clsave/pub/user.json,
+remember to set your nickname in clsave/pub/user.json,
+look for any connect-*.bat files,
+and set your nickname in clsave/pub/user.json.
+
+Oh, and then after you set your nickname in clsave/pub/user.json,
+you can run said connect-*.bat file,
+having set your nickname in clsave/pub/user.json.
+
+-------------------------------------------------------------------------------
+
 Iceball refers to one of two things:
 - The game engine.
 - The base game itself ("Ice Lua Components"), currently located in pkg/base.

@@ -7,7 +7,7 @@ though if you're getting into modding, read docs/modding_101.txt. Please.
 
  ------------------------------------------------------------------------------
 
-This isn't a game yet. But it works to some extent now.
+This is FINALLY a game, BUT is not ready to be released yet.
 
 NOTE:
 By Stack's request, this project is now known as "Iceball".
