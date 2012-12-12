@@ -190,11 +190,12 @@ int icelua_initfetch(void)
 	if(to_client_local.sockfd == -1)
 		to_client_local.sockfd = SOCKFD_LOCAL;
 	
-	lua_getglobal(lstate_client, "common");
 	lua_getglobal(lstate_client, "client");
 	lua_pushstring(lstate_client, mod_basedir+4);
 	lua_setfield(lstate_client, -2, "base_dir");
 	lua_pop(lstate_client, 1);
+	
+	lua_getglobal(lstate_client, "common");
 	lua_pushstring(lstate_client, mod_basedir+4);
 	lua_setfield(lstate_client, -2, "base_dir");
 	lua_pop(lstate_client, 1);
@@ -203,7 +204,7 @@ int icelua_initfetch(void)
 	lua_pushcfunction(lstate_client, icelua_fn_common_fetch_block);
 	lua_pushstring(lstate_client, "lua");
 	lua_pushstring(lstate_client, xpath);
-	printf("Now loading client; please wait!\n");
+	printf("Now loading client; please wait! [%s]\n", xpath);
 	if(lua_pcall(lstate_client, 2, 1, 0) != 0)
 	{
 		printf("ERROR fetching client Lua: %s\n", lua_tostring(lstate_client, -1));

@@ -109,8 +109,8 @@ int64_t platform_get_time_usec(void)
 #endif
 }
 
-int frame_prev = 0;
-int frame_now = 0;
+int64_t frame_prev = 0;
+int64_t frame_now = 0;
 int fps = 0;
 
 float sec_curtime = 0.0f;
@@ -128,16 +128,16 @@ int update_client_contpre1(void)
 	int quitflag = 0;
 	
 	// update FPS counter
-	frame_now = SDL_GetTicks();
+	frame_now = platform_get_time_usec();
 	fps++;
 	
-	if(frame_now - frame_prev > 1000)
+	if(frame_now - frame_prev > (int64_t)1000000)
 	{
 		char buf[64]; // topo how the hell did this not crash at 16 --GM
 		sprintf(buf, "iceball | FPS: %d", fps);
 		SDL_WM_SetCaption(buf, NULL);
 		fps = 0;
-		frame_prev = SDL_GetTicks();
+		frame_prev = platform_get_time_usec();
 	}
 	
 	return quitflag;
@@ -146,6 +146,10 @@ int update_client_contpre1(void)
 int update_client_cont1(void)
 {
 	int quitflag = 0;
+	
+	// skip while still loading
+	if(mod_basedir == NULL || (boot_mode & 8))
+		return 0;
 	
 	// redraw scene if necessary
 	if(force_redraw
@@ -294,6 +298,9 @@ int update_client(void)
 	{
 		// do nothing
 	} else if(boot_mode & 8) {
+		printf("boot mode flag 8!\n");
+		//abort();
+		
 		if(icelua_initfetch())
 			return 1;
 		

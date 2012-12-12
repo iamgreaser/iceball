@@ -1247,7 +1247,7 @@ int net_gethost(char *name, int port, struct sockaddr *sa, size_t alen)
 	
 	memcpy(sa, best->ai_addr, best->ai_addrlen);
 	
-	freeaddrinfo(res);
+	//freeaddrinfo(res);
 	return 0;
 }
 

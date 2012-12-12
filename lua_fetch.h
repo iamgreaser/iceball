@@ -298,7 +298,8 @@ int icelua_fn_common_fetch_poll(lua_State *L)
 
 int icelua_fn_common_fetch_block(lua_State *L)
 {
-	//printf("fetch block\n");
+	printf("fetch block\n");
+	fflush(stdout);
 	
 	int top = icelua_assert_stack(L, 2, 2);
 	
