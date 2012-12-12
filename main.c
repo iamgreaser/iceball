@@ -352,9 +352,9 @@ int update_server(void)
 #ifndef WIN32
 	if(!(boot_mode & 1))
 	{
-		printf("waity. %f\n", lua_tonumber(lstate_server, -1));
+		//printf("waity. %f\n", lua_tonumber(lstate_server, -1));
 		sec_wait += lua_tonumber(lstate_server, -1);
-		printf("%f\n", sec_wait);
+		//printf("%f\n", sec_wait);
 		int usec_wait = (int)(sec_wait*1000000.0+0.5);
 		if(usec_wait > 0)
 		{
