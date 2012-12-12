@@ -425,6 +425,31 @@ function gui_create_scene(width, height)
 		
 	end
 	
+	function scene.bone(options)
+		
+		--client.model_render_bone_local(model_t, bone_idx, px, py, pz, ry, rx, ry2, scale)
+		
+		-- we are going to break the standard model heavily here...
+		-- l=cx=rx, we ignore the regular scale, width and height will return 0, knocking out all the regular features
+		-- if we let them use an offscreen buffer... we could apply effects like alpha on top.
+		-- but for now we won't do that.
+		
+		-- so instead we have: x, y, z, scale, ry, rx, ry2, model, bone_idx - all the stuff in the render fn
+		-- and we preserve the rx behavior.
+		
+		-- the other piece of the puzzle is in how we want to define anims, if any
+		-- when rendering a single bone the only kind of animation is rotozooming...
+		-- this may be a better task for the tween lib.
+		
+		-- some tweening design:
+		
+		-- timing is event-based (motivates event system)
+		-- timing can run in dT or frame-count mode
+		-- the tween lib runs on top of the dT mode
+		-- (need to go look at the existing timing model to see what I have to work with)
+		
+	end
+	
 	-- TEST CODE
 	--[=[local frame = scene.rect_frame{width=320,height=320, x=width/2, y=height/2}
 	local frame2 = scene.rect_frame{width=32,height=32, x=0, y=0}
