@@ -236,7 +236,7 @@ make; cp bin/*.DLL $ICEBALL
 Final build (from MINGW32)
 
 # unoptimized build
-make clean all
+make clean all -f Makefile.mingw
 # optimized with SSE2
 make clean all -f Makefile.mingw CFLAGS_EXTRA="-msse2 -mfpmath=sse"
 
