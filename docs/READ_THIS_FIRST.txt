@@ -195,3 +195,49 @@ List of things NOT to request:
 - Any weapons which are SMG.
 - SMG.
 
+##############
+MinGW Install Help
+
+(This isn't 100% complete or guaranteed to work yet.)
+
+Dependencies:
+
+http://www.lua.org/ftp/lua-5.1.5.tar.gz
+http://www.libsdl.org/release/SDL-1.2.15.tar.gz
+http://www.libsdl.org/release/SDL-devel-1.2.15-mingw32.tar.gz
+http://zlib.net/zlib-1.2.7.tar.gz
+
+Download each one and extract outside of /buildandsnip (which we will call $ICEBALL)
+For each dependency cd to the root path and follow the listed commands.
+
+zlib:
+
+make
+cp *.h $ICEBALL/winlibs
+cp *.a $ICEBALL/winlibs
+cp *.dll $ICEBALL/winlibs
+
+lua:
+
+make
+cp src/*.a $ICEBALL/winlibs
+cp src/*.h $ICEBALL/winlibs
+cp src/*.dll $ICEBALL
+
+SDL:
+
+./configure; make; cp src $ICEBALL/winlibs/SDL; cp include $ICEBALL/winlibs
+
+SDL-devel
+
+make; cp bin/*.DLL $ICEBALL
+
+##############
+Final build (from MINGW32)
+
+# unoptimized build
+make clean all
+# optimized with SSE2
+make clean all -f Makefile.mingw CFLAGS_EXTRA="-msse2 -mfpmath=sse"
+
+You may find that it's not correctly pointing at gcc.exe in which case you can copy the file or change the Makefile.
