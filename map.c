@@ -114,8 +114,6 @@ map_t *map_parse_aos(int len, const char *data)
 
 map_t *map_parse_icemap(int len, const char *data)
 {
-	// WARNING UNTESTED
-	
 	int i;
 	
 	if(data == NULL)
@@ -220,6 +218,12 @@ map_t *map_load_icemap(const char *fname)
 	map_t *ret = map_parse_icemap(flen, data);
 	free(data);
 	return ret;
+}
+
+char *map_serialise_icemap(map_t *map)
+{
+	// TODO!
+	return NULL;
 }
 
 int map_save_icemap(map_t *map, const char *fname)

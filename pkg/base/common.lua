@@ -192,6 +192,9 @@ weapons = {
 				if cx2 then
 					-- TODO: block health rather than instant block removal
 					map_block_break(cx2,cy2,cz2)
+					common.net_send(nil, common.net_pack("BHHH",
+						0x09,
+						cx2,cy2,cz2))
 				end
 			end
 			

@@ -61,11 +61,17 @@ function net_broadcast_team(tidx, msg)
 	for i=1,#(client_list.fdlist) do
 		local cli = client_list[client_list.fdlist[i]]
 		local plr = cli and players[cli.plrid]
-		if plr.team == tidx then
+		if plr and plr.team == tidx then
 			--print("to", client_list.fdlist[i], type(msg))
 			common.net_send(client_list.fdlist[i], msg)
 		end
 	end
+end
+
+
+function server.hook_file(sockfd, ftype, fname)
+	print("hook_file:", sockfd, ftype, fname)
+	return true
 end
 
 function server.hook_connect(sockfd, addrinfo)

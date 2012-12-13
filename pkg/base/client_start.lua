@@ -567,7 +567,9 @@ function h_key(key, state, modif)
 		elseif key == BTSK_MAP then
 			large_map = not large_map
 		elseif key == BTSK_RELOAD then
-			if plr.wpn then plr.wpn.reload() end
+			if plr.wpn and plr.tool == TOOL_GUN then
+				plr.wpn.reload()
+			end
 		elseif key == BTSK_TOOL1 then
 			plr.tool_switch(TOOL_SPADE)
 		elseif key == BTSK_TOOL2 then
