@@ -7,7 +7,10 @@ Default keys:
 i/k = move up/down
 j/l = move left/right
 u/o = move forward/back
-]/[ = rotate around y axis
+
+a/d = rotate around y axis
+w/s = rotate around x axis
+q/e = rotate around y2 axis
 
 +/- = enlarge/shrink block
 g = add/paint block

@@ -32,8 +32,12 @@ BTSK_PMF_MOVEZP = SDLK_o
 BTSK_PMF_SIZEP = SDLK_EQUALS
 BTSK_PMF_SIZEN = SDLK_MINUS
 
-BTSK_PMF_ROTYN = SDLK_LEFTBRACKET
-BTSK_PMF_ROTYP = SDLK_RIGHTBRACKET
+BTSK_PMF_ROTYN = SDLK_a
+BTSK_PMF_ROTYP = SDLK_d
+BTSK_PMF_ROTXN = SDLK_w
+BTSK_PMF_ROTXP = SDLK_s
+BTSK_PMF_ROTY2N = SDLK_q
+BTSK_PMF_ROTY2P = SDLK_e
 
 BTSK_QUIT = SDLK_ESCAPE
 BTSK_COLORLEFT  = SDLK_LEFT
@@ -55,7 +59,9 @@ pmfedit_data = {}
 pmfedit_model = common.model_new(1)
 pmfedit_model, pmfedit_model_bone = common.model_bone_new(pmfedit_model)
 pmfedit_data[#pmfedit_data+1] = {x=0,y=0,z=0,r=0,g=0,b=0,radius=1}
+pmfedit_ry = 0
 pmfedit_rx = 0
+pmfedit_ry2 = 0
 
 blk_color = {128,128,128}
 blk_color_x = 3
@@ -97,7 +103,7 @@ end
 
 function client.hook_tick(sec_current, sec_delta)
 	blk_color = cpalette[(blk_color_y*8)+blk_color_x+1]
-	
+
 	pmfedit_data[#pmfedit_data] = {
 		x=pmfedit_x,y=pmfedit_y,z=pmfedit_z-0.01,
 		r=math.sin(sec_current-2*math.pi/3)*127+128,
@@ -105,7 +111,7 @@ function client.hook_tick(sec_current, sec_delta)
 		b=math.sin(sec_current+2*math.pi/3)*127+128,
 		radius=pmfedit_size}
 	common.model_bone_set(pmfedit_model, pmfedit_model_bone, "edit", pmfedit_data)
-	
+
 	return 0.005
 end
 
@@ -152,9 +158,17 @@ function client.hook_key(key, state)
 			end
 			blk_color = cpalette[blk_color_x+blk_color_y*8+1]
 		elseif key == BTSK_PMF_ROTYN then
-			pmfedit_rx = pmfedit_rx + math.pi/16
+			pmfedit_ry = pmfedit_ry + math.pi/16
 		elseif key == BTSK_PMF_ROTYP then
+			pmfedit_ry = pmfedit_ry - math.pi/16
+		elseif key == BTSK_PMF_ROTXN then
+			pmfedit_rx = pmfedit_rx + math.pi/16
+		elseif key == BTSK_PMF_ROTXP then
 			pmfedit_rx = pmfedit_rx - math.pi/16
+		elseif key == BTSK_PMF_ROTY2N then
+			pmfedit_ry2 = pmfedit_ry2 + math.pi/16
+		elseif key == BTSK_PMF_ROTY2P then
+			pmfedit_ry2 = pmfedit_ry2 - math.pi/16
 		elseif key == BTSK_QUIT then
 			client.hook_tick = nil
 		elseif key == BTSK_PMF_BLKSET and #pmfedit_data < 4095 then
@@ -170,20 +184,20 @@ function client.hook_key(key, state)
 				local mi,md
 				mi = 1
 				md = nil
-				
+
 				-- find nearest piece
 				for i=1,#pmfedit_data-1 do
 					dx = pmfedit_data[i].x - pmfedit_x
 					dy = pmfedit_data[i].y - pmfedit_y
 					dz = pmfedit_data[i].z - pmfedit_z
-					
+
 					d = dx*dx+dy*dy+dz*dz
 					if md == nil or d < md then
 						md = d
 						mi = i
 					end
 				end
-				
+
 				-- delete it and move to it
 				pmfedit_x = pmfedit_data[mi].x
 				pmfedit_y = pmfedit_data[mi].y
@@ -226,17 +240,19 @@ end
 function client.hook_render()
 	local c = 0xFF000000+256*(256*blk_color[3]+blk_color[2])+blk_color[1]
 	font_mini.print(4,40,c,string.format(
-		"PMF - size: %-6i x: %-6i y: %6i z: %-6i - COUNT: %6i / rot: %3f"
+		"PMF - size: %-6i x: %-6i y: %6i z: %-6i - COUNT: %6i / rot: %3f, %3f, %3f"
 		,pmfedit_size
 		,pmfedit_x
 		,pmfedit_y
 		,pmfedit_z
 		,#pmfedit_data-1
-		,pmfedit_rx))
-	
+		,pmfedit_ry
+		,pmfedit_rx
+		,pmfedit_ry2))
+
 	client.model_render_bone_local(pmfedit_model, pmfedit_model_bone,
 		0,0,1,
-		pmfedit_rx,0,0,
+		pmfedit_ry,pmfedit_rx,pmfedit_ry2,
 		0.7)
 end
 
