@@ -417,7 +417,6 @@ void net_eat_c2s(client_t *cli)
 					// check result
 					if(lua_isnil(lstate_server, -1))
 					{
-						net_packet_free(pkt, &(cli->head), &(cli->tail));
 						char buf[] = "\x35";
 						net_packet_push(1, buf, pkt->sockfd,
 							&(cli->send_head), &(cli->send_tail));
@@ -426,15 +425,28 @@ void net_eat_c2s(client_t *cli)
 						break;
 					} else if(lua_isboolean(lstate_server, -1) && lua_toboolean(lstate_server, -1)) {
 						// all good
-						
+						lua_pop(lstate_server, 1);
 					} else {
 						use_serialised = 1;
 						switch(udtype)
 						{
 							case UD_MAP:
-							case UD_MAP_ICEMAP:
-								break;
+							case UD_MAP_ICEMAP: {
+								if(!lua_isuserdata(lstate_server, -1))
+								{
+									fprintf(stderr, "S->C transfer error: not a map\n");
+									use_serialised = -1;
+									break;
+								}
+								map_t *map = lua_touserdata(lstate_server, -1);
+								lua_pop(lstate_server, 1);
+								other->sfetch_ubuf = map_serialise_icemap(
+									map, &(other->sfetch_ulen));
+							} break;
 							default:
+								fprintf(stderr,
+							"S->C transfer error: type %s not supported for serialisation\n"
+									, ftype);
 								use_serialised = -1;
 								break;
 						}
@@ -442,37 +454,37 @@ void net_eat_c2s(client_t *cli)
 						if(use_serialised == -1)
 						{
 							net_packet_free(pkt, &(cli->head), &(cli->tail));
+							lua_pop(lstate_server, 1);
 							break;
 						}
 					}
+				}
+				
+				if(use_serialised)
+				{
+					// do nothing - we have the thing
+				} else {
+					// check if we're allowed to fetch that
+					if(!path_type_server_readable(path_get_type(fname)))
+					{
+						// error! ignoring for now.
+						fprintf(stderr, "S->C transfer error: access denied\n");
+						net_packet_free(pkt, &(cli->head), &(cli->tail));
+						break;
+					}
 					
-					// pop
-					lua_pop(lstate_server, 1);
+					// check if we have a file in the queue
+					if(other->sfetch_udtype != UD_INVALID)
+					{
+						// error! ignoring for now.
+						fprintf(stderr, "S->C transfer error: still sending file\n");
+						net_packet_free(pkt, &(cli->head), &(cli->tail));
+						break;
+					}
+					
+					// k let's give this a whirl
+					other->sfetch_ubuf = net_fetch_file(fname, &(other->sfetch_ulen));
 				}
-				
-				//server.hook_file = fn(sockfd, ftype, fname)->object
-				
-				// check if we're allowed to fetch that
-				if(!path_type_server_readable(path_get_type(fname)))
-				{
-					// error! ignoring for now.
-					fprintf(stderr, "S->C transfer error: access denied\n");
-					net_packet_free(pkt, &(cli->head), &(cli->tail));
-					break;
-				}
-				
-				// check if we have a file in the queue
-				if(other->sfetch_udtype != UD_INVALID)
-				{
-					// error! ignoring for now.
-					fprintf(stderr, "S->C transfer error: still sending file\n");
-					net_packet_free(pkt, &(cli->head), &(cli->tail));
-					break;
-				}
-				
-				// k let's give this a whirl
-				// TODO: allow transferring of objects
-				other->sfetch_ubuf = net_fetch_file(fname, &(other->sfetch_ulen));
 				
 				if(other->sfetch_ubuf != NULL)
 				{

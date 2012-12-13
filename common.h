@@ -333,6 +333,7 @@ map_t *map_parse_aos(int len, const char *data);
 map_t *map_parse_icemap(int len, const char *data);
 map_t *map_load_aos(const char *fname);
 map_t *map_load_icemap(const char *fname);
+char *map_serialise_icemap(map_t *map, int *len);
 int map_save_icemap(map_t *map, const char *fname);
 void map_free(map_t *map);
 

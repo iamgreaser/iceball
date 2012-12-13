@@ -220,10 +220,87 @@ map_t *map_load_icemap(const char *fname)
 	return ret;
 }
 
-char *map_serialise_icemap(map_t *map)
+char *map_serialise_icemap(map_t *map, int *len)
 {
-	// TODO!
-	return NULL;
+	// TODO: make map_save_icemap rely on this
+	int x,z,pi;
+	int i;
+	
+	if(map == NULL)
+	{
+		fprintf(stderr, "map_serialise_icemap: map is NULL!\n");
+		return NULL;
+	}
+	
+	// calculate map length
+	int32_t maplen = 0;
+	for(z = 0, pi = 0; z < map->zlen; z++)
+	for(x = 0; x < map->xlen; x++, pi++)
+	{
+		uint8_t *p = map->pillars[pi];
+		
+		p += 4;
+		
+		for(;;)
+		{
+			int n = (int)p[0];
+			
+			if(n == 0)
+			{
+				maplen += 4*((((int)p[2])-(int)p[1])+1);
+				maplen += 4;
+				break;
+			} else {
+				maplen += 4*n;
+				p += 4*n;
+			}
+		}
+	}
+	
+	int buflen = 8
+		+8+4+6+maplen
+		+8;
+	
+	char *buf = malloc(buflen);
+	// TODO check if NULL
+	
+	memcpy(buf, "IceMap\x1A\x01MapData\xFF", 16);
+	
+	*(uint32_t *)&buf[16] = 6+maplen;
+	*(uint16_t *)&buf[20] = map->xlen;
+	*(uint16_t *)&buf[22] = map->ylen;
+	*(uint16_t *)&buf[24] = map->zlen;
+	char *zf = &buf[26];
+	
+	for(z = 0, pi = 0; z < map->zlen; z++)
+	for(x = 0; x < map->xlen; x++, pi++)
+	{
+		uint8_t *pb = (map->pillars[pi])+4;
+		uint8_t *p = pb;
+		
+		for(;;)
+		{
+			int n = (int)p[0];
+			
+			if(n == 0)
+			{
+				p += 4*(((int)p[2])-((int)p[1])+1);
+				p += 4;
+				break;
+			} else {
+				p += 4*n;
+			}
+		}
+		
+		memcpy(zf, pb, p-pb);
+		zf += p-pb;
+	}
+	memcpy(buf+buflen-8, "       \x00", 8);
+	
+	//printf("derp!\n");
+	*len = buflen;
+	
+	return buf;
 }
 
 int map_save_icemap(map_t *map, const char *fname)

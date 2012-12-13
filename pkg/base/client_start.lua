@@ -22,6 +22,7 @@ map_fname = nil
 
 dofile("pkg/base/common.lua")
 
+--[[
 while true do
 	local pkt, sockfd, cid
 	pkt, sockfd = common.net_recv()
@@ -32,7 +33,10 @@ while true do
 	else
 		error("should not receive non-map-filename packets until map filename arrives!")
 	end
-end
+end]]
+
+--map_fname = "*MAP"
+map_fname = "pkg/MAP" -- hackish workaround so iceballfornoobs-004 still works
 
 if not map_fname then
 	error("server should have sent map name by now")
@@ -394,7 +398,7 @@ function h_tick_main(sec_current, sec_delta)
 			
 			local plr = players[pid]
 			
-			print("recol",cr,cg,cb)
+			--print("recol",cr,cg,cb)
 			if plr then
 				plr.blk_color = {cr,cg,cb}
 				plr.block_recolor()
@@ -653,13 +657,7 @@ function h_mouse_button(button, state)
 			if plr.tool == TOOL_BLOCK and plr.blx1 then
 				if plr.blocks > 0 then
 				if plr.blx1 >= 0 and plr.blx1 < xlen and plr.blz1 >= 0 and plr.blz1 < zlen then
-				if plr.bly2 <= ylen-2 then
-					map_block_set(
-						plr.blx1, plr.bly1, plr.blz1,
-						1,
-						plr.blk_color[1],
-						plr.blk_color[2],
-						plr.blk_color[3])
+				if plr.bly1 <= ylen-3 then
 					common.net_send(nil, common.net_pack("BHHHBBBB",
 						0x08,
 						plr.blx1, plr.bly1, plr.blz1,
@@ -672,9 +670,8 @@ function h_mouse_button(button, state)
 				end
 				end
 			elseif plr.tool == TOOL_SPADE and plr.blx2 then
-				if plr.blx1 >= 0 and plr.blx1 < xlen and plr.blz1 >= 0 and plr.blz1 < zlen then
+				if plr.blx2 >= 0 and plr.blx2 < xlen and plr.blz2 >= 0 and plr.blz2 < zlen then
 				if plr.bly2 <= ylen-3 then
-					map_block_break(plr.blx2, plr.bly2, plr.blz2)
 					common.net_send(nil, common.net_pack("BHHH",
 						0x09,
 						plr.blx2, plr.bly2, plr.blz2))
@@ -694,21 +691,18 @@ function h_mouse_button(button, state)
 					0x18, 0x00,
 					plr.blk_color[1],plr.blk_color[2],plr.blk_color[3]))
 			elseif plr.tool == TOOL_SPADE and plr.blx2 then
-				if plr.blx1 >= 0 and plr.blx1 < xlen and plr.blz1 >= 0 and plr.blz1 < zlen then
+				if plr.blx2 >= 0 and plr.blx2 < xlen and plr.blz2 >= 0 and plr.blz2 < zlen then
 				if plr.bly2-1 <= ylen-3 then
-					map_block_break(plr.blx2, plr.bly2-1, plr.blz2)
 					common.net_send(nil, common.net_pack("BHHH",
 						0x09,
 						plr.blx2, plr.bly2-1, plr.blz2))
 				end
 				if plr.bly2 <= ylen-3 then
-					map_block_break(plr.blx2, plr.bly2, plr.blz2)
 					common.net_send(nil, common.net_pack("BHHH",
 						0x09,
 						plr.blx2, plr.bly2, plr.blz2))
 				end
 				if plr.bly2+1 <= ylen-3 then
-					map_block_break(plr.blx2, plr.bly2+1, plr.blz2)
 					common.net_send(nil, common.net_pack("BHHH",
 						0x09,
 						plr.blx2, plr.bly2+1, plr.blz2))
@@ -821,4 +815,4 @@ client.hook_mouse_motion = h_mouse_motion
 print("pkg/base/client_start.lua loaded.")
 
 --dofile("pkg/base/plug_snow.lua")
-dofile("pkg/base/plug_pmfedit.lua")
+--dofile("pkg/base/plug_pmfedit.lua")

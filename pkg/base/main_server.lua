@@ -71,6 +71,13 @@ end
 
 function server.hook_file(sockfd, ftype, fname)
 	print("hook_file:", sockfd, ftype, fname)
+	
+	--if (ftype == "icemap" or ftype == "map") and fname == "*MAP" then
+	if (ftype == "icemap" or ftype == "map") and fname == "pkg/MAP" then
+		-- hackish workaround so iceballfornoobs-004 still works
+		return map_loaded
+	end
+	
 	return true
 end
 
@@ -168,13 +175,13 @@ function server.hook_tick(sec_current, sec_delta)
 			local x,y,z,cb,cg,cr,ct
 			x,y,z,cb,cg,cr,ct,pkt = common.net_unpack("HHHBBBB", pkt)
 			map_block_set(x,y,z,ct,cr,cg,cb)
-			net_broadcast(sockfd, common.net_pack("BHHHBBBB",
+			net_broadcast(nil, common.net_pack("BHHHBBBB",
 					0x08,x,y,z,cb,cg,cr,ct))
 		elseif cid == 0x09 and plr then
 			local x,y,z
 			x,y,z = common.net_unpack("HHH", pkt)
 			map_block_break(x,y,z)
-			net_broadcast(sockfd, common.net_pack("BHHH",
+			net_broadcast(nil, common.net_pack("BHHH",
 					0x09,x,y,z))
 		elseif cid == 0x0C and plr then
 			-- chat
