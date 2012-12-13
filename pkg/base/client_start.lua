@@ -571,7 +571,7 @@ function h_key(key, state, modif)
 		elseif key == BTSK_MAP then
 			large_map = not large_map
 		elseif key == BTSK_RELOAD then
-			if plr.wpn and plr.tool == TOOL_GUN then
+			if plr.alive and plr.wpn and plr.tool == TOOL_GUN then
 				plr.wpn.reload()
 			end
 		elseif key == BTSK_TOOL1 then
@@ -593,7 +593,7 @@ function h_key(key, state, modif)
 		elseif key == BTSK_TEAMCHAT then
 			typing_type = "Team: "
 			typing_msg = ""
-		elseif key == BTSK_COLORLEFT then
+		elseif plr.alive and key == BTSK_COLORLEFT then
 			plr.blk_color_x = plr.blk_color_x - 1
 			if plr.blk_color_x < 0 then
 				plr.blk_color_x = 7
@@ -602,7 +602,7 @@ function h_key(key, state, modif)
 			common.net_send(nil, common.net_pack("BBBBB",
 				0x18, 0x00,
 				plr.blk_color[1],plr.blk_color[2],plr.blk_color[3]))
-		elseif key == BTSK_COLORRIGHT then
+		elseif plr.alive and key == BTSK_COLORRIGHT then
 			plr.blk_color_x = plr.blk_color_x + 1
 			if plr.blk_color_x > 7 then
 				plr.blk_color_x = 0
@@ -611,7 +611,7 @@ function h_key(key, state, modif)
 			common.net_send(nil, common.net_pack("BBBBB",
 				0x18, 0x00,
 				plr.blk_color[1],plr.blk_color[2],plr.blk_color[3]))
-		elseif key == BTSK_COLORUP then
+		elseif plr.alive and key == BTSK_COLORUP then
 			plr.blk_color_y = plr.blk_color_y - 1
 			if plr.blk_color_y < 0 then
 				plr.blk_color_y = 7
@@ -620,7 +620,7 @@ function h_key(key, state, modif)
 			common.net_send(nil, common.net_pack("BBBBB",
 				0x18, 0x00,
 				plr.blk_color[1],plr.blk_color[2],plr.blk_color[3]))
-		elseif key == BTSK_COLORDOWN then
+		elseif plr.alive and key == BTSK_COLORDOWN then
 			plr.blk_color_y = plr.blk_color_y + 1
 			if plr.blk_color_y > 7 then
 				plr.blk_color_y = 0
@@ -654,7 +654,7 @@ function h_mouse_button(button, state)
 	if state then
 		if button == 1 then
 			-- LMB
-			if plr.tool == TOOL_BLOCK and plr.blx1 then
+			if plr.tool == TOOL_BLOCK and plr.blx1 and plr.alive then
 				if plr.blocks > 0 then
 				if plr.blx1 >= 0 and plr.blx1 < xlen and plr.blz1 >= 0 and plr.blz1 < zlen then
 				if plr.bly1 <= ylen-3 then
@@ -669,7 +669,7 @@ function h_mouse_button(button, state)
 				end
 				end
 				end
-			elseif plr.tool == TOOL_SPADE and plr.blx2 then
+			elseif plr.tool == TOOL_SPADE and plr.blx2 and plr.alive then
 				if plr.blx2 >= 0 and plr.blx2 < xlen and plr.blz2 >= 0 and plr.blz2 < zlen then
 				if plr.bly2 <= ylen-3 then
 					common.net_send(nil, common.net_pack("BHHH",
@@ -683,14 +683,14 @@ function h_mouse_button(button, state)
 			end
 		elseif button == 3 then
 			-- RMB
-			if plr.tool == TOOL_BLOCK and plr.blx3 then
+			if plr.tool == TOOL_BLOCK and plr.blx3 and plr.alive then
 				local ct,cr,cg,cb
 				ct,cr,cg,cb = map_block_pick(plr.blx3, plr.bly3, plr.blz3)
 				plr.blk_color = {cr,cg,cb}
 				common.net_send(nil, common.net_pack("BBBBB",
 					0x18, 0x00,
 					plr.blk_color[1],plr.blk_color[2],plr.blk_color[3]))
-			elseif plr.tool == TOOL_SPADE and plr.blx2 then
+			elseif plr.tool == TOOL_SPADE and plr.blx2 and plr.alive then
 				if plr.blx2 >= 0 and plr.blx2 < xlen and plr.blz2 >= 0 and plr.blz2 < zlen then
 				if plr.bly2-1 <= ylen-3 then
 					common.net_send(nil, common.net_pack("BHHH",

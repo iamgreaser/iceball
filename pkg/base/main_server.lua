@@ -187,21 +187,34 @@ function server.hook_tick(sec_current, sec_delta)
 			-- chat
 			local msg
 			msg, pkt = common.net_unpack("z", pkt)
-			-- TODO: broadcast
-			local s = plr.name.." ("..teams[plr.team].name.."): "..msg
-			--local s = "dummy: "..msg
 			
-			net_broadcast(nil, common.net_pack("BIz", 0x0E, 0xFFFFFFFF, s))
+			local s = nil
+			if string.sub(msg,1,4) == "/me " then
+				s = "* "..plr.name.." "..string.sub(msg,5)
+			else
+				s = plr.name.." ("..teams[plr.team].name.."): "..msg
+			end
+			
+			if s then
+				net_broadcast(nil, common.net_pack("BIz", 0x0E, 0xFFFFFFFF, s))
+			end
 		elseif cid == 0x0D and plr then
 			-- teamchat
 			local msg
 			msg, pkt = common.net_unpack("z", pkt)
-			local s = plr.name..": "..msg
-			--local s = "dummy: "..msg
-			local cb = teams[plr.team].color_chat
-			local cb = {0,0,255}
-			local c = argb_split_to_merged(cb[1],cb[2],cb[3])
-			net_broadcast_team(plr.team, common.net_pack("BIz", 0x0E, c, s))
+			
+			local s = nil
+			if string.sub(msg,1,4) == "/me " then
+				s = "* "..plr.name.." "..string.sub(msg,5)
+			else
+				s = plr.name..": "..msg
+			end
+			
+			if s then
+				local cb = teams[plr.team].color_chat
+				local c = argb_split_to_merged(cb[1],cb[2],cb[3])
+				net_broadcast_team(plr.team, common.net_pack("BIz", 0x0E, c, s))
+			end
 		elseif cid == 0x11 and not plr then
 			local tidx, wpn, name
 			tidx, wpn, name, pkt = common.net_unpack("bbz", pkt)
