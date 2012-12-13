@@ -40,7 +40,7 @@ end
 
 local loose, user_toggles, user_settings = parse_commandline_options({...})
 
-local user_config_filename = 	user_settings['user'] or 
+local user_config_filename = 	user_settings['user'] or
 								"clsave/pub/user.json"
 
 -- FIXME: we don't expose documentation for valid user settings anywhere
@@ -75,6 +75,7 @@ BTSK_COLORDOWN  = SDLK_DOWN
 BTSK_CHAT     = SDLK_t
 BTSK_COMMAND  = SDLK_SLASH
 BTSK_TEAMCHAT = SDLK_y
+BTSK_SCORES   = SDLK_TAB
 
 BTSK_QUIT = SDLK_ESCAPE
 
@@ -95,7 +96,7 @@ function chat_add(ctab, mtime, msg, color)
 		color = color,
 		msg = msg,
 	}
-	
+
 	if mtime then
 		ctab[#ctab+1] = l
 	else
@@ -105,14 +106,14 @@ end
 
 function chat_prune(ctab, mtime)
 	local i
-	
+
 	for i=1,#(ctab.queue) do
 		local l = ctab.queue[i]
 		l.mtime = mtime
 		ctab[#ctab+1] = l
 	end
 	ctab.queue = {}
-	
+
 	mtime = mtime - MODE_CHAT_LINGER
 	while ctab.head <= #ctab and (
 			#ctab-ctab.head > MODE_CHAT_MAX
@@ -126,7 +127,7 @@ function chat_draw(ctab, fn_pos)
 	local i
 	local w,h
 	w,h = client.screen_get_dims()
-	
+
 	for i=ctab.head,#ctab do
 		local x,y
 		local ri = i-ctab.head
@@ -140,50 +141,50 @@ log_mspr = {}
 
 mspr_player = {
 	                -1,-3,   0,-3,   1,-3,
-	
+
 	        -2,-2,                           2,-2,
-	
+
 	-3,-1,                                           3,-1,
-	
+
 	-3, 0,                                           3, 0,
-	
+
 	-3, 1,                                           3, 1,
-	
+
 	        -2, 2,                           2, 2,
-	
+
 	                -1, 3,   0, 3,   1, 3,
 }
 
 -- TODO: confirm the correct size of the intel + tent icons
 mspr_intel = {
 	-3,-3,  -2,-3,  -1,-3,   0,-3,   1,-3,   2,-3,   3,-3,
-	
+
 	-3,-2,                                           3,-2,
-	
+
 	-3,-1,                                           3,-1,
-	
+
 	-3, 0,                                           3, 0,
-	
+
 	-3, 1,                                           3, 1,
-	
+
 	-3, 2,                                           3, 2,
-	
+
 	-3, 3,  -2, 3,  -1, 3,   0, 3,   1, 3,   2, 3,   3, 3,
 }
 
 mspr_tent = {
 	                         0,-3,
-	
+
 	                         0,-2,
-	
+
 	                         0,-1,
-	
+
 	-3, 0,  -2, 0,  -1, 0,   0, 0,   1, 0,   2, 0,   3, 0,
-	
+
 	                         0, 1,
-	
+
 	                         0, 2,
-	
+
 	                         0, 3,
 }
 
@@ -200,6 +201,8 @@ mouse_skip = 3
 
 typing_type = nil
 typing_msg = nil
+
+show_scores = false
 
 -- load images
 img_crosshair = client.img_load("pkg/base/gfx/crosshair.tga")
@@ -222,7 +225,7 @@ if false then
 	body = client.model_load_pmf("pkg/base/pmf/src/playerbody.pmf")
 	arm = client.model_load_pmf("pkg/base/pmf/src/playerarm.pmf")
 	leg = client.model_load_pmf("pkg/base/pmf/src/playerleg.pmf")
-	
+
 	local mname, mdata, mbone
 	local mbase = client.model_new(6)
 	mname, mdata = client.model_bone_get(head, 0)
@@ -237,7 +240,7 @@ if false then
 	mname, mdata = client.model_bone_get(leg, 0)
 	mbase, mbone = client.model_bone_new(mbase)
 	client.model_bone_set(mbase, mbone, "leg", mdata)
-	
+
 	client.model_save_pmf(mbase, "clsave/player.pmf")
 end
 
@@ -281,28 +284,28 @@ client.model_bone_set(mdl_bbox, mdl_bbox_bone2, "bbox_crouch", mdl_bbox_bone_dat
 -- set hooks
 function h_tick_main(sec_current, sec_delta)
 	rotpos = rotpos + sec_delta*120.0
-	
+
 	chat_prune(chat_text, sec_current)
 	chat_prune(chat_killfeed, sec_current)
-	
+
 	local pkt, sockfd
 	while true do
 		pkt, sockfd = common.net_recv()
 		if not pkt then break end
-		
+
 		local cid
 		cid, pkt = common.net_unpack("B", pkt)
 		--print("pkt", cid)
-		
+
 		if cid == 0x03 then
 			local pid, x, y, z
 			pid, x, y, z, pkt = common.net_unpack("Bhhh", pkt)
 			x = x/32.0
 			y = y/32.0
 			z = z/32.0
-			
+
 			local plr = players[pid]
-			
+
 			if plr then
 				plr.set_pos_recv(x, y, z)
 			end
@@ -311,9 +314,9 @@ function h_tick_main(sec_current, sec_delta)
 			pid, ya, xa, keys = common.net_unpack("BbbB", pkt)
 			ya = ya*math.pi/128
 			xa = xa*math.pi/256
-			
+
 			local plr = players[pid]
-			
+
 			if plr then
 				plr.set_orient_recv(ya, xa, keys)
 			end
@@ -322,7 +325,7 @@ function h_tick_main(sec_current, sec_delta)
 			local pid, tidx, wpn, score, kills, deaths, name
 			pid, tidx, wpn, score, kills, deaths, name, pkt
 				= common.net_unpack("Bbbhhhz", pkt)
-			
+
 			players[pid] = new_player({
 				name = name,
 				--[=[squad = squads[math.fmod(i-1,2)][
@@ -332,7 +335,7 @@ function h_tick_main(sec_current, sec_delta)
 				weapon = wpn,
 				pid = pid,
 			})
-			
+
 			players[pid].score = score
 			players[pid].kills = kills
 			players[pid].deaths = deaths
@@ -373,7 +376,7 @@ function h_tick_main(sec_current, sec_delta)
 		elseif cid == 0x14 then
 			local pid, amt
 			pid, amt, pkt = common.net_unpack("BB", pkt)
-			
+
 			local plr = players[pid]
 			--print("hit pkt", pid, amt)
 			if plr then
@@ -382,18 +385,18 @@ function h_tick_main(sec_current, sec_delta)
 		elseif cid == 0x17 then
 			local pid, tool
 			pid, tool, pkt = common.net_unpack("BB", pkt)
-			
+
 			local plr = players[pid]
-			
+
 			if plr then
 				plr.tool_switch(tool)
 			end
 		elseif cid == 0x18 then
 			local pid, cr,cg,cb
 			pid, cr,cg,cb, pkt = common.net_unpack("BBBB", pkt)
-			
+
 			local plr = players[pid]
-			
+
 			print("recol",cr,cg,cb)
 			if plr then
 				plr.blk_color = {cr,cg,cb}
@@ -401,7 +404,7 @@ function h_tick_main(sec_current, sec_delta)
 			end
 		end
 	end
-	
+
 	local i
 	for i=1,players.max do
 		local plr = players[i]
@@ -409,14 +412,14 @@ function h_tick_main(sec_current, sec_delta)
 			plr.tick(sec_current, sec_delta)
 		end
 	end
-	
+
 	for i=1,#intent do
 		intent[i].tick(sec_current, sec_delta)
 	end
-	
+
 	if players.current and players[players.current] then
 		local plr = players[players.current]
-		
+
 		if t_net_move and sec_current >= t_net_move then t_net_move = nil end
 		if t_net_orient and sec_current >= t_net_orient then t_net_orient = nil end
 		if not t_net_move then
@@ -435,16 +438,16 @@ function h_tick_main(sec_current, sec_delta)
 			ya,xa,keys = plr.get_orient()
 			ya = ya*128/math.pi
 			xa = xa*256/math.pi
-			
+
 			common.net_send(nil, common.net_pack("BBbbB"
 				, 0x04, 0x00, ya, xa, keys))
 		end
-		
+
 		plr.camera_firstperson()
 	else
 		-- TODO: idle camera
 	end
-	
+
 	-- wait a bit
 	return 0.005
 end
@@ -456,9 +459,9 @@ function h_tick_init(sec_current, sec_delta)
 		squads[0][i] = name_generate()
 		squads[1][i] = name_generate()
 	end]]
-	
+
 	players.current = nil
-	
+
 	--[[
 	for i=1,players.max do
 		players[i] = new_player({
@@ -471,26 +474,26 @@ function h_tick_init(sec_current, sec_delta)
 		})
 	end
 	]]
-	
+
 	intent[#intent+1] = new_intel({team = 0})
 	intent[#intent+1] = new_tent({team = 0})
 	intent[#intent+1] = new_intel({team = 1})
 	intent[#intent+1] = new_tent({team = 1})
-	
+
 	chat_add(chat_text, sec_current, "Just testing the chat...", 0xFFFFFFFF)
 	chat_add(chat_text, sec_current, "BLUE MASTER RACE", 0xFF0000FF)
 	chat_add(chat_text, sec_current, "GREEN MASTER RACE", 0xFF00C000)
 	chat_add(chat_text, sec_current, "SALLY MASTER RACE", 0xFFAA00FF)
 	chat_add(chat_text, sec_current, "YOU ALL SUCK", 0xFFC00000)
-	
+
 	mouse_released = false
 	client.mouse_lock_set(true)
 	client.mouse_visible_set(false)
-	
+
 	client.gui_scene = gui_create_scene(client.screen_get_dims())
-	
+
 	common.net_send(nil, common.net_pack("Bbbz", 0x11, -1, WPN_RIFLE, user_config.name or ""))
-	
+
 	client.hook_tick = h_tick_main
 	return client.hook_tick(sec_current, sec_delta)
 end
@@ -501,16 +504,16 @@ function h_key(key, state, modif)
 		client.mouse_lock_set(false)
 		client.mouse_visible_set(true)
 	end
-	
+
 	if not players[players.current] then
 		if state and key == SDLK_ESCAPE then
 			client.hook_tick = nil
 		end
-		
+
 		return
 	end
 	local plr = players[players.current]
-	
+
 	if typing_type then
 		if state then
 			if key == SDLK_ESCAPE then
@@ -524,7 +527,7 @@ function h_key(key, state, modif)
 						if typing_msg == "/kill" then
 							plr.damage(100, 0xFFC00000, plr.name.." committed suicide")
 						end]]
-						
+
 						if not common.net_send(nil, common.net_pack("Bz", 0x0C, typing_msg)) then
 							print("ERR!")
 						end
@@ -552,6 +555,8 @@ function h_key(key, state, modif)
 		plr.ev_jump = state
 	elseif key == BTSK_SNEAK then
 		plr.ev_sneak = state
+	elseif key == BTSK_SCORES then
+		show_scores = state
 	elseif state then
 		if key == BTSK_DEBUG then
 			debug_enabled = not debug_enabled
@@ -634,17 +639,17 @@ function h_mouse_button(button, state)
 		client.mouse_visible_set(false)
 		return
 	end
-	
+
 	local plr = players[players.current]
 	if not plr then return end
-	
+
 	local xlen, ylen, zlen
 	xlen, ylen, zlen = common.map_get_dims()
-	
+
 	if plr.tool == TOOL_GUN and plr.alive then
 		plr.wpn.click(button, state)
 	end
-	
+
 	if state then
 		if button == 1 then
 			-- LMB
@@ -726,9 +731,9 @@ function h_mouse_motion(x, y, dx, dy)
 		mouse_skip = mouse_skip - 1
 		return
 	end
-	
+
 	local plr = players[players.current]
-	
+
 	plr.dangy = plr.dangy - dx*math.pi*sensitivity/plr.zoom
 	plr.dangx = plr.dangx + dy*math.pi*sensitivity/plr.zoom
 end
@@ -751,7 +756,7 @@ do
 	img_overview_grid = common.img_new(xlen, zlen)
 	img_overview_icons = common.img_new(xlen, zlen)
 	local x,z
-	
+
 	for z=0,zlen-1 do
 	for x=0,xlen-1 do
 		local l = common.map_pillar_get(x,z)
@@ -783,7 +788,7 @@ do
 		g = cpalette[cy*8+cx+1][2]
 		b = cpalette[cy*8+cx+1][3]
 		local c = argb_split_to_merged(r,g,b)
-		
+
 		for y=cy*8+1,cy*8+6 do
 		for x=cx*8+1,cx*8+6 do
 			common.img_pixel_set(img_cpal, x, y, c)
@@ -791,7 +796,7 @@ do
 		end
 	end
 	end
-	
+
 	local i
 	for i=0,6 do
 		common.img_pixel_set(img_cpal_rect, i, 0, 0xFFFFFFFF)
