@@ -443,20 +443,6 @@ function gui_create_scene(width, height)
 	
 	function scene.bone(options)
 		
-		--client.model_render_bone_local(model_t, bone_idx, px, py, pz, ry, rx, ry2, scale)
-		
-		-- we are going to break the standard model heavily here...
-		-- l=cx=rx, we ignore the regular scale, width and height will return 0, knocking out all the regular features
-		-- if we let them use an offscreen buffer... we could apply effects like alpha on top.
-		-- but for now we won't do that.
-		
-		-- so instead we have: x, y, z, scale, ry, rx, ry2, model, bone_idx - all the stuff in the render fn
-		-- and we preserve the rx behavior.
-		
-		-- the other piece of the puzzle is in how we want to define anims, if any
-		-- when rendering a single bone the only kind of animation is rotozooming...
-		-- this may be a better task for the tween lib.
-		
 		-- some tweening design:
 		
 		-- timing is event-based (motivates event system)
@@ -464,18 +450,44 @@ function gui_create_scene(width, height)
 		-- the tween lib runs on top of the dT mode
 		-- (need to go look at the existing timing model to see what I have to work with)
 		
+		local this = scene.display_object(options)
+		
+		this.z = options.z or 1
+		this.model = options.model or nil
+		this.bone_idx = options.bone_idx or 0
+		this.rot_x = options.rot_x or 0
+		this.rot_y = options.rot_y or 0
+		this.rot_y2 = options.rot_y2 or 0
+		this.scale = options.scale or 1
+		
+		function this.getter_keys.width() return 0 end
+		this.getter_keys.height = this.getter_keys.width
+		
+		function this.draw_update()
+			if this.model ~= nil then
+				client.model_render_bone_local(this.model, 
+					this.bone_idx, 
+					this.rx, this.ry, this.z,
+					this.rot_y, this.rot_x, this.rot_y2, this.scale)
+			end
+		end
+		
+		return this
+		
 	end
 	
 	-- TEST CODE
-	--[=[local frame = scene.rect_frame{width=320,height=320, x=width/2, y=height/2}
+	--[[local frame = scene.rect_frame{width=320,height=320, x=width/2, y=height/2}
 	local frame2 = scene.rect_frame{width=32,height=32, x=0, y=0}
 	local frame3 = scene.rect_frame{width=32,height=32, x=64, y=96}
 	local text1 = scene.textfield{width=400,height=100, text="hello world"}
+	local bone = scene.bone{model=mdl_intel, rot_y = -0.3, rot_x = -0.4, rot_y2 = 0.2, scale = 0.5}
 	root.add_child(frame)
 	frame.add_child(text1)
 	frame.add_child(frame2)
 	frame.add_child(frame3)
-	frame.child_to_top(text1)]=]
+	frame.child_to_top(text1)
+	frame.add_child(bone)]]
 	
 	return scene
 	
