@@ -180,6 +180,8 @@ function new_player(settings)
 	end
 
 	function this.tool_switch(tool)
+		if not this.alive then return end
+
 		if this.tool == TOOL_GUN then
 			if this.wpn then
 				this.wpn.firing = false
@@ -400,6 +402,10 @@ function new_player(settings)
 			end
 		end
 
+		if not this.alive then
+			this.input_reset()
+		end
+
 		if this.t_switch == true then
 			this.t_switch = sec_current + 0.2
 		end
@@ -462,6 +468,7 @@ function new_player(settings)
 		if this.ev_right then
 			mvx = mvx - 1.0
 		end
+
 		if this.ev_crouch then
 			if this.grounded and not this.crouching then
 				if MODE_SOFTCROUCH then this.jerkoffs = this.jerkoffs - 1 end
@@ -469,7 +476,7 @@ function new_player(settings)
 			end
 			this.crouching = true
 		end
-		if this.ev_jump and (MODE_CHEAT_FLY or this.grounded) then
+		if this.ev_jump and this.alive and (MODE_CHEAT_FLY or this.grounded) then
 			this.vy = -7
 			this.ev_jump = false
 		end
@@ -670,7 +677,9 @@ function new_player(settings)
 		local mdl_x = hand_x1+math.cos(rax_right)*ays*0.8
 		local mdl_y = hand_y1+math.sin(rax_right)*0.8
 		local mdl_z = hand_z1+math.cos(rax_right)*ayc*0.8
-		if this.tool == TOOL_SPADE then
+		if not this.alive then
+			-- do nothing --
+		elseif this.tool == TOOL_SPADE then
 			client.model_render_bone_global(mdl_spade, mdl_spade_bone,
 				this.x+mdl_x, this.y+this.jerkoffs+mdl_y, this.z+mdl_z,
 				--0.0, -this.angx-math.pi/2*0.90, this.angy, 1)

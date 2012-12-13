@@ -61,11 +61,24 @@ function net_broadcast_team(tidx, msg)
 	for i=1,#(client_list.fdlist) do
 		local cli = client_list[client_list.fdlist[i]]
 		local plr = cli and players[cli.plrid]
-		if plr.team == tidx then
+		if plr and plr.team == tidx then
 			--print("to", client_list.fdlist[i], type(msg))
 			common.net_send(client_list.fdlist[i], msg)
 		end
 	end
+end
+
+
+function server.hook_file(sockfd, ftype, fname)
+	print("hook_file:", sockfd, ftype, fname)
+	
+	--if (ftype == "icemap" or ftype == "map") and fname == "*MAP" then
+	if (ftype == "icemap" or ftype == "map") and fname == "pkg/MAP" then
+		-- hackish workaround so iceballfornoobs-004 still works
+		return map_loaded
+	end
+	
+	return true
 end
 
 function server.hook_connect(sockfd, addrinfo)
@@ -162,33 +175,46 @@ function server.hook_tick(sec_current, sec_delta)
 			local x,y,z,cb,cg,cr,ct
 			x,y,z,cb,cg,cr,ct,pkt = common.net_unpack("HHHBBBB", pkt)
 			map_block_set(x,y,z,ct,cr,cg,cb)
-			net_broadcast(sockfd, common.net_pack("BHHHBBBB",
+			net_broadcast(nil, common.net_pack("BHHHBBBB",
 					0x08,x,y,z,cb,cg,cr,ct))
 		elseif cid == 0x09 and plr then
 			local x,y,z
 			x,y,z = common.net_unpack("HHH", pkt)
 			map_block_break(x,y,z)
-			net_broadcast(sockfd, common.net_pack("BHHH",
+			net_broadcast(nil, common.net_pack("BHHH",
 					0x09,x,y,z))
 		elseif cid == 0x0C and plr then
 			-- chat
 			local msg
 			msg, pkt = common.net_unpack("z", pkt)
-			-- TODO: broadcast
-			local s = plr.name.." ("..teams[plr.team].name.."): "..msg
-			--local s = "dummy: "..msg
 			
-			net_broadcast(nil, common.net_pack("BIz", 0x0E, 0xFFFFFFFF, s))
+			local s = nil
+			if string.sub(msg,1,4) == "/me " then
+				s = "* "..plr.name.." "..string.sub(msg,5)
+			else
+				s = plr.name.." ("..teams[plr.team].name.."): "..msg
+			end
+			
+			if s then
+				net_broadcast(nil, common.net_pack("BIz", 0x0E, 0xFFFFFFFF, s))
+			end
 		elseif cid == 0x0D and plr then
 			-- teamchat
 			local msg
 			msg, pkt = common.net_unpack("z", pkt)
-			local s = plr.name..": "..msg
-			--local s = "dummy: "..msg
-			local cb = teams[plr.team].color_chat
-			local cb = {0,0,255}
-			local c = argb_split_to_merged(cb[1],cb[2],cb[3])
-			net_broadcast_team(plr.team, common.net_pack("BIz", 0x0E, c, s))
+			
+			local s = nil
+			if string.sub(msg,1,4) == "/me " then
+				s = "* "..plr.name.." "..string.sub(msg,5)
+			else
+				s = plr.name..": "..msg
+			end
+			
+			if s then
+				local cb = teams[plr.team].color_chat
+				local c = argb_split_to_merged(cb[1],cb[2],cb[3])
+				net_broadcast_team(plr.team, common.net_pack("BIz", 0x0E, c, s))
+			end
 		elseif cid == 0x11 and not plr then
 			local tidx, wpn, name
 			tidx, wpn, name, pkt = common.net_unpack("bbz", pkt)
