@@ -66,13 +66,19 @@ client/server.hook_tick = fn(sec_curtime, sec_delta)->sec_wait @
 	NOTE: DO NOT USE COMMON FOR THIS HOOK!
 	(only client/server is accepted)
 
-server.hook_file = fn(ftype, fname, clisock)->object
+server.hook_file = fn(sockfd, ftype, fname)->object
 	sets a hook to intercept networked file requests
 	
-	"clisock" is the socket pertaining to the file request
+	"sockfd" is the socket pertaining to the file request
 	
 	can return nil to cancel the request
 	can return true to perform the default request
+	otherwise, return an object to be serialised
+	
+	currently supported values for ftype:
+	- "icemap"
+	
+	the rest must be either nil or true.
 
 client.hook_render = fn() @
 	sets a hook called every frame

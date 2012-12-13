@@ -129,6 +129,9 @@ weapons = {
 		this.reset()
 		
 		local function prv_fire(sec_current)
+			local xlen, ylen, zlen
+			xlen, ylen, zlen = common.map_get_dims()
+			
 			local sya = math.sin(plr.angy)
 			local cya = math.cos(plr.angy)
 			local sxa = math.sin(plr.angx)
@@ -189,9 +192,11 @@ weapons = {
 						, 0x13, 0, 0))
 				end
 				
-				if cx2 then
+				if cx2 and cy2 <= ylen-3 then
 					-- TODO: block health rather than instant block removal
-					map_block_break(cx2,cy2,cz2)
+					common.net_send(nil, common.net_pack("BHHH",
+						0x09,
+						cx2,cy2,cz2))
 				end
 			end
 			

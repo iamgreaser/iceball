@@ -385,27 +385,106 @@ void net_eat_c2s(client_t *cli)
 				printf("file request: %02X %s \"%s\"\n",
 					udtype, (ftype == NULL ? "*ERROR*" : ftype), fname);
 				
-				// check if we're allowed to fetch that
-				if(!path_type_server_readable(path_get_type(fname)))
+				// call hook_file if it exists
+				int use_serialised = 0;
+				
+				lua_getglobal(lstate_server, "server");
+				lua_getfield(lstate_server, -1, "hook_file");
+				lua_remove(lstate_server, -2);
+				if(lua_isnil(lstate_server, -1))
 				{
-					// error! ignoring for now.
-					fprintf(stderr, "S->C transfer error: access denied\n");
-					net_packet_free(pkt, &(cli->head), &(cli->tail));
-					break;
+					lua_pop(lstate_server, 1);
+				} else {
+					if(pkt->sockfd >= 0)
+						lua_pushinteger(lstate_server, pkt->sockfd);
+					else
+						lua_pushboolean(lstate_server, 1);
+					
+					lua_pushstring(lstate_server, ftype);
+					lua_pushstring(lstate_server, fname);
+					
+					if(lua_pcall(lstate_server, 3, 1, 0) != 0)
+					{
+						fprintf(stderr, "ERROR running server Lua (hook_file): %s\n"
+							, lua_tostring(lstate_server, -1));
+						lua_pop(lstate_server, 1);
+						
+						net_kick_sockfd_immediate(pkt->sockfd, "hook_file failed on server");
+						net_packet_free(pkt, &(cli->head), &(cli->tail));
+						break;
+					}
+					
+					// check result
+					if(lua_isnil(lstate_server, -1))
+					{
+						char buf[] = "\x35";
+						net_packet_push(1, buf, pkt->sockfd,
+							&(cli->send_head), &(cli->send_tail));
+						net_packet_free(pkt, &(cli->head), &(cli->tail));
+						lua_pop(lstate_server, 1);
+						break;
+					} else if(lua_isboolean(lstate_server, -1) && lua_toboolean(lstate_server, -1)) {
+						// all good
+						lua_pop(lstate_server, 1);
+					} else {
+						use_serialised = 1;
+						switch(udtype)
+						{
+							case UD_MAP:
+							case UD_MAP_ICEMAP: {
+								if(!lua_isuserdata(lstate_server, -1))
+								{
+									fprintf(stderr, "S->C transfer error: not a map\n");
+									use_serialised = -1;
+									break;
+								}
+								map_t *map = lua_touserdata(lstate_server, -1);
+								lua_pop(lstate_server, 1);
+								other->sfetch_ubuf = map_serialise_icemap(
+									map, &(other->sfetch_ulen));
+							} break;
+							default:
+								fprintf(stderr,
+							"S->C transfer error: type %s not supported for serialisation\n"
+									, ftype);
+								use_serialised = -1;
+								break;
+						}
+						
+						if(use_serialised == -1)
+						{
+							net_packet_free(pkt, &(cli->head), &(cli->tail));
+							lua_pop(lstate_server, 1);
+							break;
+						}
+					}
 				}
 				
-				// check if we have a file in the queue
-				if(other->sfetch_udtype != UD_INVALID)
+				if(use_serialised)
 				{
-					// error! ignoring for now.
-					fprintf(stderr, "S->C transfer error: still sending file\n");
-					net_packet_free(pkt, &(cli->head), &(cli->tail));
-					break;
+					// do nothing - we have the thing
+				} else {
+					// check if we're allowed to fetch that
+					if(!path_type_server_readable(path_get_type(fname)))
+					{
+						// error! ignoring for now.
+						fprintf(stderr, "S->C transfer error: access denied\n");
+						net_packet_free(pkt, &(cli->head), &(cli->tail));
+						break;
+					}
+					
+					// check if we have a file in the queue
+					if(other->sfetch_udtype != UD_INVALID)
+					{
+						// error! ignoring for now.
+						fprintf(stderr, "S->C transfer error: still sending file\n");
+						net_packet_free(pkt, &(cli->head), &(cli->tail));
+						break;
+					}
+					
+					// k let's give this a whirl
+					other->sfetch_ubuf = net_fetch_file(fname, &(other->sfetch_ulen));
 				}
-				
-				// k let's give this a whirl
-				// TODO: allow transferring of objects
-				other->sfetch_ubuf = net_fetch_file(fname, &(other->sfetch_ulen));
 				
 				if(other->sfetch_ubuf != NULL)
 				{
@@ -934,7 +1013,7 @@ void net_flush_accept_one(int sockfd, struct sockaddr_storage *ss, socklen_t sle
 		if(lua_pcall(lstate_server, 2, 0, 0) != 0)
 		{
 			printf("ERROR running server Lua (hook_connect): %s\n", lua_tostring(lstate_server, -1));
-			lua_pop(lstate_server, 2);
+			lua_pop(lstate_server, 1);
 			net_kick_sockfd_immediate(sockfd, "hook_connect failed on server");
 			return;
 		}

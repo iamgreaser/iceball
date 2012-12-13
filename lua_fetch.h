@@ -108,9 +108,7 @@ int icelua_fn_common_fetch_start(lua_State *L)
 	const char *ftype = lua_tostring(L, 1);
 	const char *fname = lua_tostring(L, 2);
 	
-	if(L == lstate_server
-		? !path_type_server_readable(path_get_type(fname))
-		: !path_type_client_readable(path_get_type(fname)))
+	if(L == lstate_server && !path_type_server_readable(path_get_type(fname)))
 	{
 		return luaL_error(L, "cannot read from there");
 	}
