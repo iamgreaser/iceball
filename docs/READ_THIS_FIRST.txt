@@ -145,7 +145,7 @@ F5 = release mouse cursor
 F1 = show some debug information
 
 [ TODO: add , for teamswitch ]
-[ TODO: add TAB for scores ]
+TAB = show scores
 
 Note that there is no weapon select key. This isn't Ace of Jagex.
 
