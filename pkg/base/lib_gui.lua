@@ -289,7 +289,20 @@ function gui_string_edit(str, maxlen, key, modif)
 	return str
 end
 
-function gui_create_scene(width, height)
+-- GUI Events
+
+-- DELTATIME: 
+-- uses the delta time passed in when listeners are pumped.
+-- callback passes in the dT value.
+GE_DELTATIME = 0 
+-- SHARED_ALARM:
+-- uses the scene's shared alarm, which is run at a fixed interval (default "60").
+-- callback passes in the dT value.
+GE_SHARED_ALARM = 1
+
+--[[Create a new scene. 
+Each scene contains its own displaylist, buffers, and listeners.]]
+function gui_create_scene(width, height, shared_rate)
 
 	local scene = {}
 
@@ -300,6 +313,8 @@ function gui_create_scene(width, height)
 		this.use_img = false -- allocates a img buffer to this node
 		this.img = nil
 		this.dirty = true -- whether drawing needs to be updated
+		this.listeners = {}
+		this.alarms = {}
 		function this.free()
 			common.img_free(this.img) for k,v in pairs(this.children) do v.free() end
 		end
@@ -336,12 +351,47 @@ function gui_create_scene(width, height)
 				end
 			end
 		end
+		function this.add_listener(ge_type, callback)
+			local l = this.listeners
+			if l[ge_type] == nil then
+				l[ge_type] = {callback}
+			else
+				l[ge_type][#l[ge_type]+1] = callback
+			end
+		end
+		-- given a dT and list of events [ge_type, data] call the listeners with matching type and progress any alarms
+		function this.pump_listeners(dT, events)
+			local i
+			for i=1, #this.alarms do
+				this.alarms[i].tick(dT)
+			end
+			for i=1, #events do
+				local ev = events[i]
+				local list = this.listeners[ev[1]]
+				if list ~= nil then
+					for j=1, #list do
+						list[j](ev[2])
+					end
+				end
+			end
+			for k,v in pairs(this.children) do v.pump_listeners(events) end
+		end
 		return this
 	end
-
+	
 	local root = scene.display_object{x=0, y=0,
 		width=width, height=height, align_x=0, align_y=0}
-
+	
+	function scene.pump_listeners(dT, events)
+		scene.shared_alarm_trigger = false
+		scene.shared_alarm.tick(dT)
+		if scene.shared_alarm_trigger then
+			events[#events+1] = {GE_SHARED_ALARM, dT}
+		end
+		events[#events+1] = {GE_DELTATIME, dT}
+		root.pump_listeners(dT, events)
+	end
+	
 	function scene.draw() root.draw() end
 	function scene.free() root.free() end
 
@@ -447,13 +497,6 @@ function gui_create_scene(width, height)
 
 	function scene.bone(options)
 
-		-- some tweening design:
-
-		-- timing is event-based (motivates event system)
-		-- timing can run in dT or frame-count mode
-		-- the tween lib runs on top of the dT mode
-		-- (need to go look at the existing timing model to see what I have to work with)
-
 		local this = scene.display_object(options)
 
 		this.z = options.z or 1
@@ -479,6 +522,27 @@ function gui_create_scene(width, height)
 		return this
 
 	end
+	
+	--[[
+		Each frame, before we start drawing, we traverse the DL tree in order to
+		pass in events.
+		
+		Each displayobject has a "hash of lists" - one list for each event type.
+		Callbacks are simply stored in the list.
+	]]
+	
+	--[[
+		The shared alarm records "whether it went off" this frame.
+		When the trigger is on, it injects the SHARED_ALARM event into this frame.
+	]]
+	
+	function scene.on_shared_alarm(dT)
+		scene.shared_alarm_trigger = true
+	end
+	
+	shared_rate = shared_rate or 60
+	scene.shared_alarm = alarm{time=shared_rate, loop=true,
+		on_trigger=scene.on_shared_alarm }
 
 	-- TEST CODE
 	--[[local frame = scene.rect_frame{width=320,height=320, x=width/2, y=height/2}
