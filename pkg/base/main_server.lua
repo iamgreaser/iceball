@@ -345,14 +345,20 @@ function server.hook_tick(sec_current, sec_delta)
 			--print("hit", tpid, styp)
 			
 			local tplr = players[tpid]
-			if tplr and styp >= 1 and styp <= 3 then
-				if tplr.wpn then
-					local dmg = tplr.wpn.cfg.dmg[({"head","body","legs"})[styp]]
+			if tplr then
+				if plr.tool == TOOL_GUN and plr.wpn and styp >= 1 and styp <= 3 then
+					local dmg = plr.wpn.cfg.dmg[({"head","body","legs"})[styp]]
 					--print("dmg",dmg,tplr.wpn.cfg.dmg)
 					tplr.gun_damage(styp, dmg, plr)
+				elseif plr.tool == TOOL_SPADE then
+					tplr.spade_damage(0, 1000, plr)
 				end
 			end
-			net_broadcast(sockfd, common.net_pack("BB", 0x1A, cli.plrid))
+			
+			if plr.tool == TOOL_GUN then
+				-- we don't want the spade spewing tracers!
+				net_broadcast(sockfd, common.net_pack("BB", 0x1A, cli.plrid))
+			end
 		elseif cid == 0x17 and plr then
 			local tpid, tool
 			tpid, tool, pkt = common.net_unpack("BB", pkt)

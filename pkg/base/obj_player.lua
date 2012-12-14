@@ -361,6 +361,30 @@ function new_player(settings)
 		this.damage(amt, c, kmsg, enemy)
 	end
 
+	function this.spade_damage(part, amt, enemy)
+		--print("damage",this.name,part,amt)
+
+		if not server then
+			return
+		end
+
+		local midmsg = " spaded "
+		if this.team == enemy.team then
+			error("THIS SHOULD NEVER HAPPEN WORST PYSPADES BUG EVER")
+		end
+
+		local r,g,b
+		r,g,b = 0,0,0
+
+		local l = teams[enemy.team].color_chat
+		r,g,b = l[1],l[2],l[3]
+
+		local c = argb_split_to_merged(r,g,b)
+
+		local kmsg = enemy.name..midmsg..this.name
+		this.damage(amt, c, kmsg, enemy)
+	end
+
 	function this.grenade_damage(amt, enemy)
 		--print("damage",this.name,part,amt)
 		local midmsg = " killed "
@@ -508,53 +532,6 @@ function new_player(settings)
 			this.t_newspade2 = nil
 		end
 		
-		if client and this.alive and (not this.t_switch) then
-		if this.ev_lmb then
-			if this.tool == TOOL_BLOCK and this.blx1 then
-				if (not this.t_newblock) and this.blocks > 0 then
-				if this.blx1 >= 0 and this.blx1 < xlen and this.blz1 >= 0 and this.blz1 < zlen then
-				if this.bly1 <= ylen-3 then
-					common.net_send(nil, common.net_pack("BHHHBBBB",
-						0x08,
-						this.blx1, this.bly1, this.blz1,
-						this.blk_color[3],
-						this.blk_color[2],
-						this.blk_color[1],
-						1))
-					this.blocks = this.blocks - 1
-					this.t_newblock = sec_current + MODE_DELAY_BLOCK_BUILD
-					this.t_switch = this.t_newblock
-				end
-				end
-				end
-			elseif this.tool == TOOL_SPADE and this.blx2 then
-				if (not this.t_newspade1) then
-				if this.blx2 >= 0 and this.blx2 < xlen and this.blz2 >= 0 and this.blz2 < zlen then
-				if this.bly2 <= ylen-3 then
-					bhealth_damage(this.blx2, this.bly2, this.blz2, MODE_BLOCK_DAMAGE_SPADE)
-					this.t_newspade1 = sec_current + MODE_DELAY_SPADE_HIT
-				end
-				end
-				end
-			end
-		elseif this.ev_rmb then
-			if this.tool == TOOL_BLOCK and this.blx3 and this.alive then
-				local ct,cr,cg,cb
-				ct,cr,cg,cb = map_block_pick(this.blx3, this.bly3, this.blz3)
-				this.blk_color = {cr,cg,cb}
-				common.net_send(nil, common.net_pack("BBBBB",
-					0x18, 0x00,
-					this.blk_color[1],this.blk_color[2],this.blk_color[3]))
-				this.ev_rmb = false
-			elseif this.tool == TOOL_SPADE and this.blx2 and this.alive then
-				if (not this.t_newspade2) then
-					this.t_newspade2 = sec_current
-						+ MODE_DELAY_SPADE_DIG
-				end
-			end
-		end
-		end
-
 		-- apply delta angle
 		this.angx = this.angx + this.dangx
 		this.angy = this.angy + this.dangy
@@ -581,7 +558,99 @@ function new_player(settings)
 		local cxa = math.cos(this.angx)
 		local fwx,fwy,fwz
 		fwx,fwy,fwz = sya*cxa, sxa, cya*cxa
-
+		
+		if client and this.alive and (not this.t_switch) then
+		if this.ev_lmb then
+			if this.tool == TOOL_BLOCK and this.blx1 then
+				if (not this.t_newblock) and this.blocks > 0 then
+				if this.blx1 >= 0 and this.blx1 < xlen and this.blz1 >= 0 and this.blz1 < zlen then
+				if this.bly1 <= ylen-3 then
+					common.net_send(nil, common.net_pack("BHHHBBBB",
+						0x08,
+						this.blx1, this.bly1, this.blz1,
+						this.blk_color[3],
+						this.blk_color[2],
+						this.blk_color[1],
+						1))
+					this.blocks = this.blocks - 1
+					this.t_newblock = sec_current + MODE_DELAY_BLOCK_BUILD
+					this.t_switch = this.t_newblock
+				end
+				end
+				end
+			elseif this.tool == TOOL_SPADE then
+				if (not this.t_newspade1) then
+				
+				-- see if there's anyone we can kill
+				local d = this.bld2 or 5 -- NOTE: cannot spade through walls anymore. Sorry guys :/
+				local hurt_idx = nil
+				local hurt_part = nil
+				local hurt_part_idx = 0
+				local hurt_dist = d*d
+				local i,j
+				
+				for i=1,players.max do
+					local p = players[i]
+					if p and p ~= this and p.alive and p.team ~= this.team then
+						local dx = p.x-this.x
+						local dy = p.y-this.y+0.1
+						local dz = p.z-this.z
+						
+						for j=1,3 do
+							local dd = dx*dx+dy*dy+dz*dz
+							
+							local dotk = dx*fwx+dy*fwy+dz*fwz
+							local dot = math.sqrt(dd-dotk*dotk)
+							if dot < 0.55 and dd < hurt_dist then
+								hurt_idx = i
+								hurt_dist = dd
+								hurt_part_idx = j
+								hurt_part = ({"head","body","legs"})[j]
+								
+								break
+							end
+							dy = dy + 1.0
+						end
+					end
+				end
+				
+				if hurt_idx then
+					if server then
+						players[hurt_idx].spade_damage(
+							hurt_part, 1000, this)
+					else
+						common.net_send(nil, common.net_pack("BBB"
+							, 0x13, hurt_idx, hurt_part_idx))
+					end
+				elseif this.blx2 then
+				if this.blx2 >= 0 and this.blx2 < xlen and this.blz2 >= 0 and this.blz2 < zlen then
+				if this.bly2 <= ylen-3 then
+					bhealth_damage(this.blx2, this.bly2, this.blz2, MODE_BLOCK_DAMAGE_SPADE)
+					this.t_newspade1 = sec_current + MODE_DELAY_SPADE_HIT
+				end
+				end
+				end
+				
+				end
+			end
+		elseif this.ev_rmb then
+			if this.tool == TOOL_BLOCK and this.blx3 and this.alive then
+				local ct,cr,cg,cb
+				ct,cr,cg,cb = map_block_pick(this.blx3, this.bly3, this.blz3)
+				this.blk_color = {cr,cg,cb}
+				common.net_send(nil, common.net_pack("BBBBB",
+					0x18, 0x00,
+					this.blk_color[1],this.blk_color[2],this.blk_color[3]))
+				this.ev_rmb = false
+			elseif this.tool == TOOL_SPADE and this.blx2 and this.alive then
+				if (not this.t_newspade2) then
+					this.t_newspade2 = sec_current
+						+ MODE_DELAY_SPADE_DIG
+				end
+			end
+		end
+		end
+		
 		-- move along
 		local mvx = 0.0
 		local mvy = 0.0
@@ -715,32 +784,35 @@ function new_player(settings)
 		this.grounded = (MODE_AIRJUMP and this.grounded) or not box_is_clear(
 			tx1-0.39, ty1+by2, tz1-0.39,
 			tx1+0.39, ty1+by2+0.1, tz1+0.39)
-
+		
 		if this.alive and this.vy > 0 and this.grounded then
 			this.vy = 0
 		end
-
+		
 		-- trace for stuff
 		do
 			local td
 			local _
-
+			
 			local camx,camy,camz
 			camx = this.x+0.4*math.sin(this.angy)
 			camy = this.y
 			camz = this.z+0.4*math.cos(this.angy)
-
+			
 			td,
 			this.blx1, this.bly1, this.blz1,
 			this.blx2, this.bly2, this.blz2
 			= trace_map_ray_dist(camx,camy,camz, fwx,fwy,fwz, 5)
-
+			
+			this.bld1 = td
+			this.bld2 = td
+			
 			_,
 			_, _, _,
 			this.blx3, this.bly3, this.blz3
 			= trace_map_ray_dist(camx,camy,camz, fwx,fwy,fwz, 127.5)
 		end
-
+		
 		-- update gun
 		if this.wpn then this.wpn.tick(sec_current, sec_delta) end
 	end

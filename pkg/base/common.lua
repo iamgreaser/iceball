@@ -195,7 +195,6 @@ weapons = {
 			end
 			
 			if hurt_idx then
-				-- TODO: ship this off to the server!
 				if server then
 					players[hurt_idx].gun_damage(
 						hurt_part, this.cfg.dmg[hurt_part], plr)
