@@ -295,6 +295,12 @@ function h_tick_main(sec_current, sec_delta)
 
 	chat_prune(chat_text, sec_current)
 	chat_prune(chat_killfeed, sec_current)
+	
+	if client.gui_scene then
+		--[[ TODO queue up input events so that the GUI can see them
+		implement and test these events ]]
+		client.gui_scene.pump_listeners(sec_delta, {})
+	end
 
 	local pkt, sockfd
 	while true do

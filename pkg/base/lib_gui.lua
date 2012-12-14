@@ -291,14 +291,65 @@ end
 
 -- GUI Events
 
--- DELTATIME: 
+-- DELTA_TIME: 
 -- uses the delta time passed in when listeners are pumped.
 -- callback passes in the dT value.
-GE_DELTATIME = 0 
+GE_DELTA_TIME = 1
+
 -- SHARED_ALARM:
--- uses the scene's shared alarm, which is run at a fixed interval (default "60").
--- callback passes in the dT value.
-GE_SHARED_ALARM = 1
+-- uses the scene's shared alarm, which is run at a fixed interval (default "1/60").
+-- callback passes in the dT value of the past frame.
+GE_SHARED_ALARM = 2
+
+-- KEY_DOWN:
+-- User pressed a key.
+-- callback passes in the binding and modifiers.
+GE_KEY_DOWN = 3
+
+-- KEY_UP:
+-- User released a key.
+-- callback passes in the binding and modifiers.
+GE_KEY_UP = 4
+
+-- MOUSE_INPUT:
+-- Per-frame mouse inputs: x, y, button status.
+-- (define result object)
+GE_MOUSE_INPUT = 5
+
+-- MOUSE_LMB_DOWN:
+-- Left mouse button is pressed.
+-- (define result object)
+GE_MOUSE_LMB_DOWN = 6
+
+-- MOUSE_LMB_UP:
+-- Left mouse button is released.
+-- (define result object)
+GE_MOUSE_LMB_UP = 7
+
+-- MOUSE_RMB_DOWN:
+-- Right mouse button is pressed.
+-- (define result object)
+GE_MOUSE_RMB_DOWN = 8
+
+-- MOUSE_RMB_UP:
+-- Right mouse button is released.
+-- (define result object)
+GE_MOUSE_RMB_UP = 9
+
+-- MOUSE_CLICK:
+-- Left mouse button is pressed and released while colliding with the widget.
+-- (define result object)
+GE_MOUSE_CLICK = 10
+
+-- MOUSELOCK_GAINED:
+-- Mouse cursor has been locked for camera control
+-- (define result object)
+GE_MOUSELOCK_GAINED = 11
+
+-- MOUSELOCK_RELEASED:
+-- Mouse cursor has been released and can point to GUI widgets
+-- (define result object)
+GE_MOUSELOCK_RELEASED = 12
 
 --[[Create a new scene. 
 Each scene contains its own displaylist, buffers, and listeners.]]
@@ -352,12 +403,11 @@ function gui_create_scene(width, height, shared_rate)
 			end
 		end
 		function this.add_listener(ge_type, callback)
+			if ge_type == nil then error("nil ge_type") end
+			if callback == nil then error("nil callback") end
 			local l = this.listeners
-			if l[ge_type] == nil then
-				l[ge_type] = {callback}
-			else
-				l[ge_type][#l[ge_type]+1] = callback
-			end
+			if not l[ge_type] then l[ge_type] = {} end
+			l[ge_type][#l[ge_type]+1] = callback
 		end
 		-- given a dT and list of events [ge_type, data] call the listeners with matching type and progress any alarms
 		function this.pump_listeners(dT, events)
@@ -374,7 +424,7 @@ function gui_create_scene(width, height, shared_rate)
 					end
 				end
 			end
-			for k,v in pairs(this.children) do v.pump_listeners(events) end
+			for k,v in pairs(this.children) do v.pump_listeners(dT, events) end
 		end
 		return this
 	end
@@ -383,12 +433,13 @@ function gui_create_scene(width, height, shared_rate)
 		width=width, height=height, align_x=0, align_y=0}
 	
 	function scene.pump_listeners(dT, events)
-		scene.shared_alarm_trigger = false
+		scene.shared_alarm_trigger = 0
 		scene.shared_alarm.tick(dT)
-		if scene.shared_alarm_trigger then
+		local i
+		for i=1,scene.shared_alarm_trigger do
 			events[#events+1] = {GE_SHARED_ALARM, dT}
 		end
-		events[#events+1] = {GE_DELTATIME, dT}
+		events[#events+1] = {GE_DELTA_TIME, dT}
 		root.pump_listeners(dT, events)
 	end
 	
@@ -533,14 +584,14 @@ function gui_create_scene(width, height, shared_rate)
 	
 	--[[
 		The shared alarm records "whether it went off" this frame.
-		When the trigger is on, it injects the SHARED_ALARM event into this frame.
+		Each count of the trigger injects a SHARED_ALARM event into this frame.
 	]]
 	
 	function scene.on_shared_alarm(dT)
-		scene.shared_alarm_trigger = true
+		scene.shared_alarm_trigger = scene.shared_alarm_trigger + 1
 	end
 	
-	shared_rate = shared_rate or 60
+	shared_rate = shared_rate or 1./60
 	scene.shared_alarm = alarm{time=shared_rate, loop=true,
 		on_trigger=scene.on_shared_alarm }
 
@@ -555,7 +606,22 @@ function gui_create_scene(width, height, shared_rate)
 	frame.add_child(frame2)
 	frame.add_child(frame3)
 	frame.child_to_top(text1)
-	frame.add_child(bone)]]
+	frame.add_child(bone)
+	
+	-- rotate using shared alarm(accumulates 60hz frames)
+	
+	local function bone_rotate(dT)
+		bone.rot_y = bone.rot_y + 1./60
+	end
+	bone.add_listener(GE_SHARED_ALARM, bone_rotate)]]
+	--[[
+	
+	-- rotate using dT(passes in the raw dT value and multiplies)
+	
+	local function bone_rotate_2(dT)
+		bone.rot_y = bone.rot_y + dT
+	end
+	bone.add_listener(GE_DELTA_TIME, bone_rotate_2)]]
 
 	return scene
 

@@ -429,7 +429,7 @@ function alarm(options)
 	
 	this = {}
 	
-	this.time = options.active or 1
+	this.time = options.time or 1
 	this.progress = options.progress or 0
 	this.active = options.active or true
 	this.loop = options.loop or false
