@@ -204,22 +204,24 @@ function server.hook_tick(sec_current, sec_delta)
 			x,y,z = common.net_unpack("HHH", pkt)
 			if x >= 0 and x < xlen and z >= 0 and z < zlen then
 			if y >= 0 and y <= ylen-3 then
-				map_block_break(x,y,z)
-				net_broadcast(nil, common.net_pack("BHHH",
-						0x09,x,y,z))
-				if plr.tool == TOOL_SPADE then
-					local oblocks = plr.blocks
-					plr.blocks = plr.blocks + 1
-					if plr.blocks > 100 then
-						plr.blocks = 100
-					end
+				if map_block_break(x,y,z) then
+					net_broadcast(nil, common.net_pack("BHHH",
+							0x09,x,y,z))
 					
-					if oblocks == 0 then
-						net_broadcast(nil, common.net_pack("BBB",
-							0x19, cli.plrid, plr.blocks))
-					else
-						common.net_send(sockfd, common.net_pack("BBB",
-							0x19, cli.plrid, plr.blocks))
+					if plr.tool == TOOL_SPADE then
+						local oblocks = plr.blocks
+						plr.blocks = plr.blocks + 1
+						if plr.blocks > 100 then
+							plr.blocks = 100
+						end
+						
+						if oblocks == 0 then
+							net_broadcast(nil, common.net_pack("BBB",
+								0x19, cli.plrid, plr.blocks))
+						else
+							common.net_send(sockfd, common.net_pack("BBB",
+								0x19, cli.plrid, plr.blocks))
+						end
 					end
 				end
 			end

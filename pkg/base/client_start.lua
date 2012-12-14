@@ -37,7 +37,7 @@ print("bio desc:", user_config.bio and user_config.bio.description)
 dofile("pkg/base/common.lua")
 
 tracers = {head = 1, tail = 0, time = 0}
-bhealth = {head = 1, tail = 0, time = 0}
+bhealth = {head = 1, tail = 0, time = 0, map = {}}
 
 --[[
 while true do
@@ -99,6 +99,88 @@ NET_MOVE_DELAY = 0.5
 NET_ORIENT_DELAY = 0.1
 t_net_move = nil
 t_net_orient = nil
+
+function bhealth_clear(x,y,z,repaint)
+	local map = bhealth.map
+	
+	local bh = map[x] and map[x][y] and map[x][y][z]
+	
+	if bh then
+		if repaint then
+			map_block_paint(bh.x,bh.y,bh.z,
+				bh.c[1],bh.c[2],bh.c[3],bh.c[4])
+		end
+		
+		map[x][y][z] = nil
+	end
+end
+
+function bhealth_damage(x,y,z,amt)
+	local map = bhealth.map
+	
+	map[x] = map[x] or {}
+	map[x][y] = map[x][y] or {}
+	map[x][y][z] = map[x][y][z] or {
+		c = map_block_get(x,y,z),
+		damage = 0,
+		time = nil,
+		qidx = nil,
+		x = x, y = y, z = z,
+	}
+	local blk = map[x][y][z]
+	
+	blk.time = bhealth.time + MODE_BLOCK_REGEN_TIME
+	blk.damage = blk.damage + amt
+	
+	if blk.damage >= MODE_BLOCK_HEALTH then
+		common.net_send(nil, common.net_pack("BHHH",
+			0x09, x, y, z))
+	end
+	
+	local c = blk.c
+	local darkfac = 0.8*MODE_BLOCK_HEALTH
+	local light = darkfac/(darkfac + blk.damage)
+	
+	map_block_paint(x,y,z,c[1],
+		math.floor(c[2]*light+0.5),
+		math.floor(c[3]*light+0.5),
+		math.floor(c[4]*light+0.5))
+	
+	bhealth.tail = bhealth.tail + 1
+	bhealth[bhealth.tail] = {x=x,y=y,z=z,time=blk.time}
+	
+	blk.qidx = bhealth.tail
+end
+
+function bhealth_prune(time)
+	--print("prune", bhealth.head, bhealth.tail)
+	while bhealth.head <= bhealth.tail do
+		local bhi = bhealth[bhealth.head]
+		if time < bhi.time then break end
+		bhealth[bhealth.head] = nil
+		
+		--print("bhi", bhi.x,bhi.y,bhi.z,bhi.time,time)
+		
+		local map = bhealth.map
+		local bh = map[bhi.x] and map[bhi.x][bhi.y] and map[bhi.x][bhi.y][bhi.z]
+		
+		if bh and bh.qidx == bhealth.head then
+			map_block_paint(bh.x,bh.y,bh.z,
+				bh.c[1],bh.c[2],bh.c[3],bh.c[4])
+			bhealth.map[bh.x][bh.y][bh.z] = nil
+		end
+		
+		bhealth.head = bhealth.head + 1
+	end
+	
+	if bhealth.head > bhealth.tail then
+		bhealth.head = 1
+		bhealth.tail = 0
+	end
+	
+	bhealth.time = time
+	
+end
 
 function tracer_add(x,y,z,ya,xa,time)
 	local tc = {
@@ -397,10 +479,12 @@ function h_tick_main(sec_current, sec_delta)
 		elseif cid == 0x08 then
 			local x,y,z,cb,cg,cr,ct
 			x,y,z,cb,cg,cr,ct,pkt = common.net_unpack("HHHBBBB", pkt)
+			bhealth_clear(x,y,z,false)
 			map_block_set(x,y,z,ct,cr,cg,cb)
 		elseif cid == 0x09 then
 			local x,y,z
 			x,y,z = common.net_unpack("HHH", pkt)
+			bhealth_clear(x,y,z,false)
 			map_block_break(x,y,z)
 		elseif cid == 0x0E then
 			-- add to chat
@@ -514,6 +598,7 @@ function h_tick_main(sec_current, sec_delta)
 		end
 	end
 	tracer_prune(sec_current)
+	bhealth_prune(sec_current)
 
 	local i
 	for i=1,players.max do
@@ -774,22 +859,20 @@ function h_mouse_button(button, state)
 		plr.wpn.click(button, state)
 	end
 
-	if state then
-		if button == 1 then
-			-- LMB
-			plr.ev_lmb = state
-			if plr.ev_lmb then
-				plr.ev_rmb = false
-			end
-		elseif button == 3 then
-			-- RMB
-			plr.ev_rmb = state
-			if plr.ev_rmb then
-				plr.ev_lmb = false
-			end
-		elseif button == 2 then
-			-- middleclick
+	if button == 1 then
+		-- LMB
+		plr.ev_lmb = state
+		if plr.ev_lmb then
+			plr.ev_rmb = false
 		end
+	elseif button == 3 then
+		-- RMB
+		plr.ev_rmb = state
+		if plr.ev_rmb then
+			plr.ev_lmb = false
+		end
+	elseif button == 2 then
+		-- middleclick
 	end
 end
 
@@ -902,7 +985,7 @@ function client.hook_render()
 		local cxa = math.cos(tc.xa)
 		
 		local d = tracers.time - tc.time
-		d = d + 0.02
+		d = d + 0.005
 		d = d * 600.0
 		x = x + sya*cxa*d
 		y = y + sxa*d

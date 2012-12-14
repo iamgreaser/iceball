@@ -78,6 +78,7 @@ MODE_DELAY_TOOL_CHANGE = 0.2
 MODE_BLOCK_HEALTH = 100
 MODE_BLOCK_DAMAGE_SPADE = 34
 MODE_BLOCK_DAMAGE_RIFLE = 34
+MODE_BLOCK_REGEN_TIME = 15.0
 
 MODE_RCIRC_LINGER = 60.0
 MODE_RESPAWN_TIME = 8.0
@@ -210,9 +211,7 @@ weapons = {
 				
 				if cx2 and cy2 <= ylen-3 then
 					-- TODO: block health rather than instant block removal
-					common.net_send(nil, common.net_pack("BHHH",
-						0x09,
-						cx2,cy2,cz2))
+					bhealth_damage(cx2,cy2,cz2,MODE_BLOCK_DAMAGE_RIFLE)
 				end
 			end
 			
