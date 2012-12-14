@@ -82,6 +82,8 @@ BTSK_TEAMCHAT = SDLK_y
 BTSK_SCORES   = SDLK_TAB
 
 BTSK_QUIT = SDLK_ESCAPE
+BTSK_YES  = SDLK_y
+BTSK_NO   = SDLK_n
 
 BTSK_DEBUG = SDLK_F1
 BTSK_MAP = SDLK_m
@@ -207,6 +209,8 @@ typing_type = nil
 typing_msg = nil
 
 show_scores = false
+
+quitting = false
 
 -- load images
 img_crosshair = client.img_load("pkg/base/gfx/crosshair.tga")
@@ -563,11 +567,18 @@ function h_key(key, state, modif)
 	elseif key == BTSK_SCORES then
 		show_scores = state
 	elseif state then
+		if quitting then
+			if key == BTSK_YES then
+				-- TODO: clean up
+				client.hook_tick = nil
+			elseif key == BTSK_NO then
+				quitting = false
+			end
+		end
 		if key == BTSK_DEBUG then
 			debug_enabled = not debug_enabled
 		elseif key == BTSK_QUIT then
-			-- TODO: clean up
-			client.hook_tick = nil
+			quitting = true
 		elseif key == SDLK_F10 then
 			local s = "clsave/"..common.base_dir.."/vol/lastsav.icemap"
 			print(s)

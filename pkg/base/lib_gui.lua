@@ -22,6 +22,7 @@ dofile("pkg/base/lib_util.lua")
 -- load images
 local img_font_numbers = common.img_load("pkg/base/gfx/font-numbers.tga")
 local img_font_mini = common.img_load("pkg/base/gfx/font-mini.tga")
+local img_font_large = common.img_load("pkg/base/gfx/font-large.tga")
 --[[
 client.img_free(img_font_numbers)
 img_font_numbers = nil -- PLEASE DO THIS, GUYS!
@@ -57,6 +58,8 @@ local DIGIT_WIDTH = 32
 local DIGIT_HEIGHT = 48
 local MINI_WIDTH = 6
 local MINI_HEIGHT = 8
+local LARGE_WIDTH = 24
+local LARGE_HEIGHT = 32
 
 function gui_index_mini(idx) return idx-32 end
 function gui_index_digit(idx) return digit_map[idx] end
@@ -65,116 +68,116 @@ function gui_index_digit(idx) return digit_map[idx] end
 function gui_create_fixwidth_font(image, char_width, char_height, indexing_fn, shadow)
 	local this = {image=image, width=char_width, height=char_height,
 		indexing_fn=indexing_fn, shadow=shadow}
-	
+
 	-- compute a non-wrapped characters + positions output suitable for usage in text selections as well as render
 	function this.compute_unwrapped(x, y, c, str)
-		
+
 		result = {{}}
 		local col_count = 1
-		
+
 		for col_count=1, #str do
 			local char = string.byte(str, col_count)
 			result[1][col_count] = {char, this.indexing_fn(char), x, y, c}
 			x = x + this.width
 		end
-		
+
 		return result
 	end
-	
+
 	-- compute a wordwrapped characters + positions output suitable for usage in text selections as well as render
 	function this.compute_wordwrap(wp, x, y, c, str)
-	
+
 	-- 1. find whitespace
-		
+
 		local i
 		local j
 		local toks = {}
 		local cur_tok = 1
 		local line_charwidth = math.floor(wp / this.width)
-		
+
 		for i=1,#str do
 			local idx = string.byte(str, i)
 			if idx == 13 or idx == 10 then -- CR/LF
-				if toks[cur_tok] == nil then 
+				if toks[cur_tok] == nil then
 					toks[cur_tok] = {newlines=1}
-				elseif toks[cur_tok].newlines == nil then 
+				elseif toks[cur_tok].newlines == nil then
 					cur_tok = cur_tok + 1; toks[cur_tok] = {newlines=1}
 				else
 					toks[cur_tok].newlines = toks[cur_tok].newlines + 1
 				end
 			elseif idx == 32 then -- space
-				if toks[cur_tok] == nil then 
+				if toks[cur_tok] == nil then
 					toks[cur_tok] = {spaces=1}
-				elseif toks[cur_tok].spaces == nil then 
+				elseif toks[cur_tok].spaces == nil then
 					cur_tok = cur_tok + 1; toks[cur_tok] = {spaces=1}
 				else
 					toks[cur_tok].spaces = toks[cur_tok].spaces + 1
 				end
 			else -- word
-				if toks[cur_tok] == nil then 
+				if toks[cur_tok] == nil then
 					toks[cur_tok] = {word={idx}}
-				elseif toks[cur_tok].word == nil or 
+				elseif toks[cur_tok].word == nil or
 					#toks[cur_tok].word+1 > line_charwidth -- split if word is larger than a line
-					then 
+					then
 					cur_tok = cur_tok + 1; toks[cur_tok] = {word={idx}}
 				else
 					toks[cur_tok].word[#toks[cur_tok].word+1] = idx
 				end
 			end
 		end
-		
+
 		-- 2. render as many words as possible per line to a cacheable character buffer
-		
+
 		local begin_x = x
 		local end_x = x + wp
 		local result = {{}}
 		local line_count = 1
 		local col_count = 1
-		
+
 		local function endline()
 			x = begin_x; y = y + this.height
 			line_count = line_count + 1
 			result[line_count] = {}
 			col_count = 1
 		end
-		
+
 		for i=1,#toks do
 			local tok = toks[i]
 			if tok.word ~= nil then
 				if x + #tok.word * this.width > end_x then endline() end
 				for j=1,#tok.word do
-					result[line_count][col_count] = {tok.word[j], 
+					result[line_count][col_count] = {tok.word[j],
 						this.indexing_fn(tok.word[j]), x, y, c}
 					x = x + this.width
 					col_count = col_count + 1
 				end
 			elseif tok.spaces ~= nil then
 				local char = string.byte(' ')
-				result[line_count][col_count] = {char, 
+				result[line_count][col_count] = {char,
 					this.indexing_fn(char), x, y, c}
 				x = x + this.width * tok.spaces
 				col_count = col_count + 1
-			elseif tok.newlines ~= nil then 
-				for j=1,tok.newlines do endline() end 
+			elseif tok.newlines ~= nil then
+				for j=1,tok.newlines do endline() end
 			end
 			if x > end_x then endline() end
 		end
-		
+
 		return result
 	end
-	
+
 	-- get the AABB dimensions of text given precomputed text data
 	function this.dimensions(data)
-		
-		local result = {l=data[1][1][3], 
+
+		local result = {l=data[1][1][3],
 						r=data[1][1][3] + this.width,
-						t=data[1][1][4], 
-						b=data[1][1][4] + this.height, 
+						t=data[1][1][4],
+						b=data[1][1][4] + this.height,
 						width=0, height=0}
-		
+
 		local row = 1
 		local col = 1
-		
+
 		for row=1,#data do
 			for col=1,#data[row] do
 				result.l = math.min(result.l, data[row][col][3])
@@ -183,14 +186,14 @@ function gui_create_fixwidth_font(image, char_width, char_height, indexing_fn, s
 				result.b = math.max(result.b, data[row][col][4] + this.height)
 			end
 		end
-		
+
 		result.width = result.r - result.l
 		result.height = result.b - result.t
-		
+
 		return result
-		
+
 	end
-	
+
 	function this._blit(buffer, x, y, idx, c)
 		if this.shadow then
 			if buffer == nil then
@@ -205,14 +208,14 @@ function gui_create_fixwidth_font(image, char_width, char_height, indexing_fn, s
 			client.img_blit_to(buffer, this.image, x, y, this.width, this.height, idx*this.width, 0, c)
 		end
 	end
-	
+
 	-- calculate the shadow strength from the percieved luminance of the font; brighter color = darker shadow
 	function this.calc_shadow(c)
 		local a, r, g, b = argb_merged_to_split(c)
 		local luminance = (0.2126 * r/256 + 0.7152 * g/256 + 0.0722 * b/256) -- Photometric/digital ITU-R
 		this.shadow = argb_split_to_merged(0,0,0,(luminance)*256)
 	end
-	
+
 	-- print text with topleft at x, y, color c, string str
 	function this.print(x, y, c, str, buffer)
 		this.calc_shadow(c)
@@ -223,10 +226,10 @@ function gui_create_fixwidth_font(image, char_width, char_height, indexing_fn, s
 		end
 		local i
 	end
-	
+
 	-- print a selection of precomputed text
 	function this.print_precomputed(data, offx, offy, buffer)
-		
+
 		for y=1,#data do
 			for x=1,#data[y] do
 				local char = data[y][x][1]
@@ -237,18 +240,19 @@ function gui_create_fixwidth_font(image, char_width, char_height, indexing_fn, s
 				this._blit(buffer, px, py, idx, c)
 			end
 		end
-		
+
 	end
-	
+
 	-- print text with minimum-space wordwrapping, pixelwidth wp, topleft at x, y, color c, string str
 	function this.print_wrap(wp, x, y, c, str, buffer)
 		this.print_precomputed(this.compute_wordwrap(wp, x, y, c, str), 0, 0, buffer)
 	end
-	
+
 	return this
 end
 
 font_mini = gui_create_fixwidth_font(img_font_mini, MINI_WIDTH, MINI_HEIGHT, gui_index_mini, true)
+font_large = gui_create_fixwidth_font(img_font_large, LARGE_WIDTH, LARGE_HEIGHT, gui_index_mini, true)
 font_digits = gui_create_fixwidth_font(img_font_numbers, DIGIT_WIDTH, DIGIT_HEIGHT, gui_index_digit)
 
 function gui_get_char(key, modif)
@@ -260,14 +264,14 @@ function gui_get_char(key, modif)
 				key = key - 32
 			end
 		end
-		
+
 		local k = string.char(key)
 		k = (shifted and shift_map[k]) or k
 		return k
 	end
-	
+
 	-- TODO: check some other things
-	
+
 	return nil
 end
 
@@ -276,19 +280,19 @@ function gui_string_edit(str, maxlen, key, modif)
 		str = string.sub(str, 1, #str-1)
 	else
 		local k = gui_get_char(key, modif)
-		
+
 		if #str < maxlen and k then
 			str = str .. k
 		end
 	end
-	
+
 	return str
 end
 
 function gui_create_scene(width, height)
-	
+
 	local scene = {}
-	
+
 	function scene.display_object(options)
 		local this = widgets.widget(options)
 		this.visible = true -- draws this node and children
@@ -323,7 +327,7 @@ function gui_create_scene(width, height)
 			local cw, ch = math.ceil(this.width), math.ceil(this.height)
 			if this.img == nil then
 				this.img = common.img_new(cw, ch)
-			else 
+			else
 				pw, ph = common.img_get_dims(this.img)
 				pw, ph = math.ceil(pw), math.ceil(ph)
 				if not (pw == cw and ph == ch) then
@@ -334,22 +338,22 @@ function gui_create_scene(width, height)
 		end
 		return this
 	end
-	
-	local root = scene.display_object{x=0, y=0, 
+
+	local root = scene.display_object{x=0, y=0,
 		width=width, height=height, align_x=0, align_y=0}
-	
+
 	function scene.draw() root.draw() end
 	function scene.free() root.free() end
-	
+
 	function scene.rect_frame(options)
-		
+
 		local this = scene.display_object(options)
-		
+
 		this.frame_col = options.frame_col or 0xFF888888
 		this.fill_col = options.fill_col or 0xFFAAAAAA
-		
+
 		this.use_img = true
-		
+
 		function this.draw_update()
 			local w = math.ceil(this.width)
 			local h = math.ceil(this.height)
@@ -370,48 +374,48 @@ function gui_create_scene(width, height)
 				end
 			end
 		end
-		
+
 		return this
-		
+
 	end
-	
+
 	function scene.textfield(options)
-		
+
 		local this = scene.display_object(options)
-		
+
 		this.wordwrap = options.wordwrap or true
 		this.color = options.color or 0xFF880088
 		this.autosize = options.autosize or true
 		this.font = options.font or font_mini
 		this.use_img = true
-		
+
 		-- so, we are computing the text around offset 0, 0
 		-- but when we go to display or collide with it, we're going to have to
 		-- apply the widget offsets on top.
-		
+
 		-- TODO: cursor + text selection collision, data structure, rendering
 		-- TODO: compute_unwrapped should allow new lines...
-		
+
 		function this.setter_keys.width(w)
 			if this.autosize == false then
 				rawset(this, 'width', w)
 				this.dirty = true
 			end
 		end
-		
+
 		function this.setter_keys.height(h)
 			if this.autosize == false then
 				rawset(this, 'height', h)
 				this.dirty = true
 			end
 		end
-		
+
 		function this._recalc_size()
 			if this.wordwrap == true then
 				this.text_cache = this.font.compute_wordwrap(this.width,
 					0, 0, this.color, this._text)
 			else
-				this.text_cache = this.font.compute_unwrapped(0, 0, 
+				this.text_cache = this.font.compute_unwrapped(0, 0,
 					this.color, this._text)
 			end
 			if this.autosize then
@@ -421,37 +425,37 @@ function gui_create_scene(width, height)
 			end
 			this.dirty = true
 		end
-		
+
 		function this.getter_keys.text()
 			return this._text
 		end
-		
+
 		function this.setter_keys.text(str)
 			this._text = str
 			this._recalc_size()
 		end
-		
+
 		function this.draw_update()
 			this.font.print_precomputed(this.text_cache, 0, 0, this.img)
 		end
-		
+
 		this.text = options.text or ""
-		
+
 		return this
-		
+
 	end
-	
+
 	function scene.bone(options)
-		
+
 		-- some tweening design:
-		
+
 		-- timing is event-based (motivates event system)
 		-- timing can run in dT or frame-count mode
 		-- the tween lib runs on top of the dT mode
 		-- (need to go look at the existing timing model to see what I have to work with)
-		
+
 		local this = scene.display_object(options)
-		
+
 		this.z = options.z or 1
 		this.model = options.model or nil
 		this.bone_idx = options.bone_idx or 0
@@ -459,23 +463,23 @@ function gui_create_scene(width, height)
 		this.rot_y = options.rot_y or 0
 		this.rot_y2 = options.rot_y2 or 0
 		this.scale = options.scale or 1
-		
+
 		function this.getter_keys.width() return 0 end
 		this.getter_keys.height = this.getter_keys.width
-		
+
 		function this.draw_update()
 			if this.model ~= nil then
-				client.model_render_bone_local(this.model, 
-					this.bone_idx, 
+				client.model_render_bone_local(this.model,
+					this.bone_idx,
 					this.rx, this.ry, this.z,
 					this.rot_y, this.rot_x, this.rot_y2, this.scale)
 			end
 		end
-		
+
 		return this
-		
+
 	end
-	
+
 	-- TEST CODE
 	--[[local frame = scene.rect_frame{width=320,height=320, x=width/2, y=height/2}
 	local frame2 = scene.rect_frame{width=32,height=32, x=0, y=0}
@@ -488,9 +492,9 @@ function gui_create_scene(width, height)
 	frame.add_child(frame3)
 	frame.child_to_top(text1)
 	frame.add_child(bone)]]
-	
+
 	return scene
-	
+
 end
 
 function gui_free_scene(scene)

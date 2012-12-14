@@ -1028,6 +1028,14 @@ function new_player(settings)
 				end
  			end
  		end
+
+		if quitting then
+			quit_msg = "Are you sure? (Y/N)"
+			font_large.print((w - 24 * #quit_msg) / 2
+				, h / 4
+				, argb_split_to_merged(255, 50, 50, 255)
+				, quit_msg)
+		end
 	end
 
 	return this
