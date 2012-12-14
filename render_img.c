@@ -203,6 +203,17 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 				xmm_src0_alpha = (__m128i)_mm_shuffle_ps((__m128)xmm_src0_alpha1,(__m128)xmm_src0_alpha0,0xFF);
 				xmm_src1_alpha = (__m128i)_mm_shuffle_ps((__m128)xmm_src1_alpha1,(__m128)xmm_src1_alpha0,0xFF);
 				
+				
+				// Found some instructions which should speed this up.
+				// NOTE: actually runs at the same damn speed... maybe even worse.
+				// Using older method for now.
+				/*
+				__m128i xmm_src0_alpha = _mm_shufflelo_epi16(xmm_src0, 0xFF);
+				__m128i xmm_src1_alpha = _mm_shufflelo_epi16(xmm_src1, 0xFF);
+				xmm_src0_alpha = _mm_shufflehi_epi16(xmm_src0_alpha, 0xFF);
+				xmm_src1_alpha = _mm_shufflehi_epi16(xmm_src1_alpha, 0xFF);
+				*/
+				
 				// get inverse alpha
 				__m128i xmm_ialpha0 = _mm_sub_epi16(xmmconst_256,xmm_src0_alpha);
 				__m128i xmm_ialpha1 = _mm_sub_epi16(xmmconst_256,xmm_src1_alpha);

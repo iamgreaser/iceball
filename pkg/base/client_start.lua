@@ -775,50 +775,15 @@ function h_mouse_button(button, state)
 	if state then
 		if button == 1 then
 			-- LMB
-			if plr.tool == TOOL_BLOCK and plr.blx1 and plr.alive then
-				if plr.blocks > 0 then
-				if plr.blx1 >= 0 and plr.blx1 < xlen and plr.blz1 >= 0 and plr.blz1 < zlen then
-				if plr.bly1 <= ylen-3 then
-					common.net_send(nil, common.net_pack("BHHHBBBB",
-						0x08,
-						plr.blx1, plr.bly1, plr.blz1,
-						plr.blk_color[3],
-						plr.blk_color[2],
-						plr.blk_color[1],
-						1))
-					plr.blocks = plr.blocks - 1
-				end
-				end
-				end
-			elseif plr.tool == TOOL_SPADE and plr.blx2 and plr.alive then
-				if plr.blx2 >= 0 and plr.blx2 < xlen and plr.blz2 >= 0 and plr.blz2 < zlen then
-				if plr.bly2 <= ylen-3 then
-					common.net_send(nil, common.net_pack("BHHH",
-						0x09,
-						plr.blx2, plr.bly2, plr.blz2))
-					--[[if plr.blocks < 100 then
-						plr.blocks = plr.blocks + 1
-					end]]
-				end
-				end
+			plr.ev_lmb = state
+			if plr.ev_lmb then
+				plr.ev_rmb = false
 			end
 		elseif button == 3 then
 			-- RMB
-			if plr.tool == TOOL_BLOCK and plr.blx3 and plr.alive then
-				local ct,cr,cg,cb
-				ct,cr,cg,cb = map_block_pick(plr.blx3, plr.bly3, plr.blz3)
-				plr.blk_color = {cr,cg,cb}
-				common.net_send(nil, common.net_pack("BBBBB",
-					0x18, 0x00,
-					plr.blk_color[1],plr.blk_color[2],plr.blk_color[3]))
-			elseif plr.tool == TOOL_SPADE and plr.blx2 and plr.alive then
-				if plr.blx2 >= 0 and plr.blx2 < xlen and plr.blz2 >= 0 and plr.blz2 < zlen then
-				if plr.bly2-1 <= ylen-3 then
-					common.net_send(nil, common.net_pack("BHHH",
-						0x0A,
-						plr.blx2, plr.bly2, plr.blz2))
-				end
-				end
+			plr.ev_rmb = state
+			if plr.ev_rmb then
+				plr.ev_lmb = false
 			end
 		elseif button == 2 then
 			-- middleclick

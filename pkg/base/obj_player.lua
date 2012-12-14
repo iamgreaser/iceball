@@ -203,6 +203,8 @@ function new_player(settings)
 				, 0x17, 0x00, tool))
 		end
 		this.tool = tool
+		this.ev_lmb = false
+		this.ev_rmb = false
 	end
 
 	--[[
@@ -480,6 +482,56 @@ function new_player(settings)
 				local delta = this.t_switch-sec_current
 				this.arm_rest_right = math.max(0.0,delta/0.2)
 			end
+		end
+		
+		if client and this.alive then
+		if this.ev_lmb then
+			if this.tool == TOOL_BLOCK and this.blx1 then
+				if this.blocks > 0 then
+				if this.blx1 >= 0 and this.blx1 < xlen and this.blz1 >= 0 and this.blz1 < zlen then
+				if this.bly1 <= ylen-3 then
+					common.net_send(nil, common.net_pack("BHHHBBBB",
+						0x08,
+						this.blx1, this.bly1, this.blz1,
+						this.blk_color[3],
+						this.blk_color[2],
+						this.blk_color[1],
+						1))
+					this.blocks = this.blocks - 1
+					this.ev_lmb = false -- TODO: use a timer instead
+				end
+				end
+				end
+			elseif this.tool == TOOL_SPADE and this.blx2 then
+				if this.blx2 >= 0 and this.blx2 < xlen and this.blz2 >= 0 and this.blz2 < zlen then
+				if this.bly2 <= ylen-3 then
+					common.net_send(nil, common.net_pack("BHHH",
+						0x09,
+						this.blx2, this.bly2, this.blz2))
+					this.ev_lmb = false -- TODO: use a timer instead
+				end
+				end
+			end
+		elseif this.ev_rmb then
+			if this.tool == TOOL_BLOCK and this.blx3 and this.alive then
+				local ct,cr,cg,cb
+				ct,cr,cg,cb = map_block_pick(this.blx3, this.bly3, this.blz3)
+				this.blk_color = {cr,cg,cb}
+				common.net_send(nil, common.net_pack("BBBBB",
+					0x18, 0x00,
+					this.blk_color[1],this.blk_color[2],this.blk_color[3]))
+				this.ev_rmb = false
+			elseif this.tool == TOOL_SPADE and this.blx2 and this.alive then
+				if this.blx2 >= 0 and this.blx2 < xlen and this.blz2 >= 0 and this.blz2 < zlen then
+				if this.bly2-1 <= ylen-3 then
+					common.net_send(nil, common.net_pack("BHHH",
+						0x0A,
+						this.blx2, this.bly2, this.blz2))
+					this.ev_rmb = false -- TODO: use a timer instead
+				end
+				end
+			end
+		end
 		end
 
 		-- apply delta angle
