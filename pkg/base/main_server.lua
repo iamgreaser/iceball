@@ -349,6 +349,7 @@ function server.hook_tick(sec_current, sec_delta)
 					--print("dmg",dmg,tplr.wpn.cfg.dmg)
 					tplr.gun_damage(styp, dmg, plr)
 				end
+				net_broadcast(nil, common.net_pack("BB", 0x1A, cli.plrid))
 			end
 		elseif cid == 0x17 and plr then
 			local tpid, tool

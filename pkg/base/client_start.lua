@@ -22,6 +22,8 @@ map_fname = nil
 
 dofile("pkg/base/common.lua")
 
+tracers = {head = 1, tail = 0}
+
 --[[
 while true do
 	local pkt, sockfd, cid
@@ -95,6 +97,28 @@ NET_MOVE_DELAY = 0.5
 NET_ORIENT_DELAY = 0.1
 t_net_move = nil
 t_net_orient = nil
+
+function tracer_add(x,y,z,ya,xa,time)
+	local tc = {
+		x=x,y=y,z=z,
+		ya=ya,xa=xa,
+		time=time,
+	}
+	tracers.tail = tracers.tail + 1
+	tracers[tracers.tail] = tc
+end
+
+function tracer_prune(time)
+	while tracers.head <= tracers.tail and tracers[tracers.head].time >= time + 0.4 do
+		tracers[tracers.head] = nil
+		tracers.head = tracers.head + 1
+	end
+	
+	if tracers.head > tracers.tail then
+		tracers.head = 1
+		tracers.tail = 0
+	end
+end
 
 function chat_add(ctab, mtime, msg, color)
 	local l = {
@@ -225,6 +249,7 @@ mdl_nade, mdl_nade_bone = client.model_load_pmf("pkg/base/pmf/nade.pmf"), 0
 
 mdl_tent, mdl_tent_bone = client.model_load_pmf("pkg/base/pmf/tent.pmf"), 0
 mdl_intel, mdl_intel_bone = client.model_load_pmf("pkg/base/pmf/intel.pmf"), 0
+mdl_tracer, mdl_tracer_bone = client.model_load_pmf("pkg/base/pmf/tracer.pmf"), 0
 
 -- quick hack to stitch a player model together
 if false then
@@ -467,6 +492,15 @@ function h_tick_main(sec_current, sec_delta)
 			local plr = players[pid]
 			
 			--print("19",pid,blocks)
+			
+			if plr then
+				plr.blocks = blocks
+			end
+		elseif cid == 0x1A then
+			local pid
+			pid, pkg = common.net_unpack("B", pkt)
+			
+			local plr = players[pid]
 			
 			if plr then
 				plr.blocks = blocks
@@ -826,6 +860,7 @@ do
 		common.img_pixel_set(img_overview, x, z, c)
 	end
 	end
+	
 	for z=63,zlen-1,64 do
 	for x=0,xlen-1 do
 		common.img_pixel_set(img_overview_grid, x, z, 0xFFFFFFFF)
@@ -835,6 +870,13 @@ do
 	for x=63,xlen-1,64 do
 		common.img_pixel_set(img_overview_grid, x, z, 0xFFFFFFFF)
 	end
+	end
+	
+	for x=0,xlen-1 do
+		common.img_pixel_set(img_overview_grid, x, zlen-1, 0xFFFF0000)
+	end
+	for z=0,zlen-1 do
+		common.img_pixel_set(img_overview_grid, xlen-1, z, 0xFFFF0000)
 	end
 end
 

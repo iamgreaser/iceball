@@ -238,6 +238,7 @@ int icelua_fn_common_model_bone_set(lua_State *L)
 	}
 	
 	// set the bone's name
+	memset(bone->name, 0, 16);
 	strcpy(bone->name, name);
 	
 	// load the table's contents

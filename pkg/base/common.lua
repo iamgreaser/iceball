@@ -65,6 +65,7 @@ MODE_SOFTCROUCH = true
 
 MODE_MINIMAP_RCIRC = false
 MODE_ENABLE_MINIMAP = true
+MODE_MAP_TRACERS = false -- TODO!
 
 MODE_TILT_SLOWDOWN = false -- TODO!
 MODE_TILT_DOWN_NOCLIMB = false -- TODO!
@@ -352,6 +353,7 @@ end
 damage_blk = {}
 players = {max = 32, current = 1}
 intent = {}
+nades = {}
 
 function string.split(s, sep, plain)
 	local start = 1
@@ -473,3 +475,4 @@ function alarm(options)
 	
 	return this
 end
+

@@ -259,3 +259,15 @@ Iceball Base Mod:
 	
 	0x19 pid.u8 newblocks.u8 (S->C)
 		set block count
+	
+	0x1A pid.u8 (S->C) @
+		emit tracer
+	
+	0x1B px.s16 py.s16 pz.s16 vx.s16 vy.s16 vz.s16 time.u16 (S->C)
+		throw grenade
+		
+		px,py,pz is the start position (11:5)
+		vx,vy,vz is the velocity (11:5)
+		
+		time/100 is how long in seconds until the grenade explodes
+
