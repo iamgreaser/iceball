@@ -34,6 +34,10 @@ function new_player(settings)
 	this.mdl_player = common.model_bone_new(this.mdl_player)
 	this.mdl_player = common.model_bone_new(this.mdl_player)
 	this.mdl_player = common.model_bone_new(this.mdl_player)
+	
+	this.score = 0
+	this.kills = 0
+	this.deaths = 0
 
 	local function prv_recolor_team(r,g,b)
 		if not client then return end
@@ -98,10 +102,6 @@ function new_player(settings)
 		
 		this.grounded = false
 		this.crouching = false
-		
-		this.score = 0
-		this.kills = 0
-		this.deaths = 0
 		
 		this.arm_rest_right = 0.0
 		this.arm_rest_left = 1.0
@@ -287,8 +287,8 @@ function new_player(settings)
 		this.health = amt
 		
 		if this.health <= 0 then
-			this.intel_drop()
 			if server then
+				this.intel_drop()
 				this.deaths = this.deaths + 1
 				if enemy == nil then
 					-- do nothing --
@@ -300,7 +300,7 @@ function new_player(settings)
 					enemy.score = enemy.score + SCORE_KILL
 					enemy.kills = enemy.kills + 1
 				end
-				if enemy and enemy ~= this then
+				if enemy ~= nil and enemy ~= this then
 					enemy.update_score()
 				end
 				this.update_score()
