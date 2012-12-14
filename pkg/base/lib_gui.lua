@@ -298,7 +298,7 @@ GE_DELTA_TIME = 1
 
 -- SHARED_ALARM:
 -- uses the scene's shared alarm, which is run at a fixed interval (default "1/60").
--- callback passes in the dT value of the past frame.
+-- callback passes in the dT value of the shared alarm timer.
 GE_SHARED_ALARM = 2
 
 -- KEY_DOWN:
@@ -437,7 +437,7 @@ function gui_create_scene(width, height, shared_rate)
 		scene.shared_alarm.tick(dT)
 		local i
 		for i=1,scene.shared_alarm_trigger do
-			events[#events+1] = {GE_SHARED_ALARM, dT}
+			events[#events+1] = {GE_SHARED_ALARM, scene.shared_alarm.time}
 		end
 		events[#events+1] = {GE_DELTA_TIME, dT}
 		root.pump_listeners(dT, events)
