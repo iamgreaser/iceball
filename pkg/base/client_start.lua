@@ -22,7 +22,7 @@ map_fname = nil
 
 dofile("pkg/base/common.lua")
 
-tracers = {head = 1, tail = 0}
+tracers = {head = 1, tail = 0, time = 0}
 
 --[[
 while true do
@@ -102,7 +102,7 @@ function tracer_add(x,y,z,ya,xa,time)
 	local tc = {
 		x=x,y=y,z=z,
 		ya=ya,xa=xa,
-		time=time,
+		time=time or tracers.time,
 	}
 	tracers.tail = tracers.tail + 1
 	tracers[tracers.tail] = tc
@@ -118,6 +118,8 @@ function tracer_prune(time)
 		tracers.head = 1
 		tracers.tail = 0
 	end
+	
+	tracers.time = time
 end
 
 function chat_add(ctab, mtime, msg, color)
@@ -503,10 +505,13 @@ function h_tick_main(sec_current, sec_delta)
 			local plr = players[pid]
 			
 			if plr then
-				plr.blocks = blocks
+				tracer_add(plr.x,plr.y,plr.z,
+					plr.angy,plr.angx,
+					sec_current)
 			end
 		end
 	end
+	tracer_prune(sec_current)
 
 	local i
 	for i=1,players.max do
@@ -592,6 +597,7 @@ function h_tick_init(sec_current, sec_delta)
 	]]
 	chat_add(chat_text, sec_current, "Welcome to Iceball!", 0xFFFF00AA)
 	chat_add(chat_text, sec_current, "Please send all flames to /dev/null.", 0xFFFF00AA)
+	chat_add(chat_text, sec_current, "Vucgy, this includes you.", 0xFFFF00AA)
 	
 	mouse_released = false
 	client.mouse_lock_set(true)
@@ -915,6 +921,31 @@ function client.hook_render()
 	if players and players[players.current] then
 		players[players.current].show_hud()
 	end
+	
+	local i
+	for i=tracers.head,tracers.tail do
+		local tc = tracers[i]
+		
+		local x,y,z
+		x,y,z = tc.x, tc.y, tc.z
+		
+		local sya = math.sin(tc.ya)
+		local cya = math.cos(tc.ya)
+		local sxa = math.sin(tc.xa)
+		local cxa = math.cos(tc.xa)
+		
+		local d = tracers.time - tc.time
+		d = d + 0.02
+		d = d * 600.0
+		x = x + sya*cxa*d
+		y = y + sxa*d
+		z = z + cya*cxa*d
+		
+		client.model_render_bone_global(mdl_tracer, mdl_tracer_bone,
+			x,y,z,
+			0.0, -tc.xa, tc.ya, 1)
+	end
+	
 	if client.gui_scene then
 		client.gui_scene.draw()
 	end

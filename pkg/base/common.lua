@@ -139,6 +139,11 @@ weapons = {
 			local xlen, ylen, zlen
 			xlen, ylen, zlen = common.map_get_dims()
 			
+			if client then
+				tracer_add(plr.x,plr.y,plr.z,
+					plr.angy,plr.angx)
+			end
+			
 			local sya = math.sin(plr.angy)
 			local cya = math.cos(plr.angy)
 			local sxa = math.sin(plr.angx)
