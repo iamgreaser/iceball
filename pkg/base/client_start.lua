@@ -339,17 +339,21 @@ function h_tick_main(sec_current, sec_delta)
 			local pid, tidx, wpn, score, kills, deaths, name
 			pid, tidx, wpn, score, kills, deaths, name, pkt
 				= common.net_unpack("Bbbhhhz", pkt)
-
-			players[pid] = new_player({
-				name = name,
-				--[=[squad = squads[math.fmod(i-1,2)][
-					math.fmod(math.floor((i-1)/2),4)+1],]=]
-				squad = nil,
-				team = tidx,
-				weapon = wpn,
-				pid = pid,
-			})
-
+			
+			if players[pid] then
+				-- TODO: update wpn/tidx/name
+			else
+				players[pid] = new_player({
+					name = name,
+					--[=[squad = squads[math.fmod(i-1,2)][
+						math.fmod(math.floor((i-1)/2),4)+1],]=]
+					squad = nil,
+					team = tidx,
+					weapon = wpn,
+					pid = pid,
+				})
+			end
+			
 			players[pid].score = score
 			players[pid].kills = kills
 			players[pid].deaths = deaths
@@ -387,6 +391,20 @@ function h_tick_main(sec_current, sec_delta)
 			if plr then
 				plr.spawn_at(x,y,z,ya*math.pi/128,xa*math.pi/256)
 			end
+		elseif cid == 0x12 then
+			local iid, x,y,z, f
+			iid, x,y,z, f, pkt = common.net_unpack("HhhhB", pkt)
+			if intent[iid] then
+				--print("intent",iid,x,y,z,f)
+				if not intent[iid].spawned then
+					intent[iid].spawn_at(x,y,z)
+					--print(intent[iid].spawned, intent[iid].alive, intent[iid].visible)
+				else
+					intent[iid].set_pos_recv(x,y,z)
+				end
+				intent[iid].set_flags_recv(f)
+				--print(intent[iid].spawned, intent[iid].alive, intent[iid].visible)
+			end
 		elseif cid == 0x14 then
 			local pid, amt
 			pid, amt, pkt = common.net_unpack("BB", pkt)
@@ -394,14 +412,39 @@ function h_tick_main(sec_current, sec_delta)
 			local plr = players[pid]
 			--print("hit pkt", pid, amt)
 			if plr then
-				plr.set_health_damage(amt, nil, nil)
+				plr.set_health_damage(amt, nil, nil, nil)
+			end
+		elseif cid == 0x15 then
+			local pid
+			pid, pkt = common.net_unpack("B", pkt)
+
+			local plr = players[pid]
+			if plr then
+				plr.tent_restock()
+			end
+		elseif cid == 0x16 then
+			local iid, pid
+			iid, pid = common.net_unpack("HB", pkt)
+			local plr = (pid ~= 0 and players[pid]) or nil
+			local item = intent[iid]
+			--print(">",iid,pid,plr,item)
+			if (pid == 0 or plr) and item then
+				local hplr = item.player
+				if hplr then
+					hplr.has_intel = nil
+				end
+				
+				item.player = plr
+				if plr then
+					plr.has_intel = item
+				end
 			end
 		elseif cid == 0x17 then
 			local pid, tool
 			pid, tool, pkt = common.net_unpack("BB", pkt)
-
+			
 			local plr = players[pid]
-
+			
 			if plr then
 				plr.tool_switch(tool)
 			end
@@ -416,6 +459,17 @@ function h_tick_main(sec_current, sec_delta)
 			if plr then
 				plr.blk_color = {cr,cg,cb}
 				plr.block_recolor()
+			end
+		elseif cid == 0x19 then
+			local pid, blocks
+			pid, blocks, pkg = common.net_unpack("BB", pkt)
+
+			local plr = players[pid]
+			
+			--print("19",pid,blocks)
+			
+			if plr then
+				plr.blocks = blocks
 			end
 		end
 	end
@@ -489,18 +543,22 @@ function h_tick_init(sec_current, sec_delta)
 		})
 	end
 	]]
-
-	intent[#intent+1] = new_intel({team = 0})
-	intent[#intent+1] = new_tent({team = 0})
-	intent[#intent+1] = new_intel({team = 1})
-	intent[#intent+1] = new_tent({team = 1})
-
+	
+	intent[#intent+1] = new_intel({team = 0, iid = #intent+1})
+	intent[#intent+1] = new_tent({team = 0, iid = #intent+1})
+	intent[#intent+1] = new_intel({team = 1, iid = #intent+1})
+	intent[#intent+1] = new_tent({team = 1, iid = #intent+1})
+	
+	--[[
 	chat_add(chat_text, sec_current, "Just testing the chat...", 0xFFFFFFFF)
 	chat_add(chat_text, sec_current, "BLUE MASTER RACE", 0xFF0000FF)
 	chat_add(chat_text, sec_current, "GREEN MASTER RACE", 0xFF00C000)
 	chat_add(chat_text, sec_current, "SALLY MASTER RACE", 0xFFAA00FF)
 	chat_add(chat_text, sec_current, "YOU ALL SUCK", 0xFFC00000)
-
+	]]
+	chat_add(chat_text, sec_current, "Welcome to Iceball!", 0xFFFF00AA)
+	chat_add(chat_text, sec_current, "Please send all flames to /dev/null.", 0xFFFF00AA)
+	
 	mouse_released = false
 	client.mouse_lock_set(true)
 	client.mouse_visible_set(false)
@@ -698,9 +756,9 @@ function h_mouse_button(button, state)
 					common.net_send(nil, common.net_pack("BHHH",
 						0x09,
 						plr.blx2, plr.bly2, plr.blz2))
-					if plr.blocks < 100 then
+					--[[if plr.blocks < 100 then
 						plr.blocks = plr.blocks + 1
-					end
+					end]]
 				end
 				end
 			end
@@ -717,18 +775,8 @@ function h_mouse_button(button, state)
 				if plr.blx2 >= 0 and plr.blx2 < xlen and plr.blz2 >= 0 and plr.blz2 < zlen then
 				if plr.bly2-1 <= ylen-3 then
 					common.net_send(nil, common.net_pack("BHHH",
-						0x09,
-						plr.blx2, plr.bly2-1, plr.blz2))
-				end
-				if plr.bly2 <= ylen-3 then
-					common.net_send(nil, common.net_pack("BHHH",
-						0x09,
+						0x0A,
 						plr.blx2, plr.bly2, plr.blz2))
-				end
-				if plr.bly2+1 <= ylen-3 then
-					common.net_send(nil, common.net_pack("BHHH",
-						0x09,
-						plr.blx2, plr.bly2+1, plr.blz2))
 				end
 				end
 			end

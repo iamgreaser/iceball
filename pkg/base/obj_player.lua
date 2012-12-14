@@ -95,44 +95,48 @@ function new_player(settings)
 	function this.prespawn()
 		this.alive = false
 		this.spawned = false
-
+		
 		this.grounded = false
 		this.crouching = false
-
+		
+		this.score = 0
+		this.kills = 0
+		this.deaths = 0
+		
 		this.arm_rest_right = 0.0
 		this.arm_rest_left = 1.0
-
+		
 		this.t_respawn = nil
 		this.t_switch = nil
 		this.t_newnade = nil
 		this.t_newblock = nil
 		this.t_newspade1 = nil
 		this.t_newspade2 = nil
-
+		
 		this.dangx, this.dangy = 0, 0
 		this.vx, this.vy, this.vz = 0, 0, 0
-
+		
 		this.blx1, this.bly1, this.blz1 = nil, nil, nil
 		this.blx2, this.bly2, this.blz2 = nil, nil, nil
-
+		
 		this.blk_color = {0x7F,0x7F,0x7F}
 		this.block_recolor()
 		this.blk_color_x = 3
 		this.blk_color_y = 0
-
+		
 		this.jerkoffs = 0.0
-
+		
 		this.zoom = 1.0
 		this.zooming = false
-
+		
 		this.health = 100
 		this.blocks = 25
 		this.grenades = 2
-
+		
 		this.wpn = weapons[this.weapon](this)
-
+		
 		this.tool = 2
-
+		
 		this.has_intel = nil
 	end
 
@@ -257,28 +261,64 @@ function new_player(settings)
 		this.angy = this.angy + xrec
 		this.angx = math.asin(yrec/ydist)
 	end
+	
+	function this.update_score()
+		net_broadcast(nil, common.net_pack("BBBBhhhz",
+			0x05, this.pid,
+			this.team, this.weapon,
+			this.score, this.kills, this.deaths,
+			this.name))
+	end
+	
+	function this.tent_restock()
+		this.health = 100
+		this.blocks = 100
+		this.grenades = 4
+		if this.wpn then
+			this.wpn.ammo_clip = this.wpn.cfg.ammo_clip
+			this.wpn.ammo_reserve = this.wpn.cfg.ammo_reserve
+		end
+		if server then
+			net_broadcast(nil, common.net_pack("BB", 0x15, this.pid))
+		end
+	end
 
-	function this.set_health_damage(amt, kcol, kmsg)
+	function this.set_health_damage(amt, kcol, kmsg, enemy)
 		this.health = amt
-
+		
 		if this.health <= 0 then
 			this.intel_drop()
 			if server then
+				this.deaths = this.deaths + 1
+				if enemy == nil then
+					-- do nothing --
+				elseif enemy == this then
+					enemy.score = enemy.score + SCORE_SUICIDE
+				elseif enemy.team == this.team then
+					enemy.score = enemy.score + SCORE_TEAMKILL
+				else
+					enemy.score = enemy.score + SCORE_KILL
+					enemy.kills = enemy.kills + 1
+				end
+				if enemy and enemy ~= this then
+					enemy.update_score()
+				end
+				this.update_score()
 				net_broadcast(nil, common.net_pack("BIz", 0x0F, kcol, kmsg))
 			end
 			--chat_add(chat_killfeed, nil, kmsg, kcol)
 			this.health = 0
 			this.alive = false
 		end
-
+		
 		if server then
 			net_broadcast(nil, common.net_pack("BBB", 0x14, this.pid, this.health))
 		end
 	end
 
-	function this.damage(amt, kcol, kmsg)
+	function this.damage(amt, kcol, kmsg, enemy)
 		return this.set_health_damage(
-			this.health - amt, kcol, kmsg)
+			this.health - amt, kcol, kmsg, enemy)
 	end
 
 	function this.fall_damage(amt)
@@ -289,7 +329,7 @@ function new_player(settings)
 		local c = argb_split_to_merged(r,g,b)
 
 		local kmsg = this.name.." found a high place"
-		this.damage(amt, c, kmsg)
+		this.damage(amt, c, kmsg, this)
 	end
 
 	function this.gun_damage(part, amt, enemy)
@@ -313,7 +353,7 @@ function new_player(settings)
 		local c = argb_split_to_merged(r,g,b)
 
 		local kmsg = enemy.name..midmsg..this.name
-		this.damage(amt, c, kmsg)
+		this.damage(amt, c, kmsg, enemy)
 	end
 
 	function this.grenade_damage(amt, enemy)
@@ -336,43 +376,58 @@ function new_player(settings)
 			kmsg = this.name.." exploded"
 		end
 
-		this.damage(amt, c, kmsg)
+		this.damage(amt, c, kmsg, enemy)
 	end
 
 	function this.intel_pickup(intel)
 		if this.has_intel or intel.team == this.team then
 			return false
 		end
-
-		local s = this.name.." has picked up the "..teams[intel.team].name.." intel."
-		this.has_intel = intel
-		chat_add(chat_text, nil, s, 0xFFC00000)
+		
+		if server then
+			local x,y,z,f
+			x,y,z = intel.get_pos()
+			intel.visible = false
+			f = intel.get_flags()
+			net_broadcast(nil, common.net_pack("BHhhhB", 0x12, intel.iid, x,y,z,f))
+			net_broadcast(nil, common.net_pack("BHB", 0x16, intel.iid, this.pid))
+			local s = "* "..this.name.." has picked up the "..teams[intel.team].name.." intel."
+			net_broadcast(nil, common.net_pack("BIz", 0x0E, 0xFF800000, s))
+			this.has_intel = intel
+		end
 
 		return true
 	end
 
 	function this.intel_drop()
-		local intel = this.has_intel
-		if not intel then
-			return
+		if server then
+			local intel = this.has_intel
+			--print("dropped", intel)
+			if not intel then
+				return
+			end
+			
+			intel.intel_drop()
+			this.has_intel = nil
+			
+			local s = "* "..this.name.." has dropped the "..teams[intel.team].name.." intel."
+			net_broadcast(nil, common.net_pack("BIz", 0x0E, 0xFF800000, s))
 		end
-
-		local s = this.name.." has dropped the "..teams[intel.team].name.." intel."
-		intel.intel_drop()
-		this.has_intel = nil
-		chat_add(chat_text, nil, s, 0xFFC00000)
 	end
 
 	function this.intel_capture(sec_current)
-		local intel = this.has_intel
-		if not intel then
-			return
+		if server then
+			local intel = this.has_intel
+			if not intel then
+				return
+			end
+			
+			intel.intel_capture(sec_current)
+			this.has_intel = nil
+			
+			local s = "* "..this.name.." has captured the "..teams[intel.team].name.." intel."
+			net_broadcast(nil, common.net_pack("BIz", 0x0E, 0xFF800000, s))
 		end
-
-		local s = this.name.." has captured the "..teams[intel.team].name.." intel."
-		intel.intel_capture(sec_current)
-		this.has_intel = nil
-		chat_add(chat_text, nil, s, 0xFFC00000)
 	end
 
 	function this.tick(sec_current, sec_delta)
@@ -685,9 +740,11 @@ function new_player(settings)
 				--0.0, -this.angx-math.pi/2*0.90, this.angy, 1)
 				0.0, -this.angx, this.angy, 1)
 		elseif this.tool == TOOL_BLOCK then
-			client.model_render_bone_global(this.mdl_block, mdl_block_bone,
-				this.x+mdl_x, this.y+this.jerkoffs+mdl_y, this.z+mdl_z,
-				0.0, -this.angx, this.angy, 1)
+			if this.blocks > 0 then
+				client.model_render_bone_global(this.mdl_block, mdl_block_bone,
+					this.x+mdl_x, this.y+this.jerkoffs+mdl_y, this.z+mdl_z,
+					0.0, -this.angx, this.angy, 1)
+			end
 		elseif this.tool == TOOL_GUN then
 			this.wpn.draw(this.x+mdl_x, this.y+this.jerkoffs+mdl_y, this.z+mdl_z,
 				math.pi/2, -this.angx, this.angy)
@@ -894,6 +951,15 @@ function new_player(settings)
 					drawit = false
 				elseif plr == this then
 					c = 0xFF00FFFF
+					for i=0,10-1 do
+						local d=i/math.sqrt(2)
+						local u,v
+						u = math.floor(x)+math.floor(d*math.sin(plr.angy))
+						v = math.floor(y)+math.floor(d*math.cos(plr.angy))
+						log_mspr[#log_mspr+1] = u
+						log_mspr[#log_mspr+1] = v
+						common.img_pixel_set(img_overview_icons, u, v, c)
+					end
 				elseif plr.team == this.team then
 					c = 0xFFFFFFFF
 				else
@@ -1014,15 +1080,17 @@ function new_player(settings)
 			for i=1,players.max do
 				local plr = players[i]
 				if plr ~= nil then
+					local s = plr.name.." #"..i..": "
+						..plr.score.." ("..plr.kills.."/"..plr.deaths..")"
 					if plr.team == 1 then
 						font_mini.print(w / 2 + 50, gi * 15 + 150
 							, argb_split_to_merged(150, 255, 150, 255)
-							, plr.name)
+							, s)
 						gi = gi + 1
 					else
 						font_mini.print(w / 2 - 50 - (6 * #plr.name), bi * 15 + 150
 							, argb_split_to_merged(150, 150, 255, 255)
-							, plr.name)
+							, s)
 						bi = bi + 1
 					end
 				end

@@ -19,6 +19,7 @@ function new_intel(settings)
 	local this = {} this.this = this
 	
 	this.team = settings.team or -1
+	this.iid = settings.iid
 	this.mspr = mspr_intel
 	this.player = nil
 	
@@ -42,7 +43,14 @@ function new_intel(settings)
 				math.floor(this.x),
 				math.floor(this.z))
 			
-			this.y = l[1+(1)]
+			local ty = l[1+(1)]
+			if this.y ~= ty and this.visible then
+				print("grav", this.y, ty)
+				this.y = ty
+				net_broadcast(nil, common.net_pack("BHhhhB", 0x12, this.iid,
+					this.x, this.y, this.z,
+					this.get_flags()))
+			end
 			
 			-- see if anyone has picked us up
 			local mplr = nil
@@ -96,15 +104,23 @@ function new_intel(settings)
 		client.model_render_bone_local(this.mdl_intel, 0,
 			x, y, z,
 			this.rotpos, 0, 0, scale)
-		
 	end
 	
 	function this.intel_drop()
 		this.visible = true
-		this.x = math.floor(this.player.x)+0.5
-		this.y = math.floor(this.player.y)+0.5
-		this.z = math.floor(this.player.z)+0.5
+		this.x = math.floor(this.player.x+0.5)+0.5
+		this.y = math.floor(this.player.y+0.5)
+		this.z = math.floor(this.player.z+0.5)+0.5
 		this.player = nil
+		if server then
+			local x,y,z,f
+			x,y,z = this.get_pos()
+			f = this.get_flags()
+			--print("bc pos")
+			net_broadcast(nil, common.net_pack("BHhhhB",
+				0x12, this.iid, x,y,z, f))
+			net_broadcast(nil, common.net_pack("BHB", 0x16, this.iid, 0))
+		end
 	end
 	
 	function this.intel_capture(sec_current)
@@ -115,8 +131,19 @@ function new_intel(settings)
 				plr.t_rcirc = sec_current + MODE_RCIRC_LINGER
 			end
 		end
+		local plr = this.player
 		this.player = nil
 		this.spawn()
+		if server then
+			local x,y,z,f
+			x,y,z = this.get_pos()
+			f = this.get_flags()
+			net_broadcast(nil, common.net_pack("BHhhhB",
+				0x12, this.iid, x,y,z, f))
+			net_broadcast(nil, common.net_pack("BHB", 0x16, this.iid, 0))
+			plr.score = plr.score + SCORE_INTEL
+			plr.update_score()
+		end
 	end
 	
 	function this.prespawn()
@@ -139,6 +166,7 @@ function new_intel(settings)
 			this.x = math.floor(math.random()*xlen/4.0)+0.5
 			this.z = math.floor(math.random()*zlen)+0.5
 			if this.team == 1 then this.x = xlen - this.x end
+			--if this.team == 0 then this.x = xlen - this.x end -- quick test
 			this.y = (common.map_pillar_get(this.x, this.z))[1+1]
 			if this.y < ylen-1 then break end
 		end
@@ -164,6 +192,16 @@ function new_intel(settings)
 		this.z = z
 	end
 	
+	function this.get_flags()
+		local v = 0
+		if this.visible then v = v + 0x01 end
+		return v
+	end
+	
+	function this.set_flags_recv(v)
+		this.visible = (bit_and(v, 0x01) ~= 0)
+	end
+	
 	local _
 	local l = teams[this.team].color_mdl
 	local mbone,mname,mdata
@@ -184,6 +222,7 @@ function new_tent(settings)
 	local this = {} this.this = this
 	
 	this.team = settings.team or -1
+	this.iid = settings.iid
 	this.mspr = mspr_tent
 	
 	function this.tick(sec_current, sec_delta)
@@ -198,7 +237,13 @@ function new_tent(settings)
 			math.floor(this.x),
 			math.floor(this.z))
 		
-		this.y = l[1+(1)]
+		local ty = l[1+(1)]
+		if this.y ~= ty and this.visible then
+			this.y = ty
+			net_broadcast(nil, common.net_pack("BHhhhB", 0x12, this.iid,
+				this.x, this.y, this.z,
+				this.get_flags()))
+		end
 		
 		-- see if anyone is restocking
 		for i=1,32 do
@@ -227,12 +272,7 @@ function new_tent(settings)
 				restock = restock and plr.team == this.team
 				
 				if restock then
-					plr.health = 100
-					plr.blocks = 100
-					if plr.wpn then
-						plr.wpn.ammo_clip = plr.wpn.cfg.ammo_clip
-						plr.wpn.ammo_reserve = plr.wpn.cfg.ammo_reserve
-					end
+					plr.tent_restock()
 				end
 				
 				if plr.has_intel then
@@ -266,7 +306,7 @@ function new_tent(settings)
 		
 		while true do
 			this.x = math.floor(math.random()*xlen/4.0)+0.5
-			this.z = math.floor(math.random()*zlen)+0.5
+			this.z = math.floor((math.random()*0.5+0.25)*zlen)+0.5
 			if this.team == 1 then this.x = xlen - this.x end
 			this.y = (common.map_pillar_get(this.x, this.z))[1+1]
 			if this.y < ylen-1 then break end
@@ -291,6 +331,16 @@ function new_tent(settings)
 		this.x = x
 		this.y = y
 		this.z = z
+	end
+	
+	function this.get_flags()
+		local v = 0
+		if this.visible then v = v + 0x01 end
+		return v
+	end
+	
+	function this.set_flags_recv(v)
+		this.visible = (bit_and(v, 0x01) ~= 0)
 	end
 	
 	local _

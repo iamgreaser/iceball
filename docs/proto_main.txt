@@ -154,14 +154,16 @@ Iceball Base Mod:
 	
 	0x08 x.u16 y.u16 z.u16 b g r typ: @
 		place a block
+		
+		this also decrements the block count clientside
 	
 	0x09 x.u16 y.u16 z.u16: @
 		destroy a block
 	
-	(TODO: not just use the above two!)
-	
-	0x0A x.u16 y.u16 z.u16:
+	0x0A x.u16 y.u16 z.u16: (C->S) @
 		destroy a 3 high pillar
+	
+	(TODO: use this next one:)
 	
 	0x0B x.u16 y.u16 z.u16:
 		collapse a section of blocks
@@ -193,7 +195,7 @@ Iceball Base Mod:
 		offer player
 		if team == -1, server autoselects
 	
-	0x12 iid.u16 x.s16 y.s16 z.s16
+	0x12 iid.u16 x.s16 y.s16 z.s16 flags.u8 @
 		set item position
 		
 		these are hardcoded as follows:
@@ -201,6 +203,11 @@ Iceball Base Mod:
 		2 = blue tent
 		3 = green intel
 		4 = green tent
+		
+		flag bits:
+		0x01 = visible
+		
+		TODO: make this more generic!
 	
 	0x13 tpid.u8 type.u8 (C->S) @
 		fire shot, hitting target player
@@ -219,7 +226,7 @@ Iceball Base Mod:
 		
 		if newhealth is 0, player is dead
 	
-	0x15 (S->C)
+	0x15 pid.u8 (S->C)
 		tent restock
 		
 		health is set to 100
@@ -228,10 +235,10 @@ Iceball Base Mod:
 		
 		ammo is set to full
 	
-	0x16 pid.u8 iid.u16 (S->C)
-		possess item
+	0x16 iid.u16 pid.u8 (S->C) @
+		set item carrier
 		
-		if uid == 0, depossess instead
+		if pid == 0, no carrier
 		
 		these are hardcoded as follows:
 		1 = blue intel
@@ -250,9 +257,5 @@ Iceball Base Mod:
 	0x18 pid.u8 r.u8 g.u8 b.u8 @
 		set block colour
 	
-	0xE0 map.z (S->C) @
-		name of map to fetch
-		
-		NOTE: will be deprecated eventually
-		this is just a simple hack to start with
-		while i procrastinate server.hook_file
+	0x19 pid.u8 newblocks.u8 (S->C)
+		set block count

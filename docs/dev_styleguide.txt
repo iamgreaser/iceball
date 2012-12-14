@@ -13,3 +13,4 @@ C:
 
 Lua:
 - All pretty loose really.
+- We don't use : for objects, we use cleverly crafted closures instead.
