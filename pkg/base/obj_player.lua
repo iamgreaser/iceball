@@ -467,7 +467,7 @@ function new_player(settings)
 		end
 
 		if this.t_switch == true then
-			this.t_switch = sec_current + 0.2
+			this.t_switch = sec_current + MODE_DELAY_TOOL_CHANGE
 		end
 
 		if this.t_rcirc and sec_current >= this.t_rcirc then
@@ -484,10 +484,18 @@ function new_player(settings)
 			end
 		end
 		
-		if client and this.alive then
+		if this.t_newblock and sec_current >= this.t_newblock then
+			this.t_newblock = nil
+		end
+		
+		if this.t_newspade1 and sec_current >= this.t_newspade1 then
+			this.t_newspade1 = nil
+		end
+		
+		if client and this.alive and (not this.t_switch) then
 		if this.ev_lmb then
 			if this.tool == TOOL_BLOCK and this.blx1 then
-				if this.blocks > 0 then
+				if (not this.t_newblock) and this.blocks > 0 then
 				if this.blx1 >= 0 and this.blx1 < xlen and this.blz1 >= 0 and this.blz1 < zlen then
 				if this.bly1 <= ylen-3 then
 					common.net_send(nil, common.net_pack("BHHHBBBB",
@@ -498,17 +506,20 @@ function new_player(settings)
 						this.blk_color[1],
 						1))
 					this.blocks = this.blocks - 1
-					this.ev_lmb = false -- TODO: use a timer instead
+					this.t_newblock = sec_current + MODE_DELAY_BLOCK_BUILD
+					this.t_switch = this.t_newblock
 				end
 				end
 				end
 			elseif this.tool == TOOL_SPADE and this.blx2 then
+				if (not this.t_newspade1) then
 				if this.blx2 >= 0 and this.blx2 < xlen and this.blz2 >= 0 and this.blz2 < zlen then
 				if this.bly2 <= ylen-3 then
 					common.net_send(nil, common.net_pack("BHHH",
 						0x09,
 						this.blx2, this.bly2, this.blz2))
-					this.ev_lmb = false -- TODO: use a timer instead
+					this.t_newspade1 = sec_current + MODE_DELAY_SPADE_HIT
+				end
 				end
 				end
 			end
@@ -522,12 +533,16 @@ function new_player(settings)
 					this.blk_color[1],this.blk_color[2],this.blk_color[3]))
 				this.ev_rmb = false
 			elseif this.tool == TOOL_SPADE and this.blx2 and this.alive then
+				if (not this.t_newspade1) then
 				if this.blx2 >= 0 and this.blx2 < xlen and this.blz2 >= 0 and this.blz2 < zlen then
 				if this.bly2-1 <= ylen-3 then
 					common.net_send(nil, common.net_pack("BHHH",
 						0x0A,
 						this.blx2, this.bly2, this.blz2))
-					this.ev_rmb = false -- TODO: use a timer instead
+					-- TODO: delay before actual digging
+					this.t_newspade1 = sec_current
+						+ MODE_DELAY_SPADE_DIG
+				end
 				end
 				end
 			end

@@ -48,3 +48,69 @@ function recolor_component(r,g,b,mdata)
 		end
 	end
 end
+
+function string.split(s, sep, plain)
+	local start = 1
+	local done = false
+	local function pass(i, j, ...)
+		if i then
+			local seg = s:sub(start, i - 1)
+			start = j + 1
+			return seg, ...
+		else
+			done = true
+			return s:sub(start)
+		end
+	end
+	local result = {}
+	while not done do
+		if sep == '' then done = true result[#result+1]=s end
+		result[#result+1]=pass(s:find(sep, start, plain))
+	end
+	return result
+end
+
+-- trim the character 'sep' from the left hand side of the string
+function string.triml(s, sep)
+	sep = string.byte(sep)
+	if s == '' then return s end
+	local pos = 1
+	while string.byte(s,pos)==sep and #s<=pos do pos = pos + 1 end
+	return string.sub(s, pos+1)
+end
+
+-- trim the character 'sep' from the right hand side of the string
+function string.trimr(s, sep)
+	sep = string.byte(sep)
+	if s == '' then return s end
+	local pos = #s
+	while string.byte(s, pos)==sep and pos>=1 do pos = pos - 1 end
+	return string.sub(s, 1, pos)
+end
+
+-- trim the character 'sep' from both sides of the string
+function string.trim(s, sep)
+	return string.triml(string.trimr(s, sep), sep)
+end
+
+function parse_commandline_options(options)
+	local user_toggles = {} -- toggle options (key is name, value is position)
+	local user_settings = {} -- key-value pairs
+	local loose = {} -- loose strings, filenames, etc.
+
+	for k, v in pairs(options) do
+		local setting_pair = string.split(v, "=")
+		local first = string.byte(v,1)
+		if first==string.byte('-') then -- we are toggling an option or setting a value
+			if #setting_pair == 2 then -- we are setting a key to a value
+				user_settings[string.triml(setting_pair[1], '-')]=setting_pair[2]
+				print(string.triml(setting_pair[1], '-'),"trimmed")
+			else
+				user_toggles[string.triml(v, '-')]=k
+			end
+		else -- add to the loose values
+			loose[#loose+1] = v
+		end
+	end
+	return loose, user_toggles, user_settings
+end

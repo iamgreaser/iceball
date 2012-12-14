@@ -20,9 +20,24 @@ print(...)
 
 map_fname = nil
 
+-- yeah this really should happen ASAP so we can boot people who suck
+dofile("pkg/base/lib_util.lua")
+
+local loose, user_toggles, user_settings = parse_commandline_options({...})
+local user_config_filename = user_settings['user'] or "clsave/pub/user.json"
+-- FIXME: we don't expose documentation for valid user settings anywhere
+
+user_config = common.json_load(user_config_filename)
+print("json done!")
+print("name:", user_config.name)
+print("kick on join:", user_config.kick_on_join)
+print("bio desc:", user_config.bio and user_config.bio.description)
+
+-- OK, *NOW* we can load stuff.
 dofile("pkg/base/common.lua")
 
 tracers = {head = 1, tail = 0, time = 0}
+bhealth = {head = 1, tail = 0, time = 0}
 
 --[[
 while true do
@@ -43,19 +58,6 @@ map_fname = "pkg/MAP" -- hackish workaround so iceballfornoobs-004 still works
 if not map_fname then
 	error("server should have sent map name by now")
 end
-
-local loose, user_toggles, user_settings = parse_commandline_options({...})
-
-local user_config_filename = 	user_settings['user'] or
-								"clsave/pub/user.json"
-
--- FIXME: we don't expose documentation for valid user settings anywhere
-
-user_config = common.json_load(user_config_filename)
-print("json done!")
-print("name:", user_config.name)
-print("kick on join:", user_config.kick_on_join)
-print("bio desc:", user_config.bio and user_config.bio.description)
 
 -- define keys
 BTSK_FORWARD = SDLK_w
