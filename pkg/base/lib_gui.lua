@@ -365,7 +365,7 @@ function gui_create_scene(width, height, shared_rate)
 		this.img = nil
 		this.dirty = true -- whether drawing needs to be updated
 		this.listeners = {}
-		this.alarms = {}
+		this.alarms = {} -- ticked if seen. Will NOT dispose finished alarms for you!
 		function this.free()
 			common.img_free(this.img) for k,v in pairs(this.children) do v.free() end
 		end
