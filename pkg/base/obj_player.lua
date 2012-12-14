@@ -85,6 +85,9 @@ function new_player(settings)
 		this.ev_jump = false
 		this.ev_crouch = false
 		this.ev_sneak = false
+		
+		this.ev_lmb = false
+		this.ev_rmb = false
 	end
 
 	this.input_reset()
