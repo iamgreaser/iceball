@@ -123,6 +123,7 @@ function server.hook_disconnect(sockfd, server_force, reason)
 	print("Disconnected: player on sockfd "..ss)
 	
 	if plr then
+		plr.intel_drop()
 		net_broadcast(nil, common.net_pack("BIz", 0x0E, 0xFF800000,
 			"* Player "..plr.name.." disconnected"))
 		net_broadcast(sockfd, common.net_pack("BB",
@@ -136,6 +137,8 @@ end
 
 function server.hook_tick(sec_current, sec_delta)
 	--print("tick",sec_current,sec_delta)
+	local xlen,ylen,zlen
+	xlen,ylen,zlen = common.map_get_dims()
 	
 	local pkt, sockfd
 	while true do
@@ -161,6 +164,7 @@ function server.hook_tick(sec_current, sec_delta)
 			plr.set_pos_recv(x, y, z)
 			net_broadcast(sockfd, common.net_pack("BBhhh",
 				0x03, cli.plrid, x2, y2, z2))
+			--print("03.")
 		elseif cid == 0x04 and plr then
 			-- TODO: throttle this
 			local pid, ya2, xa2, keys
@@ -171,18 +175,70 @@ function server.hook_tick(sec_current, sec_delta)
 			plr.set_orient_recv(ya, xa, keys)
 			net_broadcast(sockfd, common.net_pack("BBbbB",
 				0x04, cli.plrid, ya2, xa2, keys))
+			--print("04.")
 		elseif cid == 0x08 and plr then
 			local x,y,z,cb,cg,cr,ct
 			x,y,z,cb,cg,cr,ct,pkt = common.net_unpack("HHHBBBB", pkt)
-			map_block_set(x,y,z,ct,cr,cg,cb)
-			net_broadcast(nil, common.net_pack("BHHHBBBB",
-					0x08,x,y,z,cb,cg,cr,ct))
+			if x >= 0 and x < xlen and z >= 0 and z < zlen then
+			if y >= 0 and y <= ylen-3 then
+				if plr.blocks > 0 then
+					plr.blocks = plr.blocks - 1
+					map_block_set(x,y,z,ct,cr,cg,cb)
+					net_broadcast(nil, common.net_pack("BHHHBBBB",
+						0x08,x,y,z,cb,cg,cr,ct))
+				else
+					plr.blocks = 0
+				end
+				if plr.blocks == 0 then
+					net_broadcast(nil, common.net_pack("BBB",
+						0x19, cli.plrid, 0))
+				else
+					-- to prevent desyncing issues.
+					common.net_send(sockfd, common.net_pack("BBB",
+						0x19, cli.plrid, plr.blocks))
+				end
+			end
+			end
 		elseif cid == 0x09 and plr then
 			local x,y,z
 			x,y,z = common.net_unpack("HHH", pkt)
-			map_block_break(x,y,z)
-			net_broadcast(nil, common.net_pack("BHHH",
-					0x09,x,y,z))
+			if x >= 0 and x < xlen and z >= 0 and z < zlen then
+			if y >= 0 and y <= ylen-3 then
+				if map_block_break(x,y,z) then
+					net_broadcast(nil, common.net_pack("BHHH",
+							0x09,x,y,z))
+					
+					if plr.tool == TOOL_SPADE then
+						local oblocks = plr.blocks
+						plr.blocks = plr.blocks + 1
+						if plr.blocks > 100 then
+							plr.blocks = 100
+						end
+						
+						if oblocks == 0 then
+							net_broadcast(nil, common.net_pack("BBB",
+								0x19, cli.plrid, plr.blocks))
+						else
+							common.net_send(sockfd, common.net_pack("BBB",
+								0x19, cli.plrid, plr.blocks))
+						end
+					end
+				end
+			end
+			end
+		elseif cid == 0x0A and plr then
+			local x,y,z
+			x,y,z = common.net_unpack("HHH", pkt)
+			if x >= 0 and x < xlen and z >= 0 and z < zlen then
+				local i
+				for i=-1,1 do
+					if y+i >= 0 and y+i <= ylen-3 then
+						map_block_break(x,y+i,z)
+						net_broadcast(nil, common.net_pack("BHHH",
+								0x09,x,y+i,z))
+					end
+				end
+			end
 		elseif cid == 0x0C and plr then
 			-- chat
 			local msg
@@ -191,6 +247,8 @@ function server.hook_tick(sec_current, sec_delta)
 			local s = nil
 			if string.sub(msg,1,4) == "/me " then
 				s = "* "..plr.name.." "..string.sub(msg,5)
+			elseif msg == "/kill" then
+				plr.set_health_damage(0, 0xFF800000, plr.name.." shuffled off this mortal coil", plr)
 			else
 				s = plr.name.." ("..teams[plr.team].name.."): "..msg
 			end
@@ -249,6 +307,20 @@ function server.hook_tick(sec_current, sec_delta)
 					end
 				end
 				
+				-- relay intels/tents to this player
+				for i=1,4 do
+					local f,x,y,z
+					x,y,z = intent[i].get_pos()
+					f = intent[i].get_flags()
+					common.net_send(sockfd, common.net_pack("BHhhhB",
+						0x12, i, x, y, z, f))
+					local plr = intent[i].player
+					if plr then
+						common.net_send(sockfd, common.net_pack("BHB",
+							0x16, i, plr.pid))
+					end
+				end
+				
 				-- relay this player to everyone
 				net_broadcast(nil, common.net_pack("BBBBhhhz",
 					0x05, cli.plrid,
@@ -273,18 +345,26 @@ function server.hook_tick(sec_current, sec_delta)
 			--print("hit", tpid, styp)
 			
 			local tplr = players[tpid]
-			if tplr and styp >= 1 and styp <= 3 then
-				if tplr.wpn then
-					local dmg = tplr.wpn.cfg.dmg[({"head","body","legs"})[styp]]
+			if tplr then
+				if plr.tool == TOOL_GUN and plr.wpn and styp >= 1 and styp <= 3 then
+					local dmg = plr.wpn.cfg.dmg[({"head","body","legs"})[styp]]
 					--print("dmg",dmg,tplr.wpn.cfg.dmg)
 					tplr.gun_damage(styp, dmg, plr)
+				elseif plr.tool == TOOL_SPADE then
+					tplr.spade_damage(0, 1000, plr)
 				end
+			end
+			
+			if plr.tool == TOOL_GUN then
+				-- we don't want the spade spewing tracers!
+				net_broadcast(sockfd, common.net_pack("BB", 0x1A, cli.plrid))
 			end
 		elseif cid == 0x17 and plr then
 			local tpid, tool
 			tpid, tool, pkt = common.net_unpack("BB", pkt)
 			
-			if tool >= 0 and tool <= 3 then
+			if plr and tool >= 0 and tool <= 3 then
+				plr.tool = tool
 				net_broadcast(sockfd, common.net_pack("BBB"
 					, 0x17, cli.plrid, tool))
 			end
@@ -292,8 +372,11 @@ function server.hook_tick(sec_current, sec_delta)
 			local tpid, cr,cg,cb
 			tpid, cr,cg,cb, pkt = common.net_unpack("BBBB", pkt)
 			
-			net_broadcast(sockfd, common.net_pack("BBBBB"
-				, 0x18, cli.plrid, cr, cg, cb))
+			if plr then
+				plr.blk_color = {cr,cg,cb}
+				net_broadcast(sockfd, common.net_pack("BBBBB"
+					, 0x18, cli.plrid, cr, cg, cb))
+			end
 		end
 		-- TODO!
 	end
@@ -340,9 +423,16 @@ for i=1,players.max do
 end
 ]=]
 
-intent[#intent+1] = new_intel({team = 0})
-intent[#intent+1] = new_tent({team = 0})
-intent[#intent+1] = new_intel({team = 1})
-intent[#intent+1] = new_tent({team = 1})
+intent[#intent+1] = new_intel({team = 0, iid = #intent+1})
+intent[#intent+1] = new_tent({team = 0, iid = #intent+1})
+intent[#intent+1] = new_intel({team = 1, iid = #intent+1})
+intent[#intent+1] = new_tent({team = 1, iid = #intent+1})
+
+do
+	local i
+	for i=1,4 do
+		intent[i].spawn()
+	end
+end
 
 print("pkg/base/main_server.lua loaded.")

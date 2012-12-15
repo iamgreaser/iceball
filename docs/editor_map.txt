@@ -14,6 +14,18 @@ For the first format, it is totally OK if the first two filenames are the same.
 
 It is recommended that your maps are AT LEAST 128x(whatever)x128.
 
+-------------------------------------------------------------------------------
+
+Quick notes:
+- Water is the bottom layer.
+- The layer above that is the ground layer, and is unbreakable.
+- Intel/tent/player spawns are in the left quarter for team #1,
+  and the right quarter for team #2.
+- Tents will not spawn in the top quarter nor the bottom quarter.
+- Nothing will spawn on water.
+
+-------------------------------------------------------------------------------
+
 Default keys:
 
 WASD = move around

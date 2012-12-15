@@ -1,0 +1,119 @@
+UDP wrapper protocol
+(Just in case your VPS has no clue what TCP_NODELAY is!)
+
+WORK IN PROGRESS. NOT IMPLEMENTED YET.
+
+Also the docs here are pretty shit.
+If you've read the TCP spec, this might make more sense.
+
+Finally, THIS MIGHT NEVER EVER HAPPEN. YOU HAVE BEEN WARNED.
+
+(really QEMU, turn that fucking TCP_NODELAY on so I only get 470ms of lag)
+
+{
+	uint8_t flags;
+	uint8_t ackcount;
+	uint16_t vport;
+	uint16_t pkt_seqid;
+	
+	uint16_t acklist[ackcount];
+	uint8_t data[];
+}
+
+flags:
+	0xC0 = packet_type:
+		0x00 = ACKONLY
+		0x40 = CLOSE
+		0x80 = OPEN
+		0xC0 = DATA
+	
+	0x01-0x0C = use error correction
+		(bottom 4 bits = number of bytes used in last packet)
+		
+
+vport is a random number set by the client.
+If the client UDP port changes, it doesn't matter - vport is what matters.
+If the server UDP port changes, shoot your ISP / VPS provider.
+
+pkt_seqid increases after each packet, and wraps around.
+
+Any packets which are sent must be ACKed on the other end.
+
+If they don't get ack'd after some timeout, they get resent.
+
+packet types:
+OPEN:
+	C->S:
+		pkt_seqid is defined at random as the C->S packet ID.
+	S->C:
+		pkt_seqid is defined at random as the C->S packet ID.
+		Server MUST ack the OPEN packet.
+		
+		Once this is sent, the client must ack the OPEN packet;
+		THEN the connection is open.
+	
+	This packet MUST be checksummed.
+
+CLOSE [C->S]:
+	C->S:
+		CLOSE is set.
+		Server does not need to CLOSE.
+		If the client sends more packets, send more CLOSE.
+	
+	This packet MUST be checksummed.
+
+CLOSE [S->C]:
+	S->C:
+		CLOSE is set.
+		Client does not need to CLOSE.
+		If the server sends more packets, send more CLOSE.
+	
+	This packet MUST be checksummed.
+
+Error correction:
+	Golay code interleaved 8:1:
+	
+	We have groups of 23 bytes.
+	
+	For encoding it, we basically XOR the input bytes... somehow.
+	
+	For decoding it... I can't remember. I got an E on that paper (MATH324).
+	Worst grade I've ever had so far at uni.
+	
+	For each byte group we follow this matrix (12 bits in -> 23 bits out):
+	TODO: get the correct matrix! I suspect this is complete bullshit.
+	(It was done from memory without an internet connection.)
+	
+	1 0 0 0 0 0 0 0 0 0 0 0
+	0 1 0 0 0 0 0 0 0 0 0 0
+	0 0 1 0 0 0 0 0 0 0 0 0
+	0 0 0 1 0 0 0 0 0 0 0 0
+	0 0 0 0 1 0 0 0 0 0 0 0
+	0 0 0 0 0 1 0 0 0 0 0 0
+	0 0 0 0 0 0 1 0 0 0 0 0
+	0 0 0 0 0 0 0 1 0 0 0 0
+	0 0 0 0 0 0 0 0 1 0 0 0
+	0 0 0 0 0 0 0 0 0 1 0 0
+	0 0 0 0 0 0 0 0 0 0 1 0
+	0 0 0 0 0 0 0 0 0 0 0 1
+	1 1 0 0 0 0 0 0 0 0 0 0
+	0 1 1 0 0 0 0 0 0 0 0 0
+	0 0 1 1 0 0 0 0 0 0 0 0
+	0 0 0 1 1 0 0 0 0 0 0 0
+	0 0 0 0 1 1 0 0 0 0 0 0
+	0 0 0 0 0 1 1 0 0 0 0 0
+	0 0 0 0 0 0 1 1 0 0 0 0
+	0 0 0 0 0 0 0 1 1 0 0 0
+	0 0 0 0 0 0 0 0 1 1 0 0
+	0 0 0 0 0 0 0 0 0 1 1 0
+	0 0 0 0 0 0 0 0 0 0 1 1
+	
+	These packets MUST *NOT* be checksummed.
+	(Although I might slip in a checksum which'll be checked locally)
+	
+	You can correct up to 3 wrong bits with this method,
+	and I honestly can't remember how many you can detect
+	before the shit hits the fan...
+	
+	Hence why we might need to add in / check our own checksum.
+	(Hey, 1's compliment was fine for UDP itself...)

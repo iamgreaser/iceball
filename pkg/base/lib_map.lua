@@ -394,7 +394,7 @@ end
 function map_block_break(x,y,z)
 	local xlen,ylen,zlen 
 	xlen,ylen,zlen = common.map_get_dims()
-	if y < 0 or y >= ylen-1 then return end
+	if y < 0 or y >= ylen-1 then return false end
 	
 	local t = map_pillar_raw_get(x,z)
 	t[y+1] = nil
@@ -407,6 +407,8 @@ function map_block_break(x,y,z)
 	map_pillar_aerate(x,z+1)
 	
 	map_chkdisbrk(x,y,z)
+	
+	return true
 end
 
 function map_block_delete(x,y,z)

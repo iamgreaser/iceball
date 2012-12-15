@@ -144,6 +144,8 @@ ESC = quit game
 F5 = release mouse cursor
 F1 = show some debug information
 
+TAB = show names / scores
+
 [ TODO: add , for teamswitch ]
 TAB = show scores
 
@@ -207,7 +209,7 @@ http://www.libsdl.org/release/SDL-1.2.15.tar.gz
 http://www.libsdl.org/release/SDL-devel-1.2.15-mingw32.tar.gz
 http://zlib.net/zlib-1.2.7.tar.gz
 
-Download each one and extract outside of /buildandsnip (which we will call $ICEBALL)
+Download each one and extract outside of /buldthensnip (which we will call $ICEBALL)
 For each dependency cd to the root path and follow the listed commands.
 
 zlib:

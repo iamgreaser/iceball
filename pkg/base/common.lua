@@ -65,6 +65,7 @@ MODE_SOFTCROUCH = true
 
 MODE_MINIMAP_RCIRC = false
 MODE_ENABLE_MINIMAP = true
+MODE_MAP_TRACERS = false -- TODO!
 
 MODE_TILT_SLOWDOWN = false -- TODO!
 MODE_TILT_DOWN_NOCLIMB = false -- TODO!
@@ -74,12 +75,23 @@ MODE_DELAY_SPADE_HIT = 0.25
 MODE_DELAY_BLOCK_BUILD = 0.5
 MODE_DELAY_TOOL_CHANGE = 0.2
 
+MODE_BLOCK_HEALTH = 100
+MODE_BLOCK_DAMAGE_SPADE = 34
+MODE_BLOCK_DAMAGE_RIFLE = 34
+MODE_BLOCK_REGEN_TIME = 15.0
+
 MODE_RCIRC_LINGER = 60.0
 MODE_RESPAWN_TIME = 8.0
 
 MODE_CHAT_LINGER = 15.0
 MODE_CHAT_MAX = 10
 MODE_CHAT_STRMAX = 102
+
+-- scoring
+SCORE_INTEL = 10
+SCORE_KILL = 1
+SCORE_TEAMKILL = -1
+SCORE_SUICIDE = -1
 
 -- tools
 TOOL_SPADE = 0
@@ -132,6 +144,11 @@ weapons = {
 			local xlen, ylen, zlen
 			xlen, ylen, zlen = common.map_get_dims()
 			
+			if client then
+				tracer_add(plr.x,plr.y,plr.z,
+					plr.angy,plr.angx)
+			end
+			
 			local sya = math.sin(plr.angy)
 			local cya = math.cos(plr.angy)
 			local sxa = math.sin(plr.angx)
@@ -178,7 +195,6 @@ weapons = {
 			end
 			
 			if hurt_idx then
-				-- TODO: ship this off to the server!
 				if server then
 					players[hurt_idx].gun_damage(
 						hurt_part, this.cfg.dmg[hurt_part], plr)
@@ -194,9 +210,7 @@ weapons = {
 				
 				if cx2 and cy2 <= ylen-3 then
 					-- TODO: block health rather than instant block removal
-					common.net_send(nil, common.net_pack("BHHH",
-						0x09,
-						cx2,cy2,cz2))
+					bhealth_damage(cx2,cy2,cz2,MODE_BLOCK_DAMAGE_RIFLE)
 				end
 			end
 			
@@ -346,6 +360,7 @@ end
 damage_blk = {}
 players = {max = 32, current = 1}
 intent = {}
+nades = {}
 
 function string.split(s, sep, plain)
 	local start = 1
@@ -467,3 +482,4 @@ function alarm(options)
 	
 	return this
 end
+

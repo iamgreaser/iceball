@@ -20,7 +20,24 @@ print(...)
 
 map_fname = nil
 
+-- yeah this really should happen ASAP so we can boot people who suck
+dofile("pkg/base/lib_util.lua")
+
+local loose, user_toggles, user_settings = parse_commandline_options({...})
+local user_config_filename = user_settings['user'] or "clsave/pub/user.json"
+-- FIXME: we don't expose documentation for valid user settings anywhere
+
+user_config = common.json_load(user_config_filename)
+print("json done!")
+print("name:", user_config.name)
+print("kick on join:", user_config.kick_on_join)
+print("bio desc:", user_config.bio and user_config.bio.description)
+
+-- OK, *NOW* we can load stuff.
 dofile("pkg/base/common.lua")
+
+tracers = {head = 1, tail = 0, time = 0}
+bhealth = {head = 1, tail = 0, time = 0, map = {}}
 
 --[[
 while true do
@@ -41,19 +58,6 @@ map_fname = "pkg/MAP" -- hackish workaround so iceballfornoobs-004 still works
 if not map_fname then
 	error("server should have sent map name by now")
 end
-
-local loose, user_toggles, user_settings = parse_commandline_options({...})
-
-local user_config_filename = 	user_settings['user'] or
-								"clsave/pub/user.json"
-
--- FIXME: we don't expose documentation for valid user settings anywhere
-
-user_config = common.json_load(user_config_filename)
-print("json done!")
-print("name:", user_config.name)
-print("kick on join:", user_config.kick_on_join)
-print("bio desc:", user_config.bio and user_config.bio.description)
 
 -- define keys
 BTSK_FORWARD = SDLK_w
@@ -95,6 +99,112 @@ NET_MOVE_DELAY = 0.5
 NET_ORIENT_DELAY = 0.1
 t_net_move = nil
 t_net_orient = nil
+
+function bhealth_clear(x,y,z,repaint)
+	local map = bhealth.map
+	
+	local bh = map[x] and map[x][y] and map[x][y][z]
+	
+	if bh then
+		if repaint then
+			map_block_paint(bh.x,bh.y,bh.z,
+				bh.c[1],bh.c[2],bh.c[3],bh.c[4])
+		end
+		
+		map[x][y][z] = nil
+	end
+end
+
+function bhealth_damage(x,y,z,amt)
+	local map = bhealth.map
+	
+	map[x] = map[x] or {}
+	map[x][y] = map[x][y] or {}
+	map[x][y][z] = map[x][y][z] or {
+		c = map_block_get(x,y,z),
+		damage = 0,
+		time = nil,
+		qidx = nil,
+		x = x, y = y, z = z,
+	}
+	local blk = map[x][y][z]
+	
+	blk.time = bhealth.time + MODE_BLOCK_REGEN_TIME
+	blk.damage = blk.damage + amt
+	
+	if blk.damage >= MODE_BLOCK_HEALTH then
+		common.net_send(nil, common.net_pack("BHHH",
+			0x09, x, y, z))
+	end
+	
+	local c = blk.c
+	local darkfac = 0.8*MODE_BLOCK_HEALTH
+	local light = darkfac/(darkfac + blk.damage)
+	
+	map_block_paint(x,y,z,c[1],
+		math.floor(c[2]*light+0.5),
+		math.floor(c[3]*light+0.5),
+		math.floor(c[4]*light+0.5))
+	
+	bhealth.tail = bhealth.tail + 1
+	bhealth[bhealth.tail] = {x=x,y=y,z=z,time=blk.time}
+	
+	blk.qidx = bhealth.tail
+end
+
+function bhealth_prune(time)
+	--print("prune", bhealth.head, bhealth.tail)
+	while bhealth.head <= bhealth.tail do
+		local bhi = bhealth[bhealth.head]
+		if time < bhi.time then break end
+		bhealth[bhealth.head] = nil
+		
+		--print("bhi", bhi.x,bhi.y,bhi.z,bhi.time,time)
+		
+		local map = bhealth.map
+		local bh = map[bhi.x] and map[bhi.x][bhi.y] and map[bhi.x][bhi.y][bhi.z]
+		
+		if bh and bh.qidx == bhealth.head then
+			map_block_paint(bh.x,bh.y,bh.z,
+				bh.c[1],bh.c[2],bh.c[3],bh.c[4])
+			bhealth.map[bh.x][bh.y][bh.z] = nil
+		end
+		
+		bhealth.head = bhealth.head + 1
+	end
+	
+	if bhealth.head > bhealth.tail then
+		bhealth.head = 1
+		bhealth.tail = 0
+	end
+	
+	bhealth.time = time
+	
+end
+
+function tracer_add(x,y,z,ya,xa,time)
+	local tc = {
+		x=x,y=y,z=z,
+		ya=ya,xa=xa,
+		time=time or tracers.time,
+	}
+	tracers.tail = tracers.tail + 1
+	tracers[tracers.tail] = tc
+end
+
+function tracer_prune(time)
+	while tracers.head <= tracers.tail and tracers[tracers.head].time >= time + 0.4 do
+		tracers[tracers.head] = nil
+		tracers.head = tracers.head + 1
+	end
+	
+	if tracers.head > tracers.tail then
+		tracers.head = 1
+		tracers.tail = 0
+	end
+	
+	tracers.time = time
+end
 
 function chat_add(ctab, mtime, msg, color)
 	local l = {
@@ -225,6 +335,7 @@ mdl_nade, mdl_nade_bone = client.model_load_pmf("pkg/base/pmf/nade.pmf"), 0
 
 mdl_tent, mdl_tent_bone = client.model_load_pmf("pkg/base/pmf/tent.pmf"), 0
 mdl_intel, mdl_intel_bone = client.model_load_pmf("pkg/base/pmf/intel.pmf"), 0
+mdl_tracer, mdl_tracer_bone = client.model_load_pmf("pkg/base/pmf/tracer.pmf"), 0
 
 -- quick hack to stitch a player model together
 if false then
@@ -295,6 +406,12 @@ function h_tick_main(sec_current, sec_delta)
 
 	chat_prune(chat_text, sec_current)
 	chat_prune(chat_killfeed, sec_current)
+	
+	if client.gui_scene then
+		--[[ TODO queue up input events so that the GUI can see them
+		implement and test these events ]]
+		client.gui_scene.pump_listeners(sec_delta, {})
+	end
 
 	local pkt, sockfd
 	while true do
@@ -333,17 +450,21 @@ function h_tick_main(sec_current, sec_delta)
 			local pid, tidx, wpn, score, kills, deaths, name
 			pid, tidx, wpn, score, kills, deaths, name, pkt
 				= common.net_unpack("Bbbhhhz", pkt)
-
-			players[pid] = new_player({
-				name = name,
-				--[=[squad = squads[math.fmod(i-1,2)][
-					math.fmod(math.floor((i-1)/2),4)+1],]=]
-				squad = nil,
-				team = tidx,
-				weapon = wpn,
-				pid = pid,
-			})
-
+			
+			if players[pid] then
+				-- TODO: update wpn/tidx/name
+			else
+				players[pid] = new_player({
+					name = name,
+					--[=[squad = squads[math.fmod(i-1,2)][
+						math.fmod(math.floor((i-1)/2),4)+1],]=]
+					squad = nil,
+					team = tidx,
+					weapon = wpn,
+					pid = pid,
+				})
+			end
+			
 			players[pid].score = score
 			players[pid].kills = kills
 			players[pid].deaths = deaths
@@ -358,10 +479,12 @@ function h_tick_main(sec_current, sec_delta)
 		elseif cid == 0x08 then
 			local x,y,z,cb,cg,cr,ct
 			x,y,z,cb,cg,cr,ct,pkt = common.net_unpack("HHHBBBB", pkt)
+			bhealth_clear(x,y,z,false)
 			map_block_set(x,y,z,ct,cr,cg,cb)
 		elseif cid == 0x09 then
 			local x,y,z
 			x,y,z = common.net_unpack("HHH", pkt)
+			bhealth_clear(x,y,z,false)
 			map_block_break(x,y,z)
 		elseif cid == 0x0E then
 			-- add to chat
@@ -381,6 +504,20 @@ function h_tick_main(sec_current, sec_delta)
 			if plr then
 				plr.spawn_at(x,y,z,ya*math.pi/128,xa*math.pi/256)
 			end
+		elseif cid == 0x12 then
+			local iid, x,y,z, f
+			iid, x,y,z, f, pkt = common.net_unpack("HhhhB", pkt)
+			if intent[iid] then
+				--print("intent",iid,x,y,z,f)
+				if not intent[iid].spawned then
+					intent[iid].spawn_at(x,y,z)
+					--print(intent[iid].spawned, intent[iid].alive, intent[iid].visible)
+				else
+					intent[iid].set_pos_recv(x,y,z)
+				end
+				intent[iid].set_flags_recv(f)
+				--print(intent[iid].spawned, intent[iid].alive, intent[iid].visible)
+			end
 		elseif cid == 0x14 then
 			local pid, amt
 			pid, amt, pkt = common.net_unpack("BB", pkt)
@@ -388,14 +525,39 @@ function h_tick_main(sec_current, sec_delta)
 			local plr = players[pid]
 			--print("hit pkt", pid, amt)
 			if plr then
-				plr.set_health_damage(amt, nil, nil)
+				plr.set_health_damage(amt, nil, nil, nil)
+			end
+		elseif cid == 0x15 then
+			local pid
+			pid, pkt = common.net_unpack("B", pkt)
+
+			local plr = players[pid]
+			if plr then
+				plr.tent_restock()
+			end
+		elseif cid == 0x16 then
+			local iid, pid
+			iid, pid = common.net_unpack("HB", pkt)
+			local plr = (pid ~= 0 and players[pid]) or nil
+			local item = intent[iid]
+			--print(">",iid,pid,plr,item)
+			if (pid == 0 or plr) and item then
+				local hplr = item.player
+				if hplr then
+					hplr.has_intel = nil
+				end
+				
+				item.player = plr
+				if plr then
+					plr.has_intel = item
+				end
 			end
 		elseif cid == 0x17 then
 			local pid, tool
 			pid, tool, pkt = common.net_unpack("BB", pkt)
-
+			
 			local plr = players[pid]
-
+			
 			if plr then
 				plr.tool_switch(tool)
 			end
@@ -411,8 +573,32 @@ function h_tick_main(sec_current, sec_delta)
 				plr.blk_color = {cr,cg,cb}
 				plr.block_recolor()
 			end
+		elseif cid == 0x19 then
+			local pid, blocks
+			pid, blocks, pkg = common.net_unpack("BB", pkt)
+
+			local plr = players[pid]
+			
+			--print("19",pid,blocks)
+			
+			if plr then
+				plr.blocks = blocks
+			end
+		elseif cid == 0x1A then
+			local pid
+			pid, pkg = common.net_unpack("B", pkt)
+			
+			local plr = players[pid]
+			
+			if plr then
+				tracer_add(plr.x,plr.y,plr.z,
+					plr.angy,plr.angx,
+					sec_current)
+			end
 		end
 	end
+	tracer_prune(sec_current)
+	bhealth_prune(sec_current)
 
 	local i
 	for i=1,players.max do
@@ -483,21 +669,28 @@ function h_tick_init(sec_current, sec_delta)
 		})
 	end
 	]]
-
-	intent[#intent+1] = new_intel({team = 0})
-	intent[#intent+1] = new_tent({team = 0})
-	intent[#intent+1] = new_intel({team = 1})
-	intent[#intent+1] = new_tent({team = 1})
-
+	
+	intent[#intent+1] = new_intel({team = 0, iid = #intent+1})
+	intent[#intent+1] = new_tent({team = 0, iid = #intent+1})
+	intent[#intent+1] = new_intel({team = 1, iid = #intent+1})
+	intent[#intent+1] = new_tent({team = 1, iid = #intent+1})
+	
+	--[[
 	chat_add(chat_text, sec_current, "Just testing the chat...", 0xFFFFFFFF)
 	chat_add(chat_text, sec_current, "BLUE MASTER RACE", 0xFF0000FF)
 	chat_add(chat_text, sec_current, "GREEN MASTER RACE", 0xFF00C000)
 	chat_add(chat_text, sec_current, "SALLY MASTER RACE", 0xFFAA00FF)
 	chat_add(chat_text, sec_current, "YOU ALL SUCK", 0xFFC00000)
-
+	]]
+	chat_add(chat_text, sec_current, "Welcome to Iceball!", 0xFFFF00AA)
+	chat_add(chat_text, sec_current, "Please send all flames to /dev/null.", 0xFFFF00AA)
+	chat_add(chat_text, sec_current, "Vucgy, this includes you.", 0xFFFF00AA)
+	
 	mouse_released = false
 	client.mouse_lock_set(true)
 	client.mouse_visible_set(false)
+
+	client.gui_scene = gui_create_scene(client.screen_get_dims())
 
 	common.net_send(nil, common.net_pack("Bbbz", 0x11, -1, WPN_RIFLE, user_config.name or ""))
 
@@ -666,67 +859,20 @@ function h_mouse_button(button, state)
 		plr.wpn.click(button, state)
 	end
 
-	if state then
-		if button == 1 then
-			-- LMB
-			if plr.tool == TOOL_BLOCK and plr.blx1 and plr.alive then
-				if plr.blocks > 0 then
-				if plr.blx1 >= 0 and plr.blx1 < xlen and plr.blz1 >= 0 and plr.blz1 < zlen then
-				if plr.bly1 <= ylen-3 then
-					common.net_send(nil, common.net_pack("BHHHBBBB",
-						0x08,
-						plr.blx1, plr.bly1, plr.blz1,
-						plr.blk_color[3],
-						plr.blk_color[2],
-						plr.blk_color[1],
-						1))
-					plr.blocks = plr.blocks - 1
-				end
-				end
-				end
-			elseif plr.tool == TOOL_SPADE and plr.blx2 and plr.alive then
-				if plr.blx2 >= 0 and plr.blx2 < xlen and plr.blz2 >= 0 and plr.blz2 < zlen then
-				if plr.bly2 <= ylen-3 then
-					common.net_send(nil, common.net_pack("BHHH",
-						0x09,
-						plr.blx2, plr.bly2, plr.blz2))
-					if plr.blocks < 100 then
-						plr.blocks = plr.blocks + 1
-					end
-				end
-				end
-			end
-		elseif button == 3 then
-			-- RMB
-			if plr.tool == TOOL_BLOCK and plr.blx3 and plr.alive then
-				local ct,cr,cg,cb
-				ct,cr,cg,cb = map_block_pick(plr.blx3, plr.bly3, plr.blz3)
-				plr.blk_color = {cr,cg,cb}
-				common.net_send(nil, common.net_pack("BBBBB",
-					0x18, 0x00,
-					plr.blk_color[1],plr.blk_color[2],plr.blk_color[3]))
-			elseif plr.tool == TOOL_SPADE and plr.blx2 and plr.alive then
-				if plr.blx2 >= 0 and plr.blx2 < xlen and plr.blz2 >= 0 and plr.blz2 < zlen then
-				if plr.bly2-1 <= ylen-3 then
-					common.net_send(nil, common.net_pack("BHHH",
-						0x09,
-						plr.blx2, plr.bly2-1, plr.blz2))
-				end
-				if plr.bly2 <= ylen-3 then
-					common.net_send(nil, common.net_pack("BHHH",
-						0x09,
-						plr.blx2, plr.bly2, plr.blz2))
-				end
-				if plr.bly2+1 <= ylen-3 then
-					common.net_send(nil, common.net_pack("BHHH",
-						0x09,
-						plr.blx2, plr.bly2+1, plr.blz2))
-				end
-				end
-			end
-		elseif button == 2 then
-			-- middleclick
+	if button == 1 then
+		-- LMB
+		plr.ev_lmb = state
+		if plr.ev_lmb then
+			plr.ev_rmb = false
 		end
+	elseif button == 3 then
+		-- RMB
+		plr.ev_rmb = state
+		if plr.ev_rmb then
+			plr.ev_lmb = false
+		end
+	elseif button == 2 then
+		-- middleclick
 	end
 end
 
@@ -770,6 +916,7 @@ do
 		common.img_pixel_set(img_overview, x, z, c)
 	end
 	end
+	
 	for z=63,zlen-1,64 do
 	for x=0,xlen-1 do
 		common.img_pixel_set(img_overview_grid, x, z, 0xFFFFFFFF)
@@ -779,6 +926,13 @@ do
 	for x=63,xlen-1,64 do
 		common.img_pixel_set(img_overview_grid, x, z, 0xFFFFFFFF)
 	end
+	end
+	
+	for x=0,xlen-1 do
+		common.img_pixel_set(img_overview_grid, x, zlen-1, 0xFFFF0000)
+	end
+	for z=0,zlen-1 do
+		common.img_pixel_set(img_overview_grid, xlen-1, z, 0xFFFF0000)
 	end
 end
 
@@ -816,6 +970,34 @@ end
 function client.hook_render()
 	if players and players[players.current] then
 		players[players.current].show_hud()
+	end
+	
+	local i
+	for i=tracers.head,tracers.tail do
+		local tc = tracers[i]
+		
+		local x,y,z
+		x,y,z = tc.x, tc.y, tc.z
+		
+		local sya = math.sin(tc.ya)
+		local cya = math.cos(tc.ya)
+		local sxa = math.sin(tc.xa)
+		local cxa = math.cos(tc.xa)
+		
+		local d = tracers.time - tc.time
+		d = d + 0.005
+		d = d * 600.0
+		x = x + sya*cxa*d
+		y = y + sxa*d
+		z = z + cya*cxa*d
+		
+		client.model_render_bone_global(mdl_tracer, mdl_tracer_bone,
+			x,y,z,
+			0.0, -tc.xa, tc.ya, 1)
+	end
+	
+	if client.gui_scene then
+		client.gui_scene.draw()
 	end
 end
 

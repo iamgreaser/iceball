@@ -7,12 +7,16 @@ GreaseMonkey [Lead Developer]:
 
 And the rest in alphabetical order:
 
+BR:
+	Player name list
+
 topo:
 	FPS counter
 	Basic key binding system
 
 Triplefox:
 	Widget system (in progress)
+	Miscellaneous utility functions
 	Kindly let me use his map, mesa.vxl
 
 UnrealIncident:
