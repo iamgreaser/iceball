@@ -527,7 +527,7 @@ function new_player(settings)
 			this.t_newspade2 = nil
 		end
 		
-		if this.t_newspade2 and sec_current >= this.t_newspade2 then
+		if this.t_newspade2 and sec_current >= this.t_newspade2 and this.blx2 then
 			if this.blx2 >= 0 and this.blx2 < xlen and this.blz2 >= 0 and this.blz2 < zlen then
 			if this.bly2-1 <= ylen-3 then
 				common.net_send(nil, common.net_pack("BHHH",
