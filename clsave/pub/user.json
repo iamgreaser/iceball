@@ -10,9 +10,13 @@
 		READ THIS FILE: docs/setup_json.txt
 		
 		For name, and many other things, you need quotes:
-			"name": "your name goes here",
+			''name'': ''your name goes here'',
 		NOT:
-			"name": this is wrong,
+			''name'': this is wrong,
+		
+		(replace '' with the double-quotes used to contain this comment)
+		
+		For more info on the syntax itself, see http://json.org/
 	",
 	
 	"name": null,

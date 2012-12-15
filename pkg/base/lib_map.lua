@@ -397,6 +397,7 @@ function map_block_break(x,y,z)
 	if y < 0 or y >= ylen-1 then return false end
 	
 	local t = map_pillar_raw_get(x,z)
+	if t[y+1] == nil then return false end
 	t[y+1] = nil
 	map_pillar_raw_set(x,z,t)
 	

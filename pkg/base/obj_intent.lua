@@ -45,7 +45,7 @@ function new_intel(settings)
 			
 			local ty = l[1+(1)]
 			if this.y ~= ty and this.visible then
-				print("grav", this.y, ty)
+				--print("grav", this.y, ty)
 				this.y = ty
 				net_broadcast(nil, common.net_pack("BHhhhB", 0x12, this.iid,
 					this.x, this.y, this.z,

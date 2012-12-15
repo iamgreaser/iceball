@@ -116,12 +116,15 @@ function bhealth_clear(x,y,z,repaint)
 end
 
 function bhealth_damage(x,y,z,amt)
+	local c = map_block_get(x,y,z)
+	if not c then return end
+	
 	local map = bhealth.map
 	
 	map[x] = map[x] or {}
 	map[x][y] = map[x][y] or {}
 	map[x][y][z] = map[x][y][z] or {
-		c = map_block_get(x,y,z),
+		c = c,
 		damage = 0,
 		time = nil,
 		qidx = nil,
