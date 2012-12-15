@@ -456,6 +456,7 @@ function new_player(settings)
 			
 			local s = "* "..this.name.." has captured the "..teams[intel.team].name.." intel."
 			net_broadcast(nil, common.net_pack("BIz", 0x0E, 0xFF800000, s))
+			net_broadcast_team(this.team, common.net_pack("B", 0x1C))
 		end
 	end
 

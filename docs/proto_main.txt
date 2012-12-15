@@ -270,4 +270,6 @@ Iceball Base Mod:
 		vx,vy,vz is the velocity (11:5)
 		
 		time/100 is how long in seconds until the grenade explodes
-
+	
+	0x1C @
+		show red circles on map

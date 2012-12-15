@@ -589,6 +589,11 @@ function h_tick_main(sec_current, sec_delta)
 					plr.angy,plr.angx,
 					sec_current)
 			end
+		elseif cid == 0x1C then
+			local plr = players[players.current]
+			if plr then
+				plr.t_rcirc = sec_current + MODE_RCIRC_LINGER
+			end
 		end
 	end
 	tracer_prune(sec_current)
