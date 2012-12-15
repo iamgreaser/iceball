@@ -431,6 +431,7 @@ function gui_create_scene(width, height, shared_rate)
 	
 	local root = scene.display_object{x=0, y=0,
 		width=width, height=height, align_x=0, align_y=0}
+	scene.root = root
 	
 	function scene.pump_listeners(dT, events)
 		scene.shared_alarm_trigger = 0
@@ -563,9 +564,14 @@ function gui_create_scene(width, height, shared_rate)
 
 		function this.draw_update()
 			if this.model ~= nil then
+				-- remap pixel coordinates to (-1, 1) range
+				local ratio = root.height/root.width
+				local mx = -(this.relx/root.width*2-1)
+				local my = (this.rely/root.height*2-1)*ratio
 				client.model_render_bone_local(this.model,
 					this.bone_idx,
-					this.rx, this.ry, this.z,
+					mx, my,
+					this.z,
 					this.rot_y, this.rot_x, this.rot_y2, this.scale)
 			end
 		end

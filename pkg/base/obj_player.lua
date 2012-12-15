@@ -379,6 +379,12 @@ function new_player(settings)
 		local xlen,ylen,zlen
 		xlen,ylen,zlen = common.map_get_dims()
 
+		if this.scene then
+			--[[ TODO queue up input events so that the GUI can see them
+			implement and test these events ]]
+			this.scene.pump_listeners(sec_delta, {})
+		end
+		
 		if not this.spawned then
 			return
 		end
@@ -725,6 +731,54 @@ function new_player(settings)
 			this.has_intel.render_backpack()
 		end
 	end
+	
+	--[[create static widgets for hud.
+		FIXME: share 1 instance across all players? (This makes ticking trickier)
+	]]
+	function this.create_hud()
+		local scene = gui_create_scene(client.screen_get_dims())
+		local root = scene.root
+		local w = root.width
+		local h = root.height
+		local tools_align = scene.display_object{x=root.l, y=root.t}
+		local bone_wslot1 = scene.bone{model=mdl_spade, bone=mdl_spade_bone,
+			x=0.15*w/2}
+		local bone_wslot2 = scene.bone{model=this.mdl_block, bone=this.mdl_block_bone,
+			x=0.3*w/2}
+		local bone_wslot3 = scene.bone{model=this.wpn.get_model(), bone=0,
+			x=0.45*w/2}
+		local bone_wslot4 = scene.bone{model=mdl_nade, bone=mdl_nade_bone,
+			x=0.6*w/2}
+		scene.root.add_child(tools_align)
+		tools_align.add_child(bone_wslot1)
+		tools_align.add_child(bone_wslot2)
+		tools_align.add_child(bone_wslot3)
+		tools_align.add_child(bone_wslot4)
+		
+		local tool_mappings = {TOOL_SPADE,TOOL_BLOCK,TOOL_GUN,TOOL_NADE}
+		local tool_y = {0.3,0.25,0.25,0.25}
+		local tool_scale = {0.2,0.1,0.2,0.1}
+		local tool_pick_scale = {1.5,2.0,2.0,2.0}
+		local bounce = 0
+		local function bone_rotate(dT)
+			for k,bone in pairs(tools_align.children) do
+				bone.rot_y = bone.rot_y + dT * 120 * 0.01
+				bone.y = tool_y[k]
+				bone.scale = tool_scale[k]
+				if this.tool == tool_mappings[k] then
+					bone.y = bone.y + math.sin(bounce * 120 * 0.02) * 0.02
+					bone.scale = bone.scale * tool_pick_scale[k]
+				end
+				bone.y = bone.y * h/2
+				bounce = bounce + dT
+			end
+		end
+		tools_align.add_listener(GE_DELTA_TIME, bone_rotate)
+		
+		bone_rotate(0)
+		
+		this.scene = scene
+	end
 
 	function this.show_hud()
 		local fogr,fogg,fogb,fogd = client.map_fog_get()
@@ -757,8 +811,14 @@ function new_player(settings)
 			1-0.2, 600/800-0.2, 1.0,
 			rotpos*0.01, rotpos*0.004, 0.0, 0.1)
 		]]
-
+		
+		if not this.scene then
+			this.create_hud()
+		end
+		this.scene.draw()
+		
 		-- TODO: not have this on all the time
+		--[[
 		client.model_render_bone_local(mdl_spade, mdl_spade_bone,
 			1-0.15, -h/w+0.25+((this.tool == TOOL_SPADE and 0.02*math.sin(rotpos*0.02)) or 0), 1.0,
 			rotpos*0.01, 0.0, 0.0, 0.2*((this.tool == TOOL_SPADE and 1.5) or 1.0))
@@ -771,7 +831,8 @@ function new_player(settings)
 		client.model_render_bone_local(mdl_nade, mdl_nade_bone,
 			1-0.60, -h/w+0.2+((this.tool == TOOL_NADE and 0.02*math.sin(rotpos*0.02)) or 0), 1.0,
 			rotpos*0.01, 0.0, 0.0, 0.1*((this.tool == TOOL_NADE and 2.0) or 1.0))
-
+		]]
+		
 		this.render()
 
 		if MODE_DEBUG_SHOWBOXES then

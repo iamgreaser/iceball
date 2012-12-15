@@ -295,12 +295,6 @@ function h_tick_main(sec_current, sec_delta)
 
 	chat_prune(chat_text, sec_current)
 	chat_prune(chat_killfeed, sec_current)
-	
-	if client.gui_scene then
-		--[[ TODO queue up input events so that the GUI can see them
-		implement and test these events ]]
-		client.gui_scene.pump_listeners(sec_delta, {})
-	end
 
 	local pkt, sockfd
 	while true do
@@ -504,8 +498,6 @@ function h_tick_init(sec_current, sec_delta)
 	mouse_released = false
 	client.mouse_lock_set(true)
 	client.mouse_visible_set(false)
-
-	client.gui_scene = gui_create_scene(client.screen_get_dims())
 
 	common.net_send(nil, common.net_pack("Bbbz", 0x11, -1, WPN_RIFLE, user_config.name or ""))
 
@@ -824,9 +816,6 @@ end
 function client.hook_render()
 	if players and players[players.current] then
 		players[players.current].show_hud()
-	end
-	if client.gui_scene then
-		client.gui_scene.draw()
 	end
 end
 
