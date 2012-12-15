@@ -28,12 +28,12 @@ function slot_add(sockfd, tidx, wpn, name)
 		if not players[i] then
 			if tidx < 0 or tidx > 1 then
 				-- TODO: actually balance this properly!
-				tidx = math.fmod(i-1,2)
+				tidx = (i-1) % 2
 			end
 			players[i] = new_player({
 				name = name,
-				--[[squad = squads[math.fmod(i-1,2)][
-					math.fmod(math.floor((i-1)/2),4)+1],]]
+				--[[squad = squads[(i-1) % 2][
+					(math.floor((i-1)/2) % 4)+1],]]
 				squad = nil,
 				team = tidx, -- 0 == blue, 1 == green
 				weapon = WPN_RIFLE,
@@ -405,23 +405,6 @@ map_fname = loose[1]
 map_fname = map_fname or MAP_DEFAULT
 map_loaded = common.map_load(map_fname, "auto")
 common.map_set(map_loaded)
-
--- spam with players
---[=[
-players.local_multi = math.floor(math.random()*32)+1
-
-for i=1,players.max do
-	players[i] = new_player({
-		name = name_generate(),
-		--[[squad = squads[math.fmod(i-1,2)][
-			math.fmod(math.floor((i-1)/2),4)+1],]]
-		squad = nil,
-		team = math.fmod(i-1,2), -- 0 == blue, 1 == green
-		weapon = WPN_RIFLE,
-	})
-	print("player", i, players[i].name)
-end
-]=]
 
 intent[#intent+1] = new_intel({team = 0, iid = #intent+1})
 intent[#intent+1] = new_tent({team = 0, iid = #intent+1})

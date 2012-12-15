@@ -15,6 +15,25 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
+function trace_gap(x,y,z)
+	local xlen,ylen,zlen
+	xlen,ylen,zlen = common.map_get_dims()
+	
+	local l = common.map_pillar_get(math.floor(x), math.floor(z))
+	i = 1
+	local h1,h2
+	h1 = nil
+	while true do
+		h2 = l[i+1]
+		if h2 == ylen-1 then h2 = ylen end
+		if y < l[i+1] or l[i] == 0 then return h1, h2 end
+		i = i + l[i]*4
+		if y < l[i+3] then return h1, h2 end
+		h1 = l[i+3]
+		h2 = l[i+1]
+	end
+end
+
 function box_is_clear(x1,y1,z1,x2,y2,z2,canwrap)
 	local x,z,i
 	
@@ -216,9 +235,9 @@ function trace_map_box(x1,y1,z1, x2,y2,z2, bx1,by1,bz1, bx2,by2,bz2, canwrap)
 	
 	-- sub deltas
 	local sx, sy, sz
-	sx = math.fmod(x1, 1.0) - 0.001
-	sy = math.fmod(y1, 1.0) - 0.001
-	sz = math.fmod(z1, 1.0) - 0.001
+	sx = (x1 % 1.0) - 0.001
+	sy = (y1 % 1.0) - 0.001
+	sz = (z1 % 1.0) - 0.001
 	if gx >= 0 then sx = 1-sx end
 	if gy >= 0 then sy = 1-sy end
 	if gz >= 0 then sz = 1-sz end

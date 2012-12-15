@@ -190,17 +190,17 @@ function map_hashcoord3(x,y,z)
 	xlen,ylen,zlen = common.map_get_dims()
 	
 	return 
-		 math.fmod(math.fmod(y,ylen)+ylen,ylen)
-		+ylen*(math.fmod(math.fmod(x,xlen)+xlen,xlen)
-		+xlen*math.fmod(math.fmod(z,zlen)+zlen,zlen))
+		 (y % ylen)
+		+ylen*(x % xlen)
+		+xlen*(z % zlen)
 end
 
 function map_hashcoord2(x,z)
 	local xlen,ylen,zlen
 	xlen,ylen,zlen = common.map_get_dims()
 	
-	return math.fmod(math.fmod(x,xlen)+xlen,xlen)
-		+xlen*math.fmod(math.fmod(z,zlen)+zlen,zlen)
+	return (x % xlen)
+		+xlen*(z % zlen)
 end
 
 function map_chkdisbrk(x,y,z)

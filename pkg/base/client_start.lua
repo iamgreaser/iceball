@@ -450,8 +450,8 @@ function h_tick_main(sec_current, sec_delta)
 			else
 				players[pid] = new_player({
 					name = name,
-					--[=[squad = squads[math.fmod(i-1,2)][
-						math.fmod(math.floor((i-1)/2),4)+1],]=]
+					--[=[squad = squads[(i-1) % 2][
+						(math.floor((i-1)/2) % 4)+1],]=]
 					squad = nil,
 					team = tidx,
 					weapon = wpn,
@@ -655,10 +655,10 @@ function h_tick_init(sec_current, sec_delta)
 	for i=1,players.max do
 		players[i] = new_player({
 			name = (players.current == i and user_config.name) or name_generate(),
-			--[=[squad = squads[math.fmod(i-1,2)][
-				math.fmod(math.floor((i-1)/2),4)+1],]=]
+			--[=[squad = squads[(i-1) % 2][
+				(math.floor((i-1)/2) % 4)+1],]=]
 			squad = nil,
-			team = math.fmod(i-1,2), -- 0 == blue, 1 == green
+			team = (i-1) % 2, -- 0 == blue, 1 == green
 			weapon = WPN_RIFLE,
 		})
 	end

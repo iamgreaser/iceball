@@ -748,9 +748,11 @@ function new_player(settings)
 		end
 		if this.crouching or MODE_AUTOCLIMB then
 			by2 = by2 - 1
+			if MODE_AUTOCLIMB then
+				by2 = by2 - 0.01
+			end
 		end
-
-
+		
 		if this.alive then
 			tx1,ty1,tz1 = trace_map_box(
 				ox, oy, oz,
@@ -761,37 +763,68 @@ function new_player(settings)
 		else
 			tx1,ty1,tz1 = nx,ny,nz
 		end
-
-		if this.alive and MODE_AUTOCLIMB then
+		
+		if this.alive and MODE_AUTOCLIMB and not this.crouching then
+			by2 = by2 + 1.01
+		end
+		
+		if this.alive and MODE_AUTOCLIMB and not this.crouching then
 			local jerky = ty1
-			if not this.crouching then
-				ty1 = ty1 - 1
-				by2 = by2 + 1
-			end
-			tx1,ty1,tz1 = trace_map_box(
-				tx1,ty1,tz1,
-				nx, ny, nz,
-				-0.4,  by1, -0.4,
-				0.4,  by2,  0.4,
-				false)
-			if ty1-jerky < -0.8 and not box_is_clear(
-					nx-0.4, ny-0.3-0.5, nz-0.4,
-					nx+0.4, ny-0.3, nz+0.4) then
-				this.crouching = true
-				ty1 = ty1 + 1
-			end
-			if math.abs(jerky-ty1) > 0.2 then
-				this.jerkoffs = this.jerkoffs + jerky - ty1
+			
+			local h1a,h1b,h1c,h1d
+			local h2a,h2b,h2c,h2d
+			local h1,h2,_
+			_,h2 = trace_gap(tx1,ty1+1.0,tz1)
+			h1a,h2a = trace_gap(tx1-0.39,ty1+1.0,tz1-0.39)
+			h1b,h2b = trace_gap(tx1+0.39,ty1+1.0,tz1-0.39)
+			h1c,h2c = trace_gap(tx1-0.39,ty1+1.0,tz1+0.39)
+			h1d,h2d = trace_gap(tx1+0.39,ty1+1.0,tz1+0.39)
+			
+			if (not h1a) or (h1b and h1a < h1b) then h1a = h1b end
+			if (not h1a) or (h1c and h1a < h1c) then h1a = h1c end
+			if (not h1a) or (h1d and h1a < h1d) then h1a = h1d end
+			if (not h2a) or (h2b and h2a > h2b) then h2a = h2b end
+			if (not h2a) or (h2c and h2a > h2c) then h2a = h2c end
+			if (not h2a) or (h2d and h2a > h2d) then h2a = h2d end
+			
+			h1 = h1a
+			h2 = h2a
+			
+			local dh1 = (h1 and -(h1 - ty1))
+			local dh2 = (h2 and  (h2 - ty1))
+			
+			if dh2 and dh2 < by2 and dh2 > 0 then
+				--print("old", ty1, dh2, by2, h1, h2)
+				
+				if (dh1 and dh1 < -by1) then
+					-- crouch
+					this.crouching = true
+					ty1 = ty1 + 1
+				else
+					-- climb
+					ty1 = h2 - by2
+					local jdiff = jerky - ty1
+					if math.abs(jdiff) > 0.1 then
+						this.jerkoffs = this.jerkoffs + jdiff
+					end
+				end
+				
+				--print("new", ty1, this.vy)
+				--if this.vy > 0 then this.vy = 0 end
 			end
 		end
 
 		this.x, this.y, this.z = tx1, ty1, tz1
-
-		this.grounded = (MODE_AIRJUMP and this.grounded) or not box_is_clear(
+		
+		local fgrounded = not box_is_clear(
 			tx1-0.39, ty1+by2, tz1-0.39,
 			tx1+0.39, ty1+by2+0.1, tz1+0.39)
 		
-		if this.alive and this.vy > 0 and this.grounded then
+		--print(fgrounded, tx1,ty1,tz1,by2)
+		
+		this.grounded = (MODE_AIRJUMP and this.grounded) or fgrounded
+		
+		if this.alive and this.vy > 0 and fgrounded then
 			this.vy = 0
 		end
 		

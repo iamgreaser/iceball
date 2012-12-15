@@ -17,7 +17,7 @@
 
 function bit_unsign(a,m)
 	m = math.pow(2,m)
-	local v = math.fmod(a,m)
+	local v = (a % m)
 	if v < 0 then
 		v = v + m
 	end
@@ -28,7 +28,7 @@ function bit_xor(a,b)
 	local shift = 1
 	local v = 0
 	while a > 0 and b > 0 do
-		if (math.fmod(a,2) ~= 0) ~= (math.fmod(b,2) ~= 0) then
+		if ((a % 2) ~= 0) ~= ((b % 2) ~= 0) then
 			v = v + shift
 		end
 		shift = shift * 2
@@ -42,7 +42,7 @@ function bit_or(a,b)
 	local shift = 1
 	local v = 0
 	while a > 0 and b > 0 do
-		if (math.fmod(a,2) ~= 0) or (math.fmod(b,2) ~= 0) then
+		if ((a % 2) ~= 0) or ((b % 2) ~= 0) then
 			v = v + shift
 		end
 		shift = shift * 2
@@ -56,7 +56,7 @@ function bit_and(a,b)
 	local shift = 1
 	local v = 0
 	while a > 0 and b > 0 do
-		if (math.fmod(a,2) ~= 0) and (math.fmod(b,2) ~= 0) then
+		if ((a % 2) ~= 0) and ((b % 2) ~= 0) then
 			v = v + shift
 		end
 		shift = shift * 2

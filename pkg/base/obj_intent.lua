@@ -275,7 +275,7 @@ function new_tent(settings)
 					plr.tent_restock()
 				end
 				
-				if plr.has_intel then
+				if plr.has_intel and plr.team == this.team then
 					plr.intel_capture(sec_current)
 				end
 			end
