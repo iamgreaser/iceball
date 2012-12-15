@@ -23,8 +23,17 @@ a1,a2,a3,a4,a5,a6,a7,a8,a9,a10 = ...
 dofile("pkg/base/lib_gui.lua")
 
 do
+	local scriptcache = {}
+	
 	local fnlist = {}
 	function load_screen_fetch(ftype, fname)
+		local cname = ftype.."!"..fname
+		local cacheable = ftype ~= "map" and ftype ~= "icemap" and ftype ~= "vxl"
+		if cacheable and scriptcache[cname] then
+			fnlist[#fnlist+1] = fname.." [CACHED]"
+			return scriptcache[cname]
+		end
+		
 		fnlist[#fnlist+1] = fname
 		
 		local map,r,g,b,dist
@@ -104,6 +113,10 @@ do
 		
 		common.map_set(map)
 		client.map_fog_set(r,g,b,dist)
+		
+		if cacheable then
+			scriptcache[cname] = obj
+		end
 		
 		return obj
 	end
