@@ -9,6 +9,10 @@
 		
 		READ THIS FILE: docs/setup_json.txt
 		
+		For name, and many other things, you need quotes:
+			"name": "your name goes here",
+		NOT:
+			"name": this is wrong,
 	",
 	
 	"name": null,

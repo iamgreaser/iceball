@@ -147,7 +147,6 @@ F1 = show some debug information
 TAB = show names / scores
 
 [ TODO: add , for teamswitch ]
-TAB = show scores
 
 Note that there is no weapon select key. This isn't Ace of Jagex.
 
