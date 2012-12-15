@@ -117,6 +117,10 @@ end
 
 function bhealth_damage(x,y,z,amt)
 	local c = map_block_get(x,y,z)
+	if c == false then
+		map_pillar_aerate(x,z)
+		c = map_block_get(x,y,z)
+	end
 	if not c then return end
 	
 	local map = bhealth.map
