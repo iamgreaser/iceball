@@ -947,13 +947,13 @@ function new_player(settings)
 		local h = root.height
 		local tools_align = scene.display_object{x=root.l, y=root.t}
 		local bone_wslot1 = scene.bone{model=mdl_spade, bone=mdl_spade_bone,
-			x=0.15*w/2}
+			x=0.1*w*5/8}
 		local bone_wslot2 = scene.bone{model=this.mdl_block, bone=this.mdl_block_bone,
-			x=0.3*w/2}
+			x=0.25*w*5/8}
 		local bone_wslot3 = scene.bone{model=this.wpn.get_model(), bone=0,
-			x=0.45*w/2}
+			x=0.4*w*5/8}
 		local bone_wslot4 = scene.bone{model=mdl_nade, bone=mdl_nade_bone,
-			x=0.6*w/2}
+			x=0.55*w*5/8}
 		scene.root.add_child(tools_align)
 		tools_align.add_child(bone_wslot1)
 		tools_align.add_child(bone_wslot2)
@@ -963,7 +963,7 @@ function new_player(settings)
 		local tool_mappings = {TOOL_SPADE,TOOL_BLOCK,TOOL_GUN,TOOL_NADE}
 		local tool_y = {0.3,0.25,0.25,0.25}
 		local tool_scale = {0.2,0.1,0.2,0.1}
-		local tool_pick_scale = {1.5,2.0,2.0,2.0}
+		local tool_pick_scale = {1.3,2.0,2.0,2.0}
 		local bounce = 0
 		local function bone_rotate(dT)
 			for k,bone in pairs(tools_align.children) do
@@ -971,7 +971,7 @@ function new_player(settings)
 				bone.y = tool_y[k]
 				bone.scale = tool_scale[k]
 				if this.tool == tool_mappings[k] then
-					bone.y = bone.y + math.sin(bounce * 120 * 0.02) * 0.02
+					bone.y = bone.y + math.sin(bounce * 120 * 0.01) * 0.02
 					bone.scale = bone.scale * tool_pick_scale[k]
 				end
 				bone.y = bone.y * h/2
