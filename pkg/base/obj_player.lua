@@ -207,6 +207,16 @@ function new_player(settings)
 		this.ev_rmb = false
 	end
 
+	function this.tool_switch_next()
+		new_tool = (this.tool + 1) % (TOOL_NADE + 1) -- Nade is last weapon
+		this.tool_switch(new_tool)
+	end
+
+	function this.tool_switch_prev()
+		new_tool = (this.tool - 1) % (TOOL_NADE + 1) -- Nade is last weapon
+		this.tool_switch(new_tool)
+	end
+
 	--[[
 		keys are:
 			0x01: up

@@ -875,6 +875,16 @@ function h_mouse_button(button, state)
 		if plr.ev_rmb then
 			plr.ev_lmb = false
 		end
+	elseif button == 4 then
+		-- mousewheelup
+		if state then
+			plr.tool_switch_prev()
+        end
+	elseif button == 5 then
+		-- mousewheeldown
+		if state then
+			plr.tool_switch_next()
+        end
 	elseif button == 2 then
 		-- middleclick
 	end
