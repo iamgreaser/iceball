@@ -19,4 +19,4 @@
 
 print("[server] Testing the snow plugin!")
 loadfile("pkg/base/main_server.lua")(...)
---dofile("pkg/base/plug_snow.lua")
+dofile("pkg/base/plug_snow.lua")

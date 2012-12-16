@@ -15,7 +15,7 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
-function snow_init()
+function snow_init_pissdown(p_snow)
 	print("Snowing the map...")
 	local xlen,ylen,zlen
 	local x,y,z,i
@@ -29,7 +29,7 @@ function snow_init()
 			s = s.." "..t[i]
 		end
 		print(s)]]
-		if t[1+1] > 0 and math.random() < 0.9 then
+		if t[1+1] > 0 and t[1+1] < ylen-1 and math.random() < p_snow then
 			for i=#t,5,-1 do t[i+4] = t[i] end
 			if t[1+0] ~= 0 then t[1+0] = t[1+0] + 1 end
 			t[1+1] = t[1+1] - 1
@@ -37,47 +37,60 @@ function snow_init()
 			t[5+1] = 255
 			t[5+2] = 255
 			t[5+3] = 2
-			common.img_pixel_set(img_overview,x,z,0xFFFFFFFF)
+			if img_overview then
+				common.img_pixel_set(img_overview,x,z,0xFFFFFFFF)
+			end
 		end
 		--print(x,z)
 		common.map_pillar_set(x,z,t)
 	end
 	end
-	
+	print("Done!")
+end
+
+function snow_init_hook()
 	do
+		local function mpgnew(mpgold)
+			return function(px,pz)
+				local t = map_pillar_raw_unpack(mpgold(px,pz))
+				local i
+				local xlen,ylen,zlen
+				xlen,ylen,zlen = common.map_get_dims()
+				for i=0,ylen-1 do
+					if t[i] and t[i][1] == 2 then
+						t[i] = nil
+					end
+				end
+				return map_pillar_raw_pack(t)
+			end
+		end
+		
 		local bicold = box_is_clear
 		function box_is_clear(x1,y1,z1,x2,y2,z2,canwrap)
 			local mpgold = common.map_pillar_get
-			common.map_pillar_get = function (px,pz)
-				local t = mpgold(px,pz)
-				if t[5+3] == 2 then
-					local i
-					for i=5,#t-4,1 do t[i] = t[i+4] end
-					if t[1+0] ~= 0 then t[1+0] = t[1+0] - 1 end
-					t[1+1] = t[1+1] + 1
-					for i=1,4 do t[#t] = nil end
-					-- the melting causes it to screw up
-					--[[
-					if math.random() < 0.05 then
-						common.map_pillar_set(px,pz,t)
-					end
-					]]
-				end
-				return t
-			end
+			common.map_pillar_get = mpgnew(mpgold)
 			local ret = bicold(x1,y1,z1,x2,y2,z2,canwrap)
 			common.map_pillar_get = mpgold
 			return ret
 		end
+		
+		local trgold = trace_gap
+		function trace_gap(x,y,z)
+			local mpgold = common.map_pillar_get
+			common.map_pillar_get = mpgnew(mpgold)
+			local r1,r2
+			r1,r2 = trgold(x,y,z)
+			common.map_pillar_get = mpgold
+			return r1,r2
+		end
 	end
-	print("Done!")
 end
 
-do
-	local snow_oldtick = client.hook_tick
-	function client.hook_tick(...)
-		snow_init()
-		client.hook_tick = snow_oldtick
-		return client.hook_tick(...)
-	end
+if server then
+	snow_init_pissdown(0.1)
+	snow_init_hook()
+end
+
+if client then
+	snow_init_hook()
 end

@@ -16,10 +16,9 @@
 ]]
 
 -- returns a list consisting of {t,r,g,b} tuplets
-function map_pillar_raw_get(x,z)
+function map_pillar_raw_unpack(tpack)
 	local xlen,ylen,zlen 
 	xlen,ylen,zlen = common.map_get_dims()
-	local tpack = common.map_pillar_get(x,z)
 	local t = {}
 	local i,j,y
 	i = 1
@@ -72,7 +71,11 @@ function map_pillar_raw_get(x,z)
 	return t
 end
 
-function map_pillar_raw_set(x,z,t)
+function map_pillar_raw_get(x,z)
+	return map_pillar_raw_unpack(common.map_pillar_get(x,z))
+end
+
+function map_pillar_raw_pack(t)
 	local xlen,ylen,zlen 
 	xlen,ylen,zlen = common.map_get_dims()
 	local tpack = {}
@@ -132,6 +135,14 @@ function map_pillar_raw_set(x,z,t)
 		a = y
 	end
 	
+	return tpack
+end
+
+function map_pillar_raw_set(x,z,t)
+	local tpack = map_pillar_raw_pack(t)
+	
+	common.map_pillar_set(x,z,tpack)
+	
 	if img_overview and tpack[5] then
 		-- TODO: check for wrapping
 		local r,g,b
@@ -141,8 +152,6 @@ function map_pillar_raw_set(x,z,t)
 		local c = argb_split_to_merged(r,g,b)
 		common.img_pixel_set(img_overview, x, z, c)
 	end
-	
-	common.map_pillar_set(x,z,tpack)
 end
 
 function map_block_aerate(x,y,z)
