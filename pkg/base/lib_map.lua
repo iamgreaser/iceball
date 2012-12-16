@@ -190,9 +190,7 @@ function map_hashcoord3(x,y,z)
 	xlen,ylen,zlen = common.map_get_dims()
 	
 	return 
-		 (y % ylen)
-		+ylen*(x % xlen)
-		+xlen*(z % zlen)
+		 (y % ylen) + ylen*((x % xlen) + xlen*(z % zlen))
 end
 
 function map_hashcoord2(x,z)
