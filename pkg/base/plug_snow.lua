@@ -149,4 +149,95 @@ end
 
 if client then
 	snow_init_hook()
+	
+	local snowflakes = {
+		sxp=0,szp=0,
+		sx0=0,sz0=0,
+		sx1=0,sz1=0,
+		st=0,
+	}
+	local snow_flakecount = 1000
+	local snow_flakedist = 60
+	local snow_fallspeed = 13
+	local snow_changetime = 1
+	do
+		local i
+		for i=1,snow_flakecount do
+			local x,y,z
+			x = math.random()*snow_flakedist*2
+			y = math.random()*64
+			z = math.random()*snow_flakedist*2
+			snowflakes[#snowflakes+1] = {
+				x=x,y=y,z=z,
+			}
+		end
+	end
+	
+	local mdl_snow = common.model_new(1)
+	local mdl_snow_bone
+	mdl_snow, mdl_snow_bone = common.model_bone_new(mdl_snow, 1)
+	local mdl_snow_name,mdl_snow_tab
+	mdl_snow_name = "snow"
+	mdl_snow_tab = {{radius=32, x=0,y=0,z=0, r=255,g=255,b=255}}
+	common.model_bone_set(mdl_snow, mdl_snow_bone, mdl_snow_name, mdl_snow_tab)
+	
+	local snow_oldrender = client.hook_render
+	function snow_render(...)
+		local i
+		local camx,camy,camz
+		camx,camy,camz = client.camera_get_pos()
+		for i=1,snow_flakecount do
+			local px,py,pz
+			px = snowflakes[i].x+snowflakes.sxp
+			py = snowflakes[i].y
+			pz = snowflakes[i].z+snowflakes.szp
+			px = (px-camx+snow_flakedist)%(snow_flakedist*2)-snow_flakedist+camx
+			pz = (pz-camz+snow_flakedist)%(snow_flakedist*2)-snow_flakedist+camz
+			client.model_render_bone_global(mdl_snow, mdl_snow_bone, px, py, pz, 0,0,0, 1)
+		end
+		
+		client.hook_render = snow_oldrender
+		local ret = client.hook_render(...)
+		snow_oldrender = client.hook_render
+		client.hook_render = snow_render
+	end
+	
+	local snow_oldtick = client.hook_tick
+	function snow_tick(sec_current, sec_delta)
+		-- update snow wind
+		local sdx,sdz
+		local st = (1-math.cos(snowflakes.st*math.pi))/2
+		sdx = snowflakes.sx0*(1-st)+snowflakes.sx1*st
+		sdz = snowflakes.sz0*(1-st)+snowflakes.sz1*st
+		snowflakes.sxp = snowflakes.sxp + sdx*sec_delta
+		snowflakes.szp = snowflakes.szp + sdz*sec_delta
+		snowflakes.st = snowflakes.st + sec_delta/snow_changetime
+		while snowflakes.st >= 1 do
+			snowflakes.sx0, snowflakes.sz0 = snowflakes.sx1, snowflakes.sz1
+			snowflakes.sx1 = (math.random()*2-1)*15
+			snowflakes.sz1 = (math.random()*2-1)*15
+			snowflakes.st = snowflakes.st - 1
+		end
+		
+		-- update snowflakes
+		local i
+		for i=1,snow_flakecount do
+			local sf = snowflakes[i]
+			sf.y = sf.y + sec_delta*snow_fallspeed
+			if sf.y >= 64 then
+				sf.x = math.random()*snow_flakedist*2
+				sf.y = 0
+				sf.z = math.random()*snow_flakedist*2
+			end
+		end
+		
+		client.hook_tick = snow_oldtick
+		local ret = client.hook_tick(sec_current, sec_delta)
+		snow_oldtick = client.hook_tick
+		client.hook_tick = snow_tick
+		return ret
+	end
+	
+	client.hook_render = snow_render
+	client.hook_tick = snow_tick
 end
