@@ -1,0 +1,38 @@
+{
+	"__COMMENT_000": "
+		
+		This is the sort of place you set up your controls.
+		It can be read by all mods, but not writeable by any.
+		
+		By the way, don't store anything important in this comment.
+		It is possible that a hacked server might be able to read it.
+		
+		READ THIS FILE: docs/setup_json.txt
+		READ THIS URL: http://wiki.libsdl.org/moin.cgi/SDLKeycodeLookup
+		
+		For more info on the syntax itself, see http://json.org/
+	",
+	
+	"forward": 119,
+	"back": 115,
+	"left": 97,
+	"right": 100,
+	"jump": 32,
+	"crouch": -2147483424,
+	"sneak": 118,
+	"reload": 114,
+	"tool1": 49,
+	"tool2": 50,
+	"tool3": 51,
+	"tool4": 52,
+	"tool5": 53,
+	"colorleft": -2147483568,
+	"colorright": -2147483569,
+	"colorup": -2147483566,
+	"colordown": -2147483567,
+	"chat": 116,
+	"teamchat": 121,
+	"scores": 9,
+	"quit": 27,
+	"map": 109
+}

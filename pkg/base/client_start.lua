@@ -25,6 +25,7 @@ dofile("pkg/base/lib_util.lua")
 
 local loose, user_toggles, user_settings = parse_commandline_options({...})
 local user_config_filename = user_settings['user'] or "clsave/pub/user.json"
+local controls_config_filename = user_settings['controls'] or "clsave/pub/controls.json"
 -- FIXME: we don't expose documentation for valid user settings anywhere
 
 user_config = common.json_load(user_config_filename)
@@ -60,37 +61,38 @@ if not map_fname then
 end
 
 -- define keys
-BTSK_FORWARD = SDLK_w
-BTSK_BACK    = SDLK_s
-BTSK_LEFT    = SDLK_a
-BTSK_RIGHT   = SDLK_d
-BTSK_JUMP    = SDLK_SPACE
-BTSK_CROUCH  = SDLK_LCTRL
-BTSK_SNEAK   = SDLK_v
-BTSK_RELOAD  = SDLK_r
+controls_config = common.json_load(controls_config_filename)
+BTSK_FORWARD = controls_config.forward or SDLK_w
+BTSK_BACK    = controls_config.back or SDLK_s
+BTSK_LEFT    = controls_config.left or SDLK_a
+BTSK_RIGHT   = controls_config.right or SDLK_d
+BTSK_JUMP    = controls_config.jump or SDLK_SPACE
+BTSK_CROUCH  = controls_config.crouch or SDLK_LCTRL
+BTSK_SNEAK   = controls_config.sneak or SDLK_v
+BTSK_RELOAD  = controls_config.reload or SDLK_r
 
-BTSK_TOOL1 = SDLK_1
-BTSK_TOOL2 = SDLK_2
-BTSK_TOOL3 = SDLK_3
-BTSK_TOOL4 = SDLK_4
-BTSK_TOOL5 = SDLK_5
+BTSK_TOOL1 = controls_config.tool1 or SDLK_1
+BTSK_TOOL2 = controls_config.tool2 or SDLK_2
+BTSK_TOOL3 = controls_config.tool3 or SDLK_3
+BTSK_TOOL4 = controls_config.tool4 or SDLK_4
+BTSK_TOOL5 = controls_config.tool5 or SDLK_5
 
-BTSK_COLORLEFT  = SDLK_LEFT
-BTSK_COLORRIGHT = SDLK_RIGHT
-BTSK_COLORUP    = SDLK_UP
-BTSK_COLORDOWN  = SDLK_DOWN
+BTSK_COLORLEFT  = controls_config.colorleft or SDLK_LEFT
+BTSK_COLORRIGHT = controls_config.colorright or SDLK_RIGHT
+BTSK_COLORUP    = controls_config.colorup or SDLK_UP
+BTSK_COLORDOWN  = controls_config.colordown or SDLK_DOWN
 
-BTSK_CHAT     = SDLK_t
+BTSK_CHAT     = controls_config.chat or SDLK_t
 BTSK_COMMAND  = SDLK_SLASH
-BTSK_TEAMCHAT = SDLK_y
-BTSK_SCORES   = SDLK_TAB
+BTSK_TEAMCHAT = controls_config.teamchat or SDLK_y
+BTSK_SCORES   = controls_config.scores or SDLK_TAB
 
-BTSK_QUIT = SDLK_ESCAPE
+BTSK_QUIT = controls_config.quit or SDLK_ESCAPE
 BTSK_YES  = SDLK_y
 BTSK_NO   = SDLK_n
 
 BTSK_DEBUG = SDLK_F1
-BTSK_MAP = SDLK_m
+BTSK_MAP = controls_config.map or SDLK_m
 
 chat_killfeed = {head = 1, scroll = nil, queue = {}}
 chat_text = {head = 1, scroll = nil, queue = {}}
