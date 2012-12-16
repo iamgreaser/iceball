@@ -205,6 +205,14 @@ function new_player(settings)
 		this.tool = tool
 		this.ev_lmb = false
 		this.ev_rmb = false
+		
+		-- hud
+		if this.tools_align then
+			this.tools_align.visible = true
+			this.tools_align.static_alarm{name='viz',
+				time=3.0, on_trigger=function() this.tools_align.visible = false end}
+		end
+		
 	end
 
 	function this.tool_switch_next()
@@ -989,7 +997,7 @@ function new_player(settings)
 		local root = scene.root
 		local w = root.width
 		local h = root.height
-		local tools_align = scene.display_object{x=root.l, y=root.t}
+		this.tools_align = scene.display_object{x=root.l, y=root.t}
 		local bone_wslot1 = scene.bone{model=mdl_spade, bone=mdl_spade_bone,
 			x=0.1*w*5/8}
 		local bone_wslot2 = scene.bone{model=this.mdl_block, bone=this.mdl_block_bone,
@@ -998,11 +1006,11 @@ function new_player(settings)
 			x=0.4*w*5/8}
 		local bone_wslot4 = scene.bone{model=mdl_nade, bone=mdl_nade_bone,
 			x=0.55*w*5/8}
-		scene.root.add_child(tools_align)
-		tools_align.add_child(bone_wslot1)
-		tools_align.add_child(bone_wslot2)
-		tools_align.add_child(bone_wslot3)
-		tools_align.add_child(bone_wslot4)
+		scene.root.add_child(this.tools_align)
+		this.tools_align.add_child(bone_wslot1)
+		this.tools_align.add_child(bone_wslot2)
+		this.tools_align.add_child(bone_wslot3)
+		this.tools_align.add_child(bone_wslot4)
 		
 		local tool_mappings = {TOOL_SPADE,TOOL_BLOCK,TOOL_GUN,TOOL_NADE}
 		local tool_y = {0.3,0.25,0.25,0.25}
@@ -1010,7 +1018,7 @@ function new_player(settings)
 		local tool_pick_scale = {1.3,2.0,2.0,2.0}
 		local bounce = 0
 		local function bone_rotate(dT)
-			for k,bone in pairs(tools_align.children) do
+			for k,bone in pairs(this.tools_align.children) do
 				bone.rot_y = bone.rot_y + dT * 120 * 0.01
 				bone.y = tool_y[k]
 				bone.scale = tool_scale[k]
@@ -1022,7 +1030,8 @@ function new_player(settings)
 				bounce = bounce + dT
 			end
 		end
-		tools_align.add_listener(GE_DELTA_TIME, bone_rotate)
+		this.tools_align.add_listener(GE_DELTA_TIME, bone_rotate)
+		this.tools_align.visible = false
 		
 		bone_rotate(0)
 		

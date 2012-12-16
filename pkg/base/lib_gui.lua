@@ -407,13 +407,12 @@ function gui_create_scene(width, height, shared_rate)
 			if callback == nil then error("nil callback") end
 			local l = this.listeners
 			if not l[ge_type] then l[ge_type] = {} end
-			l[ge_type][#l[ge_type]+1] = callback
+			table.insert(l[ge_type], callback)
 		end
 		-- given a dT and list of events [ge_type, data] call the listeners with matching type and progress any alarms
 		function this.pump_listeners(dT, events)
-			local i
-			for i=1, #this.alarms do
-				this.alarms[i].tick(dT)
+			for k, v in pairs(this.alarms) do
+				this.alarms[k].tick(dT)
 			end
 			for i=1, #events do
 				local ev = events[i]
@@ -425,6 +424,31 @@ function gui_create_scene(width, height, shared_rate)
 				end
 			end
 			for k,v in pairs(this.children) do v.pump_listeners(dT, events) end
+		end
+		--Declare a self-cleaning alarm using the common.lua alarm syntax.
+		function this.alarm(options)
+			local a = alarm(options)
+			table.insert(this.alarms, a)
+			local on_trigger = a.on_trigger
+			local function wrap()
+				on_trigger()
+				for i=1, #this.alarms do
+					if this.alarms[i] == a then table.remove(this.alarms, i) break end
+				end				
+			end
+			a.on_trigger = wrap
+		end
+		--[[Declare a self-cleaning alarm using the common.lua alarm syntax, plus a
+			"name" option so that at most 1 of this alarm exists at one time.]]
+		function this.static_alarm(options)
+			local a = alarm(options)
+			this.alarms[options.name] = a
+			local on_trigger = a.on_trigger
+			local function wrap()
+				on_trigger()
+				this.alarms[options.name] = nil
+			end
+			a.on_trigger = wrap
 		end
 		return this
 	end
