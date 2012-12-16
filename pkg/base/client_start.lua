@@ -726,12 +726,6 @@ function h_key(key, state, modif)
 			elseif key == SDLK_RETURN then
 				if typing_msg ~= "" then
 					if typing_type == "Chat: " then
-						-- TODO: get this supported - needs to be serverside!
-						--[[
-						if typing_msg == "/kill" then
-							plr.damage(100, 0xFFC00000, plr.name.." committed suicide")
-						end]]
-
 						if not common.net_send(nil, common.net_pack("Bz", 0x0C, typing_msg)) then
 							print("ERR!")
 						end

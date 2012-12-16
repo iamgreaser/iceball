@@ -1075,22 +1075,6 @@ function new_player(settings)
 		end
 		this.scene.draw()
 		
-		-- TODO: not have this on all the time
-		--[[
-		client.model_render_bone_local(mdl_spade, mdl_spade_bone,
-			1-0.15, -h/w+0.25+((this.tool == TOOL_SPADE and 0.02*math.sin(rotpos*0.02)) or 0), 1.0,
-			rotpos*0.01, 0.0, 0.0, 0.2*((this.tool == TOOL_SPADE and 1.5) or 1.0))
-		client.model_render_bone_local(this.mdl_block, this.mdl_block_bone,
-			1-0.30, -h/w+0.2+((this.tool == TOOL_BLOCK and 0.02*math.sin(rotpos*0.02)) or 0), 1.0,
-			rotpos*0.01, 0.0, 0.0, 0.1*((this.tool == TOOL_BLOCK and 2.0) or 1.0))
-		client.model_render_bone_local(this.wpn.get_model(), 0,
-			1-0.45, -h/w+0.2+((this.tool == TOOL_GUN and 0.02*math.sin(rotpos*0.02)) or 0), 1.0,
-			rotpos*0.01, 0.0, 0.0, 0.2*((this.tool == TOOL_GUN and 2.0) or 1.0))
-		client.model_render_bone_local(mdl_nade, mdl_nade_bone,
-			1-0.60, -h/w+0.2+((this.tool == TOOL_NADE and 0.02*math.sin(rotpos*0.02)) or 0), 1.0,
-			rotpos*0.01, 0.0, 0.0, 0.1*((this.tool == TOOL_NADE and 2.0) or 1.0))
-		]]
-		
 		this.render()
 
 		if MODE_DEBUG_SHOWBOXES then

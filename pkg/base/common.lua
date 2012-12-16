@@ -209,7 +209,6 @@ weapons = {
 				end
 				
 				if cx2 and cy2 <= ylen-3 then
-					-- TODO: block health rather than instant block removal
 					bhealth_damage(cx2,cy2,cz2,MODE_BLOCK_DAMAGE_RIFLE)
 				end
 			end
