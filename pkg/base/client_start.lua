@@ -61,7 +61,8 @@ if not map_fname then
 end
 
 -- define keys
-controls_config = common.json_load(controls_config_filename)
+controls_config = common.json_load(controls_config_filename) or {}
+setmetatable(controls_config, {__index = function() return nil end})
 BTSK_FORWARD = controls_config.forward or SDLK_w
 BTSK_BACK    = controls_config.back or SDLK_s
 BTSK_LEFT    = controls_config.left or SDLK_a
