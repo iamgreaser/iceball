@@ -33,6 +33,7 @@ function snow_drop_part(x,z,t,bcast)
 	end
 end
 
+--[[
 function snow_drop(x,z,bcast)
 	local tl = common.map_pillar_get(x-1,z)
 	local tr = common.map_pillar_get(x+1,z)
@@ -49,8 +50,33 @@ function snow_drop(x,z,bcast)
 	elseif td[1+1] > tc[1+1] then
 		snow_drop_part(x,z+1,td,bcast)
 	else
-		snow_drop_part(x,z,tc)
+		snow_drop_part(x,z,tc,bcast)
 	end
+end
+]]
+function snow_drop(x,z,bcast)
+	local xlen,ylen,zlen
+	xlen,ylen,zlen = common.map_get_dims()
+	
+	local t1 = math.floor(math.random()*2)
+	local t2 = 2*math.floor(math.random()*2)-1
+	local gx,gz
+	gx = t2*t1
+	gz = t2*(1-t1)
+	
+	local tc = common.map_pillar_get(x,z)
+	local i
+	for i=1,100 do
+		local tn = common.map_pillar_get(x+gx,z+gz)
+		if tn[1+1] >= ylen-1 or tn[1+1] < tc[1+1] then
+			break
+		else
+			tc = tn
+			x = x + gx
+			z = z + gz
+		end
+	end
+	snow_drop_part(x%xlen,z%zlen,tc,bcast)
 end
 
 function snow_init_pissdown(p_snow)
@@ -112,7 +138,7 @@ if server then
 	--snow_init_pissdown(0.1)
 	snow_init_hook()
 	local snow_lasttime = nil
-	local snow_freq = 0.1
+	local snow_freq = 0.25
 	local snow_oldtick = server.hook_tick
 	function snow_tick(sec_current, sec_delta)
 		snow_lasttime = snow_lasttime or sec_current
@@ -120,7 +146,7 @@ if server then
 		local i
 		
 		-- hack to work around a bug
-		if snow_lasttime - sec_current > 5 then
+		if snow_lasttime - sec_current > 3 then
 			snow_lasttime = sec_current
 		end
 		
@@ -128,7 +154,14 @@ if server then
 			local xlen,ylen,zlen
 			xlen,ylen,zlen = common.map_get_dims()
 			for i=1,5 do
-				snow_drop(math.floor(math.random()*xlen),math.floor(math.random()*zlen),true)
+				local x,z
+				while true do
+					x = math.floor(math.random()*xlen)
+					z = math.floor(math.random()*zlen)
+					local t = common.map_pillar_get(x,z)
+					if t[1+1] < ylen-1 then break end
+				end
+				snow_drop(x,z,true)
 			end
 			snow_lasttime = snow_lasttime + snow_freq
 			ct = ct - 1
