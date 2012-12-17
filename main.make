@@ -23,7 +23,7 @@ $(OBJDIR):
 $(BINNAME): $(OBJS)
 	$(CC) -o $(BINNAME) $(LDFLAGS) $(OBJS) $(LIBS)
 
-$(OBJDIR)/lua.o: $(SRCDIR)/lua.c $(INCDIR)/lua_*.h $(INCLUDES)
+$(OBJDIR)/lua.o: $(SRCDIR)/lua.c $(SRCDIR)/lua_*.h $(INCLUDES)
 	$(CC) -c -o $@ $(CFLAGS) $<
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c $(OBJDIR) $(INCLUDES)
