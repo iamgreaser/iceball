@@ -2,7 +2,11 @@
 
 CFLAGS = -DDEDI -pg -O2 -fno-strict-aliasing -g -Wall -Wextra \
 	-Wno-unused-variable -Wno-unused-parameter \
-	-Wno-unused-but-set-variable $(CFLAGS_EXTRA)
+	-Wno-unused-but-set-variable $(CFLAGS_EXTRA) \
+	-I $(INCDIR) \
+	$(HEADERS_LUA)
+
+HEADERS_LUA =
 
 LDFLAGS = -pg -g $(LDFLAGS_EXTRA)
 LIBS_Lua = -llua
@@ -12,5 +16,7 @@ LIBS = -lm $(LIBS_Lua) $(LIBS_zlib)
 BINNAME = dedi_iceball
 
 OBJDIR = build/dedi
+SRCDIR = source
+INCDIR = include
 
 include main.make
