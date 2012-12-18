@@ -492,3 +492,23 @@ function alarm(options)
 	return this
 end
 
+function sort_players()
+	players_sorted = {}
+	for k,v in ipairs(players) do
+		players_sorted[k] = v
+	end
+	table.sort(players_sorted,
+		function(x, y)
+			if x.score == y.score then
+				if x.kills == y.kills then
+					if x.deaths == y.deaths then
+						return x.pid < y.pid
+					end
+					return x.deaths < y.deaths
+				end
+				return x.kills > y.kills
+			end
+			return x.score > y.score
+		end
+	)
+end

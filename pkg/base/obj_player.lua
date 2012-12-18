@@ -292,6 +292,7 @@ function new_player(settings)
 			this.team, this.weapon,
 			this.score, this.kills, this.deaths,
 			this.name, this.squad))
+		sort_players()
 	end
 	
 	function this.tent_restock()
@@ -1379,7 +1380,7 @@ function new_player(settings)
 			bi = 1
 			gi = 1
 			for i=1,players.max do
-				local plr = players[i]
+				local plr = players_sorted[i]
 				if plr ~= nil then
 					local sn = plr.name
 					if plr.squad then
