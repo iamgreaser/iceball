@@ -111,6 +111,7 @@ function new_player(settings)
 		
 		this.t_respawn = nil
 		this.t_switch = nil
+		this.t_nadeboom = nil
 		this.t_newnade = nil
 		this.t_newblock = nil
 		this.t_newspade1 = nil
@@ -477,6 +478,35 @@ function new_player(settings)
 			net_broadcast_team(this.team, common.net_pack("B", 0x1C))
 		end
 	end
+	
+	function this.throw_nade(sec_current)
+		local sya = math.sin(this.angy)
+		local cya = math.cos(this.angy)
+		local sxa = math.sin(this.angx)
+		local cxa = math.cos(this.angx)
+		local fwx,fwy,fwz
+		fwx,fwy,fwz = sya*cxa, sxa, cya*cxa
+		
+		local n = new_nade({
+			x = this.x,
+			y = this.y,
+			z = this.z,
+			vx = fwx*MODE_NADE_SPEED*MODE_NADE_STEP+this.vx*MODE_NADE_STEP,
+			vy = fwy*MODE_NADE_SPEED*MODE_NADE_STEP+this.vy*MODE_NADE_STEP,
+			vz = fwz*MODE_NADE_SPEED*MODE_NADE_STEP+this.vz*MODE_NADE_STEP,
+			fuse = math.max(0, this.t_nadeboom - sec_current)
+		})
+		nade_add(n)
+		common.net_send(nil, common.net_pack("BhhhhhhH",
+			0x1B,
+			math.floor(n.x*32+0.5),
+			math.floor(n.y*32+0.5),
+			math.floor(n.z*32+0.5),
+			math.floor(n.vx*256+0.5),
+			math.floor(n.vy*256+0.5),
+			math.floor(n.vz*256+0.5),
+			math.floor(n.fuse*100+0.5)))
+	end
 
 	function this.tick(sec_current, sec_delta)
 		local xlen,ylen,zlen
@@ -539,6 +569,19 @@ function new_player(settings)
 		
 		if this.t_newspade1 and sec_current >= this.t_newspade1 then
 			this.t_newspade1 = nil
+		end
+		
+		if this.t_newnade and sec_current >= this.t_newnade then
+			this.t_newnade = nil
+		end
+		
+		if this.t_nadeboom then
+			if (not this.ev_lmb) or sec_current >= this.t_nadeboom then
+				this.throw_nade(sec_current)
+				this.t_newnade = sec_current + MODE_DELAY_NADE_THROW
+				this.t_nadeboom = nil
+				this.ev_lmb = false
+			end
 		end
 		
 		if not this.ev_rmb then
@@ -658,29 +701,14 @@ function new_player(settings)
 				
 				end
 			elseif this.tool == TOOL_NADE then
-				if this.grenades > 0 then
-					-- TODO: allow smaller fuses
-					local n = new_nade({
-						x = this.x,
-						y = this.y,
-						z = this.z,
-						vx = fwx*MODE_NADE_SPEED*MODE_NADE_STEP+this.vx*MODE_NADE_STEP,
-						vy = fwy*MODE_NADE_SPEED*MODE_NADE_STEP+this.vy*MODE_NADE_STEP,
-						vz = fwz*MODE_NADE_SPEED*MODE_NADE_STEP+this.vz*MODE_NADE_STEP,
-						fuse = 3.0
-					})
-					nade_add(n)
-					common.net_send(nil, common.net_pack("BhhhhhhH",
-						0x1B,
-						math.floor(n.x*32+0.5),
-						math.floor(n.y*32+0.5),
-						math.floor(n.z*32+0.5),
-						math.floor(n.vx*256+0.5),
-						math.floor(n.vy*256+0.5),
-						math.floor(n.vz*256+0.5),
-						math.floor(n.fuse*100+0.5)))
-					this.ev_lmb = false
+				if (not this.t_newnade) and this.grenades > 0 then
+					if (not this.t_nadeboom) then
+						this.grenades = this.grenades - 1
+						this.t_nadeboom = sec_current + MODE_NADE_FUSE
+					end
 				end
+			else
+				
 			end
 		elseif this.ev_rmb then
 			if this.tool == TOOL_BLOCK and this.blx3 and this.alive then

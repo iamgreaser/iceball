@@ -387,7 +387,8 @@ function server.hook_tick(sec_current, sec_delta)
 				net_broadcast(sockfd, common.net_pack("BBBBB"
 					, 0x18, cli.plrid, cr, cg, cb))
 			end
-		elseif cid == 0x1B and plr then
+		elseif cid == 0x1B and plr and plr.grenades > 0 then
+			plr.grenades = plr.grenades - 1
 			local x,y,z,vx,vy,vz,fuse
 			x,y,z,vx,vy,vz,fuse, pkt = common.net_unpack("hhhhhhH", pkt)
 			local n = new_nade({
