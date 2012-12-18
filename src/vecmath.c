@@ -17,14 +17,13 @@
 
 #include "common.h"
 
-#ifndef __SSE__
-
 vec4f_t mtx_apply_vec(matrix_t *mtx, vec4f_t *vec)
 {
 	int i,j;
-	vec4f_t ret;
 
-	// TODO: SIMD versions
+#ifndef __SSE__
+
+	vec4f_t ret;
 
 	for(j = 0; j < 4; j++)
 	{
@@ -33,76 +32,26 @@ vec4f_t mtx_apply_vec(matrix_t *mtx, vec4f_t *vec)
 			ret.a[j] += vec->a[i] * mtx->c[i].a[j];
 	}
 
-	return ret;
-
-}
-
 #else
 
-// MatrixMultiply3 -- a C++/ASM version of MatrixMultiply2, which takes
-// advantage of Intel's SSE instructions.  This version requires that
-// M be in column-major order.
-//
-// Performance: 57 cycles/vector
-vec4f_t mtx_apply_vec(matrix_t *mtx, vec4f_t *vec)
-{
-	vec4f_t ret;
+	vec4f_t ret = {.m = {}}; //c99 + vector extensions, hopefully it optimizes
+	vec4f_t accum;
 
-	vec4f_t xmm0;
-	vec4f_t xmm1;
-	vec4f_t xmm4;
-	vec4f_t xmm5;
-	vec4f_t xmm6;
-	vec4f_t xmm7;
+	const mask[4] = {0x00,0x55,0xAA,0xFF};
 
-	// load columns of matrix into xmm4-7
-	_mm_store_ps(mtx->c[0].a, xmm4.m);
-        _mm_store_ps(mtx->c[1].a, xmm5.m);
-	_mm_store_ps(mtx->c[2].a, xmm6.m);
-	_mm_store_ps(mtx->c[3].a, xmm7.m);
-
-	// load vec into xmm0.
-        _mm_store_ps(vec->a, xmm0.m);
-
-	// we'll store the final result in %[xmm_out]; initialize it
-	// to zero
-	xmm0.m = __builtin_ia32_xorps (ret.m, ret.m);
-
-	// broadcast x into xmm1, multiply it by the first
-	// column of the matrix (xmm4), and add it to the total
-	_mm_store_ps(xmm0.a, xmm1.m);
-	__builtin_ia32_shufps(xmm1.m, xmm1.m, 0x00);
-	__builtin_ia32_mulps(xmm1.m, xmm4.m);
-	__builtin_ia32_addps(ret.m, xmm1.m);
-
-	// repeat the process for y, z and w
-	_mm_store_ps(xmm0.a, xmm1.m);
-	__builtin_ia32_shufps(xmm1.m, xmm1.m, 0x55);
-	__builtin_ia32_mulps(xmm1.m, xmm5.m);
-	__builtin_ia32_addps(ret.m, xmm1.m);
-	_mm_store_ps(xmm0.a, xmm1.m);
-	__builtin_ia32_shufps(xmm1.m, xmm1.m, 0xAA);
-	__builtin_ia32_mulps(xmm1.m, xmm6.m);
-	__builtin_ia32_addps(ret.m, xmm1.m);
-	_mm_store_ps(xmm0.a, xmm1.m);
-	__builtin_ia32_shufps(xmm1.m, xmm1.m, 0xFF);
-	__builtin_ia32_mulps(xmm1.m, xmm7.m);
-	__builtin_ia32_addps(ret.m, xmm1.m);
-
-	return ret;
-}
+	for(i = 0; i < 4; i++)
+	{
+		accum.m = vec->m;
+		__builtin_ia32_shufps(accum.m, accum.m, mask[i]);
+		accum.m *= mtx->c[i].m;
+		ret.m += accum.m;
+	}
 
 #endif
 
-
-void mtx_identity(matrix_t *mtx)
-{
-	int i,j;
-
-	for(i = 0; i < 4; i++)
-		for(j = 0; j < 4; j++)
-			mtx->c[j].a[i] = (i==j ? 1 : 0);
+	return ret;
 }
+
 
 void cam_point_dir(camera_t *model, float dx, float dy, float dz, float zoom, float roll)
 {
