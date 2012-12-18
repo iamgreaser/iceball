@@ -286,11 +286,11 @@ function new_player(settings)
 	end
 	
 	function this.update_score()
-		net_broadcast(nil, common.net_pack("BBBBhhhz",
+		net_broadcast(nil, common.net_pack("BBBBhhhzz",
 			0x05, this.pid,
 			this.team, this.weapon,
 			this.score, this.kills, this.deaths,
-			this.name))
+			this.name, this.squad))
 	end
 	
 	function this.tent_restock()
@@ -405,9 +405,9 @@ function new_player(settings)
 
 	function this.grenade_damage(amt, enemy)
 		--print("damage",this.name,part,amt)
-		local midmsg = " killed "
-		if this.team == enemy.team then
-			midmsg = " teamkilled "
+		local midmsg = " grenaded "
+		if this.team == enemy.team and this ~= enemy then
+			error("THIS SHOULD NEVER HAPPEN")
 		end
 
 		local r,g,b
@@ -1350,7 +1350,11 @@ function new_player(settings)
 			for i=1,players.max do
 				local plr = players[i]
 				if plr ~= nil then
-					local s = plr.name.." #"..i..": "
+					local sn = plr.name
+					if plr.squad then
+						sn = sn.." ["..plr.squad.."]"
+					end
+					local s = sn.." #"..i..": "
 						..plr.score.." ("..plr.kills.."/"..plr.deaths..")"
 					if plr.team == 1 then
 						font_mini.print(w / 2 + 50, gi * 15 + 150
@@ -1358,7 +1362,7 @@ function new_player(settings)
 							, s)
 						gi = gi + 1
 					else
-						font_mini.print(w / 2 - 50 - (6 * #plr.name), bi * 15 + 150
+						font_mini.print(w / 2 - 50 - (6 * #s), bi * 15 + 150
 							, argb_split_to_merged(150, 150, 255, 255)
 							, s)
 						bi = bi + 1

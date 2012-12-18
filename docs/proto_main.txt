@@ -136,7 +136,7 @@ Iceball Base Mod:
 		
 		note, for C->S pid MUST be 0x00
 	
-	0x05 pid team weapon score.s16 kills.s16 deaths.s16 namelen name[namelen]: (S->C) @
+	0x05 pid team weapon score.s16 kills.s16 deaths.s16 name.z squad.z: (S->C) @
 		adds player to server
 		
 		note, this can be used to update a player on the server

@@ -450,19 +450,21 @@ function h_tick_main(sec_current, sec_delta)
 				plr.set_orient_recv(ya, xa, keys)
 			end
 		elseif cid == 0x05 then
-			-- 0x05 pid team weapon score.s16 kills.s16 deaths.s16 namelen name[namelen]: (S->C)
-			local pid, tidx, wpn, score, kills, deaths, name
-			pid, tidx, wpn, score, kills, deaths, name, pkt
-				= common.net_unpack("Bbbhhhz", pkt)
+			-- 0x05 pid team weapon score.s16 kills.s16 deaths.s16 name.z squad.z: (S->C)
+			local pid, tidx, wpn, score, kills, deaths, name, squad
+			pid, tidx, wpn, score, kills, deaths, name, squad, pkt
+				= common.net_unpack("Bbbhhhzz", pkt)
 			
 			if players[pid] then
 				-- TODO: update wpn/tidx/name
+				players[pid].squad = (squad ~= "" and squad) or nil
+				players[pid].name = name
 			else
 				players[pid] = new_player({
 					name = name,
 					--[=[squad = squads[(i-1) % 2][
 						(math.floor((i-1)/2) % 4)+1],]=]
-					squad = nil,
+					squad = (squad ~= "" and squad) or nil,
 					team = tidx,
 					weapon = wpn,
 					pid = pid,

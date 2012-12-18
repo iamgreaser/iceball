@@ -247,6 +247,16 @@ function server.hook_tick(sec_current, sec_delta)
 			local s = nil
 			if string.sub(msg,1,4) == "/me " then
 				s = "* "..plr.name.." "..string.sub(msg,5)
+			elseif string.sub(msg,1,7) == "/squad " then
+				local s = string.sub(msg,8)
+				if s ~= "" then
+					if s == "none" then
+						plr.squad = nil
+					else
+						plr.squad = s
+					end
+					plr.update_score()
+				end
 			elseif msg == "/kill" then
 				plr.set_health_damage(0, 0xFF800000, plr.name.." shuffled off this mortal coil", plr)
 			else
@@ -290,11 +300,11 @@ function server.hook_tick(sec_current, sec_delta)
 				for i=1,players.max do
 					local plr = players[i]
 					if plr then
-						common.net_send(sockfd, common.net_pack("BBBBhhhz",
+						common.net_send(sockfd, common.net_pack("BBBBhhhzz",
 							0x05, i,
 							plr.team, plr.weapon,
 							plr.score, plr.kills, plr.deaths,
-							plr.name))
+							plr.name, plr.squad))
 						common.net_send(sockfd, common.net_pack("BBfffBB",
 							0x10, i,
 							plr.x, plr.y, plr.z,
@@ -322,11 +332,11 @@ function server.hook_tick(sec_current, sec_delta)
 				end
 				
 				-- relay this player to everyone
-				net_broadcast(nil, common.net_pack("BBBBhhhz",
+				net_broadcast(nil, common.net_pack("BBBBhhhzz",
 					0x05, cli.plrid,
 					plr.team, plr.weapon,
 					plr.score, plr.kills, plr.deaths,
-					plr.name))
+					plr.name, plr.squad))
 				net_broadcast(nil, common.net_pack("BBfffBB",
 					0x10, cli.plrid,
 					plr.x, plr.y, plr.z,
@@ -387,7 +397,8 @@ function server.hook_tick(sec_current, sec_delta)
 				vx = vx/256,
 				vy = vy/256,
 				vz = vz/256,
-				fuse = fuse/100
+				fuse = fuse/100,
+				pid = cli.plrid
 			})
 			nade_add(n)
 			net_broadcast(sockfd, common.net_pack("BhhhhhhH",

@@ -52,6 +52,8 @@ function new_nade(settings)
 		vy = settings.vy,
 		vz = settings.vz,
 		
+		pid = settings.pid,
+		
 		trem = 0.0,
 		fuse = settings.fuse,
 		dead = false
@@ -102,6 +104,36 @@ function new_nade(settings)
 		local xlen,ylen,zlen
 		xlen,ylen,zlen = common.map_get_dims()
 		
+		local hplr = this.pid and players[this.pid]
+		
+		local i
+		for i=1,players.max do
+			local plr = players[i]
+			if plr and ((not hplr) or plr == hplr or plr.team ~= hplr.team) then
+				local dx,dy,dz
+				dx = plr.x-this.x
+				dy = (plr.y+0.9)-this.y
+				dz = plr.z-this.z
+				
+				local dd = dx*dx+dy*dy+dz*dz
+				if dd < MODE_NADE_RANGE*MODE_NADE_RANGE then
+					dd = math.sqrt(dd)
+					dx = dx/dd
+					dy = dy/dd
+					dz = dz/dd
+					local nd
+					nd = trace_map_ray_dist(this.x,this.y,this.z, dx,dy,dz, dd)
+					if not nd then
+						local dmg = ((MODE_NADE_RANGE-dd)/MODE_NADE_RANGE)
+						dmg = dmg * dmg
+						dmg = dmg * MODE_NADE_DAMAGE
+						
+						plr.grenade_damage(dmg, hplr)
+					end
+				end
+			end
+		end
+		
 		if map_block_get(x0,y0,z0) ~= nil then
 			if y0 < ylen-2 then
 				map_block_break(x0,y0,z0)
@@ -121,7 +153,7 @@ function new_nade(settings)
 			end
 		end
 		
-		-- TODO: hurt players!
+		
 	end
 	
 	function this.tick(sec_current, sec_delta)
