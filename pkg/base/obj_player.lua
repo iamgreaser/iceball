@@ -1375,6 +1375,7 @@ function new_player(settings)
 		end
 
 		if show_scores then
+			local bi, gi
 			bi = 1
 			gi = 1
 			for i=1,players.max do
@@ -1402,11 +1403,27 @@ function new_player(settings)
  		end
 
 		if quitting then
+			local quit_msg
 			quit_msg = "Are you sure? (Y/N)"
 			font_large.print((w - 24 * #quit_msg) / 2
 				, h / 4
 				, argb_split_to_merged(255, 50, 50, 255)
 				, quit_msg)
+		end
+
+		--TODO: update bluetext/greentext with the actual keys (if changed in controls.json)
+		if team_change then
+			local bluetext, greentext
+			bluetext = "Press 1 to join Blue"
+			greentext = "Press 2 to join Green"
+			font_large.print((w - 24 * #bluetext) / 2
+				, 3 * h / 4
+				, argb_split_to_merged(0, 0, 255, 255)
+				, bluetext)
+			font_large.print((w - 24 * #greentext) / 2
+				, 3 * h / 4 + 40
+				, argb_split_to_merged(0, 255, 0, 255)
+				, greentext)
 		end
 	end
 

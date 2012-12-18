@@ -94,6 +94,8 @@ BTSK_NO   = SDLK_n
 BTSK_DEBUG = SDLK_F1
 BTSK_MAP = controls_config.map or SDLK_m
 
+BTSK_TEAM = controls_config.team or SDLK_COMMA
+
 chat_killfeed = {head = 1, scroll = nil, queue = {}}
 chat_text = {head = 1, scroll = nil, queue = {}}
 
@@ -331,6 +333,8 @@ show_scores = false
 
 quitting = false
 
+team_change = false
+
 -- load images
 img_crosshair = client.img_load("pkg/base/gfx/crosshair.tga")
 
@@ -455,9 +459,10 @@ function h_tick_main(sec_current, sec_delta)
 				= common.net_unpack("Bbbhhhzz", pkt)
 			
 			if players[pid] then
-				-- TODO: update wpn/tidx/name
+				-- TODO: update wpn/name
 				players[pid].squad = (squad ~= "" and squad) or nil
 				players[pid].name = name
+				players[pid].team = tidx
 			else
 				players[pid] = new_player({
 					name = name,
@@ -786,6 +791,24 @@ function h_key(key, state, modif)
 			elseif key == BTSK_NO then
 				quitting = false
 			end
+		elseif team_change then
+			local team
+			if key == BTSK_TOOL1 then
+				team = 0
+				team_change = false
+			elseif key == BTSK_TOOL2 then
+				team = 1
+				team_change = false
+			end
+			if key == BTSK_QUIT then
+				team_change = false
+			else
+				local plr
+				plr = players[players.current]
+				if plr ~= nil and team ~= nil and team ~= plr.team then
+					common.net_send(nil, common.net_pack("Bbbz", 0x11, team, WPN_RIFLE, plr.name or ""))
+				end
+			end
 		elseif key == BTSK_DEBUG then
 			debug_enabled = not debug_enabled
 		elseif key == BTSK_QUIT then
@@ -857,6 +880,8 @@ function h_key(key, state, modif)
 			common.net_send(nil, common.net_pack("BBBBB",
 				0x18, 0x00,
 				plr.blk_color[1],plr.blk_color[2],plr.blk_color[3]))
+		elseif key == BTSK_TEAM then
+			team_change = true
 		end
 	end
 end

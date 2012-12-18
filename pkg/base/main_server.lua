@@ -283,6 +283,19 @@ function server.hook_tick(sec_current, sec_delta)
 				local c = argb_split_to_merged(cb[1],cb[2],cb[3])
 				net_broadcast_team(plr.team, common.net_pack("BIz", 0x0E, c, s))
 			end
+		elseif cid == 0x11 and plr then
+			local tidx, wpn, name
+			tidx, wpn, name, pkt = common.net_unpack("bbz", pkt)
+			name = (name ~= "" and name) or name_generate()
+			plr.set_health_damage(0, 0xFF800000, plr.name.." changed teams", nil)
+			plr.team = tidx
+			net_broadcast(nil, common.net_pack("BBBBhhhzz",
+					0x05, plr.pid,
+					plr.team, plr.weapon,
+					plr.score, plr.kills, plr.deaths,
+					plr.name, plr.squad))
+			net_broadcast(nil, common.net_pack("BIz", 0x0E, 0xFF800000,
+				"* Player "..plr.name.." has joined the "..teams[plr.team].name.." team"))
 		elseif cid == 0x11 and not plr then
 			local tidx, wpn, name
 			tidx, wpn, name, pkt = common.net_unpack("bbz", pkt)
