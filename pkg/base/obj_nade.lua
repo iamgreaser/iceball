@@ -99,15 +99,20 @@ function new_nade(settings)
 			, math.floor(this.y)
 			, math.floor(this.z)
 		
+		local xlen,ylen,zlen
+		xlen,ylen,zlen = common.map_get_dims()
+		
 		if map_block_get(x0,y0,z0) ~= nil then
-			map_block_break(x0,y0,z0)
-			net_broadcast(nil, common.net_pack("BHHH"
-				, 0x09, x0,y0,z0))
+			if y0 < ylen-2 then
+				map_block_break(x0,y0,z0)
+				net_broadcast(nil, common.net_pack("BHHH"
+					, 0x09, x0,y0,z0))
+			end
 		else
 			for z=z0-1,z0+1 do
 			for x=x0-1,x0+1 do
 			for y=y0-1,y0+1 do
-				if map_block_break(x,y,z) then
+				if y < ylen-2 and map_block_break(x,y,z) then
 					net_broadcast(nil, common.net_pack("BHHH"
 						, 0x09, x,y,z))
 				end
