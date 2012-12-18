@@ -26,8 +26,6 @@ LIBS = -Lwinlibs -lm -lmingw32 $(LIBS_Lua) $(LIBS_SDL) $(LIBS_zlib) $(LIBS_Winsu
 BINNAME = iceball.exe
 
 OBJDIR = build/mingw32
-SRCDIR = src
-INCDIR = include
 
 MINGPREFIX = i686-pc-mingw32
 CC = $(MINGPREFIX)-gcc

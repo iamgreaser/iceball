@@ -2,6 +2,8 @@
 
 TOOLS = 
 
+SRCDIR = src
+INCDIR = include
 INCLUDES = $(INCDIR)/common.h
 OBJS = \
 	$(OBJDIR)/main.o \
@@ -23,7 +25,7 @@ $(OBJDIR):
 $(BINNAME): $(OBJS)
 	$(CC) -o $(BINNAME) $(LDFLAGS) $(OBJS) $(LIBS)
 
-$(OBJDIR)/lua.o: $(SRCDIR)/lua.c $(SRCDIR)/lua_*.h $(INCLUDES)
+$(OBJDIR)/lua.o: $(SRCDIR)/lua.c $(SRCDIR)/lua_*.h $(OBJDIR) $(INCLUDES)
 	$(CC) -c -o $@ $(CFLAGS) $<
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c $(OBJDIR) $(INCLUDES)

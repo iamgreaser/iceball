@@ -19,8 +19,5 @@ LIBS = -lm $(LIBS_Lua) $(LIBS_SDL) $(LIBS_zlib)
 BINNAME = iceball
 
 OBJDIR = build/unix
-SRCDIR = src
-INCDIR = include
-
 
 include main.make

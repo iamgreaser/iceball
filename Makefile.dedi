@@ -16,7 +16,5 @@ LIBS = -lm $(LIBS_Lua) $(LIBS_zlib)
 BINNAME = dedi_iceball
 
 OBJDIR = build/dedi
-SRCDIR = src
-INCDIR = include
 
 include main.make
