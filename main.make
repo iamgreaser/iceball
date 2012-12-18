@@ -2,7 +2,7 @@
 
 TOOLS = 
 
-INCLUDES = common.h
+INCLUDES = $(INCDIR)/common.h
 OBJS = \
 	$(OBJDIR)/main.o \
 	$(OBJDIR)/vecmath.o \
@@ -12,7 +12,7 @@ OBJS = \
 	$(OBJDIR)/path.o $(OBJDIR)/json.o \
 	$(OBJDIR)/wav.o
 
-all: $(OBJDIR) $(BINNAME) $(TOOLS)
+all: $(BINNAME) $(TOOLS)
 
 clean:
 	rm -f $(OBJS)
@@ -23,9 +23,9 @@ $(OBJDIR):
 $(BINNAME): $(OBJS)
 	$(CC) -o $(BINNAME) $(LDFLAGS) $(OBJS) $(LIBS)
 
-$(OBJDIR)/lua.o: lua.c lua_*.h $(INCLUDES)
+$(OBJDIR)/lua.o: $(SRCDIR)/lua.c $(SRCDIR)/lua_*.h $(INCLUDES)
 	$(CC) -c -o $@ $(CFLAGS) $<
 
-$(OBJDIR)/%.o: %.c $(INCLUDES)
+$(OBJDIR)/%.o: $(SRCDIR)/%.c $(OBJDIR) $(INCLUDES)
 	$(CC) -c -o $@ $(CFLAGS) $<
 
