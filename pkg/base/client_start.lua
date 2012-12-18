@@ -464,6 +464,7 @@ function h_tick_main(sec_current, sec_delta)
 				players[pid].squad = (squad ~= "" and squad) or nil
 				players[pid].name = name
 				players[pid].team = tidx
+				players[pid].recolor_team()
 			else
 				players[pid] = new_player({
 					name = name,

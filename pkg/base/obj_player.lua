@@ -56,6 +56,13 @@ function new_player(settings)
 		common.model_bone_set(this.mdl_player, mdl_player_leg, mname, mdata)
 	end
 
+	function this.recolor_team()
+		local c = teams[this.team].color_mdl
+		local r,g,b
+		r,g,b = c[1],c[2],c[3]
+		prv_recolor_team(r,g,b)
+	end
+
 	local function prv_recolor_block(r,g,b)
 		if not client then return end
 		local mname,mdata
