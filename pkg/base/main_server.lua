@@ -377,6 +377,21 @@ function server.hook_tick(sec_current, sec_delta)
 				net_broadcast(sockfd, common.net_pack("BBBBB"
 					, 0x18, cli.plrid, cr, cg, cb))
 			end
+		elseif cid == 0x1B and plr then
+			local x,y,z,vx,vy,vz,fuse
+			x,y,z,vx,vy,vz,fuse, pkt = common.net_unpack("hhhhhhH", pkt)
+			local n = new_nade({
+				x = x/32,
+				y = y/32,
+				z = z/32,
+				vx = vx/256,
+				vy = vy/256,
+				vz = vz/256,
+				fuse = fuse/100
+			})
+			nade_add(n)
+			net_broadcast(sockfd, common.net_pack("BhhhhhhH",
+				0x1B,x,y,z,vx,vy,vz,fuse))
 		end
 		-- TODO!
 	end
@@ -388,6 +403,11 @@ function server.hook_tick(sec_current, sec_delta)
 			plr.tick(sec_current, sec_delta)
 		end
 	end
+	
+	for i=nades.head,nades.tail do
+		if nades[i] then nades[i].tick(sec_current, sec_delta) end
+	end
+	nade_prune(sec_current)
 	
 	for i=1,#intent do
 		intent[i].tick(sec_current, sec_delta)

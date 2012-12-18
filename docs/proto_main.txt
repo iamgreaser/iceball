@@ -267,7 +267,7 @@ Iceball Base Mod:
 		throw grenade
 		
 		px,py,pz is the start position (11:5)
-		vx,vy,vz is the velocity (11:5)
+		vx,vy,vz is the velocity (8:8)
 		
 		time/100 is how long in seconds until the grenade explodes
 	

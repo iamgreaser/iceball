@@ -657,6 +657,30 @@ function new_player(settings)
 				end
 				
 				end
+			elseif this.tool == TOOL_NADE then
+				if this.grenades > 0 then
+					-- TODO: allow smaller fuses
+					local n = new_nade({
+						x = this.x,
+						y = this.y,
+						z = this.z,
+						vx = fwx*MODE_NADE_SPEED*MODE_NADE_STEP+this.vx*MODE_NADE_STEP,
+						vy = fwy*MODE_NADE_SPEED*MODE_NADE_STEP+this.vy*MODE_NADE_STEP,
+						vz = fwz*MODE_NADE_SPEED*MODE_NADE_STEP+this.vz*MODE_NADE_STEP,
+						fuse = 3.0
+					})
+					nade_add(n)
+					common.net_send(nil, common.net_pack("BhhhhhhH",
+						0x1B,
+						math.floor(n.x*32+0.5),
+						math.floor(n.y*32+0.5),
+						math.floor(n.z*32+0.5),
+						math.floor(n.vx*256+0.5),
+						math.floor(n.vy*256+0.5),
+						math.floor(n.vz*256+0.5),
+						math.floor(n.fuse*100+0.5)))
+					this.ev_lmb = false
+				end
 			end
 		elseif this.ev_rmb then
 			if this.tool == TOOL_BLOCK and this.blx3 and this.alive then
@@ -957,7 +981,7 @@ function new_player(settings)
 		elseif this.tool == TOOL_NADE then
 			client.model_render_bone_global(mdl_nade, mdl_nade_bone,
 				this.x+mdl_x, this.y+this.jerkoffs+mdl_y, this.z+mdl_z,
-				0.0, -this.angx, this.angy, 0.5)
+				0.0, -this.angx, this.angy, 1.0)
 		end
 
 		client.model_render_bone_global(this.mdl_player, mdl_player_arm,

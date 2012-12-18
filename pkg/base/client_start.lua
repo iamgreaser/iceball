@@ -599,6 +599,20 @@ function h_tick_main(sec_current, sec_delta)
 					plr.angy,plr.angx,
 					sec_current)
 			end
+		elseif cid == 0x1B then
+			local x,y,z,vx,vy,vz,fuse
+			x,y,z,vx,vy,vz,fuse, pkt = common.net_unpack("hhhhhhH", pkt)
+			
+			local n = new_nade({
+				x = x/32,
+				y = y/32,
+				z = z/32,
+				vx = vx/256,
+				vy = vy/256,
+				vz = vz/256,
+				fuse = fuse/100
+			})
+			nade_add(n)
 		elseif cid == 0x1C then
 			local plr = players[players.current]
 			if plr then
@@ -616,7 +630,12 @@ function h_tick_main(sec_current, sec_delta)
 			plr.tick(sec_current, sec_delta)
 		end
 	end
-
+	
+	for i=nades.head,nades.tail do
+		if nades[i] then nades[i].tick(sec_current, sec_delta) end
+	end
+	nade_prune(sec_current)
+	
 	for i=1,#intent do
 		intent[i].tick(sec_current, sec_delta)
 	end
@@ -766,8 +785,7 @@ function h_key(key, state, modif)
 			elseif key == BTSK_NO then
 				quitting = false
 			end
-		end
-		if key == BTSK_DEBUG then
+		elseif key == BTSK_DEBUG then
 			debug_enabled = not debug_enabled
 		elseif key == BTSK_QUIT then
 			quitting = true
@@ -1005,6 +1023,10 @@ function client.hook_render()
 		client.model_render_bone_global(mdl_tracer, mdl_tracer_bone,
 			x,y,z,
 			0.0, -tc.xa, tc.ya, 1)
+	end
+	
+	for i=nades.head,nades.tail do
+		if nades[i] then nades[i].render() end
 	end
 	
 end

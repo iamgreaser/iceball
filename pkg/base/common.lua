@@ -41,7 +41,8 @@ LIB_LIST = LIB_LIST or {
 	DIR_PKG_LIB.."/lib_vector.lua",
 	
 	DIR_PKG_LIB.."/obj_player.lua",
-	DIR_PKG_LIB.."/obj_intent.lua",	
+	DIR_PKG_LIB.."/obj_intent.lua",
+	DIR_PKG_LIB.."/obj_nade.lua",
 }
 
 -- load libs
@@ -62,6 +63,11 @@ MODE_CHEAT_FLY = false
 MODE_AUTOCLIMB = true
 MODE_AIRJUMP = false
 MODE_SOFTCROUCH = true
+
+MODE_NADE_SPEED = 30.0
+MODE_NADE_STEP = 0.1
+MODE_NADE_ADAMP = 0.5
+MODE_NADE_BDAMP = 1.0
 
 MODE_MINIMAP_RCIRC = false
 MODE_ENABLE_MINIMAP = true
@@ -359,7 +365,7 @@ end
 damage_blk = {}
 players = {max = 32, current = 1}
 intent = {}
-nades = {}
+nades = {head = 1, tail = 0}
 
 function string.split(s, sep, plain)
 	local start = 1
