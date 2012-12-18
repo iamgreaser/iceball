@@ -438,7 +438,9 @@ end
 function map_block_pick(x,y,z)
 	local xlen,ylen,zlen 
 	xlen,ylen,zlen = common.map_get_dims()
+	if x < 0 or x >= xlen then return end
 	if y < 0 or y >= ylen then return end
+	if z < 0 or z >= zlen then return end
 	
 	local t = map_pillar_raw_get(x,z)
 	local c = t[y+1]

@@ -714,10 +714,12 @@ function new_player(settings)
 			if this.tool == TOOL_BLOCK and this.blx3 and this.alive then
 				local ct,cr,cg,cb
 				ct,cr,cg,cb = map_block_pick(this.blx3, this.bly3, this.blz3)
-				this.blk_color = {cr,cg,cb}
-				common.net_send(nil, common.net_pack("BBBBB",
-					0x18, 0x00,
-					this.blk_color[1],this.blk_color[2],this.blk_color[3]))
+				if ct ~= nil then
+					this.blk_color = {cr,cg,cb}
+					common.net_send(nil, common.net_pack("BBBBB",
+						0x18, 0x00,
+						this.blk_color[1],this.blk_color[2],this.blk_color[3]))
+				end
 				this.ev_rmb = false
 			elseif this.tool == TOOL_SPADE and this.blx2 and this.alive then
 				if (not this.t_newspade2) then
