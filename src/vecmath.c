@@ -44,55 +44,50 @@ vec4f_t mtx_apply_vec(matrix_t *mtx, vec4f_t *vec)
 // M be in column-major order.
 //
 // Performance: 57 cycles/vector
-void MatrixMultiply3(matrix_t *mtx, vec4f_t *vec)
+vec4f_t mtx_apply_vec(matrix_t *mtx, vec4f_t *vec)
 {
 	vec4f_t ret;
-	__asm__ __volatile__ (
-		".intel_syntax prefix\n"
-		//"mov	%[vec], vin"
-		//"mov	edi, vout"
 
-		// load columns of matrix into xmm4-7
-		"movaps	%%xmm4, [%[mtx]]"
-		"movaps	%%xmm5, [%[mtx]+0x10]"
-		"movaps	%%xmm6, [%[mtx]+0x20]"
-		"movaps	%%xmm7, [%[mtx]+0x30]"
+	vec4f_t xmm0;
+	vec4f_t xmm1;
+	vec4f_t xmm4;
+	vec4f_t xmm5;
+	vec4f_t xmm6;
+	vec4f_t xmm7;
 
-		// load v into xmm0.
-		"movaps	%%xmm0, [%[vec]]"
+	// load columns of matrix into xmm4-7
+	_mm_store_ps(mtx->c[0].a, xmm4.m);
+        _mm_store_ps(mtx->c[1].a, xmm5.m);
+	_mm_store_ps(mtx->c[2].a, xmm6.m);
+	_mm_store_ps(mtx->c[3].a, xmm7.m);
 
-		// we'll store the final result in %[xmm_out]; initialize it
-		// to zero
-		"xorps	%[xmm_out], %[xmm_out]"
+	// load vec into xmm0.
+        _mm_store_ps(vec->a, xmm0.m);
 
-		// broadcast x into xmm1, multiply it by the first
-		// column of the matrix (xmm4), and add it to the total
-		"movaps	%%xmm1, %%xmm0"
-		"shufps	%%xmm1, %%xmm1, 0x00"
-		"mulps	%%xmm1, %%xmm4"
-		"addps	%[xmm_out], %%xmm1"
+	// we'll store the final result in %[xmm_out]; initialize it
+	// to zero
+	xmm0.m = __builtin_ia32_xorps (ret.m, ret.m);
 
-		// repeat the process for y, z and w
-		"movaps	%%xmm1, %%xmm0"
-		"shufps	%%xmm1, %%xmm1, 0x55"
-		"mulps	%%xmm1, %%xmm5"
-		"addps	%[xmm_out], %%xmm1"
-		"movaps	%%xmm1, %%xmm0"
-		"shufps	%%xmm1, %%xmm1, 0xAA"
-		"mulps	%%xmm1, %%xmm6"
-		"addps	%[xmm_out], %%xmm1"
-		"movaps	%%xmm1, %%xmm0"
-		"shufps	%%xmm1, %%xmm1, 0xFF"
-		"mulps	%%xmm1, %%xmm7"
-		"addps	%[xmm_out], %%xmm1"
+	// broadcast x into xmm1, multiply it by the first
+	// column of the matrix (xmm4), and add it to the total
+	_mm_store_ps(xmm0.a, xmm1.m);
+	__builtin_ia32_shufps(xmm1.m, xmm1.m, 0x00);
+	__builtin_ia32_mulps(xmm1.m, xmm4.m);
+	__builtin_ia32_addps(ret.m, xmm1.m);
 
-		// write the results to vout
-		//"movaps	[edi], xmm2"
-		".att_syntax prefix\n"
-		: [xmm_out] "=x" (ret)
-		: [mtx] "r" (mtx), [vec] "r" (vec)
-		: "xmm1", "xmm4", "xmm5", "xmm6", "xmm7"
-		);
+	// repeat the process for y, z and w
+	_mm_store_ps(xmm0.a, xmm1.m);
+	__builtin_ia32_shufps(xmm1.m, xmm1.m, 0x55);
+	__builtin_ia32_mulps(xmm1.m, xmm5.m);
+	__builtin_ia32_addps(ret.m, xmm1.m);
+	_mm_store_ps(xmm0.a, xmm1.m);
+	__builtin_ia32_shufps(xmm1.m, xmm1.m, 0xAA);
+	__builtin_ia32_mulps(xmm1.m, xmm6.m);
+	__builtin_ia32_addps(ret.m, xmm1.m);
+	_mm_store_ps(xmm0.a, xmm1.m);
+	__builtin_ia32_shufps(xmm1.m, xmm1.m, 0xFF);
+	__builtin_ia32_mulps(xmm1.m, xmm7.m);
+	__builtin_ia32_addps(ret.m, xmm1.m);
 
 	return ret;
 }

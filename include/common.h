@@ -106,7 +106,7 @@ typedef union vec4f
 	struct { float x,y,z,w; } __attribute__((__packed__)) p;
 	float a[4];
 #ifdef __SSE__
-	__m128 m;
+	float __attribute__ ((vector_size (16))) m;
 #endif
 } __attribute__((__packed__)) vec4f_t;
 
