@@ -318,7 +318,7 @@ function new_player(settings)
 	function this.set_health_damage(amt, kcol, kmsg, enemy)
 		this.health = amt
 		
-		if this.health <= 0 then
+		if this.health <= 0 and this.alive then
 			if server then
 				this.intel_drop()
 				this.deaths = this.deaths + 1
