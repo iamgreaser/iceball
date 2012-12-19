@@ -18,6 +18,12 @@
 print("pkg/base/main_server.lua starting")
 print(...)
 
+if common.version == nil then
+	error("You must have at least version 0.0-1 to run this server!"
+	.." iceballfornoobs-004 is FAR TOO OLD!"
+	.." If you are using an old git version, PLEASE UPDATE!")
+end
+
 dofile("pkg/base/common.lua")
 
 client_list = {fdlist={}}
@@ -72,9 +78,9 @@ end
 function server.hook_file(sockfd, ftype, fname)
 	print("hook_file:", sockfd, ftype, fname)
 	
-	--if (ftype == "icemap" or ftype == "map") and fname == "*MAP" then
-	if (ftype == "icemap" or ftype == "map") and fname == "pkg/MAP" then
-		-- hackish workaround so iceballfornoobs-004 still works
+	if (ftype == "icemap" or ftype == "map") and (fname == "pkg/MAP" or fname == "*MAP") then
+		-- pkg/MAP is a hackish workaround so iceballfornoobs-004 still works
+		-- once -004 support is dropped, please remove that approach!
 		return map_loaded
 	end
 	

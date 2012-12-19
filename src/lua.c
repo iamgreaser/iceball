@@ -228,6 +228,45 @@ int icelua_initfetch(void)
 	return 0;
 }
 
+void icelua_pushversion(lua_State *L, const char *tabname)
+{
+	char vbuf[32];
+	
+	snprintf(vbuf, 31, "%i.%i", VERSION_W, VERSION_X);
+	if(VERSION_Y != 0)
+		snprintf(vbuf+strlen(vbuf), 31-strlen(vbuf), ".%i", VERSION_Y);
+	if(VERSION_A != 0)
+		snprintf(vbuf+strlen(vbuf), 31-strlen(vbuf), "%c", VERSION_A+96);
+	if(VERSION_Z != 0)
+		snprintf(vbuf+strlen(vbuf), 31-strlen(vbuf), "-%i", VERSION_Z);
+	
+	lua_getglobal(L, tabname);
+	
+	lua_newtable(L);
+	
+	lua_pushstring(L, vbuf);
+	lua_setfield(L, -2, "str");
+	
+	lua_pushinteger(L, 
+		(((((((VERSION_W<<5) + VERSION_X
+		)<<7) + VERSION_Y
+		)<<5) + VERSION_A
+		)<<10) + VERSION_Z);
+	lua_setfield(L, -2, "num");
+	
+	lua_newtable(L);
+	lua_pushinteger(L, 1); lua_pushinteger(L, VERSION_W); lua_settable(L, -3);
+	lua_pushinteger(L, 2); lua_pushinteger(L, VERSION_X); lua_settable(L, -3);
+	lua_pushinteger(L, 3); lua_pushinteger(L, VERSION_Y); lua_settable(L, -3);
+	lua_pushinteger(L, 4); lua_pushinteger(L, VERSION_A); lua_settable(L, -3);
+	lua_pushinteger(L, 5); lua_pushinteger(L, VERSION_Z); lua_settable(L, -3);
+	lua_setfield(L, -2, "cmp");
+	
+	lua_setfield(L, -2, "version");
+	
+	lua_pop(L, 1);
+}
+
 int icelua_init(void)
 {
 	int i, argct;
@@ -273,7 +312,7 @@ int icelua_init(void)
 	icelua_loadbasefuncs(lstate_client);
 	icelua_loadbasefuncs(lstate_server);
 	
-	// shove some pathnames in
+	// shove some pathnames / versions in
 	if(lstate_server != NULL)
 	{
 		lua_getglobal(lstate_server, "common");
@@ -284,7 +323,17 @@ int icelua_init(void)
 		lua_pushstring(lstate_server, mod_basedir+4);
 		lua_setfield(lstate_server, -2, "base_dir");
 		lua_pop(lstate_server, 1);
+		
+		icelua_pushversion(lstate_server, "common");
+		icelua_pushversion(lstate_server, "server");
 	}
+	
+	if(lstate_client != NULL)
+	{
+		icelua_pushversion(lstate_client, "common");
+		icelua_pushversion(lstate_client, "client");
+	}
+	
 	/*
 	NOTE:
 	to call stuff, use lua_pcall.

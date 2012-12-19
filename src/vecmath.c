@@ -37,12 +37,12 @@ vec4f_t mtx_apply_vec(matrix_t *mtx, vec4f_t *vec)
 	vec4f_t ret = {.m = {}}; //c99 + vector extensions, hopefully it optimizes
 	vec4f_t accum;
 
-	const mask[4] = {0x00,0x55,0xAA,0xFF};
+	const int mask[4] = {0x00,0x55,0xAA,0xFF};
 
 	for(i = 0; i < 4; i++)
 	{
 		accum.m = vec->m;
-		__builtin_ia32_shufps(accum.m, accum.m, mask[i]);
+		_mm_shuffle_ps(accum.m, accum.m, mask[i]);
 		accum.m *= mtx->c[i].m;
 		ret.m += accum.m;
 	}

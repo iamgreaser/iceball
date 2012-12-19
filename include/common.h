@@ -15,6 +15,15 @@
     along with Iceball.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#define VERSION_W 0
+#define VERSION_X 0
+#define VERSION_Y 0
+#define VERSION_A 0
+#define VERSION_Z 1
+// Remember to bump "Z" basically every time you change the engine!
+// Z can only be 0 for official releases!
+
+
 #define MODEL_BONE_MAX  256
 #define MODEL_POINT_MAX 4096
 #define PACKET_LEN_MAX 1280

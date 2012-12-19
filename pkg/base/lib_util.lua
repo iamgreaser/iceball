@@ -114,3 +114,58 @@ function parse_commandline_options(options)
 	end
 	return loose, user_toggles, user_settings
 end
+
+--[[Create an alarm object. When run, counts down to the specified value
+based on the time delta passed in.
+
+time: The time limit of the alarm. Ignored with values less than 1.
+progress: the progress towards the time limit.
+active: Whether alarm is running or not.
+on_frame: Callback run every frame, passed in the dT of that frame.
+on_trigger: Callback run when alarm reaches its limit, passed in the dT of that frame.
+loop: Whether the alarm will continue after the first run.
+preserve_accumulator: Whether looping transfers overflow dT from the previous run
+
+]]
+function alarm(options)
+	
+	this = {}
+	
+	this.time = options.time or 1
+	this.progress = options.progress or 0
+	this.active = options.active or true
+	this.loop = options.loop or false
+	this.preserve_accumulator = options.preserve_accumulator or true
+	this.on_frame = options.on_frame or nil
+	this.on_trigger = options.on_trigger or nil
+
+	function this.tick(dT)
+		if this.active then
+			this.progress = this.progress + dT
+			if this.on_frame ~= nil then this.on_frame(dT) end
+			while this.progress >= this.time and this.active do
+				if this.on_trigger ~= nil then this.on_trigger(dT) end
+				if this.loop and this.time > 0 then
+					if this.preserve_accumulator then
+						this.progress = this.progress - this.time
+					else
+						this.progress = 0
+					end
+				else
+					this.active = false
+				end
+			end
+		end
+	end
+	
+	function this.restart()
+		this.progress = 0
+		this.active = true
+	end
+	
+	function this.time_remaining()
+		return this.time - this.progress
+	end
+	
+	return this
+end

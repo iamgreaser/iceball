@@ -1,23 +1,32 @@
-0.1.0.0 - Released YYYY-MM-DD.
+0.1.0/0.0 - Released YYYY-MM-DD.
 - Initial release.
 
 -------------------------------------------------------------------------------
 
 Version scheme:
-w.x.y.za
+Engine: w.x.ya
+Engine (git): w.x.ya-z
+Game:   w.x.ya/p.qb-r
+
 w.x = major base engine version. Note, 0.10 is > 0.9.
-y = minor base engine version, for quick fixes.
-z = major game version.
-a = minor game version (a lowercase letter), for quick fixes.
+y = minor base engine version, for bugfixes and whatnot. optional.
+a = subminor base engine version, for last-minute fixes. optional.
+z = git version. optional, must be 0 for releases and >=1 for nonreleases!
+
+p.qb-r = same as above but for game code (p is equivalent to w.x).
+p.q is mandatory; b is optional.
+These start at 0.0.
 
 Note, if you increase one of these, you reset those after it to zero
-(or blank for "a").
+(or blank for "a"/"b").
 
-"a" should never go past the letter z.
-But if it does, you might as well just bump "z" up a digit,
-and reset "a" to blank.
+"a"/"b" should never go past the letter z.
+But if it does, you might as well just bump "y"/"q" up a digit,
+and reset "a"/"b" to blank.
 
 Ultimately:
-- servers should always have the latest w.x.y.za version, and
-- clients and servers alike must always have the latest w.x version.
-
+- servers must always have the latest w.x.ya release version of the engine
+- clients must always have the latest w.x release version
+- clients ideally should have the latest w.x.ya release version
+- servers ideally should have the latest w.x.ya/p.qb version of the game component
+- clients do not need the game component at all

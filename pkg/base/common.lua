@@ -17,6 +17,8 @@
 
 print("base dir:",common.base_dir)
 
+dofile("pkg/base/version.lua")
+
 -- base dir stuff
 DIR_PKG_ROOT = DIR_PKG_ROOT or "pkg/base"
 DIR_PKG_LIB = DIR_PKG_LIB or DIR_PKG_ROOT
@@ -370,127 +372,6 @@ damage_blk = {}
 players = {max = 32, current = 1}
 intent = {}
 nades = {head = 1, tail = 0}
-
-function string.split(s, sep, plain)
-	local start = 1
-	local done = false
-	local function pass(i, j, ...)
-		if i then
-			local seg = s:sub(start, i - 1)
-			start = j + 1
-			return seg, ...
-		else
-			done = true
-			return s:sub(start)
-		end
-	end
-	local result = {}
-	while not done do
-		if sep == '' then done = true result[#result+1]=s end
-		result[#result+1]=pass(s:find(sep, start, plain))
-	end
-	return result
-end
-
--- trim the character 'sep' from the left hand side of the string
-function string.triml(s, sep)
-	sep = string.byte(sep)
-	if s == '' then return s end
-	local pos = 1
-	while string.byte(s,pos)==sep and #s<=pos do pos = pos + 1 end
-	return string.sub(s, pos+1)
-end
-
--- trim the character 'sep' from the right hand side of the string
-function string.trimr(s, sep)
-	sep = string.byte(sep)
-	if s == '' then return s end
-	local pos = #s
-	while string.byte(s, pos)==sep and pos>=1 do pos = pos - 1 end
-	return string.sub(s, 1, pos)
-end
-
--- trim the character 'sep' from both sides of the string
-function string.trim(s, sep)
-	return string.triml(string.trimr(s, sep), sep)
-end
-
-function parse_commandline_options(options)
-	local user_toggles = {} -- toggle options (key is name, value is position)
-	local user_settings = {} -- key-value pairs
-	local loose = {} -- loose strings, filenames, etc.
-
-	for k, v in pairs(options) do
-		local setting_pair = string.split(v, "=")
-		local first = string.byte(v,1)
-		if first==string.byte('-') then -- we are toggling an option or setting a value
-			if #setting_pair == 2 then -- we are setting a key to a value
-				user_settings[string.triml(setting_pair[1], '-')]=setting_pair[2]
-				print(string.triml(setting_pair[1], '-'),"trimmed")
-			else
-				user_toggles[string.triml(v, '-')]=k
-			end
-		else -- add to the loose values
-			loose[#loose+1] = v
-		end
-	end
-	return loose, user_toggles, user_settings
-end
-
---[[Create an alarm object. When run, counts down to the specified value
-based on the time delta passed in.
-
-time: The time limit of the alarm. Ignored with values less than 1.
-progress: the progress towards the time limit.
-active: Whether alarm is running or not.
-on_frame: Callback run every frame, passed in the dT of that frame.
-on_trigger: Callback run when alarm reaches its limit, passed in the dT of that frame.
-loop: Whether the alarm will continue after the first run.
-preserve_accumulator: Whether looping transfers overflow dT from the previous run
-
-]]
-function alarm(options)
-	
-	this = {}
-	
-	this.time = options.time or 1
-	this.progress = options.progress or 0
-	this.active = options.active or true
-	this.loop = options.loop or false
-	this.preserve_accumulator = options.preserve_accumulator or true
-	this.on_frame = options.on_frame or nil
-	this.on_trigger = options.on_trigger or nil
-
-	function this.tick(dT)
-		if this.active then
-			this.progress = this.progress + dT
-			if this.on_frame ~= nil then this.on_frame(dT) end
-			while this.progress >= this.time and this.active do
-				if this.on_trigger ~= nil then this.on_trigger(dT) end
-				if this.loop and this.time > 0 then
-					if this.preserve_accumulator then
-						this.progress = this.progress - this.time
-					else
-						this.progress = 0
-					end
-				else
-					this.active = false
-				end
-			end
-		end
-	end
-	
-	function this.restart()
-		this.progress = 0
-		this.active = true
-	end
-	
-	function this.time_remaining()
-		return this.time - this.progress
-	end
-	
-	return this
-end
 
 function sort_players()
 	players_sorted = {}

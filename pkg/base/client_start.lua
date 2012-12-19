@@ -53,8 +53,10 @@ while true do
 	end
 end]]
 
---map_fname = "*MAP"
-map_fname = "pkg/MAP" -- hackish workaround so iceballfornoobs-004 still works
+map_fname = "*MAP"
+if not common.version then
+	map_fname = "pkg/MAP" -- hackish workaround so iceballfornoobs-004 still works
+end
 
 if not map_fname then
 	error("server should have sent map name by now")

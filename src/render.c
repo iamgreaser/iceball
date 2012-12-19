@@ -1505,13 +1505,15 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 		}
 		
 		// get correct centre depth
-		float max_axis = fabsf(x);
-		if(max_axis < fabsf(y))
-			max_axis = fabsf(y);
-		if(max_axis < fabsf(z))
-			max_axis = fabsf(z);
-		float dlen = sqrtf(x*x+y*y+z*z);
-		float depth = max_axis/dlen;
+		float m = fabsf(x);
+		if(m < fabsf(y))
+			m = fabsf(y);
+		if(m < fabsf(z))
+			m = fabsf(z);
+		//float dlen2 = x*x + y*y + z*z;
+		//float dlen = sqrtf(dlen2);
+		//float depth = sqrtf(2*m*m - dlen2);
+		float depth = m;
 		
 		// cameranananinate
 		if(!islocal)
@@ -1524,7 +1526,7 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 			y = ny;
 			z = nz;
 		}
-		depth *= z*rezoom;
+		//depth *= z*rezoom;
 		
 		// plotinate
 		render_pmf_box(-x, y, z, depth, pt->radius*scale, color);

@@ -17,6 +17,53 @@
 
 print("pkg/base/main_client.lua starting")
 
+dofile("pkg/base/version.lua")
+
+vernotes = ""
+
+local cver = common.version
+
+if cver == nil then
+	cver = {
+		cmp={0,0,0,0,-1004},
+		num=-1,
+		str="iceballfornoobs-004 (or pre-0.0-1 git)",
+	}
+	vernotes = [[
+This is one of a multitude of old versions,
+most likely iceballfornoobs-004.
+
+CLIENT ISSUES (all pre-0.0-1):
+- PMF models have the wrong Z value when close to the screen edges,
+  and can be seen through walls
+
+CLIENT ISSUES (iceballfornoobs-004 and some later builds):
+- Client does pathname security checks for non-clsave files
+
+We will inform you once we have a newer noob build.
+
+If you're using a git build, please upgrade!
+	]]
+elseif cver.num == VERSION_ENGINE.num then
+	vernotes = [[
+This is the expected version.
+	]]
+elseif cver.num > VERSION_ENGINE.num and cver.cmp[5] == 0 then
+	vernotes = [[
+This is a newer version than this mod expects.
+Please tell the server owner to upgrade.
+	]]
+elseif cver.num > VERSION_ENGINE.num then
+	vernotes = [[
+This is a newer version than this mod expects.
+	]]
+else
+	vernotes = [[
+This is an older version than this mod expects.
+You should have 0.0.0-1.
+	]]
+end
+
 -- please excuse this hack.
 a1,a2,a3,a4,a5,a6,a7,a8,a9,a10 = ...
 
@@ -74,6 +121,12 @@ do
 				font_mini.print(2, 2+(i-koffs)*8, 0xFFFFFFFF, "LOAD: "..fnlist[i])
 			end
 			font_mini.print(2, sh-10, 0xFFFFFFFF, loadstr)
+			
+			font_mini.print(2, 2+(12)*8, 0xFFFFFFFF, "Version: "..cver.str)
+			local l = string.split(vernotes,"\n")
+			for i=1,#l do
+				font_mini.print(2, 2+(i+14)*8, 0xFFFFFFFF, l[i])
+			end
 		end
 		
 		function client.hook_tick(sec_current, sec_delta)

@@ -26,11 +26,13 @@ lua base library stuff:
 	error @
 	print @
 	loadstring @
-	loadfile @ (TODO: filter the path)
-	dofile @ (TODO: filter the path)
+	loadfile @
+	dofile @
 	_G @
 	
 	nothing else yet
+	(TODO: work out what we want to keep,
+	 as there's stuff being used that isn't listed here!)
 	
 	check http://www.lua.org/manual/5.1/ for more info on these
 	
@@ -52,6 +54,13 @@ common.base_dir @
 	
 	writing to this string will *not* change the base dir,
 	so *don't write to it* or else you'll just screw up your own code!
+
+common.version = {cmp={w,x,y,a,z},num,str="w.x.ya-z"} @
+	current engine version
+	
+	cmp is for the individual version components
+	num is a comparable number (bit count for each: 5,5,7,5,10)
+	str is the version as a string
 
 client/server.hook_tick = fn(sec_curtime, sec_delta)->sec_wait @
 	sets a hook called every "tick"

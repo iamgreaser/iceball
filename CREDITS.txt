@@ -9,6 +9,17 @@ And the rest in alphabetical order:
 
 BR:
 	Player name list
+	Team switching
+	"Are you sure?" on quit
+	Improved key binding system
+
+Ericson2314:
+	Rearranged the build tree
+	Added an SSE-optimised matrix-vector multiply
+
+rakiru:
+	Scroll wheel to switch tools
+	Lent his VPS to host an Iceball server
 
 topo:
 	FPS counter

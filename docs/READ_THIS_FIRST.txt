@@ -145,8 +145,7 @@ F5 = release mouse cursor
 F1 = show some debug information
 
 TAB = show names / scores
-
-[ TODO: add , for teamswitch ]
+, = switch teams
 
 Note that there is no weapon select key. This isn't Ace of Jagex.
 
@@ -155,8 +154,6 @@ For each tool, here is what each mouse button does:
   2:   Block: L = place a block, R = sample block colour
   3:     Gun: L = shoot, R = zoom
   4: Grenade: L press = pull the pin, L release = throw
-
-[ TODO: These will eventually be valid! ]
 
 A few notes:
 - If you left-click-dig with the spade, you can get blocks back which you can
