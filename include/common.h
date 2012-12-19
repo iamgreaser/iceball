@@ -98,18 +98,25 @@ enum
 // if this flag is set, free when finished sending
 #define UDF_TEMPSEND 0x8000
 
+#ifdef __SSE__
+__attribute__((aligned(16)))
+#endif
 typedef union vec4f
 {
 	struct { float x,y,z,w; } __attribute__((__packed__)) p;
 	float a[4];
 #ifdef __SSE__
-	__m128 m;
+	float __attribute__ ((vector_size (16))) m;
 #endif
 } __attribute__((__packed__)) vec4f_t;
 
+#ifdef __SSE__
+__attribute__((aligned(16)))
+#endif
 typedef struct matrix
 {
-	vec4f_t r[4];
+	//column-major!
+	vec4f_t c[4];
 } __attribute__((__packed__)) matrix_t;
 
 typedef struct camera
