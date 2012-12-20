@@ -1101,15 +1101,17 @@ function new_player(settings)
 		bone_rotate(0)
 		
 		this.quit_msg = scene.textfield{wordwrap=false, color=0xFFFF3232, font=font_large, 
-			text="Are you sure? (Y/N)", x = w/2, y = h/4, align_x = 0.5, align_y = 0.5}
-		this.quit_msg.visible = false
+			text="Are you sure? (Y/N)", x = w/2, y = h/4, align_x = 0.5, align_y = 0.5,
+			visible=false}
 		scene.root.add_child(this.quit_msg)
 		
 		--TODO: update bluetext/greentext with the actual keys (if changed in controls.json)
 		this.team_change_msg_b = scene.textfield{wordwrap=false, color=0xFF0000FF, font=font_large, 
-			text="Press 1 to join Blue", x = w/2, y = h/4, align_x = 0.5, align_y = 0.5}
+			text="Press 1 to join Blue", x = w/2, y = h/4, align_x = 0.5, align_y = 0.5,
+			visible=false}
 		this.team_change_msg_g = scene.textfield{wordwrap=false, color=0xFF00FF00, font=font_large, 
-			text="Press 2 to join Green", x = w/2, y = h/4 + 40, align_x = 0.5, align_y = 0.5}
+			text="Press 2 to join Green", x = w/2, y = h/4 + 40, align_x = 0.5, align_y = 0.5,
+			visible=false}
 		scene.root.add_child(this.team_change_msg_b)
 		scene.root.add_child(this.team_change_msg_g)
 		

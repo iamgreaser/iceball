@@ -98,6 +98,54 @@ BTSK_MAP = controls_config.map or SDLK_m
 
 BTSK_TEAM = controls_config.team or SDLK_COMMA
 
+--[[ For user messages and hooking up GUI elements, we have a need for mapping 
+the key variables to names and back. We also need to seperate the internal 
+names with the natural-language descriptions. (Someday desc could be localized.)
+]]
+
+button_map = {
+
+	forward={key=BTSK_FORWARD,desc="Forward"},
+	back={key=BTSK_BACK,desc="Back"},
+	left={key=BTSK_LEFT,desc="Left"},
+	right={key=BTSK_RIGHT,desc="Right"},
+	jump={key=BTSK_JUMP,desc="Jump"},
+	crouch={key=BTSK_CROUCH,desc="Crouch"},
+	sneak={key=BTSK_SNEAK,desc="Sneak"},
+	reload={key=BTSK_RELOAD,desc="Reload"},
+	
+	tool1={key=BTSK_TOOL1,desc="Tool 1"},
+	tool2={key=BTSK_TOOL2,desc="Tool 2"},
+	tool3={key=BTSK_TOOL3,desc="Tool 3"},
+	tool4={key=BTSK_TOOL4,desc="Tool 4"},
+	tool5={key=BTSK_TOOL5,desc="Tool 5"},
+	
+	color_left={key=BTSK_COLORLEFT,desc="Color Left"},
+	color_right={key=BTSK_COLORRIGHT,desc="Color Right"},
+	color_up={key=BTSK_COLORUP,desc="Color Up"},
+	color_down={key=BTSK_COLORDOWN,desc="Color Down"},
+	
+	chat={key=BTSK_CHAT,desc="Chat"},
+	command={key=BTSK_COMMAND,desc="Command"},
+	teamchat={key=BTSK_TEAMCHAT,desc="Team Chat"},
+	scores={key=BTSK_SCORES,desc="Scoreboard"},
+	
+	quit={key=BTSK_QUIT,desc="Quit"},
+	yes={key=BTSK_YES,desc="Yes"},
+	no={key=BTSK_NO,desc="No"},
+	
+	debug={key=BTSK_DEBUG,desc="Debug"},
+	map={key=BTSK_MAP,desc="Map"},
+	team={key=BTSK_TEAM,desc="Change Team"},
+	
+}
+
+-- equivalent - find a button from a keybinding
+key_map = {}
+for k, v in pairs(button_map) do
+	key_map[v.key] = {button=k, desc=v.desc}
+end
+
 chat_killfeed = {head = 1, scroll = nil, queue = {}}
 chat_text = {head = 1, scroll = nil, queue = {}}
 
@@ -733,6 +781,25 @@ function h_tick_init(sec_current, sec_delta)
 
 	client.hook_tick = h_tick_main
 	return client.hook_tick(sec_current, sec_delta)
+end
+
+input_events = {}
+
+--[[
+	As it's currently architected, the hooks each take in stuff immediately and drive polling constants.
+	the SDL events are similar to icegui events, but not exactly the same.
+	The push_mouse and push_keypress are intended to be inlined in the hook functions eventually.
+	]]
+	
+local function push_keypress(key, state, modif)
+	table.insert(input_events, {etype=GE_KEY, edata={key=key,state=state,modif=modif}})
+	if key_map[key] ~= nil then
+		table.insert(input_events, {etype=GE_BUTTON, edata={key=key,button=key_map[key],state=state,modif=modif}})		
+	end
+end
+
+local function push_mouse()
+	-- TODO look up how we are getting mouse now.
 end
 
 function h_key(key, state, modif)

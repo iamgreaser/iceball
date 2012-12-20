@@ -169,3 +169,40 @@ function alarm(options)
 	
 	return this
 end
+
+-- GUI Events
+
+-- DELTA_TIME: 
+-- uses the delta time passed in when listeners are pumped.
+-- callback passes in the dT value.
+GE_DELTA_TIME = 1
+
+-- SHARED_ALARM:
+-- uses the scene's shared alarm, which is run at a fixed interval (default "1/60").
+-- callback passes in the dT value of the shared alarm timer.
+GE_SHARED_ALARM = 2
+
+-- KEY:
+-- User pressed or released a key.
+-- callback passes in the binding and modifiers.
+GE_KEY = 3
+
+-- BUTTON:
+-- User pressed or released a mapped button.
+-- callback passes in the binding and modifiers.
+GE_BUTTON = 4
+
+-- MOUSE:
+-- Per-frame mouse inputs: x, y, button status.
+-- (define result object)
+GE_MOUSE = 5
+
+-- MOUSE_BUTTON:
+-- Mouse button is pressed or released.
+-- (define result object)
+GE_MOUSE_BUTTON = 6
+
+-- MOUSELOCK:
+-- Mouse cursor has been either locked and hidden or released and visible
+-- (define result object)
+GE_MOUSELOCK = 7
