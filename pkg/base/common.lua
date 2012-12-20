@@ -306,6 +306,7 @@ weapons = {
 				this.ammo_clip = this.ammo_clip - 1
 				
 				-- TODO: poll: do we want to require a new click per shot?
+				-- nope - rakiru
 			end
 			
 			if this.t_fire and this.t_fire < sec_current then
