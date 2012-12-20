@@ -303,11 +303,13 @@ function gui_create_scene(width, height, shared_rate)
 	function scene.display_object(options)
 		local this = widgets.widget(options)
 		
-		this.visible = options.visible and true -- draws this node and children
-		this.drawable = options.drawable and true -- calls the draw method
+		this.visible = options.visible
+		if this.visible == nil then this.visible = true end -- draws this node and children
+		this.drawable = options.drawable
+		if this.drawable == nil then this.drawable = true end -- calls the draw method
+		options.dirty = true -- whether drawing needs to be updated
 		this.use_img = options.use_img or false -- allocates a img buffer to this node
 		this.img = options.img or nil
-		this.dirty = options.dirty and true -- whether drawing needs to be updated
 		this.listeners = options.listeners or {}
 		this.alarms = options.alarms or {} -- ticked if seen. Will NOT dispose finished alarms for you!
 		
