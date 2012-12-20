@@ -1062,7 +1062,7 @@ function new_player(settings)
 		
 		-- tools
 		
-		this.tools_align = scene.display_object{x=root.l, y=root.t}
+		this.tools_align = scene.display_object{x=root.l, y=root.t, visible=false}
 		local bone_wslot1 = scene.bone{model=mdl_spade, bone=mdl_spade_bone,
 			x=0.1*w*5/8}
 		local bone_wslot2 = scene.bone{model=this.mdl_block, bone=this.mdl_block_bone,
@@ -1096,7 +1096,6 @@ function new_player(settings)
 			end
 		end
 		this.tools_align.add_listener(GE_DELTA_TIME, bone_rotate)
-		this.tools_align.visible = false
 		
 		bone_rotate(0)
 		
