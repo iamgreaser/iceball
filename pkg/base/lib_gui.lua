@@ -496,7 +496,6 @@ function gui_create_scene(width, height, shared_rate)
 				rawset(this, 'width', dim.width)
 				rawset(this, 'height', dim.height)
 			end
-			print("OK")
 			this.dirty = true
 		end
 

@@ -466,7 +466,11 @@ client.model_bone_set(mdl_bbox, mdl_bbox_bone2, "bbox_crouch", mdl_bbox_bone_dat
 
 -- set hooks
 function h_tick_main(sec_current, sec_delta)
+
+	--FIXME: why is this POS prototyping variable still here, it is being used to control the player model's leg swing >:(
 	rotpos = rotpos + sec_delta*120.0
+	
+	input_events = {}
 
 	chat_prune(chat_text, sec_current)
 	chat_prune(chat_killfeed, sec_current)
@@ -789,7 +793,14 @@ input_events = {}
 	As it's currently architected, the hooks each take in stuff immediately and drive polling constants.
 	the SDL events are similar to icegui events, but not exactly the same.
 	The push_mouse and push_keypress are intended to be inlined in the hook functions eventually.
-	]]
+
+	Triplefox:
+
+	GM wired everything directly to the first-person view when building these hooks,
+and we need to get some distance from that model to let the gui - or any alternate control schemes like vehicles/spectate - breathe.
+Migrating the view stuff into the player object would help keep the client-global focused on just being infrastructure.
+I've marked the points where it becomes an "ai controller" to help guide this.
+]]
 	
 local function push_keypress(key, state, modif)
 	table.insert(input_events, {etype=GE_KEY, edata={key=key,state=state,modif=modif}})
@@ -798,17 +809,18 @@ local function push_keypress(key, state, modif)
 	end
 end
 
-local function push_mouse()
-	-- TODO look up how we are getting mouse now.
-end
-
 function h_key(key, state, modif)
+	
+	push_keypress(key, state, modif)
+
 	if state and key == SDLK_F5 then
 		mouse_released = true
 		client.mouse_lock_set(false)
 		client.mouse_visible_set(true)
 	end
-
+	
+	-- disconnected ai
+	
 	if not players[players.current] then
 		if state and key == SDLK_ESCAPE then
 			client.hook_tick = nil
@@ -816,6 +828,9 @@ function h_key(key, state, modif)
 
 		return
 	end
+	
+	-- player entity ai
+	
 	local plr = players[players.current]
 
 	if typing_type then
@@ -958,19 +973,56 @@ function h_key(key, state, modif)
 	end
 end
 
+local function push_mouse_button(button, state)
+	table.insert(input_events, {etype=GE_MOUSE_BUTTON, edata={button=button,down=state}})
+end
+
+local function push_mouse(x, y, dx, dy)
+	table.insert(input_events, {etype=GE_MOUSE, edata={x=x, y=y, dx=dx, dy=dy}})
+end
+
+-- a nice little tool for checking the mouse state
+function mouse_prettyprint()
+	
+	local function xyp(n)
+		local s = tostring(mouse_xy[n])
+		if #s == 1 then return n..s.."    "
+		elseif #s == 2 then return n..s.."   "
+		elseif #s == 3 then return n..s.."  "
+		elseif #s == 4 then return n..s.." "
+		else return n..s end
+	end
+	
+	local function pollp(n)
+		if mouse_poll[n] then return n..'X ' else return n..'  ' end
+	end
+	
+	return xyp('x')..xyp('y')..xyp('dx')..xyp('dy')..
+	"  "..pollp(1)..pollp(2)..pollp(3)..pollp(4)..pollp(5)
+end
+
+mouse_poll = {false,false,false,false,false}
+mouse_xy = {x=0,y=0,dx=0,dy=0}
+
 function h_mouse_button(button, state)
+	
+	if mouse_poll[button] ~= state then
+		mouse_poll[button] = state
+		push_mouse_button(button, state)
+	end
+	
 	if mouse_released then
 		mouse_released = false
 		client.mouse_lock_set(true)
 		client.mouse_visible_set(false)
 		return
 	end
+	
+	-- player entity ai
+	-- FIXME: no reassignable mouse button controls?
 
 	local plr = players[players.current]
 	if not plr then return end
-
-	local xlen, ylen, zlen
-	xlen, ylen, zlen = common.map_get_dims()
 
 	if plr.tool == TOOL_GUN and plr.alive then
 		plr.wpn.click(button, state)
@@ -1004,6 +1056,16 @@ function h_mouse_button(button, state)
 end
 
 function h_mouse_motion(x, y, dx, dy)
+	
+	mouse_xy.x = x
+	mouse_xy.y = y
+	mouse_xy.dx = dx
+	mouse_xy.dy = dy
+	
+	push_mouse(x, y, dx, dy)
+
+	-- player entity ai
+	
 	if not players[players.current] then return end
 	if mouse_released then return end
 	if mouse_skip > 0 then

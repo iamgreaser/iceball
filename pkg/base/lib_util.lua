@@ -184,22 +184,22 @@ GE_SHARED_ALARM = 2
 
 -- KEY:
 -- User pressed or released a key.
--- callback passes in the binding and modifiers.
+-- callback passes in {key(int), state(bool), modif(int bitmask)}
 GE_KEY = 3
 
 -- BUTTON:
 -- User pressed or released a mapped button.
--- callback passes in the binding and modifiers.
+-- callback passes in {key(int), button{button(string), desc(string)}, state(bool), modif(int bitmask)}
 GE_BUTTON = 4
 
 -- MOUSE:
--- Per-frame mouse inputs: x, y, button status.
--- (define result object)
+-- Mouse movement: x, y, dx, dy.
+-- callback passes in {x(number), y(number), dx(number), dy(number)}
 GE_MOUSE = 5
 
 -- MOUSE_BUTTON:
 -- Mouse button is pressed or released.
--- (define result object)
+-- callback passes in {button(int), down(bool)}
 GE_MOUSE_BUTTON = 6
 
 -- MOUSELOCK:

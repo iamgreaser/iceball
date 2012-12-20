@@ -1133,6 +1133,8 @@ function new_player(settings)
 		axs = math.sin(this.angx)
 		axc = math.cos(this.angx)
 
+		--font_mini.print(64,8,0xFFFFFFFF,mouse_prettyprint())
+		
 		local w, h
 		local i, j
 		w, h = client.screen_get_dims()
