@@ -71,7 +71,7 @@ function gui_create_fixwidth_font(image, char_width, char_height, indexing_fn, s
 
 	-- compute a non-wrapped characters + positions output suitable for usage in text selections as well as render
 	function this.compute_unwrapped(x, y, c, str)
-
+		
 		result = {{}}
 		local col_count = 1
 
@@ -80,7 +80,7 @@ function gui_create_fixwidth_font(image, char_width, char_height, indexing_fn, s
 			result[1][col_count] = {char, this.indexing_fn(char), x, y, c}
 			x = x + this.width
 		end
-
+		
 		return result
 	end
 
@@ -89,6 +89,8 @@ function gui_create_fixwidth_font(image, char_width, char_height, indexing_fn, s
 
 	-- 1. find whitespace
 
+		if wp < this.width then wp = this.width end -- force width to at least 1 char
+		
 		local i
 		local j
 		local toks = {}
@@ -168,7 +170,7 @@ function gui_create_fixwidth_font(image, char_width, char_height, indexing_fn, s
 
 	-- get the AABB dimensions of text given precomputed text data
 	function this.dimensions(data)
-
+		
 		local result = {l=data[1][1][3],
 						r=data[1][1][3] + this.width,
 						t=data[1][1][4],
@@ -229,7 +231,9 @@ function gui_create_fixwidth_font(image, char_width, char_height, indexing_fn, s
 
 	-- print a selection of precomputed text
 	function this.print_precomputed(data, offx, offy, buffer)
-
+		
+		local lastc = nil
+		
 		for y=1,#data do
 			for x=1,#data[y] do
 				local char = data[y][x][1]
@@ -237,6 +241,7 @@ function gui_create_fixwidth_font(image, char_width, char_height, indexing_fn, s
 				local px = data[y][x][3] + offx
 				local py = data[y][x][4] + offy
 				local c = data[y][x][5]
+				if c ~= lastc then lastc = c; this.calc_shadow(c) end
 				this._blit(buffer, px, py, idx, c)
 			end
 		end
@@ -509,7 +514,7 @@ function gui_create_scene(width, height, shared_rate)
 
 		local this = scene.display_object(options)
 
-		this.wordwrap = options.wordwrap or true
+		this.wordwrap = options.wordwrap
 		this.color = options.color or 0xFF880088
 		this.autosize = options.autosize or true
 		this.font = options.font or font_mini
@@ -549,6 +554,7 @@ function gui_create_scene(width, height, shared_rate)
 				rawset(this, 'width', dim.width)
 				rawset(this, 'height', dim.height)
 			end
+			print("OK")
 			this.dirty = true
 		end
 

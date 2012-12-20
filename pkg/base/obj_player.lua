@@ -1059,6 +1059,9 @@ function new_player(settings)
 		local root = scene.root
 		local w = root.width
 		local h = root.height
+		
+		-- tools
+		
 		this.tools_align = scene.display_object{x=root.l, y=root.t}
 		local bone_wslot1 = scene.bone{model=mdl_spade, bone=mdl_spade_bone,
 			x=0.1*w*5/8}
@@ -1096,6 +1099,26 @@ function new_player(settings)
 		this.tools_align.visible = false
 		
 		bone_rotate(0)
+		
+		this.quit_msg = scene.textfield{wordwrap=false, color=0xFFFF3232, font=font_large, 
+			text="Are you sure? (Y/N)", x = w/2, y = h/4, align_x = 0.5, align_y = 0.5}
+		this.quit_msg.visible = false
+		scene.root.add_child(this.quit_msg)
+		
+		--TODO: update bluetext/greentext with the actual keys (if changed in controls.json)
+		this.team_change_msg_b = scene.textfield{wordwrap=false, color=0xFF0000FF, font=font_large, 
+			text="Press 1 to join Blue", x = w/2, y = h/4, align_x = 0.5, align_y = 0.5}
+		this.team_change_msg_g = scene.textfield{wordwrap=false, color=0xFF00FF00, font=font_large, 
+			text="Press 2 to join Green", x = w/2, y = h/4 + 40, align_x = 0.5, align_y = 0.5}
+		scene.root.add_child(this.team_change_msg_b)
+		scene.root.add_child(this.team_change_msg_g)
+		
+		local function update_viz(dT)
+			this.quit_msg.visible = quitting
+			this.team_change_msg_b.visible = team_change
+			this.team_change_msg_g.visible = team_change
+		end
+		this.quit_msg.add_listener(GE_DELTA_TIME, update_viz)
 		
 		this.scene = scene
 	end
@@ -1410,29 +1433,6 @@ function new_player(settings)
  			end
  		end
 
-		if quitting then
-			local quit_msg
-			quit_msg = "Are you sure? (Y/N)"
-			font_large.print((w - 24 * #quit_msg) / 2
-				, h / 4
-				, argb_split_to_merged(255, 50, 50, 255)
-				, quit_msg)
-		end
-
-		--TODO: update bluetext/greentext with the actual keys (if changed in controls.json)
-		if team_change then
-			local bluetext, greentext
-			bluetext = "Press 1 to join Blue"
-			greentext = "Press 2 to join Green"
-			font_large.print((w - 24 * #bluetext) / 2
-				, 3 * h / 4
-				, argb_split_to_merged(0, 0, 255, 255)
-				, bluetext)
-			font_large.print((w - 24 * #greentext) / 2
-				, 3 * h / 4 + 40
-				, argb_split_to_merged(0, 255, 0, 255)
-				, greentext)
-		end
 	end
 
 	return this
