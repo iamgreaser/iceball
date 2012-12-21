@@ -1097,6 +1097,7 @@ function new_player(settings)
 		
 		bone_rotate(0)
 		
+		--TODO: use the actual yes/no key mappings
 		this.quit_msg = scene.textfield{wordwrap=false, color=0xFFFF3232, font=font_large, 
 			text="Are you sure? (Y/N)", x = w/2, y = h/4, align_x = 0.5, align_y = 0.5,
 			visible=false}
@@ -1104,32 +1105,59 @@ function new_player(settings)
 		
 		--TODO: update bluetext/greentext with the actual keys (if changed in controls.json)
 		this.team_change_msg_b = scene.textfield{wordwrap=false, color=0xFF0000FF, font=font_large, 
-			text="Press 1 to join Blue", x = w/2, y = h/4, align_x = 0.5, align_y = 0.5,
-			visible=false}
+			text="Press 1 to join Blue", x = w/2, y = h/4, align_x = 0.5, align_y = 0.5}
 		this.team_change_msg_g = scene.textfield{wordwrap=false, color=0xFF00FF00, font=font_large, 
-			text="Press 2 to join Green", x = w/2, y = h/4 + 40, align_x = 0.5, align_y = 0.5,
-			visible=false}
-		scene.root.add_child(this.team_change_msg_b)
-		scene.root.add_child(this.team_change_msg_g)
+			text="Press 2 to join Green", x = w/2, y = h/4 + 40, align_x = 0.5, align_y = 0.5}
+		this.team_change = scene.display_object{visible=false}
+		this.team_change.add_child(this.team_change_msg_b)
+		this.team_change.add_child(this.team_change_msg_g)
+		scene.root.add_child(this.team_change)
 		
-		local function update_viz(dT)
-			this.team_change_msg_b.visible = team_change
-			this.team_change_msg_g.visible = team_change
+		local function menus_visible()
+			return this.quit_msg.visible or this.team_change.visible
 		end
-		local function can_quit(options)
-			if this.quit_msg.visible and options.state then
-				if options.key == BTSK_YES then
-					-- TODO: clean up
-					client.hook_tick = nil
-				elseif options.key == BTSK_NO then
-					this.quit_msg.visible = false
+		
+		local function quit_events(options)
+			if options.state then
+				if this.quit_msg.visible then
+					if options.key == BTSK_YES then
+						-- TODO: clean up
+						client.hook_tick = nil
+					elseif options.key == BTSK_NO then
+						this.quit_msg.visible = false
+					end
+				elseif options.key == BTSK_QUIT and not menus_visible() then
+					this.quit_msg.visible = true
 				end
-			elseif options.key == BTSK_QUIT then
-				this.quit_msg.visible = true
 			end
 		end
-		this.quit_msg.add_listener(GE_DELTA_TIME, update_viz)
-		this.quit_msg.add_listener(GE_BUTTON, can_quit)
+		local function teamchange_events(options)
+			local viz = this.team_change.visible
+			if options.state then
+				if viz then
+				
+					local team
+				
+					if options.key == BTSK_TOOL1 then viz = false; team = 0
+					elseif options.key == BTSK_TOOL2 then viz = false; team = 1
+					elseif (options.key == BTSK_QUIT or options.key == BTSK_TEAM)
+						then viz = false 
+					end
+					
+					local plr
+					plr = players[players.current]
+					if plr ~= nil and team ~= nil and team ~= plr.team then
+						common.net_send(nil, common.net_pack("Bbbz", 0x11, team, WPN_RIFLE, plr.name or ""))
+					end					
+					
+				elseif options.key == BTSK_TEAM and not menus_visible() then
+					viz = true
+				end
+			end		
+			this.team_change.visible = viz
+		end
+		this.quit_msg.add_listener(GE_BUTTON, quit_events)
+		this.team_change.add_listener(GE_BUTTON, teamchange_events)
 		
 		this.scene = scene
 	end

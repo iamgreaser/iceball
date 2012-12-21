@@ -383,10 +383,6 @@ typing_msg = nil
 
 show_scores = false
 
-quitting = false
-
-team_change = false
-
 -- load images
 img_crosshair = client.img_load("pkg/base/gfx/crosshair.tga")
 
@@ -870,25 +866,7 @@ function h_key(key, state, modif)
 	elseif key == BTSK_SCORES then
 		show_scores = state
 	elseif state then
-		if team_change then
-			local team
-			if key == BTSK_TOOL1 then
-				team = 0
-				team_change = false
-			elseif key == BTSK_TOOL2 then
-				team = 1
-				team_change = false
-			end
-			if key == BTSK_QUIT then
-				team_change = false
-			else
-				local plr
-				plr = players[players.current]
-				if plr ~= nil and team ~= nil and team ~= plr.team then
-					common.net_send(nil, common.net_pack("Bbbz", 0x11, team, WPN_RIFLE, plr.name or ""))
-				end
-			end
-		elseif key == BTSK_DEBUG then
+		if key == BTSK_DEBUG then
 			debug_enabled = not debug_enabled
 		elseif key == SDLK_F10 then
 			local s = "clsave/"..common.base_dir.."/vol/lastsav.icemap"
@@ -957,8 +935,6 @@ function h_key(key, state, modif)
 			common.net_send(nil, common.net_pack("BBBBB",
 				0x18, 0x00,
 				plr.blk_color[1],plr.blk_color[2],plr.blk_color[3]))
-		elseif key == BTSK_TEAM then
-			team_change = true
 		end
 	end
 end
