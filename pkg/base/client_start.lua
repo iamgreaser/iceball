@@ -143,7 +143,7 @@ button_map = {
 -- equivalent - find a button from a keybinding
 key_map = {}
 for k, v in pairs(button_map) do
-	key_map[v.key] = {button=k, desc=v.desc}
+	key_map[v.key] = {name=k, desc=v.desc}
 end
 
 chat_killfeed = {head = 1, scroll = nil, queue = {}}
@@ -376,6 +376,7 @@ large_map = false
 sensitivity = user_config.sensitivity or 1.0
 sensitivity = sensitivity/1000.0
 mouse_skip = 3
+input_events = {}
 
 typing_type = nil
 typing_msg = nil
@@ -469,8 +470,6 @@ function h_tick_main(sec_current, sec_delta)
 
 	--FIXME: why is this POS prototyping variable still here, it is being used to control the player model's leg swing >:(
 	rotpos = rotpos + sec_delta*120.0
-	
-	input_events = {}
 
 	chat_prune(chat_text, sec_current)
 	chat_prune(chat_killfeed, sec_current)
@@ -733,7 +732,9 @@ function h_tick_main(sec_current, sec_delta)
 	else
 		-- TODO: idle camera
 	end
-
+	
+	input_events = {}
+		
 	-- wait a bit
 	return 0.005
 end
@@ -787,8 +788,6 @@ function h_tick_init(sec_current, sec_delta)
 	return client.hook_tick(sec_current, sec_delta)
 end
 
-input_events = {}
-
 --[[
 	As it's currently architected, the hooks each take in stuff immediately and drive polling constants.
 	the SDL events are similar to icegui events, but not exactly the same.
@@ -803,9 +802,9 @@ I've marked the points where it becomes an "ai controller" to help guide this.
 ]]
 	
 local function push_keypress(key, state, modif)
-	table.insert(input_events, {etype=GE_KEY, edata={key=key,state=state,modif=modif}})
+	table.insert(input_events, {GE_KEY, {key=key,state=state,modif=modif}})
 	if key_map[key] ~= nil then
-		table.insert(input_events, {etype=GE_BUTTON, edata={key=key,button=key_map[key],state=state,modif=modif}})		
+		table.insert(input_events, {GE_BUTTON, {key=key,button=key_map[key],state=state,modif=modif}})		
 	end
 end
 
@@ -871,14 +870,7 @@ function h_key(key, state, modif)
 	elseif key == BTSK_SCORES then
 		show_scores = state
 	elseif state then
-		if quitting then
-			if key == BTSK_YES then
-				-- TODO: clean up
-				client.hook_tick = nil
-			elseif key == BTSK_NO then
-				quitting = false
-			end
-		elseif team_change then
+		if team_change then
 			local team
 			if key == BTSK_TOOL1 then
 				team = 0
@@ -898,8 +890,6 @@ function h_key(key, state, modif)
 			end
 		elseif key == BTSK_DEBUG then
 			debug_enabled = not debug_enabled
-		elseif key == BTSK_QUIT then
-			quitting = true
 		elseif key == SDLK_F10 then
 			local s = "clsave/"..common.base_dir.."/vol/lastsav.icemap"
 			print(s)
@@ -974,11 +964,11 @@ function h_key(key, state, modif)
 end
 
 local function push_mouse_button(button, state)
-	table.insert(input_events, {etype=GE_MOUSE_BUTTON, edata={button=button,down=state}})
+	table.insert(input_events, {GE_MOUSE_BUTTON, {button=button,down=state}})
 end
 
 local function push_mouse(x, y, dx, dy)
-	table.insert(input_events, {etype=GE_MOUSE, edata={x=x, y=y, dx=dx, dy=dy}})
+	table.insert(input_events, {GE_MOUSE, {x=x, y=y, dx=dx, dy=dy}})
 end
 
 -- a nice little tool for checking the mouse state

@@ -189,7 +189,7 @@ GE_KEY = 3
 
 -- BUTTON:
 -- User pressed or released a mapped button.
--- callback passes in {key(int), button{button(string), desc(string)}, state(bool), modif(int bitmask)}
+-- callback passes in {key(int), button{name(string), desc(string)}, state(bool), modif(int bitmask)}
 GE_BUTTON = 4
 
 -- MOUSE:

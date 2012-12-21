@@ -521,9 +521,7 @@ function new_player(settings)
 		xlen,ylen,zlen = common.map_get_dims()
 
 		if this.scene then
-			--[[ TODO queue up input events so that the GUI can see them
-			implement and test these events ]]
-			this.scene.pump_listeners(sec_delta, {})
+			this.scene.pump_listeners(sec_delta, input_events)
 		end
 		
 		if not this.spawned then
@@ -1115,11 +1113,23 @@ function new_player(settings)
 		scene.root.add_child(this.team_change_msg_g)
 		
 		local function update_viz(dT)
-			this.quit_msg.visible = quitting
 			this.team_change_msg_b.visible = team_change
 			this.team_change_msg_g.visible = team_change
 		end
+		local function can_quit(options)
+			if this.quit_msg.visible and options.state then
+				if options.key == BTSK_YES then
+					-- TODO: clean up
+					client.hook_tick = nil
+				elseif options.key == BTSK_NO then
+					this.quit_msg.visible = false
+				end
+			elseif options.key == BTSK_QUIT then
+				this.quit_msg.visible = true
+			end
+		end
 		this.quit_msg.add_listener(GE_DELTA_TIME, update_viz)
+		this.quit_msg.add_listener(GE_BUTTON, can_quit)
 		
 		this.scene = scene
 	end

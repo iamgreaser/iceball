@@ -363,10 +363,10 @@ function gui_create_scene(width, height, shared_rate)
 			end
 			for i=1, #events do
 				local ev = events[i]
-				local list = this.listeners[ev[1]]
-				if list ~= nil then
-					for j=1, #list do
-						list[j](ev[2])
+				local listen_list = this.listeners[ev[1]]
+				if listen_list ~= nil then
+					for j=1, #listen_list do
+						listen_list[j](ev[2])
 					end
 				end
 			end
@@ -405,14 +405,21 @@ function gui_create_scene(width, height, shared_rate)
 	scene.root = root
 	
 	function scene.pump_listeners(dT, events)
+		-- copy incoming events
+		local e = {}
+		local i
+		for i=1, #events do
+			table.insert(e, events[i])
+		end
+		-- tick timers
 		scene.shared_alarm_trigger = 0
 		scene.shared_alarm.tick(dT)
-		local i
 		for i=1,scene.shared_alarm_trigger do
-			events[#events+1] = {GE_SHARED_ALARM, scene.shared_alarm.time}
+			table.insert(e, {GE_SHARED_ALARM, scene.shared_alarm.time})
 		end
-		events[#events+1] = {GE_DELTA_TIME, dT}
-		root.pump_listeners(dT, events)
+		table.insert(e, {GE_DELTA_TIME, dT})
+		-- propogate
+		root.pump_listeners(dT, e)
 	end
 	
 	function scene.draw() root.draw() end
