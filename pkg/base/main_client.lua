@@ -73,7 +73,7 @@ else
 	bug_str = bug_str_gen(cver.num)
 	vernotes = [[
 This is an older version than this mod expects.
-You should have at least 0.0.0-1.
+You should have at least ]]..VERSION_ENGINE.str..[[.
 ]]..bug_str..[[]]
 end
 
