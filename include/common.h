@@ -441,3 +441,17 @@ extern float wav_cube_size;
 extern wavchn_t wchn[WAV_CHN_COUNT];
 int wav_init(void);
 void wav_deinit(void);
+
+// dsp.c
+float interp_linear(float y0, float y1, float x);
+float interp_cubic(float y0, float y1, float y2, float y3, float x);
+float interp_hermite6p(float y0, float y1, float y2, float y3, 
+		float y4, float y5, float x);
+float frequency2wavelength(int rate, float frequency);
+float wavelength2frequency(int rate, float wavelength);
+float frequency2midinote(float frequency);
+float midinote2frequency(float midinote);
+float below_min_power(float amplitude);
+float attentuationDB2pctpower(float data);
+float equal_power_left(float pan);
+float equal_power_right(float pan);
