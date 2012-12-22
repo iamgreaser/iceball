@@ -115,7 +115,7 @@ float attentuationDB2pctpower(float data)
 
 /*
 
-    Equal-power crossfade given a pan of -1, 1.
+    Equal-power crossfade given a pan of 0, 1 (left to right)
     Use this instead of linear xfading to keep the dB level similar across all pan positions.
     (It's actually more complicated than that, but for most material in a mix this is fine.)
 
