@@ -15,6 +15,7 @@
 		"freq": 44100,
 		"channels": 2,
 		"bits": 16,
+		"bufsize": 2048,
 		
 		"volume": 1.0,
 		
@@ -22,7 +23,7 @@
 		"setups" : {
 			"headphones": {
 				"head_width": 0.19,
-				"head_screen_distance": 0.50,
+				"head_screen_distance": 0.80,
 				"channels": [
 					{"name": "left",  "distance": -0.095, "angle": -90, "tilt": 0},
 					{"name": "right", "distance":  0.095, "angle":  90, "tilt": 0}

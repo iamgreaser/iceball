@@ -22,12 +22,14 @@ clean:
 $(OBJDIR):
 	mkdir -p $(OBJDIR)
 
-$(BINNAME): $(OBJS)
+$(BINNAME): $(OBJDIR) $(OBJS)
 	$(CC) -o $(BINNAME) $(LDFLAGS) $(OBJS) $(LIBS)
 
-$(OBJDIR)/lua.o: $(SRCDIR)/lua.c $(SRCDIR)/lua_*.h $(OBJDIR) $(INCLUDES)
+$(OBJDIR)/lua.o: $(SRCDIR)/lua.c $(SRCDIR)/lua_*.h $(INCLUDES)
 	$(CC) -c -o $@ $(CFLAGS) $<
 
-$(OBJDIR)/%.o: $(SRCDIR)/%.c $(OBJDIR) $(INCLUDES)
+$(OBJDIR)/%.o: $(SRCDIR)/%.c $(INCLUDES)
 	$(CC) -c -o $@ $(CFLAGS) $<
 
+
+.PHONY: all clean

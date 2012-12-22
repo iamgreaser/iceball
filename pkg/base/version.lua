@@ -16,12 +16,19 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,0,0,0,1},
-	num=1,
-	str="0.0-1",
+	cmp={0,0,0,0,2},
+	num=2,
+	str="0.0-2",
 }
 
 VERSION_MOD = {
 	cmp={0,0,0,1},
 	str="0.0-1"
+}
+
+VERSION_BUGS = {
+{intro=nil, fix=1, msg="PMF models have the wrong Z value when close to the screen edges, and can be seen through walls"},
+{intro=nil, fix=1, msg="PMF models are sometimes saved with garbage following the name"},
+{intro=nil, fix=1, msg="Client does pathname security checks for non-clsave files"},
+{intro=nil, fix=nil, msg="Sound is not supported"},
 }

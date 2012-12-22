@@ -123,7 +123,7 @@ Metadata:
 - Hoping to support a simple line-by-line append-mode format, too.
 
 Sounds:
-- None yet! Aiming for *.wav.
+- 8/16-bit *mono* *.wav. Stereo .wav will just be rejected.
 - Hoping to get ADPCM support in there too.
 - If someone can be bothered with libogg/libvorbis, *.ogg vorbis too.
 - Maybe even some form of DFPWM, but that'll be for voice chat only.

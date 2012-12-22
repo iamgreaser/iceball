@@ -19,10 +19,9 @@
 #define VERSION_X 0
 #define VERSION_Y 0
 #define VERSION_A 0
-#define VERSION_Z 1
+#define VERSION_Z 2
 // Remember to bump "Z" basically every time you change the engine!
 // Z can only be 0 for official releases!
-
 
 #define MODEL_BONE_MAX  256
 #define MODEL_POINT_MAX 4096
@@ -33,6 +32,8 @@
 #define CLIENT_MAX 512
 
 #define WAV_MFREQ 44100
+#define WAV_BUFSIZE 2048
+#define WAV_CHN_COUNT 128
 
 //define RENDER_FACE_COUNT 2
 
@@ -185,6 +186,28 @@ typedef struct img
 	img_tgahead_t head;
 	uint32_t pixels[];
 } img_t;
+
+typedef struct wav
+{
+	int udtype;
+	uint32_t refcount; // 1 for all of lua, 1 per channel
+	uint32_t freq;
+	uint32_t len;
+	int16_t data[]; // y'know, just in case we get 16-bit sound.
+} wav_t;
+
+typedef struct wavchn
+{
+	wav_t *src;
+	uint32_t idx;
+	int flags;
+	float freq_mod;
+	float vol, vol_spread;
+	float x,y,z;
+	uint32_t offs;
+} wavchn_t;
+#define WCF_ACTIVE   0x00000001
+#define WCF_GLOBAL   0x00000002
 
 /*
 
@@ -414,5 +437,7 @@ void mtx_identity(matrix_t *mtx);
 void cam_point_dir(camera_t *model, float dx, float dy, float dz, float zoom, float roll);
 
 // wav.c
+extern float wav_cube_size;
+extern wavchn_t wchn[WAV_CHN_COUNT];
 int wav_init(void);
 void wav_deinit(void);

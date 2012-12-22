@@ -525,6 +525,38 @@ common.wav_free(wav)
 	if you don't do this then it's memoryleaktopia
 	(plus i'm allowed to kill you)
 
-client.wav_play(wav, vol_left = 1.0, vol_right = 1.0, freq_mod = 1.0)
-	play the given sound
+client.wav_cube_size(size)
+	sets the size of a block in metres for sound calculations
+
+chn = client.wav_play_global(wav, x, y, z, vol = 1.0, freq_mod = 1.0, vol_spread = ?)
+	play the given sound at the given world position
+	
+	TODO: define vol_spread properly
+	
+	returns an index of a channel
+	returns nil on error
+
+chn = client.wav_play_local(wav, x = 0.0, y = 0.0, z = 0.0, vol = 1.0, freq_mod = 1.0, vol_spread = ?)
+	play the given sound at the given camera-local position
+	
+	returns an index of a channel
+	returns nil on error
+
+exists = client.wav_chn_exists(chn)
+	checks if an allocated channel still exists
+	
+	if a channel stops, it is garbage collected
+
+success = client.wav_chn_update(chn, x = nil, y = nil, z = nil, vol = nil, freq_mod = nil, vol_spread = nil)
+	updates information pertaining to a channel
+	
+	any field which is nil is not affected
+	
+	returns false if the channel no longer exists
+
+client.wav_kill(chn)
+	stops and removes a channel
+	
+	if chn == "true", kills all channels
+
 #

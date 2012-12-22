@@ -19,9 +19,24 @@ print("pkg/base/main_client.lua starting")
 
 dofile("pkg/base/version.lua")
 
-vernotes = ""
-
+local vernotes = ""
 local cver = common.version
+local bug_str
+
+local function bug_str_gen()
+	local i
+	local s = ""
+	
+	for i=1,#VERSION_BUGS do
+		local bug = VERSION_BUGS[i]
+		if ((not bug.intro) or bug.intro <= cver.num) and
+			((not bug.fix) or bug.fix > cver.num) then
+			s = s.."- "..bug.msg.."\n"
+		end
+	end
+	
+	return (s ~= "" and "\nCLIENT ISSUES:\n"..s) or ""
+end
 
 if cver == nil then
 	cver = {
@@ -29,39 +44,37 @@ if cver == nil then
 		num=-1,
 		str="iceballfornoobs-004 (or pre-0.0-1 git)",
 	}
+	bug_str = bug_str_gen(cver.num)
 	vernotes = [[
 This is one of a multitude of old versions,
 most likely iceballfornoobs-004.
-
-CLIENT ISSUES (all pre-0.0-1):
-- PMF models have the wrong Z value when close to the screen edges,
-  and can be seen through walls
-
-CLIENT ISSUES (iceballfornoobs-004 and some later builds):
-- Client does pathname security checks for non-clsave files
-
+]]..bug_str..[[
 We will inform you once we have a newer noob build.
 
-If you're using a git build, please upgrade!
-	]]
+If you're using a git build, please upgrade!]]
 elseif cver.num == VERSION_ENGINE.num then
+	bug_str = bug_str_gen(cver.num)
 	vernotes = [[
 This is the expected version.
-	]]
+]]..bug_str..[[]]
 elseif cver.num > VERSION_ENGINE.num and cver.cmp[5] == 0 then
+	bug_str = bug_str_gen(cver.num)
 	vernotes = [[
 This is a newer version than this mod expects.
 Please tell the server owner to upgrade.
-	]]
+]]..bug_str..[[]]
 elseif cver.num > VERSION_ENGINE.num then
+	bug_str = bug_str_gen(cver.num)
 	vernotes = [[
 This is a newer version than this mod expects.
-	]]
+The bug information here might not apply.
+]]..bug_str..[[]]
 else
+	bug_str = bug_str_gen(cver.num)
 	vernotes = [[
 This is an older version than this mod expects.
-You should have 0.0.0-1.
-	]]
+You should have at least 0.0.0-1.
+]]..bug_str..[[]]
 end
 
 -- please excuse this hack.
