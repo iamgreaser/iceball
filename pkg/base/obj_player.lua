@@ -1101,7 +1101,6 @@ function new_player(settings)
 		this.quit_msg = scene.textfield{wordwrap=false, color=0xFFFF3232, font=font_large, 
 			text="Are you sure? (Y/N)", x = w/2, y = h/4, align_x = 0.5, align_y = 0.5,
 			visible=false}
-		scene.root.add_child(this.quit_msg)
 		
 		--TODO: update bluetext/greentext with the actual keys (if changed in controls.json)
 		this.team_change_msg_b = scene.textfield{wordwrap=false, color=0xFF0000FF, font=font_large, 
@@ -1109,9 +1108,167 @@ function new_player(settings)
 		this.team_change_msg_g = scene.textfield{wordwrap=false, color=0xFF00FF00, font=font_large, 
 			text="Press 2 to join Green", x = w/2, y = h/4 + 40, align_x = 0.5, align_y = 0.5}
 		this.team_change = scene.display_object{visible=false}
-		this.team_change.add_child(this.team_change_msg_b)
-		this.team_change.add_child(this.team_change_msg_g)
-		scene.root.add_child(this.team_change)
+		
+		-- map (large_map and minimap)
+		
+		this.mini_map = scene.display_object{width=128, height=128, align_x = 1, align_y = 0,
+			x=w, y=0}
+		this.large_map = scene.display_object{x=w/2, y=h/2 - 24, visible=false}
+		
+		function this.large_map.update_size()
+			local ow, oh
+			ow, oh = common.img_get_dims(img_overview)
+			this.large_map.width = ow
+			this.large_map.height = oh
+		end
+		this.large_map.update_size()
+		
+		function this.map_gridname(x, y)
+			return string.char(65+math.floor(x/64))..(1+math.floor(y/64))
+		end
+		
+		-- w - mh/w - 3*#s, mh + 2
+		function this.print_map_location(x, y)
+			local s = "Location: "..this.map_gridname(this.x, this.z)
+			font_mini.print(x - font_mini.width*#s/2, y, 0xFFFFFFFF, s)
+		end
+		
+		-- OK. icons update - maybe. now add the maps to scene.
+		
+		function this.update_overview_icons(dT)
+			for i=1,#log_mspr,2 do
+				local u,v
+				u = log_mspr[i  ]
+				v = log_mspr[i+1]
+				common.img_pixel_set(img_overview_icons, u, v, 0x00000000)
+			end
+			log_mspr = {}
+			
+			for j=1,players.max do
+				local plr = players[j]
+				if plr then
+					local x,y
+					x,y = plr.x, plr.z
+					local c
+					local drawit = true
+					if not plr.alive then
+						drawit = false
+					elseif plr == this then
+						c = 0xFF00FFFF
+						for i=0,10-1 do
+							local d=i/math.sqrt(2)
+							local u,v
+							u = math.floor(x)+math.floor(d*math.sin(plr.angy))
+							v = math.floor(y)+math.floor(d*math.cos(plr.angy))
+							log_mspr[#log_mspr+1] = u
+							log_mspr[#log_mspr+1] = v
+							common.img_pixel_set(img_overview_icons, u, v, c)
+						end
+					elseif plr.team == this.team then
+						c = 0xFFFFFFFF
+					else
+						c = 0xFFFF0000
+						drawit = drawit and (this.t_rcirc ~= nil and
+							(MODE_MINIMAP_RCIRC or large_map))
+					end
+
+					if drawit then
+						for i=1,#mspr_player,2 do
+							local u,v
+							u = math.floor(x)+mspr_player[i  ]
+							v = math.floor(y)+mspr_player[i+1]
+							log_mspr[#log_mspr+1] = u
+							log_mspr[#log_mspr+1] = v
+							common.img_pixel_set(img_overview_icons, u, v, c)
+						end
+					end
+				end
+			end
+			
+			for j=1,#intent do
+				local obj = intent[j]
+
+				if obj.visible then
+					local x,y
+					x,y = obj.x, obj.z
+					local l = teams[obj.team].color_chat
+					local c = argb_split_to_merged(l[1],l[2],l[3])
+					for i=1,#(obj.mspr),2 do
+						local u,v
+						u = math.floor(x)+obj.mspr[i  ]
+						v = math.floor(y)+obj.mspr[i+1]
+						log_mspr[#log_mspr+1] = u
+						log_mspr[#log_mspr+1] = v
+						common.img_pixel_set(img_overview_icons, u, v, c)
+					end
+				end
+			end
+		end
+		
+		function this.large_map.draw_update()
+			this.large_map.update_size()
+			local mx, my
+			mx = this.large_map.l
+			my = this.large_map.t
+			client.img_blit(img_overview, mx, my)
+			client.img_blit(img_overview_grid, mx, my,
+				this.large_map.width, this.large_map.height, 
+				0, 0, 0x80FFFFFF)
+			client.img_blit(img_overview_icons, mx, my)
+			
+			local i
+			
+			for i=1,math.floor(this.large_map.height/64+0.5) do
+				font_mini.print(mx - 12, my + (i-0.5)*64,
+					0xFFFFFFFF, ""..i)
+				font_mini.print(mx + this.large_map.width + 12-6, 
+					my + (i-0.5)*64,
+					0xFFFFFFFF, ""..i)
+			end
+
+			for i=1,math.floor(this.large_map.width/64+0.5) do
+				font_mini.print(mx + (i-0.5)*64, my - 12,
+					0xFFFFFFFF, ""..string.char(64+i))
+				font_mini.print(mx + (i-0.5)*64, 
+					my + this.large_map.height + 12-6,
+					0xFFFFFFFF, ""..string.char(64+i))
+			end
+		end
+		
+		function this.mini_map.draw_update()
+			if MODE_ENABLE_MINIMAP then
+				local mw, mh
+				mw, mh = this.mini_map.width, this.mini_map.height
+				
+				local left, top
+				left = this.mini_map.l
+				top = this.mini_map.t
+				
+				local qx, qy
+				for qy=-1,1 do
+				for qx=-1,1 do
+				
+					local view_left, view_top
+					view_left = this.x-mw/2+this.large_map.width*qx
+					view_top = this.z-mh/2+this.large_map.height*qy
+				
+					client.img_blit(img_overview, left, top,
+						mw, mh,
+						view_left, view_top,
+						0xFFFFFFFF)
+					client.img_blit(img_overview_grid, left, top,
+						mw, mh,
+						view_left, view_top,
+						0x80FFFFFF)
+					client.img_blit(img_overview_icons, left, top,
+						mw, mh,
+						view_left, view_top,
+						0xFFFFFFFF)
+				end
+				end
+				this.print_map_location(this.mini_map.cx, this.mini_map.b + 2)
+			end
+		end
 		
 		local function menus_visible()
 			return this.quit_msg.visible or this.team_change.visible
@@ -1156,8 +1313,24 @@ function new_player(settings)
 			end		
 			this.team_change.visible = viz
 		end
+		local function toggle_map_state(options)
+			if options.state and options.key == BTSK_MAP then
+				this.mini_map.visible = not this.mini_map.visible
+				this.large_map.visible = not this.large_map.visible
+			end
+		end
+		
 		this.quit_msg.add_listener(GE_BUTTON, quit_events)
 		this.team_change.add_listener(GE_BUTTON, teamchange_events)
+		this.large_map.add_listener(GE_DELTA_TIME, this.update_overview_icons)
+		this.mini_map.add_listener(GE_BUTTON, toggle_map_state)
+		
+		scene.root.add_child(this.mini_map)
+		scene.root.add_child(this.large_map)
+		this.team_change.add_child(this.team_change_msg_b)
+		this.team_change.add_child(this.team_change_msg_g)
+		scene.root.add_child(this.team_change)
+		scene.root.add_child(this.quit_msg)
 		
 		this.scene = scene
 	end
@@ -1303,129 +1476,7 @@ function new_player(settings)
 		end
 
 		client.img_blit(img_crosshair, w/2 - 8, h/2 - 8)
-
-		for i=1,#log_mspr,2 do
-			local u,v
-			u = log_mspr[i  ]
-			v = log_mspr[i+1]
-			common.img_pixel_set(img_overview_icons, u, v, 0x00000000)
-		end
-		log_mspr = {}
-
-		for j=1,players.max do
-			local plr = players[j]
-			if plr then
-				local x,y
-				x,y = plr.x, plr.z
-				local c
-				local drawit = true
-				if not plr.alive then
-					drawit = false
-				elseif plr == this then
-					c = 0xFF00FFFF
-					for i=0,10-1 do
-						local d=i/math.sqrt(2)
-						local u,v
-						u = math.floor(x)+math.floor(d*math.sin(plr.angy))
-						v = math.floor(y)+math.floor(d*math.cos(plr.angy))
-						log_mspr[#log_mspr+1] = u
-						log_mspr[#log_mspr+1] = v
-						common.img_pixel_set(img_overview_icons, u, v, c)
-					end
-				elseif plr.team == this.team then
-					c = 0xFFFFFFFF
-				else
-					c = 0xFFFF0000
-					drawit = drawit and (this.t_rcirc ~= nil and
-						(MODE_MINIMAP_RCIRC or large_map))
-				end
-
-				if drawit then
-					for i=1,#mspr_player,2 do
-						local u,v
-						u = math.floor(x)+mspr_player[i  ]
-						v = math.floor(y)+mspr_player[i+1]
-						log_mspr[#log_mspr+1] = u
-						log_mspr[#log_mspr+1] = v
-						common.img_pixel_set(img_overview_icons, u, v, c)
-					end
-				end
-			end
-		end
-
-		for j=1,#intent do
-			local obj = intent[j]
-
-			if obj.visible then
-				local x,y
-				x,y = obj.x, obj.z
-				local l = teams[obj.team].color_chat
-				local c = argb_split_to_merged(l[1],l[2],l[3])
-				for i=1,#(obj.mspr),2 do
-					local u,v
-					u = math.floor(x)+obj.mspr[i  ]
-					v = math.floor(y)+obj.mspr[i+1]
-					log_mspr[#log_mspr+1] = u
-					log_mspr[#log_mspr+1] = v
-					common.img_pixel_set(img_overview_icons, u, v, c)
-				end
-			end
-		end
-
-		local ow, oh
-		ow, oh = common.img_get_dims(img_overview)
-		if large_map then
-			local mx, my
-			mx = w/2 - ow/2
-			my = h/2 - oh/2 - 24
-			client.img_blit(img_overview, mx, my)
-			client.img_blit(img_overview_grid, mx, my,
-				ow, oh, 0, 0, 0x80FFFFFF)
-			client.img_blit(img_overview_icons, mx, my)
-
-			local i
-
-			for i=1,math.floor(oh/64+0.5) do
-				font_mini.print(mx - 12, my + (i-0.5)*64,
-					0xFFFFFFFF, ""..i)
-				font_mini.print(mx + ow + 12-6, my + (i-0.5)*64,
-					0xFFFFFFFF, ""..i)
-			end
-
-			for i=1,math.floor(ow/64+0.5) do
-				font_mini.print(mx + (i-0.5)*64, my - 12,
-					0xFFFFFFFF, ""..string.char(64+i))
-				font_mini.print(mx + (i-0.5)*64, my + oh + 12-6,
-					0xFFFFFFFF, ""..string.char(64+i))
-			end
-		elseif MODE_ENABLE_MINIMAP then
-			-- TODO: make this a JSON option
-			local mw, mh
-			mw, mh = 128, 128
-			local qx, qy
-
-			for qy=-1,1 do
-			for qx=-1,1 do
-				client.img_blit(img_overview, w - mw, 0,
-					mw, mh,
-					this.x-mw/2+ow*qx, this.z-mh/2+oh*qy,
-					0xFFFFFFFF)
-				client.img_blit(img_overview_grid, w - mw, 0,
-					mw, mh,
-					this.x-mw/2+ow*qx, this.z-mh/2+oh*qy,
-					0x80FFFFFF)
-				client.img_blit(img_overview_icons, w - mw, 0,
-					mw, mh,
-					this.x-mw/2+ow*qx, this.z-mh/2+oh*qy,
-					0xFFFFFFFF)
-			end
-			end
-
-			local s = "Location: "
-				..string.char(65+math.floor(this.x/64))
-				..(1+math.floor(this.z/64))
-			font_mini.print(w - mw/2 - 3*#s, mh + 2, 0xFFFFFFFF, s)
-		end
+		
 		client.img_blit(img_cpal, 0, h-64)
 		client.img_blit(img_cpal_rect,
 			0 + this.blk_color_x*8,
