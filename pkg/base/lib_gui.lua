@@ -341,6 +341,7 @@ function gui_create_scene(width, height, shared_rate)
 			if this.img == nil then
 				this.img = common.img_new(cw, ch)
 			else
+				local pw, ph
 				pw, ph = common.img_get_dims(this.img)
 				pw, ph = math.ceil(pw), math.ceil(ph)
 				if not (pw == cw and ph == ch) then
@@ -523,6 +524,43 @@ function gui_create_scene(width, height, shared_rate)
 
 		return this
 
+	end
+	
+	function scene.image(options)
+		
+		local this = scene.display_object(options)
+		
+		this._img = options.img
+		this.use_img = false
+		
+		function this.getter_keys.width()
+			error("can't set the width of an image")
+		end
+		function this.getter_keys.height()
+			error("can't set the height of an image")
+		end
+		
+		function this._recalc_size()
+			local pw, ph 
+			pw, ph = common.img_get_dims(this.img)
+			rawset(this, 'width', pw)
+			rawset(this, 'height', ph)
+			this.dirty = true
+		end
+		function this.getter_keys.img()
+			return this._img
+		end
+		function this.setter_keys.img(img)
+			this._img = img
+			this._recalc_size()
+		end
+		function this.draw_update()
+			client.img_blit(this._img, this.l, this.t)
+		end
+		
+		this._recalc_size()
+		
+		return this
 	end
 
 	function scene.bone(options)

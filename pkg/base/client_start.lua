@@ -372,7 +372,6 @@ mspr_tent = {
 rotpos = 0.0
 debug_enabled = false
 mouse_released = false
-large_map = false
 sensitivity = user_config.sensitivity or 1.0
 sensitivity = sensitivity/1000.0
 mouse_skip = 3
@@ -874,8 +873,6 @@ function h_key(key, state, modif)
 			--client.map_load(s)
 			client.map_save(map_loaded, s, "icemap")
 			chat_add(chat_text, nil, "Map saved to "..s, 0xFFC00000)
-		elseif key == BTSK_MAP then
-			large_map = not large_map
 		elseif key == BTSK_RELOAD then
 			if plr.alive and plr.wpn and plr.tool == TOOL_GUN then
 				plr.wpn.reload()

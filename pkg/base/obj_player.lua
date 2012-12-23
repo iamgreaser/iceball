@@ -1112,8 +1112,8 @@ function new_player(settings)
 		-- map (large_map and minimap)
 		
 		this.mini_map = scene.display_object{width=128, height=128, align_x = 1, align_y = 0,
-			x=w, y=0}
-		this.large_map = scene.display_object{x=w/2, y=h/2 - 24, visible=false}
+			x=w, y=0, use_img = false}
+		this.large_map = scene.display_object{x=w/2, y=h/2 - 24, visible=false, use_img = false}
 		
 		function this.large_map.update_size()
 			local ow, oh
@@ -1127,13 +1127,10 @@ function new_player(settings)
 			return string.char(65+math.floor(x/64))..(1+math.floor(y/64))
 		end
 		
-		-- w - mh/w - 3*#s, mh + 2
 		function this.print_map_location(x, y)
 			local s = "Location: "..this.map_gridname(this.x, this.z)
 			font_mini.print(x - font_mini.width*#s/2, y, 0xFFFFFFFF, s)
 		end
-		
-		-- OK. icons update - maybe. now add the maps to scene.
 		
 		function this.update_overview_icons(dT)
 			for i=1,#log_mspr,2 do
@@ -1320,11 +1317,26 @@ function new_player(settings)
 			end
 		end
 		
+		this.crosshair = scene.image{img=img_crosshair, x=w/2, y=h/2}
+		this.cpal = scene.image{img=img_cpal, x=0, y=h, align_x=0, align_y=1}
+		this.cpal_rect = scene.image{img=img_cpal_rect, align_x=0, align_y=0}
+		
+		local function cpal_update(options)
+			this.cpal_rect.x = this.blk_color_x * 8 + this.cpal.l
+			this.cpal_rect.y = this.blk_color_y * 8 + this.cpal.t
+		end
+		
+		cpal_update()
+		
 		this.quit_msg.add_listener(GE_BUTTON, quit_events)
 		this.team_change.add_listener(GE_BUTTON, teamchange_events)
 		this.large_map.add_listener(GE_DELTA_TIME, this.update_overview_icons)
 		this.mini_map.add_listener(GE_BUTTON, toggle_map_state)
+		this.cpal_rect.add_listener(GE_DELTA_TIME, cpal_update)
 		
+		scene.root.add_child(this.crosshair)
+		scene.root.add_child(this.cpal)
+		scene.root.add_child(this.cpal_rect)
 		scene.root.add_child(this.mini_map)
 		scene.root.add_child(this.large_map)
 		this.team_change.add_child(this.team_change_msg_b)
@@ -1474,13 +1486,6 @@ function new_player(settings)
 
 			font_mini.print(4, 4, 0x80FFFFFF, cam_pos_str)
 		end
-
-		client.img_blit(img_crosshair, w/2 - 8, h/2 - 8)
-		
-		client.img_blit(img_cpal, 0, h-64)
-		client.img_blit(img_cpal_rect,
-			0 + this.blk_color_x*8,
-			h-64 + this.blk_color_y*8)
 
 		local coffs_killfeed = (#chat_killfeed-chat_killfeed.head)
 		local coffs_text = (#chat_text-chat_text.head)
