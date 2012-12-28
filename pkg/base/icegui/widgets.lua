@@ -59,9 +59,6 @@ function P.widget(options)
 	-- align 1 = bottom-right
 	-- align 0.5 = center
 	
-	-- FIXME: some of the things that are disallowed as setters could be made settable with more effort.
-	-- FIXME: Test all the child add/swap/drop methods properly(do they leak?)
-	
 	function setter_keys.x(v) rawset(this, 'x', v) this.dirty = true end
 	function setter_keys.y(v) rawset(this, 'y', v) this.dirty = true end
 	
@@ -83,27 +80,35 @@ function P.widget(options)
 		if this.parent == nil then return pos
 		else return this.parent.relx + this.parent.width * this.parent.align_x + pos end
 	end
-	function setter_keys.relx(v) error("cannot set widget.relx externally") end
+	function setter_keys.relx(v) 
+		local pos = v + (this.width * this.align_x)
+		if this.parent == nil then this.x = pos
+		else this.x = pos - (this.parent.relx + this.parent.width * this.parent.align_x) end
+	end
 	
 	function getter_keys.rely()
 		local pos = this.y - (this.height * this.align_y)
 		if this.parent == nil then return pos
 		else return this.parent.rely + this.parent.height * this.parent.align_y + pos end
 	end
-	function setter_keys.rely(v) error("cannot set widget.rely externally") end
+	function setter_keys.rely(v) 
+		local pos = v + (this.width * this.align_y)
+		if this.parent == nil then this.y = pos
+		else this.y = pos - (this.parent.rely + this.parent.height * this.parent.align_y) end
+	end
 	
 	function getter_keys.l() return this.relx end
-	function setter_keys.l(v) error("cannot set widget.l externally") end
+	function setter_keys.l(v) this.relx = v end
 	function getter_keys.t() return this.rely end
-	function setter_keys.t(v) error("cannot set widget.t externally") end
+	function setter_keys.t(v) this.rely = v end
 	function getter_keys.r() return this.relx + this.width end    
-	function setter_keys.r(v) error("cannot set widget.r externally") end
+	function setter_keys.r(v) this.relx = v - this.width end
 	function getter_keys.b() return this.rely + this.height end    
-	function setter_keys.b(v) error("cannot set widget.b externally") end
+	function setter_keys.b(v) this.rely = v - this.height end
 	function getter_keys.cx() return this.relx + this.width * 0.5 end
-	function setter_keys.cx(v) error("cannot set widget.cx externally") end
+	function setter_keys.cx(v) this.relx = v - this.width * 0.5 end
 	function getter_keys.cy() return this.rely + this.height * 0.5 end
-	function setter_keys.cy(v) error("cannot set widget.cy externally") end
+	function setter_keys.cy(v) this.rely = v - this.height * 0.5 end
 	
 	function this.inner()
 		local l = this.l() + this.margin_left()

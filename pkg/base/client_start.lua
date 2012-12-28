@@ -23,6 +23,8 @@ map_fname = nil
 -- yeah this really should happen ASAP so we can boot people who suck
 dofile("pkg/base/lib_util.lua")
 
+--dofile("pkg/base/serpent.lua") -- serpent.block is a great debugging aid
+
 local loose, user_toggles, user_settings = parse_commandline_options({...})
 local user_config_filename = user_settings['user'] or "clsave/pub/user.json"
 local controls_config_filename = user_settings['controls'] or "clsave/pub/controls.json"
@@ -146,8 +148,29 @@ for k, v in pairs(button_map) do
 	key_map[v.key] = {name=k, desc=v.desc}
 end
 
-chat_killfeed = {head = 1, scroll = nil, queue = {}}
-chat_text = {head = 1, scroll = nil, queue = {}}
+-- a list of arbitrary data with a "camera" that can render sublists.
+function scroll_list(data, cam_start, cam_height)
+	
+	local this = {list={},cam={
+		start=cam_start or 1,
+		height=cam_height-1 or 0}}
+	
+	-- return a subset of the list table based on the camera position and height
+	function this.render(cam)
+		cam = cam or this.cam
+		local result = {}
+		local i
+		for i=cam.start, cam.start+cam.height do
+			table.insert(result, this.list[i])
+		end
+		return result
+	end
+	
+	return this	
+end
+
+chat_killfeed = scroll_list({}, 0, 10)
+chat_text = scroll_list({}, 0, 6)
 
 NET_MOVE_DELAY = 0.5
 NET_ORIENT_DELAY = 0.1
@@ -268,50 +291,25 @@ function tracer_prune(time)
 	tracers.time = time
 end
 
-function chat_add(ctab, mtime, msg, color)
-	local l = {
+function chat_add(scrollist, mtime, msg, color)
+	table.insert(scrollist.list, #scrollist.list+1, {
 		mtime = mtime,
 		color = color,
 		msg = msg,
-	}
-
-	if mtime then
-		ctab[#ctab+1] = l
-	else
-		ctab.queue[#(ctab.queue)+1] = l
-	end
+	})
+	table.sort(scrollist.list, function(a, b) return a.mtime < b.mtime end)
 end
 
-function chat_prune(ctab, mtime)
-	local i
-
-	for i=1,#(ctab.queue) do
-		local l = ctab.queue[i]
-		l.mtime = mtime
-		ctab[#ctab+1] = l
+function chat_prune(scrollist, mtime)
+	-- prune lines over the stored limit
+	-- prune lines that are old
+	while #scrollist.list > 0 and 
+		(scrollist.list[1].mtime <= mtime - MODE_CHAT_LINGER or
+		#scrollist.list > MODE_CHAT_MAX) do
+		table.remove(scrollist.list, 1)
 	end
-	ctab.queue = {}
-
-	mtime = mtime - MODE_CHAT_LINGER
-	while ctab.head <= #ctab and (
-			#ctab-ctab.head > MODE_CHAT_MAX
-			or ctab[ctab.head].mtime <= mtime) do
-		ctab.head = ctab.head + 1
-	end
-end
-
-function chat_draw(ctab, fn_pos)
-	-- TODO: scrollback
-	local i
-	local w,h
-	w,h = client.screen_get_dims()
-
-	for i=ctab.head,#ctab do
-		local x,y
-		local ri = i-ctab.head
-		x,y = fn_pos(ri,ctab[i].msg,w,h)
-		font_mini.print(x,y,ctab[i].color,ctab[i].msg)
-	end
+	
+	scrollist.cam.start = #scrollist.list - scrollist.cam.height	
 end
 
 -- create map sprites
@@ -370,6 +368,7 @@ mspr_tent = {
 
 -- set stuff
 rotpos = 0.0
+sec_last = 0.
 debug_enabled = false
 mouse_released = false
 sensitivity = user_config.sensitivity or 1.0
@@ -551,12 +550,12 @@ function h_tick_main(sec_current, sec_delta)
 			-- add to chat
 			local color, msg
 			color, msg, pkt = common.net_unpack("Iz", pkt)
-			chat_add(chat_text, nil, msg, color)
+			chat_add(chat_text, sec_current, msg, color)
 		elseif cid == 0x0F then
 			-- add to killfeed
 			local color, msg
 			color, msg, pkt = common.net_unpack("Iz", pkt)
-			chat_add(chat_killfeed, nil, msg, color)
+			chat_add(chat_killfeed, sec_current, msg, color)
 		elseif cid == 0x10 then
 			local pid, x,y,z, ya,xa
 			pid, x,y,z, ya,xa, pkt = common.net_unpack("Bfffbb", pkt)
@@ -729,7 +728,9 @@ function h_tick_main(sec_current, sec_delta)
 	end
 	
 	input_events = {}
-		
+	
+	sec_last = sec_current
+	
 	-- wait a bit
 	return 0.005
 end
@@ -770,8 +771,8 @@ function h_tick_init(sec_current, sec_delta)
 	chat_add(chat_text, sec_current, "YOU ALL SUCK", 0xFFC00000)
 	]]
 	chat_add(chat_text, sec_current, "Welcome to Iceball!", 0xFFFF00AA)
-	chat_add(chat_text, sec_current, "Please send all flames to /dev/null.", 0xFFFF00AA)
-	chat_add(chat_text, sec_current, "Vucgy, this includes you.", 0xFFFF00AA)
+	chat_add(chat_killfeed, sec_current, "Please send all flames to /dev/null.", 0xFFFF00AA)
+	chat_add(chat_killfeed, sec_current, "Vucgy, this includes you.", 0xFFFF00AA)
 	
 	mouse_released = false
 	client.mouse_lock_set(true)
@@ -872,7 +873,7 @@ function h_key(key, state, modif)
 			print(s)
 			--client.map_load(s)
 			client.map_save(map_loaded, s, "icemap")
-			chat_add(chat_text, nil, "Map saved to "..s, 0xFFC00000)
+			chat_add(chat_text, sec_last, "Map saved to "..s, 0xFFC00000)
 		elseif key == BTSK_RELOAD then
 			if plr.alive and plr.wpn and plr.tool == TOOL_GUN then
 				plr.wpn.reload()

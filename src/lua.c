@@ -116,6 +116,7 @@ struct icelua_entry icelua_common[] = {
 	{icelua_fn_common_img_load, "img_load"},
 	{icelua_fn_common_img_new, "img_new"},
 	{icelua_fn_common_img_pixel_set, "img_pixel_set"},
+	{icelua_fn_common_img_fill, "img_fill"},
 	{icelua_fn_common_img_free, "img_free"},
 	{icelua_fn_common_img_get_dims, "img_get_dims"},
 	{icelua_fn_common_json_parse, "json_parse"},

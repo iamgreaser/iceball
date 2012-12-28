@@ -1109,6 +1109,13 @@ function new_player(settings)
 			text="Press 2 to join Green", x = w/2, y = h/4 + 40, align_x = 0.5, align_y = 0.5}
 		this.team_change = scene.display_object{visible=false}
 		
+		-- chat and killfeed
+		
+		this.chat_text = scene.textfield{font=font_mini, ctab={}, 
+			align_x=0, align_y=1, x = 4, y = h - 90}
+		this.kill_text = scene.textfield{font=font_mini, ctab={}, 
+			align_x=1, align_y=1, x = w - 4, y = h - 90}
+		
 		-- map (large_map and minimap)
 		
 		this.mini_map = scene.display_object{width=128, height=128, align_x = 1, align_y = 0,
@@ -1270,6 +1277,9 @@ function new_player(settings)
 		local function menus_visible()
 			return this.quit_msg.visible or this.team_change.visible
 		end
+		local function is_typing()
+			return typing_type
+		end
 		
 		local function quit_events(options)
 			if options.state then
@@ -1287,7 +1297,7 @@ function new_player(settings)
 		end
 		local function teamchange_events(options)
 			local viz = this.team_change.visible
-			if options.state then
+			if options.state and not is_typing() then
 				if viz then
 				
 					local team
@@ -1311,11 +1321,17 @@ function new_player(settings)
 			this.team_change.visible = viz
 		end
 		local function toggle_map_state(options)
-			if options.state and options.key == BTSK_MAP then
+			if options.state and options.key == BTSK_MAP and not is_typing() then
 				this.mini_map.visible = not this.mini_map.visible
 				this.large_map.visible = not this.large_map.visible
 			end
 		end
+		local function feed_update(options)
+			this.chat_text.ctab = chat_text.render()
+			this.kill_text.ctab = chat_killfeed.render()
+		end
+		-- FIXME: chat typing isn't aware of the widgets, so it'll open up e.g. if you have the quit message open
+		-- (plan is to ultimately make the typing box a textfield, then is_typing becomes the typing box's visibility)
 		
 		this.crosshair = scene.image{img=img_crosshair, x=w/2, y=h/2}
 		this.cpal = scene.image{img=img_cpal, x=0, y=h, align_x=0, align_y=1}
@@ -1333,12 +1349,15 @@ function new_player(settings)
 		this.large_map.add_listener(GE_DELTA_TIME, this.update_overview_icons)
 		this.mini_map.add_listener(GE_BUTTON, toggle_map_state)
 		this.cpal_rect.add_listener(GE_DELTA_TIME, cpal_update)
+		this.chat_text.add_listener(GE_DELTA_TIME, feed_update)
 		
 		scene.root.add_child(this.crosshair)
 		scene.root.add_child(this.cpal)
 		scene.root.add_child(this.cpal_rect)
 		scene.root.add_child(this.mini_map)
 		scene.root.add_child(this.large_map)
+		scene.root.add_child(this.chat_text)
+		scene.root.add_child(this.kill_text)
 		this.team_change.add_child(this.team_change_msg_b)
 		this.team_change.add_child(this.team_change_msg_g)
 		scene.root.add_child(this.team_change)
@@ -1384,7 +1403,6 @@ function new_player(settings)
 		if not this.scene then
 			this.create_hud()
 		end
-		this.scene.draw()
 		
 		this.render()
 
@@ -1451,6 +1469,8 @@ function new_player(settings)
 				obj.render()
 			end
 		end
+		
+		this.scene.draw()
 
 		if this.has_intel then
 			local intel = this.has_intel
@@ -1486,16 +1506,6 @@ function new_player(settings)
 
 			font_mini.print(4, 4, 0x80FFFFFF, cam_pos_str)
 		end
-
-		local coffs_killfeed = (#chat_killfeed-chat_killfeed.head)
-		local coffs_text = (#chat_text-chat_text.head)
-
-		chat_draw(chat_killfeed, (function (i,s,w,h)
-			return w-4-6*#s, h-90-(coffs_killfeed-i)*8
-		end))
-		chat_draw(chat_text, (function (i,s,w,h)
-			return 4, h-90-(coffs_text-i)*8
-		end))
 
 		if typing_type then
 			local s = typing_type..typing_msg.."_"

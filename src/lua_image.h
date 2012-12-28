@@ -157,6 +157,23 @@ int icelua_fn_common_img_pixel_set(lua_State *L)
 	return 0;
 }
 
+void icelua_fn_common_img_fill(lua_State *L)
+{
+	int i;
+	
+	int top = icelua_assert_stack(L, 2, 2);
+	
+	img_t *img = lua_touserdata(L, 1);
+	if(img == NULL || img->udtype != UD_IMG)
+		return luaL_error(L, "not an image");
+	uint32_t color = lua_tointeger(L, 2);
+	
+    for (i=0; i<(img->head.width*img->head.height); i++)
+        img->pixels[i] = color;    
+    
+	return 0;
+}
+
 int icelua_fn_common_img_free(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 1, 1);

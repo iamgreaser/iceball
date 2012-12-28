@@ -83,6 +83,23 @@ function gui_create_fixwidth_font(image, char_width, char_height, indexing_fn, s
 		
 		return result
 	end
+	
+	-- compute characters + positions from a colortable, where each line of table contains a string "msg" and a color "color"
+	function this.compute_ctab(ctab, x, y)
+		local result = {}
+		
+		for k, v in pairs(ctab) do
+			-- compute and append a single line
+			local line = this.compute_unwrapped(x, y, v.color, v.msg)
+			local i
+			for i=0, #line do
+				table.insert(result, line[i])
+			end
+			-- then add the y of the last character + a newline		
+			y = line[#line][#line[#line]][4] + this.height
+		end
+		return result
+	end
 
 	-- compute a wordwrapped characters + positions output suitable for usage in text selections as well as render
 	function this.compute_wordwrap(wp, x, y, c, str)
@@ -170,6 +187,8 @@ function gui_create_fixwidth_font(image, char_width, char_height, indexing_fn, s
 
 	-- get the AABB dimensions of text given precomputed text data
 	function this.dimensions(data)
+		
+		if #data<1 or #data[1]<1 then return {l=0,r=0,t=0,b=0,width=1,height=1} end
 		
 		local result = {l=data[1][1][3],
 						r=data[1][1][3] + this.width,
@@ -490,14 +509,21 @@ function gui_create_scene(width, height, shared_rate)
 				this.dirty = true
 			end
 		end
-
-		function this._recalc_size()
-			if this.wordwrap == true then
-				this.text_cache = this.font.compute_wordwrap(this.width,
-					0, 0, this.color, this._text)
+		
+		local _text
+		local _ctab
+		
+		local function recalc_size()
+			if _ctab ~= nil then
+				this.text_cache = this.font.compute_ctab(_ctab, 0, 0)
 			else
-				this.text_cache = this.font.compute_unwrapped(0, 0,
-					this.color, this._text)
+				if this.wordwrap == true then
+					this.text_cache = this.font.compute_wordwrap(this.width,
+						0, 0, this.color, _text)
+				else
+					this.text_cache = this.font.compute_unwrapped(0, 0,
+						this.color, _text)
+				end
 			end
 			if this.autosize then
 				local dim = this.font.dimensions(this.text_cache)
@@ -508,19 +534,52 @@ function gui_create_scene(width, height, shared_rate)
 		end
 
 		function this.getter_keys.text()
-			return this._text
+			return _text
 		end
 
 		function this.setter_keys.text(str)
-			this._text = str
-			this._recalc_size()
+			_ctab = nil
+			if _text == str then return end
+			_text = str
+			recalc_size()
+		end
+		
+		function this.getter_keys.ctab()
+			return _ctab
+		end
+
+		function this.setter_keys.ctab(ctab)
+			_text = nil
+			
+			-- test sameness
+			
+			local same = true
+			if _ctab == nil or #_ctab ~= #ctab then same = false
+			else
+				local i
+				for i=1, #ctab do
+					if _ctab[i] ~= ctab then same = false break end
+				end
+			end
+			if same then return end
+			
+			-- copy and dirtify
+			
+			local tabcopy = {}
+			for k, v in pairs(ctab) do
+				table.insert(tabcopy, v)
+			end
+			_ctab = tabcopy
+			recalc_size()
 		end
 
 		function this.draw_update()
+			common.img_fill(this.img, 0x00000000)
 			this.font.print_precomputed(this.text_cache, 0, 0, this.img)
 		end
 
 		this.text = options.text or ""
+		if options.ctab ~= nil then this.ctab = options.ctab end
 
 		return this
 
@@ -633,7 +692,7 @@ function gui_create_scene(width, height, shared_rate)
 	-- rotate using shared alarm(accumulates 60hz frames)
 	
 	local function bone_rotate(dT)
-		bone.rot_y = bone.rot_y + 1./60
+		bone.rot_y = bone.rot_y + 1./6
 	end
 	bone.add_listener(GE_SHARED_ALARM, bone_rotate)]]
 	--[[
