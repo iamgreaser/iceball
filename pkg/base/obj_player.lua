@@ -1079,7 +1079,12 @@ function new_player(settings)
 		local tool_y = {0.3,0.25,0.25,0.25}
 		local tool_scale = {0.2,0.1,0.2,0.1}
 		local tool_pick_scale = {1.3,2.0,2.0,2.0}
-		local bounce = 0
+		local bounce = 0. -- picked tool bounce
+		
+		local bone_intel = scene.bone{model=mdl_intel, bone=mdl_intel_bone,
+			x=w*0.1,y=h*0.5,scale=0.18,visible=false}
+		scene.root.add_child(bone_intel)
+		
 		local function bone_rotate(dT)
 			for k,bone in pairs(this.tools_align.children) do
 				bone.rot_y = bone.rot_y + dT * 120 * 0.01
@@ -1090,7 +1095,14 @@ function new_player(settings)
 					bone.scale = bone.scale * tool_pick_scale[k]
 				end
 				bone.y = bone.y * h/2
-				bounce = bounce + dT
+			end
+			for k,bone in pairs({bone_intel}) do
+				bone.rot_y = bone.rot_y + dT * 120 * 0.01
+			end
+			bounce = bounce + dT * 4
+			if this.has_intel then
+				bone_intel.visible = (this.has_intel ~= nil)
+				bone_intel.model = this.has_intel.mdl_intel
 			end
 		end
 		this.tools_align.add_listener(GE_DELTA_TIME, bone_rotate)
@@ -1330,6 +1342,7 @@ function new_player(settings)
 			this.chat_text.ctab = chat_text.render()
 			this.kill_text.ctab = chat_killfeed.render()
 		end
+		
 		-- FIXME: chat typing isn't aware of the widgets, so it'll open up e.g. if you have the quit message open
 		-- (plan is to ultimately make the typing box a textfield, then is_typing becomes the typing box's visibility)
 		
@@ -1471,11 +1484,6 @@ function new_player(settings)
 		end
 		
 		this.scene.draw()
-
-		if this.has_intel then
-			local intel = this.has_intel
-			intel.render_icon(-0.5,-0.5,1.0,0.2)
-		end
 
 		local hcolor = 0xFFA1FFA1
 		local acolor = 0xFFC0C0C0

@@ -100,12 +100,6 @@ function new_intel(settings)
 			math.pi/2, math.pi/2, this.player.angy-math.pi/2, 1)
 	end
 	
-	function this.render_icon(x,y,z,scale)
-		client.model_render_bone_local(this.mdl_intel, 0,
-			x, y, z,
-			this.rotpos, 0, 0, scale)
-	end
-	
 	function this.intel_drop()
 		this.visible = true
 		this.x = math.floor(this.player.x+0.5)+0.5
