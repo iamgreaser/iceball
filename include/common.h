@@ -19,8 +19,9 @@
 #define VERSION_X 0
 #define VERSION_Y 0
 #define VERSION_A 0
-#define VERSION_Z 2
+#define VERSION_Z 3
 // Remember to bump "Z" basically every time you change the engine!
+// TRIPLEFOX THIS INCLUDES YOU
 // Z can only be 0 for official releases!
 
 #define MODEL_BONE_MAX  256

@@ -168,9 +168,9 @@ void icelua_fn_common_img_fill(lua_State *L)
 		return luaL_error(L, "not an image");
 	uint32_t color = lua_tointeger(L, 2);
 	
-    for (i=0; i<(img->head.width*img->head.height); i++)
-        img->pixels[i] = color;    
-    
+	for (i=0; i<(img->head.width*img->head.height); i++)
+		img->pixels[i] = color;    
+	
 	return 0;
 }
 

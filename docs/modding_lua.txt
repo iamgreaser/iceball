@@ -429,6 +429,9 @@ client.img_blit_to(target, img, dx, dy, width = iwidth, height = iheight, sx = 0
 	
 	this is clipped to fit!
 
+client.img_fill(img, color) @
+	fills an image with a solid colour
+
 tab = common.json_parse(str) @
 	parses the JSON string "str"
 	

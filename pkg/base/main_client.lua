@@ -38,6 +38,29 @@ local function bug_str_gen()
 	return (s ~= "" and "\nCLIENT ISSUES:\n"..s) or ""
 end
 
+if cver.num == 2 and common.img_fill then
+	cver = {
+		cmp={0,0,0,0,3},
+		num=3,
+		str="0.0-3",
+	}
+	VERSION_BUGS[#VERSION_BUGS+1] = 
+		{intro=nil, fix=nil, msg="Triplefox forgot to bump the version number in this build"}
+end
+
+if not common.img_fill then
+	function common.img_fill(img, color)
+		local x,y,w,h
+		w,h = common.img_get_dims(img)
+		for y=0,h-1 do
+		for x=0,w-1 do
+			common.img_pixel_set(img, x, y, color)
+		end
+		end
+	end
+	client.img_fill = common.img_fill
+end
+
 if cver == nil then
 	cver = {
 		cmp={0,0,0,0,-1004},
