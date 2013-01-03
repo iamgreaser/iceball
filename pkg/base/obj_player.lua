@@ -1079,6 +1079,22 @@ function new_player(settings)
 		local tool_y = {0.3,0.25,0.25,0.25}
 		local tool_scale = {0.2,0.1,0.2,0.1}
 		local tool_pick_scale = {1.3,2.0,2.0,2.0}
+		local tool_textcolor = {
+			function() return 0xFFC0C0C0 end,
+			function() 
+				local cr,cg,cb
+				cr,cg,cb = this.blk_color[1],this.blk_color[2],this.blk_color[3]
+				return (cr*256+cg)*256+cb+0xFF000000
+			end,
+			function() return 0xFFC0C0C0 end,
+			function() return 0xFFC0C0C0 end
+		}
+		local tool_textgen = {
+			function() return "" end,
+			function() return ""..this.blocks end,
+			function() return ""..this.wpn.ammo_clip.."-"..this.wpn.ammo_reserve end,
+			function() return ""..this.grenades end
+		}
 		local bounce = 0. -- picked tool bounce
 		
 		local bone_intel = scene.bone{model=mdl_intel, bone=mdl_intel_bone,
@@ -1357,18 +1373,48 @@ function new_player(settings)
 		
 		cpal_update()
 		
+		this.health_text = scene.textfield{font=font_digits,
+			text="100", 
+			color=0xFFA1FFA1,
+			align_x=0.5, 
+			align_y=0, 
+			x = w/2,
+			y = h-48}
+			
+		local function health_update(options)
+			this.health_text.text = ""..this.health
+		end
+		
+		this.ammo_text = scene.textfield{font=font_digits,
+			text="",
+			color=0xFFC0C0C0,
+			align_x = 1,
+			align_y = 0,
+			x = w - 16,
+			y = h - 48}
+		
+		local function ammo_update(options)
+			local tool = this.tool + 1
+			this.ammo_text.color = tool_textcolor[tool]()
+			this.ammo_text.text = tool_textgen[tool]()
+		end
+		
 		this.quit_msg.add_listener(GE_BUTTON, quit_events)
 		this.team_change.add_listener(GE_BUTTON, teamchange_events)
 		this.large_map.add_listener(GE_DELTA_TIME, this.update_overview_icons)
 		this.mini_map.add_listener(GE_BUTTON, toggle_map_state)
 		this.cpal_rect.add_listener(GE_DELTA_TIME, cpal_update)
 		this.chat_text.add_listener(GE_DELTA_TIME, feed_update)
+		this.health_text.add_listener(GE_DELTA_TIME, health_update)
+		this.ammo_text.add_listener(GE_DELTA_TIME, ammo_update)
 		
 		scene.root.add_child(this.crosshair)
 		scene.root.add_child(this.cpal)
 		scene.root.add_child(this.cpal_rect)
 		scene.root.add_child(this.mini_map)
 		scene.root.add_child(this.large_map)
+		scene.root.add_child(this.health_text)
+		scene.root.add_child(this.ammo_text)
 		scene.root.add_child(this.chat_text)
 		scene.root.add_child(this.kill_text)
 		this.team_change.add_child(this.team_change_msg_b)
@@ -1484,27 +1530,6 @@ function new_player(settings)
 		end
 		
 		this.scene.draw()
-
-		local hcolor = 0xFFA1FFA1
-		local acolor = 0xFFC0C0C0
-		local gcolor = 0xFFC0C0C0
-		local cr,cg,cb
-		cr,cg,cb = this.blk_color[1],this.blk_color[2],this.blk_color[3]
-		local bcolor = (cr*256+cg)*256+cb
-		local hstr = ""..this.health
-		local astr = ""..this.wpn.ammo_clip.."-"..this.wpn.ammo_reserve
-		local bstr = ""..this.blocks
-		local gstr = ""..this.grenades
-
-		font_digits.print((w-32*#hstr)/2, h-48, hcolor, hstr)
-		if this.tool == TOOL_GUN then
-			font_digits.print(-16+w-32*#astr, h-48, acolor, astr)
-		elseif this.tool == TOOL_NADE then
-			font_digits.print(-16+w-32*#gstr, h-48, gcolor, gstr)
-		else
-			font_digits.print(-16+w-32*#bstr, h-48, bcolor+0xFF000000, bstr)
-		end
-		local i
 
 		if debug_enabled then
 			local camx,camy,camz

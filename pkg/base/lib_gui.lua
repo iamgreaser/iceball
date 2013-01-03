@@ -484,7 +484,6 @@ function gui_create_scene(width, height, shared_rate)
 		local this = scene.display_object(options)
 
 		this.wordwrap = options.wordwrap
-		this.color = options.color or 0xFF880088
 		this.autosize = options.autosize or true
 		this.font = options.font or font_mini
 		this.use_img = true
@@ -512,25 +511,30 @@ function gui_create_scene(width, height, shared_rate)
 		
 		local _text
 		local _ctab
+		local _color = options.color or 0xFF880088
 		
-		local function recalc_size()
+		local function recalc_glyphs()
 			if _ctab ~= nil then
 				this.text_cache = this.font.compute_ctab(_ctab, 0, 0)
 			else
 				if this.wordwrap == true then
 					this.text_cache = this.font.compute_wordwrap(this.width,
-						0, 0, this.color, _text)
+						0, 0, _color, _text)
 				else
 					this.text_cache = this.font.compute_unwrapped(0, 0,
-						this.color, _text)
+						_color, _text)
 				end
-			end
+			end		
+			this.dirty = true
+		end
+		
+		local function recalc_size()
+			recalc_glyphs()
 			if this.autosize then
 				local dim = this.font.dimensions(this.text_cache)
 				rawset(this, 'width', dim.width)
 				rawset(this, 'height', dim.height)
 			end
-			this.dirty = true
 		end
 
 		function this.getter_keys.text()
@@ -576,6 +580,15 @@ function gui_create_scene(width, height, shared_rate)
 		function this.draw_update()
 			common.img_fill(this.img, 0x00000000)
 			this.font.print_precomputed(this.text_cache, 0, 0, this.img)
+		end
+			
+		function this.getter_keys.color(v)
+			return _color
+		end
+		
+		function this.setter_keys.color(v)
+			_color = v
+			recalc_glyphs()
 		end
 
 		this.text = options.text or ""
