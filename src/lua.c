@@ -69,6 +69,7 @@ int icelua_force_get_integer(lua_State *L, int table, char *name)
 
 // server functions
 
+#ifndef DEDI
 struct icelua_entry icelua_client[] = {
 	{icelua_fn_client_mouse_lock_set, "mouse_lock_set"},
 	{icelua_fn_client_mouse_visible_set, "mouse_visible_set"},
@@ -93,6 +94,7 @@ struct icelua_entry icelua_client[] = {
 	{icelua_fn_client_wav_kill, "wav_kill"},
 	{NULL, NULL}
 };
+#endif
 
 struct icelua_entry icelua_server[] = {
 	{NULL, NULL}
@@ -138,9 +140,11 @@ struct icelua_entry icelua_common[] = {
 	{NULL, NULL}
 };
 
+#ifndef DEDI
 struct icelua_entry icelua_common_client[] = {
 	{NULL, NULL}
 };
+#endif
 
 struct icelua_entry icelua_common_server[] = {
 	{NULL, NULL}
@@ -307,15 +311,17 @@ int icelua_init(void)
 	}
 	
 	// load stuff into them
+#ifndef DEDI
 	icelua_loadfuncs(lstate_client, "client", icelua_client);
-	icelua_loadfuncs(lstate_server, "server", icelua_server);
 	icelua_loadfuncs(lstate_client, "client", icelua_common);
-	icelua_loadfuncs(lstate_server, "server", icelua_common);
 	icelua_loadfuncs(lstate_client, "common", icelua_common);
-	icelua_loadfuncs(lstate_server, "common", icelua_common);
 	icelua_loadfuncs(lstate_client, "client", icelua_common_client);
-	icelua_loadfuncs(lstate_server, "server", icelua_common_server);
 	icelua_loadfuncs(lstate_client, "common", icelua_common_client);
+#endif
+	icelua_loadfuncs(lstate_server, "server", icelua_server);
+	icelua_loadfuncs(lstate_server, "server", icelua_common);
+	icelua_loadfuncs(lstate_server, "common", icelua_common);
+	icelua_loadfuncs(lstate_server, "server", icelua_common_server);
 	icelua_loadfuncs(lstate_server, "common", icelua_common_server);
 	
 	// load some lua base libraries

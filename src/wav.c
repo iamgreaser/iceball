@@ -17,8 +17,6 @@
 
 #include "common.h"
 
-#ifndef DEDI
-
 typedef struct wavfmt {
 	uint16_t codec, chns;
 	uint32_t freq;
@@ -26,6 +24,7 @@ typedef struct wavfmt {
 	uint16_t blkalign, bps;
 } __attribute__((__packed__)) wavfmt_t;
 
+#ifndef DEDI
 float wav_cube_size = 1.0f;
 int wav_mfreq = 0;
 void (*wav_fn_mixer)(void *buf, int len) = NULL;
@@ -159,6 +158,7 @@ void wav_fn_mixer_s16he_stereo(void *buf, int len)
 		}
 	}
 }
+#endif
 
 wav_t *wav_parse(char *buf, int len)
 {
@@ -310,16 +310,7 @@ wav_t *wav_load(const char *fname)
 	return ret;
 }
 
-void wav_kill(wav_t *wav)
-{
-	if(wav != NULL)
-	{
-		wav->refcount--;
-		if(wav->refcount == 0)
-			free(wav);
-	}
-}
-
+#ifndef DEDI
 void wav_chn_kill(wavchn_t *chn)
 {
 	wav_kill(chn->src);
@@ -369,7 +360,19 @@ void wav_callback_sdl(void *userdata, Uint8 *stream, int len)
 	
 	wav_fn_mixer((void *)stream, len);
 }
+#endif
 
+void wav_kill(wav_t *wav)
+{
+	if(wav != NULL)
+	{
+		wav->refcount--;
+		if(wav->refcount == 0)
+			free(wav);
+	}
+}
+
+#ifndef DEDI
 int wav_init(void)
 {
 	int i;

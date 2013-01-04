@@ -19,7 +19,7 @@
 #define VERSION_X 0
 #define VERSION_Y 0
 #define VERSION_A 0
-#define VERSION_Z 4
+#define VERSION_Z 5
 // Remember to bump "Z" basically every time you change the engine!
 // TRIPLEFOX THIS INCLUDES YOU
 // Z can only be 0 for official releases!
@@ -452,14 +452,14 @@ void mtx_identity(matrix_t *mtx);
 void cam_point_dir(camera_t *model, float dx, float dy, float dz, float zoom, float roll);
 
 // wav.c
+wav_t *wav_parse(char *buf, int len);
+wav_t *wav_load(const char *fname);
+void wav_kill(wav_t *wav);
 #ifndef DEDI
 extern float wav_cube_size;
 extern wavchn_t wchn[WAV_CHN_COUNT];
-wav_t *wav_parse(char *buf, int len);
-wav_t *wav_load(const char *fname);
 wavchn_t *wav_chn_alloc(int flags, wav_t *wav, float x, float y, float z, float vol, float freq_mod, float vol_spread);
 void wav_chn_kill(wavchn_t *chn);
-void wav_kill(wav_t *wav);
 int wav_init(void);
 void wav_deinit(void);
 #endif

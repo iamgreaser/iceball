@@ -17,6 +17,7 @@
 
 // client functions
 
+#ifndef DEDI
 /*
 client.wav_cube_size(size)
 	sets the size of a block in metres for sound calculations
@@ -179,6 +180,7 @@ int icelua_fn_client_wav_kill(lua_State *L)
 	
 	return 0;
 }
+#endif
 
 // common functions
 

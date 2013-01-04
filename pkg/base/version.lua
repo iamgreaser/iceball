@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,0,0,0,4},
-	num=4,
-	str="0.0-4",
+	cmp={0,0,0,0,5},
+	num=5,
+	str="0.0-5",
 }
 
 VERSION_MOD = {
@@ -32,4 +32,5 @@ VERSION_BUGS = {
 {intro=nil, fix=1, msg="Client does pathname security checks for non-clsave files"},
 {intro=nil, fix=3, msg="common.img_fill not implemented (this wrapper will be somewhat slow)"},
 {intro=nil, fix=4, msg="Sound is not supported"},
+{intro=4, fix=5, msg="Dedicated server build was broken"},
 }
