@@ -35,10 +35,9 @@ int icelua_fnaux_fetch_gettype(lua_State *L, const char *ftype)
 		return UD_IMG_TGA;
 	else if(!strcmp(ftype, "json"))
 		return UD_JSON;
+	else if(!strcmp(ftype, "wav"))
+		return UD_WAV;
 	else if(!strcmp(ftype, "log")) {
-		// TODO!
-		return luaL_error(L, "format not supported yet!");
-	} else if(!strcmp(ftype, "wav")) {
 		// TODO!
 		return luaL_error(L, "format not supported yet!");
 	} else {
@@ -88,12 +87,16 @@ int icelua_fnaux_fetch_immediate(lua_State *L, const char *ftype, const char *fn
 		
 		lua_pushlightuserdata(L, img);
 		return 1;
+	} else if(!strcmp(ftype, "wav")) {
+		wav_t *wav = wav_load(fname);
+		if(wav == NULL)
+			return 0;
+		
+		lua_pushlightuserdata(L, wav);
+		return 1;
 	} else if(!strcmp(ftype, "json")) {
 		return (json_load(L, fname) ? 0 : 1);
 	} else if(!strcmp(ftype, "log")) {
-		// TODO!
-		return luaL_error(L, "format not supported yet!");
-	} else if(!strcmp(ftype, "wav")) {
 		// TODO!
 		return luaL_error(L, "format not supported yet!");
 	} else {
@@ -244,6 +247,21 @@ int icelua_fn_common_fetch_poll(lua_State *L)
 				}
 				
 				lua_pushlightuserdata(L, img);
+				ret = 1;
+			} break;
+			
+			case UD_WAV: {
+				wav_t *wav = wav_parse(
+					to_client_local.cfetch_ubuf,
+					to_client_local.cfetch_ulen);
+				
+				if(wav == NULL)
+				{
+					ret = 0;
+					break;
+				}
+				
+				lua_pushlightuserdata(L, wav);
 				ret = 1;
 			} break;
 			

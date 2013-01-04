@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,0,0,0,3},
-	num=3,
-	str="0.0-3",
+	cmp={0,0,0,0,4},
+	num=4,
+	str="0.0-4",
 }
 
 VERSION_MOD = {
@@ -31,5 +31,5 @@ VERSION_BUGS = {
 {intro=nil, fix=1, msg="PMF models are sometimes saved with garbage following the name"},
 {intro=nil, fix=1, msg="Client does pathname security checks for non-clsave files"},
 {intro=nil, fix=3, msg="common.img_fill not implemented (this wrapper will be somewhat slow)"},
-{intro=nil, fix=nil, msg="Sound is not supported"},
+{intro=nil, fix=4, msg="Sound is not supported"},
 }

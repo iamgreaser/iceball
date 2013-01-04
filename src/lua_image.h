@@ -157,7 +157,7 @@ int icelua_fn_common_img_pixel_set(lua_State *L)
 	return 0;
 }
 
-void icelua_fn_common_img_fill(lua_State *L)
+int icelua_fn_common_img_fill(lua_State *L)
 {
 	int i;
 	

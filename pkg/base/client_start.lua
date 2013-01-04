@@ -272,7 +272,9 @@ function tracer_add(x,y,z,ya,xa,time)
 		x=x,y=y,z=z,
 		ya=ya,xa=xa,
 		time=time or tracers.time,
+		chn=client.wav_play_global(wav_whoosh,x,y,z)
 	}
+	
 	tracers.tail = tracers.tail + 1
 	tracers[tracers.tail] = tc
 end
@@ -540,6 +542,7 @@ function h_tick_main(sec_current, sec_delta)
 			local x,y,z,cb,cg,cr,ct
 			x,y,z,cb,cg,cr,ct,pkt = common.net_unpack("HHHBBBB", pkt)
 			bhealth_clear(x,y,z,false)
+			client.wav_play_global(wav_buld,x+0.5,y+0.5,z+0.5)
 			map_block_set(x,y,z,ct,cr,cg,cb)
 		elseif cid == 0x09 then
 			local x,y,z
@@ -654,6 +657,7 @@ function h_tick_main(sec_current, sec_delta)
 				tracer_add(plr.x,plr.y,plr.z,
 					plr.angy,plr.angx,
 					sec_current)
+				client.wav_play_global(wav_rifle_shot, plr.x, plr.y, plr.z)
 			end
 		elseif cid == 0x1B then
 			local x,y,z,vx,vy,vz,fuse
@@ -668,6 +672,7 @@ function h_tick_main(sec_current, sec_delta)
 				vz = vz/256,
 				fuse = fuse/100
 			})
+			client.wav_play_global(wav_whoosh, x, y, z)
 			nade_add(n)
 		elseif cid == 0x1C then
 			local plr = players[players.current]
@@ -1143,6 +1148,8 @@ function client.hook_render()
 		x = x + sya*cxa*d
 		y = y + sxa*d
 		z = z + cya*cxa*d
+		
+		client.wav_chn_update(tracers.chn, x, y, z)
 		
 		client.model_render_bone_global(mdl_tracer, mdl_tracer_bone,
 			x,y,z,

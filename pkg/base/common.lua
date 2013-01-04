@@ -111,6 +111,17 @@ TOOL_BLOCK = 1
 TOOL_GUN = 2
 TOOL_NADE = 3
 
+-- sounds
+if client then
+	client.wav_cube_size(0.5)
+	wav_rifle_shot = common.wav_load(DIR_PKG_WAV.."/rifle-shot.wav")
+	wav_rifle_reload = common.wav_load(DIR_PKG_WAV.."/rifle-reload.wav")
+	wav_whoosh = common.wav_load(DIR_PKG_WAV.."/whoosh.wav")
+	wav_buld = common.wav_load(DIR_PKG_WAV.."/buld.wav")
+	wav_grif = common.wav_load(DIR_PKG_WAV.."/grif.wav")
+	wav_hammer = common.wav_load(DIR_PKG_WAV.."/hammer.wav")
+end
+
 -- weapons
 WPN_RIFLE = 1
 
@@ -159,6 +170,8 @@ weapons = {
 			if client then
 				tracer_add(plr.x,plr.y,plr.z,
 					plr.angy,plr.angx)
+				
+				client.wav_play_global(wav_rifle_shot, plr.x, plr.y, plr.z)
 			end
 			
 			local sya = math.sin(plr.angy)
@@ -237,6 +250,7 @@ weapons = {
 			if this.ammo_reserve ~= 0 then
 			if not this.reloading then
 				this.reloading = true
+				client.wav_play_global(wav_rifle_reload, plr.x, plr.y, plr.z)
 				plr.zooming = false
 				this.t_reload = nil
 			end end end

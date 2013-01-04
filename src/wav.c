@@ -17,6 +17,8 @@
 
 #include "common.h"
 
+#ifndef DEDI
+
 typedef struct wavfmt {
 	uint16_t codec, chns;
 	uint32_t freq;
@@ -24,23 +26,144 @@ typedef struct wavfmt {
 	uint16_t blkalign, bps;
 } __attribute__((__packed__)) wavfmt_t;
 
-float wav_cube_size;
+float wav_cube_size = 1.0f;
 int wav_mfreq = 0;
 void (*wav_fn_mixer)(void *buf, int len) = NULL;
 wavchn_t wchn[WAV_CHN_COUNT];
 int wav_wctr = 0;
 
-void wav_fn_mixer_s16he(void *buf, int len)
+void wav_fn_mixer_s16he_stereo(void *buf, int len)
 {
-	int i;
+	int i,j;
+	
+	len /= 4;
+	
+	// clear buffer
+	{
+		int16_t *v = (int16_t *)buf;
+		for(j = 0; j < len; j++)
+		{
+			*(v++) = 0;
+			*(v++) = 0;
+		}
+	}
+	
 	for(i = 0; i < WAV_CHN_COUNT; i++)
 	{
+		wavchn_t *wc = &wchn[i];
 		
+		// check if playing
+		if((!(wc->flags & WCF_ACTIVE)) || wc->src == NULL)
+			continue;
+		
+		// determine pos in 3D space
+		float dx = wc->x;
+		float dy = wc->y;
+		float dz = wc->z;
+		
+		if(wc->flags & WCF_GLOBAL)
+		{
+			float odx = dx - tcam.mpx;
+			float ody = dy - tcam.mpy;
+			float odz = dz - tcam.mpz;
+			
+			dx = odx*tcam.mxx + ody*tcam.mxy + odz*tcam.mxz;
+			dy = odx*tcam.myx + ody*tcam.myy + odz*tcam.myz;
+			dz = odx*tcam.mzx + ody*tcam.mzy + odz*tcam.mzz;
+			
+			dx = -dx;
+			dy = -dy;
+			dz = -dz;
+			
+			//printf("%.3f %.3f %.3f\n", dx, dy, dz);
+		}
+		
+		float dist2 = dx*dx + dy*dy + dz*dz;
+		float dist = sqrtf(dist2);
+		if(dist < 0.00001f)
+			dist = 0.00001f;
+		
+		dx /= dist;
+		dy /= dist;
+		dz /= dist;
+		
+		float distm = dist*wav_cube_size;
+		distm /= 10.0f;
+		float att = 1.0f/(distm*distm);
+		if(att > 1.0f)
+			att = 1.0f;
+		
+		att *= wc->vol;
+		// TODO: work out how to apply vol_spread? or do we just scrap it?
+		
+		// determine speaker volumes
+		// TODO: genericise this for multiple channels!
+		float vol[2];
+		vol[0] = 1.0f-dx;
+		vol[1] = 1.0f+dx;
+		
+		if(vol[0] > 1.0f)
+			vol[0] = 1.0f;
+		if(vol[1] > 1.0f)
+			vol[1] = 1.0f;
+		
+		vol[0] *= att;
+		vol[1] *= att;
+		
+		// get the speed
+		uint32_t freq = (uint32_t)(wc->src->freq*wc->freq_mod+0.5f);
+		uint32_t speed = (uint32_t)((((uint64_t)freq)<<16)/((uint64_t)wav_mfreq));
+		
+		// get the other stuff too
+		int16_t *data = wc->src->data;
+		uint32_t slen = wc->src->len;
+		int16_t *data_end = data+slen;
+		
+		// move stuff into registers
+		uint32_t offs = wc->offs;
+		uint32_t suboffs = wc->suboffs;
+		int16_t *v = (int16_t *)buf;
+		
+		//printf("%i %i %i %.5f %.5f\n", speed, offs, len, vol[0], vol[1]);
+		
+		for(j = 0; j < len; j++)
+		{
+			if(offs >= slen)
+			{
+				wav_chn_kill(wc);
+				break;
+			}
+			
+			int16_t d = data[offs];
+			int32_t v0 = (int32_t)(*v) + (int32_t)(vol[0]*d+0.5f);
+			int32_t v1 = (int32_t)(*v) + (int32_t)(vol[1]*d+0.5f);
+			if(v0 >  0x7FFF) v0 =  0x7FFF;
+			if(v0 < -0x7FFF) v0 = -0x7FFF;
+			if(v1 >  0x7FFF) v1 =  0x7FFF;
+			if(v1 < -0x7FFF) v1 = -0x7FFF;
+			
+			*(v++) = (int16_t)v0;
+			*(v++) = (int16_t)v1;
+			
+			suboffs += speed;
+			uint32_t ofinc = suboffs>>16;
+			offs += ofinc;
+			suboffs &= 0xFFFF;
+		}
+		
+		if(wc->flags & WCF_ACTIVE)
+		{
+			// move stuff back
+			wc->offs = offs;
+			wc->suboffs = suboffs;
+		}
 	}
 }
 
 wav_t *wav_parse(char *buf, int len)
 {
+	int i;
+	
 	if(len < 28+16)
 	{
 		fprintf(stderr, "wav_parse: file too short\n");
@@ -119,7 +242,7 @@ wav_t *wav_parse(char *buf, int len)
 	}
 	
 	// check integrity
-	if(fmt.blkalign != ((fmt.bps+7)>>1)*fmt.chns)
+	if(fmt.blkalign != ((fmt.bps+7)>>3)*fmt.chns)
 	{
 		fprintf(stderr, "wav_parse: block alignment is inconsistent\n");
 		return NULL;
@@ -151,21 +274,100 @@ wav_t *wav_parse(char *buf, int len)
 		return NULL;
 	}
 	
-	printf("TODO: actual .wav loading\n");
+	int datalen_smps = datalen/fmt.blkalign;
 	
-	return NULL;
+	wav_t *wav = malloc(sizeof(wav_t)*datalen_smps);
+	wav->udtype = UD_WAV;
+	wav->refcount = 1;
+	wav->len = datalen_smps;
+	wav->freq = fmt.freq;
+	
+	if(fmt.bps == 8)
+	{
+		int16_t *d = wav->data;
+		uint8_t *s = (uint8_t *)data_void;
+		
+		for(i = 0; i < datalen_smps; i++)
+			*(d++) = (((int16_t)(*s++))-0x80)<<8;
+	} else if(fmt.bps == 16) {
+		memcpy(wav->data, data_void, datalen_smps);
+	} else {
+		fprintf(stderr, "EDOOFUS: should never reach this point!\n");
+		abort();
+	}
+	
+	return wav;
+}
+
+wav_t *wav_load(const char *fname)
+{
+	int flen;
+	char *buf = net_fetch_file(fname, &flen);
+	if(buf == NULL)
+		return NULL;
+	wav_t *ret = wav_parse(buf, flen);
+	free(buf);
+	return ret;
+}
+
+void wav_kill(wav_t *wav)
+{
+	if(wav != NULL)
+	{
+		wav->refcount--;
+		if(wav->refcount == 0)
+			free(wav);
+	}
 }
 
 void wav_chn_kill(wavchn_t *chn)
 {
-	if(chn->src != NULL)
-	{
-		chn->src->refcount--;
-		if(chn->src->refcount == 0)
-			free(chn->src);
-		chn->src = NULL;
-	}
+	wav_kill(chn->src);
+	chn->src = NULL;
 	chn->flags = 0;
+}
+
+wavchn_t *wav_chn_alloc(int flags, wav_t *wav, float x, float y, float z, float vol, float freq_mod, float vol_spread)
+{
+	int i;
+	
+	for(i = 0; i < WAV_CHN_COUNT+1; i++)
+	{
+		if(!(wchn[wav_wctr].flags & WCF_ACTIVE))
+			break;
+		wav_wctr++;
+	}
+	
+	wavchn_t *wc = &wchn[wav_wctr];
+	
+	if(wc->flags & WCF_ACTIVE)
+		wav_chn_kill(wc);
+	
+	wc->idx = wav_wctr;
+	wav_wctr++;
+	
+	wc->flags = flags;
+	wc->src = wav;
+	wav->refcount++;
+	wc->x = x;
+	wc->y = y;
+	wc->z = z;
+	wc->vol = vol;
+	wc->freq_mod = freq_mod;
+	wc->vol_spread = vol_spread;
+	
+	wc->offs = 0;
+	wc->suboffs = 0;
+	
+	return wc;
+}
+
+void wav_callback_sdl(void *userdata, Uint8 *stream, int len)
+{
+	if(wav_fn_mixer == NULL)
+		return;
+	
+	wav_fn_mixer((void *)stream, len);
 }
 
 int wav_init(void)
@@ -177,8 +379,23 @@ int wav_init(void)
 		wchn[i].src = NULL;
 		wchn[i].flags = 0;
 	}
+	wav_mfreq = 44100;
 	
-	// TODO: actually get output working
+	SDL_AudioSpec aspec;
+	aspec.freq = wav_mfreq;
+	aspec.format = AUDIO_S16SYS;
+	aspec.channels = 2;
+	aspec.samples = 4096; // TODO: make this editable
+	aspec.userdata = NULL;
+	aspec.callback = wav_callback_sdl;
+	if(SDL_OpenAudio(&aspec, NULL))
+	{
+		error_sdl("wav_init(nonfatal)");
+		return 0;
+	}
+	
+	wav_fn_mixer = wav_fn_mixer_s16he_stereo;
+	SDL_PauseAudio(0);
 	
 	return 0;
 }
@@ -192,3 +409,4 @@ void wav_deinit(void)
 	
 	// TODO: disable sound
 }
+#endif

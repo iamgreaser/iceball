@@ -19,7 +19,7 @@
 #define VERSION_X 0
 #define VERSION_Y 0
 #define VERSION_A 0
-#define VERSION_Z 3
+#define VERSION_Z 4
 // Remember to bump "Z" basically every time you change the engine!
 // TRIPLEFOX THIS INCLUDES YOU
 // Z can only be 0 for official releases!
@@ -200,12 +200,12 @@ typedef struct wav
 typedef struct wavchn
 {
 	wav_t *src;
-	uint32_t idx;
+	int idx;
 	int flags;
 	float freq_mod;
 	float vol, vol_spread;
 	float x,y,z;
-	uint32_t offs;
+	uint32_t offs, suboffs;
 } wavchn_t;
 #define WCF_ACTIVE   0x00000001
 #define WCF_GLOBAL   0x00000002
@@ -329,6 +329,20 @@ enum
 	PATH_ENUM_MAX
 };
 
+// dsp.c
+float interp_linear(float y0, float y1, float x);
+float interp_cubic(float y0, float y1, float y2, float y3, float x);
+float interp_hermite6p(float y0, float y1, float y2, float y3, 
+		float y4, float y5, float x);
+float frequency2wavelength(int rate, float frequency);
+float wavelength2frequency(int rate, float wavelength);
+float frequency2midinote(float frequency);
+float midinote2frequency(float midinote);
+float below_min_power(float amplitude);
+float attentuationDB2pctpower(float data);
+float equal_power_left(float pan);
+float equal_power_right(float pan);
+
 // img.c
 void img_free(img_t *img);
 img_t *img_parse_tga(int len, const char *data);
@@ -438,21 +452,14 @@ void mtx_identity(matrix_t *mtx);
 void cam_point_dir(camera_t *model, float dx, float dy, float dz, float zoom, float roll);
 
 // wav.c
+#ifndef DEDI
 extern float wav_cube_size;
 extern wavchn_t wchn[WAV_CHN_COUNT];
+wav_t *wav_parse(char *buf, int len);
+wav_t *wav_load(const char *fname);
+wavchn_t *wav_chn_alloc(int flags, wav_t *wav, float x, float y, float z, float vol, float freq_mod, float vol_spread);
+void wav_chn_kill(wavchn_t *chn);
+void wav_kill(wav_t *wav);
 int wav_init(void);
 void wav_deinit(void);
-
-// dsp.c
-float interp_linear(float y0, float y1, float x);
-float interp_cubic(float y0, float y1, float y2, float y3, float x);
-float interp_hermite6p(float y0, float y1, float y2, float y3, 
-		float y4, float y5, float x);
-float frequency2wavelength(int rate, float frequency);
-float wavelength2frequency(int rate, float wavelength);
-float frequency2midinote(float frequency);
-float midinote2frequency(float midinote);
-float below_min_power(float amplitude);
-float attentuationDB2pctpower(float data);
-float equal_power_left(float pan);
-float equal_power_right(float pan);
+#endif

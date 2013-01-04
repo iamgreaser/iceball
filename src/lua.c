@@ -61,6 +61,7 @@ int icelua_force_get_integer(lua_State *L, int table, char *name)
 #include "lua_map.h"
 #include "lua_model.h"
 #include "lua_net.h"
+#include "lua_wav.h"
 
 // common functions
 
@@ -84,6 +85,12 @@ struct icelua_entry icelua_client[] = {
 	{icelua_fn_client_model_render_bone_local, "model_render_bone_local"},
 	{icelua_fn_client_img_blit, "img_blit"},
 	{icelua_fn_client_img_blit_to, "img_blit_to"},
+	{icelua_fn_client_wav_cube_size, "wav_cube_size"},
+	{icelua_fn_client_wav_play_global, "wav_play_global"},
+	{icelua_fn_client_wav_play_local, "wav_play_local"},
+	{icelua_fn_client_wav_chn_exists, "wav_chn_exists"},
+	{icelua_fn_client_wav_chn_update, "wav_chn_update"},
+	{icelua_fn_client_wav_kill, "wav_kill"},
 	{NULL, NULL}
 };
 
@@ -125,6 +132,8 @@ struct icelua_entry icelua_common[] = {
 	{icelua_fn_common_net_unpack, "net_unpack"},
 	{icelua_fn_common_net_send, "net_send"},
 	{icelua_fn_common_net_recv, "net_recv"},
+	{icelua_fn_common_wav_load, "wav_load"},
+	{icelua_fn_common_wav_free, "wav_free"},
 	
 	{NULL, NULL}
 };

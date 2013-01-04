@@ -322,9 +322,11 @@ function map_chkdisbrk(x,y,z)
 	
 	-- nuke it all
 	-- TODO: assemble falling PMFs and drop the buggers
+	local brokestuff = false
 	for i=1,#nukeq do
 		local tx,ty,tz
 		local nl = nukeq[i]
+		if #nl > 0 then brokestuff = true end
 		for j=1,#nl do
 			local c = nl[j]
 			tx,ty,tz = c[1],c[2],c[3]
@@ -334,6 +336,10 @@ function map_chkdisbrk(x,y,z)
 			end
 			pmap[map_hashcoord2(tx,tz)][ty+1] = nil
 		end
+	end
+	
+	if brokestuff and client then
+		client.wav_play_global(wav_grif,x+0.5,y+0.5,z+0.5)
 	end
 	
 	-- apply nukings
