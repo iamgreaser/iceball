@@ -15,6 +15,9 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
+-- if you don't want music, set FILE_MUSIC to "true".
+FILE_MUSIC = FILE_MUSIC or "pkg/base/wav/music.wav"
+
 print("pkg/base/main_client.lua starting")
 
 dofile("pkg/base/version.lua")
@@ -22,6 +25,10 @@ dofile("pkg/base/version.lua")
 local wav_buld = common.wav_load("pkg/base/wav/buld.wav")
 local wav_buld_frq = math.pow(0.5,3.0)
 local wav_buld_inc = math.pow(2.0,1.0/12.0)
+
+local wav_mus = nil
+--local wav_mus = common.wav_load("pkg/base/wav/hammer.wav")
+local chn_mus = nil
 
 local vernotes = ""
 local cver = common.version
@@ -143,6 +150,10 @@ do
 		local loadstr = "Fetching..."
 		
 		function client.hook_render()
+			if chn_mus and not client.wav_chn_exists(chn_mus) then
+				chn_mus = client.wav_play_local(wav_mus)
+			end
+			
 			local i
 			local sw,sh
 			sw,sh = client.screen_get_dims()
@@ -209,7 +220,17 @@ common.fetch_block = load_screen_fetch
 
 function client.hook_tick()
 	client.hook_tick = nil
+	if FILE_MUSIC ~= true then
+		wav_mus = common.wav_load(FILE_MUSIC)
+		chn_mus = client.wav_play_local(wav_mus)
+	end
 	loadfile("pkg/"..common.base_dir.."/client_start.lua")(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+	if wav_mus then
+		if chn_mus and client.wav_chn_exists(chn_mus) then
+			client.wav_kill(chn_mus)
+		end
+		client.wav_free(wav_mus)
+	end
 	return 0.005
 end
 
