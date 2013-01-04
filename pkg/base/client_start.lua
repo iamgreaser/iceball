@@ -56,12 +56,9 @@ while true do
 end]]
 
 map_fname = "*MAP"
-if not common.version then
-	map_fname = "pkg/MAP" -- hackish workaround so iceballfornoobs-004 still works
-end
 
-if not map_fname then
-	error("server should have sent map name by now")
+if common.version.num < 5 then
+	error("Your version is too old! Please upgrade to 0.0-5 at least!")
 end
 
 -- define keys
