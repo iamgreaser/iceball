@@ -269,7 +269,7 @@ function tracer_add(x,y,z,ya,xa,time)
 		x=x,y=y,z=z,
 		ya=ya,xa=xa,
 		time=time or tracers.time,
-		chn=client.wav_play_global(wav_whoosh,x,y,z)
+		chn=client.wav_play_global(wav_whoosh,x,y,z,4.0)
 	}
 	
 	tracers.tail = tracers.tail + 1

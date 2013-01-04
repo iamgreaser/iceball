@@ -19,6 +19,10 @@ print("pkg/base/main_client.lua starting")
 
 dofile("pkg/base/version.lua")
 
+local wav_buld = common.wav_load("pkg/base/wav/buld.wav")
+local wav_buld_frq = math.pow(0.5,3.0)
+local wav_buld_inc = math.pow(2.0,1.0/12.0)
+
 local vernotes = ""
 local cver = common.version
 local bug_str
@@ -104,6 +108,9 @@ do
 			return scriptcache[cname]
 		end
 		
+		client.wav_play_local(wav_buld, 0, 0, 0, 1.0, wav_buld_frq)
+		wav_buld_frq = wav_buld_frq * wav_buld_inc
+		
 		fnlist[#fnlist+1] = fname
 		
 		local map,r,g,b,dist
@@ -154,7 +161,7 @@ do
 		
 		function client.hook_tick(sec_current, sec_delta)
 			-- TODO!
-			print("tick called.")
+			--print("tick called.")
 			return 0.005
 		end
 		

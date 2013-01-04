@@ -324,12 +324,12 @@ wavchn_t *wav_chn_alloc(int flags, wav_t *wav, float x, float y, float z, float 
 	
 	for(i = 0; i < WAV_CHN_COUNT+1; i++)
 	{
-		if(!(wchn[wav_wctr].flags & WCF_ACTIVE))
+		if(!(wchn[wav_wctr & (WAV_CHN_COUNT-1)].flags & WCF_ACTIVE))
 			break;
 		wav_wctr++;
 	}
 	
-	wavchn_t *wc = &wchn[wav_wctr];
+	wavchn_t *wc = &wchn[wav_wctr & (WAV_CHN_COUNT-1)];
 	
 	if(wc->flags & WCF_ACTIVE)
 		wav_chn_kill(wc);

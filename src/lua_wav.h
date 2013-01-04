@@ -108,7 +108,7 @@ int icelua_fn_client_wav_chn_exists(lua_State *L)
 	int top = icelua_assert_stack(L, 1, 1);
 	
 	int cidx = lua_tointeger(L, 1);
-	wavchn_t *wc = &wchn[cidx % WAV_CHN_COUNT];
+	wavchn_t *wc = &wchn[cidx & (WAV_CHN_COUNT-1)];
 	
 	lua_pushboolean(L, wc->idx == cidx && (wc->flags & WCF_ACTIVE));
 	return 1;
@@ -128,7 +128,7 @@ int icelua_fn_client_wav_chn_update(lua_State *L)
 	
 	// TODO!
 	int cidx = lua_tointeger(L, 1);
-	wavchn_t *wc = &wchn[cidx % WAV_CHN_COUNT];
+	wavchn_t *wc = &wchn[cidx & (WAV_CHN_COUNT-1)];
 	int isactive = (wc->idx == cidx && (wc->flags & WCF_ACTIVE));
 	
 	if(isactive)
@@ -176,7 +176,7 @@ int icelua_fn_client_wav_kill(lua_State *L)
 	
 	int idx = lua_tointeger(L, 1);
 	
-	wav_chn_kill(&wchn[idx % WAV_CHN_COUNT]);
+	wav_chn_kill(&wchn[idx & (WAV_CHN_COUNT-1)]);
 	
 	return 0;
 }

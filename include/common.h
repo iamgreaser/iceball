@@ -19,7 +19,7 @@
 #define VERSION_X 0
 #define VERSION_Y 0
 #define VERSION_A 0
-#define VERSION_Z 5
+#define VERSION_Z 6
 // Remember to bump "Z" basically every time you change the engine!
 // TRIPLEFOX THIS INCLUDES YOU
 // Z can only be 0 for official releases!
@@ -34,6 +34,7 @@
 
 #define WAV_MFREQ 44100
 #define WAV_BUFSIZE 2048
+// MUST BE A POWER OF TWO
 #define WAV_CHN_COUNT 128
 
 //define RENDER_FACE_COUNT 2

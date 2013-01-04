@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,0,0,0,5},
-	num=5,
-	str="0.0-5",
+	cmp={0,0,0,0,6},
+	num=6,
+	str="0.0-6",
 }
 
 VERSION_MOD = {
@@ -33,4 +33,5 @@ VERSION_BUGS = {
 {intro=nil, fix=3, msg="common.img_fill not implemented (this wrapper will be somewhat slow)"},
 {intro=nil, fix=4, msg="Sound is not supported"},
 {intro=4, fix=5, msg="Dedicated server build was broken"},
+{intro=5, fix=6, msg="CRASHES ON CHANNEL WRAPAROUND - PLEASE UPDATE TO 0.0-6!"},
 }
