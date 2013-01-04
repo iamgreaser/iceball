@@ -251,20 +251,32 @@ function server.hook_tick(sec_current, sec_delta)
 			msg, pkt = common.net_unpack("z", pkt)
 			
 			local s = nil
-			if string.sub(msg,1,4) == "/me " then
-				s = "* "..plr.name.." "..string.sub(msg,5)
-			elseif string.sub(msg,1,7) == "/squad " then
-				local s = string.sub(msg,8)
-				if s ~= "" then
-					if s == "none" then
-						plr.squad = nil
-					else
-						plr.squad = s
+			local usage_colour = 0xFFDDDDFF
+			if string.sub(msg,1,1) == "/" then
+				--TODO: Better parameter parsing (param1 "param two" "param \"three\"")
+				local params = string.split(string.sub(msg,2), " ")
+				if params[1] == "me" then
+					s = "* "..plr.name.." "..string.sub(msg,5)
+				elseif params[1] == "squad" then
+					--TODO: 
+					local s = string.sub(msg,8)
+					if s ~= "" then
+						if s == "none" then
+							plr.squad = nil
+						else
+							plr.squad = s
+						end
+						plr.update_score()
 					end
-					plr.update_score()
+				elseif params[1] == "kill" then
+					plr.set_health_damage(0, 0xFF800000, plr.name.." shuffled off this mortal coil", plr)
+				elseif params[1] == "teleport" or params[1] == "tp" then
+					if table.getn(params) == 4 then
+						--TODO: Actually teleport player to (tonumber(params[2]), tonumber(params[3]), tonumber(params[4]))
+					else
+						net_broadcast(nil, common.net_pack("BIz", 0x0E, usage_colour, "Usage: /teleport x y z"))
+					end
 				end
-			elseif msg == "/kill" then
-				plr.set_health_damage(0, 0xFF800000, plr.name.." shuffled off this mortal coil", plr)
 			else
 				s = plr.name.." ("..teams[plr.team].name.."): "..msg
 			end
