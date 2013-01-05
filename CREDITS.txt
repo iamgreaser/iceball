@@ -7,6 +7,9 @@ GreaseMonkey [Lead Developer]:
 
 And the rest in alphabetical order:
 
+Arctic77:
+	Rifle model added January 2013
+
 BR:
 	Player name list
 	Team switching
@@ -32,6 +35,3 @@ Triplefox:
 
 UnrealIncident:
 	Debug info (which is the reason I use string.format at all)
-
-Arctic77:
-	Rifle model added January 2013
