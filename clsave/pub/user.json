@@ -22,6 +22,7 @@
 	"name": null,
 	"kick_on_join": true,
 	"sensitivity": 1.0,
+	"hold_to_zoom": false,
 	
 	"skins" : {
 	

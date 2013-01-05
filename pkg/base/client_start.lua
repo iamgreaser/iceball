@@ -372,6 +372,7 @@ debug_enabled = false
 mouse_released = false
 sensitivity = user_config.sensitivity or 1.0
 sensitivity = sensitivity/1000.0
+hold_to_zoom = user_config.hold_to_zoom or false
 mouse_skip = 3
 input_events = {}
 

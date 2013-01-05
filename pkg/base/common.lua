@@ -267,8 +267,12 @@ weapons = {
 				end
 			elseif button == 3 then
 				-- RMB
-				if state and not this.reloading then
-					plr.zooming = not plr.zooming
+				if hold_to_zoom then
+					plr.zooming = state
+				else
+					if state and not this.reloading then
+						plr.zooming = not plr.zooming
+					end
 				end
 			end
 		end
