@@ -435,6 +435,9 @@ function server.hook_tick(sec_current, sec_delta)
 			nade_add(n)
 			net_broadcast(sockfd, common.net_pack("BhhhhhhH",
 				0x1B,x,y,z,vx,vy,vz,fuse))
+		elseif cid == 0x1D and plr then
+			-- TODO: actually reload with serverside counts
+			net_broadcast(sockfd, common.net_pack("BB", 0x1D, cli.plrid))
 		end
 		-- TODO!
 	end

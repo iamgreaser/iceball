@@ -677,6 +677,15 @@ function h_tick_main(sec_current, sec_delta)
 			if plr then
 				plr.t_rcirc = sec_current + MODE_RCIRC_LINGER
 			end
+		elseif cid == 0x1D then
+			local pid
+			pid, pkg = common.net_unpack("B", pkt)
+			
+			local plr = players[pid]
+			
+			if plr then
+				client.wav_play_global(wav_rifle_reload, plr.x, plr.y, plr.z)
+			end
 		end
 	end
 	tracer_prune(sec_current)

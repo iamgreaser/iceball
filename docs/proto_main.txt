@@ -226,7 +226,7 @@ Iceball Base Mod:
 		
 		if newhealth is 0, player is dead
 	
-	0x15 pid.u8 (S->C)
+	0x15 pid.u8 (S->C) @
 		tent restock
 		
 		health is set to 100
@@ -257,13 +257,13 @@ Iceball Base Mod:
 	0x18 pid.u8 r.u8 g.u8 b.u8 @
 		set block colour
 	
-	0x19 pid.u8 newblocks.u8 (S->C)
+	0x19 pid.u8 newblocks.u8 (S->C) @
 		set block count
 	
 	0x1A pid.u8 (S->C) @
 		emit tracer
 	
-	0x1B px.s16 py.s16 pz.s16 vx.s16 vy.s16 vz.s16 time.u16 (S->C)
+	0x1B px.s16 py.s16 pz.s16 vx.s16 vy.s16 vz.s16 time.u16 (S->C) @
 		throw grenade
 		
 		px,py,pz is the start position (11:5)
@@ -273,3 +273,8 @@ Iceball Base Mod:
 	
 	0x1C @
 		show red circles on map
+	
+	0x1D pid.u8 @
+		reload gun
+		
+		TODO: make the ammo counts serverside

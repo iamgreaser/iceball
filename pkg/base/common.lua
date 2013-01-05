@@ -120,6 +120,13 @@ if client then
 	wav_buld = common.wav_load(DIR_PKG_WAV.."/buld.wav")
 	wav_grif = common.wav_load(DIR_PKG_WAV.."/grif.wav")
 	wav_hammer = common.wav_load(DIR_PKG_WAV.."/hammer.wav")
+	wav_jump_up = common.wav_load(DIR_PKG_WAV.."/jump-up.wav")
+	wav_jump_down = common.wav_load(DIR_PKG_WAV.."/jump-down.wav")
+	wav_steps = {}
+	local i
+	for i=1,8 do
+		wav_steps[i] = common.wav_load(DIR_PKG_WAV.."/step"..i..".wav")
+	end
 end
 
 -- weapons
@@ -251,6 +258,7 @@ weapons = {
 			if not this.reloading then
 				this.reloading = true
 				client.wav_play_global(wav_rifle_reload, plr.x, plr.y, plr.z)
+				common.net_send(nil, common.net_pack("BB", 0x1D, 0))
 				plr.zooming = false
 				this.t_reload = nil
 			end end end

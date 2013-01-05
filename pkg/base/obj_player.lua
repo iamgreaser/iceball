@@ -123,6 +123,7 @@ function new_player(settings)
 		this.t_newblock = nil
 		this.t_newspade1 = nil
 		this.t_newspade2 = nil
+		this.t_step = nil
 		
 		this.dangx, this.dangy = 0, 0
 		this.vx, this.vy, this.vz = 0, 0, 0
@@ -550,6 +551,8 @@ function new_player(settings)
 		if not this.alive then
 			this.input_reset()
 		end
+		
+		local inwater = (this.y > ylen-3)
 
 		if this.t_switch == true then
 			this.t_switch = sec_current + MODE_DELAY_TOOL_CHANGE
@@ -604,6 +607,34 @@ function new_player(settings)
 			end
 			
 			this.t_newspade2 = nil
+		end
+		
+		if client then
+			local moving = (this.ev_left or this.ev_right or this.ev_forward or this.ev_back)
+			local sneaking = (this.ev_crouch or this.ev_sneak or this.zooming)
+			
+			if moving and not sneaking then
+				if not this.t_step then
+					this.t_step = sec_current + 0.5
+				end
+				if this.t_step < sec_current then
+					local freq_mod = (inwater and 0.25) or 1.0
+					local tdiff = 0.01
+					if this.grounded then
+						client.wav_play_global(wav_steps[
+							math.floor(math.random()*#wav_steps)+1],
+								this.x, this.y, this.z,
+								1.0, freq_mod)
+						tdiff = 0.5
+					end
+					this.t_step = this.t_step + tdiff
+					if this.t_step < sec_current then
+						this.t_step = sec_current + tdiff
+					end
+				end
+			else
+				this.t_step = nil
+			end
 		end
 		
 		-- apply delta angle
@@ -764,6 +795,9 @@ function new_player(settings)
 		if this.ev_jump and this.alive and (MODE_CHEAT_FLY or this.grounded) then
 			this.vy = -7
 			this.ev_jump = false
+			if client then
+				client.wav_play_global(wav_jump_up, this.x, this.y, this.z)
+			end
 		end
 
 		-- normalise mvx,mvz
@@ -783,7 +817,7 @@ function new_player(settings)
 			mvz = mvz * 0.6
 			mvchange = mvchange * 0.3
 		end
-		if this.y > ylen-3 then
+		if inwater then
 			mvx = mvx * 0.6
 			mvz = mvz * 0.6
 		end
@@ -901,10 +935,14 @@ function new_player(settings)
 		
 		--print(fgrounded, tx1,ty1,tz1,by2)
 		
+		local wasgrounded = this.grounded
 		this.grounded = (MODE_AIRJUMP and this.grounded) or fgrounded
 		
 		if this.alive and this.vy > 0 and fgrounded then
 			this.vy = 0
+			if client and not wasgrounded then
+				client.wav_play_global(wav_jump_down, this.x, this.y, this.z)
+			end
 		end
 		
 		-- trace for stuff
