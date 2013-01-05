@@ -32,3 +32,6 @@ Triplefox:
 
 UnrealIncident:
 	Debug info (which is the reason I use string.format at all)
+
+Artic77:
+	Rifle model added January 2013
