@@ -1116,8 +1116,8 @@ function new_player(settings)
 				bone.rot_y = bone.rot_y + dT * 120 * 0.01
 			end
 			bounce = bounce + dT * 4
+			bone_intel.visible = (this.has_intel ~= nil)
 			if this.has_intel then
-				bone_intel.visible = (this.has_intel ~= nil)
 				bone_intel.model = this.has_intel.mdl_intel
 			end
 		end
