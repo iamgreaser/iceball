@@ -1,14 +1,4 @@
--- sketch listener and collision system:
---    onDown onUp onMove onClick(down+up inside collision) onDrag(down inside collision, movement) onKeyboard
---    when will mouse cursor be visible? important engine consideration!
-
--- with min_width(), min_height(), and inner() we should have all the tools necessary for packing.
--- 1. estimate the size of all the children. (recursive)
--- 2. sort the children in the order specified by the packer's manifest.
--- 3. iterate through the children, moving them to the positions and sizes desired as specified by the packing mode.
-
--- also something to note - when we draw we have to pass a clip rectangle upwards so that scrolling is possible.
--- this isn't strictly necessary, but if the possibility is there, use it!
+-- Icegui widget layout library
 
 local P = {}
 
@@ -224,7 +214,7 @@ function P.widget(options)
 	function this.child_to_bottom(child) child.detach() this.add_child(child, 1) end
 
 	-- when using spacers, this walks through the tree and reflows them
-	function this.reflow() for k, v in pairs(children) do v.reflow() end end
+	function this.reflow() for k, v in pairs(this.children) do v.reflow() end end
 	
 	return this
 end
@@ -269,8 +259,13 @@ local function spacer(options)
 		end
 		return h
 	end
-
+	
+	return this
+	
 end
+
+--[[ FIXME: We can use min_width and min_height some more to force percentage allocation
+to achieve the minimally overlapped result. (This would mean refactoring the table gen a bit.) ]]
 
 -- percentage allocation table
 local function percentage_table(p, children, width)
@@ -299,15 +294,21 @@ end
 
 -- Horizontal spacer
 function P.hspacer(options)
-
+	
 	local this = spacer(options)
-
+	
 	function this.reflow()
+	
+		local children = this.children
+		
 		for k, v in pairs(children) do v.reflow() end
+		
+		local tw = 0
 		
 		if this.fixed_width then
 			-- allocate space to the children inside the given width
 			local w = this.width
+			tw = w
 			local p = percentage_table(this.percentage, this.children)
 			local i = 1
 			for i=1, #children do
@@ -318,12 +319,24 @@ function P.hspacer(options)
 			local i = 1
 			local pos = 0
 			for i=1, #children do
-				children[i].l = pos
+				children[i].l = pos + this.relx
 				pos = pos + this.spread + children[i].min_width
 			end
-		end		
+			tw = pos - this.spread
+		end
+		
+		-- final pass: fix up alignment
+		tw = tw * -this.align_x
+		
+		for i=1, #children do
+			children[i].x = children[i].x + tw
+		end
+		
+		this.propogate_dirty()
 		
 	end
+	
+	return this
 	
 end
 
@@ -333,11 +346,17 @@ function P.vspacer(options)
 	local this = spacer(options)
 
 	function this.reflow()
+	
+		local children = this.children
+		
 		for k, v in pairs(children) do v.reflow() end
+		
+		local th = 0
 		
 		if this.fixed_height then
 			-- allocate space to the children inside the given width
 			local h = this.height
+			th = h
 			local p = percentage_table(this.percentage, this.children)
 			local i = 1
 			for i=1, #children do
@@ -348,12 +367,24 @@ function P.vspacer(options)
 			local i = 1
 			local pos = 0
 			for i=1, #children do
-				children[i].t = pos
+				children[i].t = pos + this.rely
 				pos = pos + this.spread + children[i].min_height
 			end
+			th = pos - this.spread
+		end
+		
+		-- final pass: fix up alignment
+		th = th * -this.align_y
+		
+		for i=1, #children do
+			children[i].y = children[i].y + th
 		end		
 		
+		this.propogate_dirty()
+		
 	end
+	
+	return this
 	
 end
 

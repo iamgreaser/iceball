@@ -1399,6 +1399,27 @@ function new_player(settings)
 			this.ammo_text.text = tool_textgen[tool]()
 		end
 		
+		-- spacer test
+		--[[
+		local spacer = scene.hspacer{x=w/2,y=h/2,spread=8}
+		scene.root.add_child(spacer)
+		local boxes = {}
+		local i
+		for i=1, 10 do
+			local box = scene.rect_frame{frame_col=0xFFAA880088, width=20+math.random(50), height=20+math.random(50)}
+			table.insert(boxes, box)
+			spacer.add_child(box)
+		end
+		spacer.reflow()
+		boxes[1].add_listener(GE_DELTA_TIME, function(dT)
+			for i=1, 10 do
+				boxes[i].width=20+math.random(50)
+				boxes[i].height=20+math.random(50)
+			end
+			spacer.reflow()
+		end)
+		]]
+		
 		this.quit_msg.add_listener(GE_BUTTON, quit_events)
 		this.team_change.add_listener(GE_BUTTON, teamchange_events)
 		this.large_map.add_listener(GE_DELTA_TIME, this.update_overview_icons)

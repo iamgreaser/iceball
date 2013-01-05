@@ -424,6 +424,28 @@ function gui_create_scene(width, height, shared_rate)
 		width=width, height=height, align_x=0, align_y=0}
 	scene.root = root
 	
+	function scene.hspacer(options)
+		local this = widgets.hspacer(options)
+		this.draw = function()
+			for k,v in pairs(this.children) do v.draw() end
+		end
+		this.pump_listeners = function(dT, events)
+			for k,v in pairs(this.children) do v.pump_listeners(dT, events) end
+		end
+		return this
+	end
+	
+	function scene.vspacer(options)
+		local this = widgets.vspacer(options)
+		this.draw = function()
+			for k,v in pairs(this.children) do v.draw() end
+		end
+		this.pump_listeners = function(dT, events)
+			for k,v in pairs(this.children) do v.pump_listeners(dT, events) end
+		end
+		return this
+	end
+	
 	function scene.pump_listeners(dT, events)
 		-- copy incoming events
 		local e = {}
@@ -453,6 +475,7 @@ function gui_create_scene(width, height, shared_rate)
 		this.fill_col = options.fill_col or 0xFFAAAAAA
 
 		this.use_img = true
+		this.dirty = true
 
 		function this.draw_update()
 			local w = math.ceil(this.width)
@@ -460,6 +483,7 @@ function gui_create_scene(width, height, shared_rate)
 			local img = this.img
 			local frame_col = this.frame_col
 			local fill_col = this.fill_col
+			common.img_fill(img, fill_col)
 			for ix = 0, w-1, 1 do
 				common.img_pixel_set(img, ix, 0, frame_col)
 				common.img_pixel_set(img, ix, h-1, frame_col)
@@ -467,11 +491,6 @@ function gui_create_scene(width, height, shared_rate)
 			for iy = 0, h-1, 1 do
 				common.img_pixel_set(img, 0, iy, frame_col)
 				common.img_pixel_set(img, w-1, iy, frame_col)
-			end
-			for ix = 1, w-2, 1 do
-				for iy = 1, h-2, 1 do
-					common.img_pixel_set(this.img, ix, iy, fill_col)
-				end
 			end
 		end
 
