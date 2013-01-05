@@ -59,16 +59,23 @@ function P.widget(options)
 	-- align 1 = bottom-right
 	-- align 0.5 = center
 	
-	function setter_keys.x(v) rawset(this, 'x', v) this.dirty = true end
-	function setter_keys.y(v) rawset(this, 'y', v) this.dirty = true end
+	function this.propogate_dirty() 
+		this.dirty = true
+		for k, v in pairs(this.children) do
+			v.propogate_dirty()
+		end
+	end
 	
-	function setter_keys.width(v) rawset(this, 'width', v) this.dirty = true end
-	function setter_keys.height(v) rawset(this, 'height', v) this.dirty = true end
+	function setter_keys.x(v) rawset(this, 'x', v) this.propogate_dirty() end
+	function setter_keys.y(v) rawset(this, 'y', v) this.propogate_dirty() end
 	
-	function setter_keys.margin_left(v) rawset(this, 'margin_left', v) this.dirty = true end
-	function setter_keys.margin_top(v) rawset(this, 'margin_top', v) this.dirty = true end
-	function setter_keys.margin_right(v) rawset(this, 'margin_right', v) this.dirty = true end
-	function setter_keys.margin_bottom(v) rawset(this, 'margin_bottom', v) this.dirty = true end
+	function setter_keys.width(v) rawset(this, 'width', v) this.propogate_dirty() end
+	function setter_keys.height(v) rawset(this, 'height', v) this.propogate_dirty() end
+	
+	function setter_keys.margin_left(v) rawset(this, 'margin_left', v) this.propogate_dirty() end
+	function setter_keys.margin_top(v) rawset(this, 'margin_top', v) this.propogate_dirty() end
+	function setter_keys.margin_right(v) rawset(this, 'margin_right', v) this.propogate_dirty() end
+	function setter_keys.margin_bottom(v) rawset(this, 'margin_bottom', v) this.propogate_dirty() end
 	
 	function getter_keys.min_width() return this.width end
 	function setter_keys.min_width(v) error("cannot set widget.min_width externally") end
@@ -216,7 +223,138 @@ function P.widget(options)
 	-- make the child the bottom-most element without disturbing other ordering
 	function this.child_to_bottom(child) child.detach() this.add_child(child, 1) end
 
+	-- when using spacers, this walks through the tree and reflows them
+	function this.reflow() for k, v in pairs(children) do v.reflow() end end
+	
 	return this
+end
+
+-- Abstract spacer implementation
+local function spacer(options)
+
+	local this = P.widget(options)
+	
+	this.fixed_width = options.fixed_width or false
+	this.fixed_height = options.fixed_height or false
+	this.spread = options.spread or 0
+	
+	local width_auto = function()
+		local b = this.child_boundaries()
+		return b.r - b.l
+	end	
+	local height_auto = function()
+		local b = this.child_boundaries()
+		return b.b - b.t
+	end
+	
+	this.getter_keys.width = function() 
+		if this.fixed_width then return rawget(this, 'width') else return width_auto() end
+	end
+	this.getter_keys.height = function() 
+		if this.fixed_height then return rawget(this, 'height') else return height_auto() end
+	end
+	
+	this.getter_keys.min_width = function()
+		local w = 0
+		for k, v in pairs(this.children) do
+			w = w + v.min_width
+		end
+		return w
+	end
+	
+	this.getter_keys.min_height = function()
+		local h = 0
+		for k, v in pairs(this.children) do
+			h = h + v.min_height
+		end
+		return h
+	end
+
+end
+
+-- percentage allocation table
+local function percentage_table(p, children, width)
+	if p == nil then
+		-- default: all elements get same %
+		local c = #children
+		local i
+		p = {}
+		for i=1,c do table.insert(p, i, 1./c) end
+	elseif not (#children == #p) then
+		error("mismatched # of children in percentage table: expected "..#children.." got "..#p)
+	end
+	
+	local result = {}
+	
+	-- create a result positioning table that is each element centered inside their allocated %
+	local i
+	local pct = 0
+	for i=1, #children do
+		pct = pct + p[i]
+		table.insert(result, i, pct - p[i]/2)
+	end
+	
+	return result
+end
+
+-- Horizontal spacer
+function P.hspacer(options)
+
+	local this = spacer(options)
+
+	function this.reflow()
+		for k, v in pairs(children) do v.reflow() end
+		
+		if this.fixed_width then
+			-- allocate space to the children inside the given width
+			local w = this.width
+			local p = percentage_table(this.percentage, this.children)
+			local i = 1
+			for i=1, #children do
+				children[i].x = p[i]
+			end
+		else
+			-- allocate in order, left-positioned, based on the 'spread' value
+			local i = 1
+			local pos = 0
+			for i=1, #children do
+				children[i].l = pos
+				pos = pos + this.spread + children[i].min_width
+			end
+		end		
+		
+	end
+	
+end
+
+-- Vertical spacer
+function P.vspacer(options)
+
+	local this = spacer(options)
+
+	function this.reflow()
+		for k, v in pairs(children) do v.reflow() end
+		
+		if this.fixed_height then
+			-- allocate space to the children inside the given width
+			local h = this.height
+			local p = percentage_table(this.percentage, this.children)
+			local i = 1
+			for i=1, #children do
+				children[i].y = p[i]
+			end
+		else
+			-- allocate in order, top-positioned, based on the 'spread' value
+			local i = 1
+			local pos = 0
+			for i=1, #children do
+				children[i].t = pos
+				pos = pos + this.spread + children[i].min_height
+			end
+		end		
+		
+	end
+	
 end
 
 if _REQUIREDNAME == nil then
