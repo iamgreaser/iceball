@@ -81,7 +81,7 @@ MODE_MAP_TRACERS = false -- TODO!
 MODE_TILT_SLOWDOWN = false -- TODO!
 MODE_TILT_DOWN_NOCLIMB = false -- TODO!
 
-MODE_DRUNKCAM_VELOCITY = true
+MODE_DRUNKCAM_VELOCITY = false -- keep this off unless you want to throw up
 MODE_DRUNKCAM_LOCALTURN = false -- TODO!
 
 MODE_DELAY_SPADE_DIG = 1.0
