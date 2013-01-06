@@ -52,51 +52,80 @@ vec4f_t mtx_apply_vec(matrix_t *mtx, vec4f_t *vec)
 	return ret;
 }
 
+void cam_point_dir_sky(camera_t *model, float dx, float dy, float dz, float sx, float sy, float sz, float zoom)
+{
+	// Double cross product method:
+	//
+	// left =  forward x sky
+	// down =  forward x left
+	//
+	// Much nicer than the aimbot shit.
+	
+	// Get the distances.
+	float dist_d = dx*dx+dy*dy+dz*dz;
+	float dist_s = sx*sx+sy*sy+sz*sz;
+	dist_d = sqrtf(dist_d);
+	dist_s = sqrtf(dist_s);
+	
+	// Get the normalised vectors.
+	dx = dx/dist_d;
+	dy = dy/dist_d;
+	dz = dz/dist_d;
+	
+	sx = sx/dist_s;
+	sy = sy/dist_s;
+	sz = sz/dist_s;
+	
+	// Get the left vector.
+	float ax = dy*sz - dz*sy;
+	float ay = dz*sx - dx*sz;
+	float az = dx*sy - dy*sx;
+	
+	// Get the down vector.
+	float bx = dy*az - dz*ay;
+	float by = dz*ax - dx*az;
+	float bz = dx*ay - dy*ax;
+	
+	// Get their distances.
+	float dist_a = ax*ax+ay*ay+az*az;
+	float dist_b = bx*bx+by*by+bz*bz;
+	dist_a = sqrtf(dist_a);
+	dist_b = sqrtf(dist_b);
+	
+	// Get their normalised vectors.
+	ax = ax/dist_a;
+	ay = ay/dist_a;
+	az = az/dist_a;
+	
+	bx = bx/dist_b;
+	by = by/dist_b;
+	bz = bz/dist_b;
+	
+	// Now build that matrix!
+	
+	// Front vector (Z)
+	model->mzx = dx*zoom;
+	model->mzy = dy*zoom;
+	model->mzz = dz*zoom;
+	
+	// Left vector (X)
+	model->mxx = ax;
+	model->mxy = ay;
+	model->mxz = az;
+	
+	// Down vector (Y)
+	model->myx = bx;
+	model->myy = by;
+	model->myz = bz;
+}
 
 void cam_point_dir(camera_t *model, float dx, float dy, float dz, float zoom, float roll)
 {
-	// Another case where I'd copy-paste code from my aimbot.
-	// Except the last time I did it, I redid it from scratch,
-	// and then dumped it. (VUW COMP308 Project 2012T2, anyone?)
-	//
-	// But yeah, basically this code's useful for making aimbots >:D
-	//
-	// Am I worried?
-	// Well, the average skid is too lazy to compile this.
-	// So, uh, no, not really.
-
-	// Get two distance values.
-	float d2 = dx*dx+dz*dz;
-	float d3 = dy*dy+d2;
-
-	// Square root them so they're actually distance values.
-	d2 = sqrtf(d2);
-	d3 = sqrtf(d3);
-
-	// Get the normalised distances.
-	float nx = dx/d3;
-	float ny = dy/d3;
-	float nz = dz/d3;
-
-	// Now build that matrix!
-
-	// Front vector (Z): Well, duh.
-	model->mzx = nx*zoom;
-	model->mzy = ny*zoom;
-	model->mzz = nz*zoom;
-
-	// Left (TODO: confirm) vector (X): Simple 2D 90deg rotation.
-	// Can be derived from a bit of trial and error.
-	model->mxx = dz/d2;
-	model->mxy = 0.0f;
-	model->mxz = -dx/d2;
-
-	// Down vector (Y): STUPID GIMBAL LOCK GRR >:(
-	// But really, this one's the hardest of them all.
-	//
-	// I decided to cheat and look at my aimbot anyway.
-	// Still didn't *quite* solve my problem.
-	model->myx = -dx*ny/d2;
-	model->myy = sqrtf(1.0f - ny*ny);
-	model->myz = -dz*ny/d2;
+	// COMPLETE REWRITE
+	
+	float d2 = sqrtf(dx*dx + dz*dz);
+	float sr = sin(roll);
+	float cr = cos(roll);
+	
+	cam_point_dir_sky(model, dx, dy, dz, -sr*dz/d2, -cr, sr*dx/d2, zoom);
 }

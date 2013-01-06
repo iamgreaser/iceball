@@ -19,7 +19,7 @@
 #define VERSION_X 0
 #define VERSION_Y 0
 #define VERSION_A 0
-#define VERSION_Z 6
+#define VERSION_Z 7
 // Remember to bump "Z" basically every time you change the engine!
 // TRIPLEFOX THIS INCLUDES YOU
 // Z can only be 0 for official releases!
@@ -451,6 +451,7 @@ void render_deinit(void);
 vec4f_t mtx_apply_vec(matrix_t *mtx, vec4f_t *vec);
 void mtx_identity(matrix_t *mtx);
 void cam_point_dir(camera_t *model, float dx, float dy, float dz, float zoom, float roll);
+void cam_point_dir_sky(camera_t *model, float dx, float dy, float dz, float sx, float sy, float sz, float zoom);
 
 // wav.c
 wav_t *wav_parse(char *buf, int len);

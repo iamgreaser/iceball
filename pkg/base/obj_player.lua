@@ -131,6 +131,10 @@ function new_player(settings)
 		this.blx1, this.bly1, this.blz1 = nil, nil, nil
 		this.blx2, this.bly2, this.blz2 = nil, nil, nil
 		
+		this.sx, this.sy, this.sz = 0, -1, 0
+		this.drunkx, this.drunkz = 0, 0
+		this.drunkfx, this.drunkfz = 0, 0
+		
 		this.blk_color = {0x7F,0x7F,0x7F}
 		this.block_recolor()
 		this.blk_color_x = 3
@@ -926,7 +930,22 @@ function new_player(settings)
 				--if this.vy > 0 then this.vy = 0 end
 			end
 		end
-
+		
+		if MODE_DRUNKCAM_VELOCITY then
+			local xdiff = tx1-ox
+			local zdiff = tz1-oz
+			local dfac = math.sqrt(1.0-fwy*fwy) * 2.0
+			xdiff = xdiff * dfac
+			zdiff = zdiff * dfac
+			this.drunkfx = this.drunkfx + (xdiff - this.drunkfx)*(1.0-math.exp(-5.0*sec_delta))
+			this.drunkfz = this.drunkfz + (zdiff - this.drunkfz)*(1.0-math.exp(-5.0*sec_delta))
+			xdiff = this.drunkfx
+			zdiff = this.drunkfz
+			this.sx = this.sx - (xdiff-this.drunkx)*20.0*sec_delta
+			this.sz = this.sz - (zdiff-this.drunkz)*20.0*sec_delta
+			this.drunkx = this.drunkx + (xdiff - this.drunkx)*(1.0-math.exp(-10.0*sec_delta))
+			this.drunkz = this.drunkz + (zdiff - this.drunkz)*(1.0-math.exp(-10.0*sec_delta))
+		end
 		this.x, this.y, this.z = tx1, ty1, tz1
 		
 		local fgrounded = not box_is_clear(
@@ -973,19 +992,28 @@ function new_player(settings)
 		if this.wpn then this.wpn.tick(sec_current, sec_delta) end
 	end
 
-	function this.camera_firstperson()
+	function this.camera_firstperson(sec_current, sec_delta)
 		-- set camera position
 		client.camera_move_to(this.x, this.y + this.jerkoffs, this.z)
 
-		-- set camera direction
+		-- calc camera forward direction
 		local sya = math.sin(this.angy)
 		local cya = math.cos(this.angy)
 		local sxa = math.sin(this.angx)
 		local cxa = math.cos(this.angx)
 		local fwx,fwy,fwz
 		fwx,fwy,fwz = sya*cxa, sxa, cya*cxa
-		client.camera_point(fwx, fwy, fwz, this.zoom, 0.0)
-
+		
+		-- drunkencam correction
+		this.sy = this.sy - 10.0*sec_delta
+		local ds = math.sqrt(this.sx*this.sx + this.sy*this.sy + this.sz*this.sz)
+		this.sx = this.sx / ds
+		this.sy = this.sy / ds
+		this.sz = this.sz / ds
+		
+		-- set camera direction
+		client.camera_point_sky(fwx, fwy, fwz, this.zoom, this.sx, this.sy, this.sz)
+		
 		-- offset by eye pos
 		-- slightly cheating here.
 		client.camera_move_global(sya*0.4, 0, cya*0.4)

@@ -36,6 +36,28 @@ int icelua_fn_client_camera_point(lua_State *L)
 	return 0;
 }
 
+int icelua_fn_client_camera_point_sky(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 3, 7);
+	float dx, dy, dz;
+	float zoom = 1.0f;
+	float sx, sy, sz;
+	
+	dx = lua_tonumber(L, 1);
+	dy = lua_tonumber(L, 2);
+	dz = lua_tonumber(L, 3);
+	if(top >= 4)
+		zoom = lua_tonumber(L, 4);
+	sx = (top >= 5 ? lua_tonumber(L, 5) :  0.0f);
+	sy = (top >= 6 ? lua_tonumber(L, 6) : -1.0f);
+	sz = (top >= 7 ? lua_tonumber(L, 7) :  0.0f);
+	
+	//printf("%f\n", zoom);
+	cam_point_dir_sky(&tcam, dx, dy, dz, sx, sy, sz, zoom);
+	
+	return 0;
+}
+
 int icelua_fn_client_camera_move_local(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 3, 3);

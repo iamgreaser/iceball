@@ -76,6 +76,7 @@ struct icelua_entry icelua_client[] = {
 	{icelua_fn_client_map_fog_get, "map_fog_get"},
 	{icelua_fn_client_map_fog_set, "map_fog_set"},
 	{icelua_fn_client_camera_point, "camera_point"},
+	{icelua_fn_client_camera_point_sky, "camera_point_sky"},
 	{icelua_fn_client_camera_move_local, "camera_move_local"},
 	{icelua_fn_client_camera_move_global, "camera_move_global"},
 	{icelua_fn_client_camera_move_to, "camera_move_to"},

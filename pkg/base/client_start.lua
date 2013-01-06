@@ -734,7 +734,7 @@ function h_tick_main(sec_current, sec_delta)
 				, 0x04, 0x00, ya, xa, keys))
 		end
 
-		plr.camera_firstperson()
+		plr.camera_firstperson(sec_current, sec_delta)
 	else
 		-- TODO: idle camera
 	end

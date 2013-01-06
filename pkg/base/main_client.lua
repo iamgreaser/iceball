@@ -98,6 +98,14 @@ You should have at least ]]..VERSION_ENGINE.str..[[.
 ]]..bug_str..[[]]
 end
 
+-- BACKWARD COMPAT HACKS
+client.camera_point_sky = client.camera_point_sky or function(dx,dy,dz,zoom,sx,sy,sz)
+	return client.camera_point(dx,dy,dz,zoom,0.0)
+end
+common.camera_point_sky = common.camera_point_sky or function(dx,dy,dz,zoom,sx,sy,sz)
+	return common.camera_point(dx,dy,dz,zoom,0.0)
+end
+
 -- please excuse this hack.
 a1,a2,a3,a4,a5,a6,a7,a8,a9,a10 = ...
 
