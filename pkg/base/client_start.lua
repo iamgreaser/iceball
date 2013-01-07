@@ -861,91 +861,8 @@ function h_key(key, state, modif)
 				typing_msg = gui_string_edit(typing_msg, MODE_CHAT_STRMAX, key, modif)
 			end
 		end
-	elseif key == BTSK_FORWARD then
-		plr.ev_forward = state
-	elseif key == BTSK_BACK then
-		plr.ev_back = state
-	elseif key == BTSK_LEFT then
-		plr.ev_left = state
-	elseif key == BTSK_RIGHT then
-		plr.ev_right = state
-	elseif key == BTSK_CROUCH then
-		plr.ev_crouch = state
-	elseif key == BTSK_JUMP then
-		plr.ev_jump = state
-	elseif key == BTSK_SNEAK then
-		plr.ev_sneak = state
-	elseif key == BTSK_SCORES then
-		show_scores = state
-	elseif state then
-		if key == BTSK_DEBUG then
-			debug_enabled = not debug_enabled
-		elseif key == SDLK_F10 then
-			local s = "clsave/"..common.base_dir.."/vol/lastsav.icemap"
-			print(s)
-			--client.map_load(s)
-			client.map_save(map_loaded, s, "icemap")
-			chat_add(chat_text, sec_last, "Map saved to "..s, 0xFFC00000)
-		elseif key == BTSK_RELOAD then
-			if plr.alive and plr.wpn and plr.tool == TOOL_GUN then
-				plr.wpn.reload()
-			end
-		elseif key == BTSK_TOOL1 then
-			plr.tool_switch(TOOL_SPADE)
-		elseif key == BTSK_TOOL2 then
-			plr.tool_switch(TOOL_BLOCK)
-		elseif key == BTSK_TOOL3 then
-			plr.tool_switch(TOOL_GUN)
-		elseif key == BTSK_TOOL4 then
-			plr.tool_switch(TOOL_NADE)
-		elseif key == BTSK_TOOL5 then
-			-- TODO
-		elseif key == BTSK_CHAT then
-			typing_type = "Chat: "
-			typing_msg = ""
-		elseif key == BTSK_COMMAND then
-			typing_type = "Chat: "
-			typing_msg = "/"
-		elseif key == BTSK_TEAMCHAT then
-			typing_type = "Team: "
-			typing_msg = ""
-		elseif plr.alive and key == BTSK_COLORLEFT then
-			plr.blk_color_x = plr.blk_color_x - 1
-			if plr.blk_color_x < 0 then
-				plr.blk_color_x = 7
-			end
-			plr.blk_color = cpalette[plr.blk_color_x+plr.blk_color_y*8+1]
-			common.net_send(nil, common.net_pack("BBBBB",
-				0x18, 0x00,
-				plr.blk_color[1],plr.blk_color[2],plr.blk_color[3]))
-		elseif plr.alive and key == BTSK_COLORRIGHT then
-			plr.blk_color_x = plr.blk_color_x + 1
-			if plr.blk_color_x > 7 then
-				plr.blk_color_x = 0
-			end
-			plr.blk_color = cpalette[plr.blk_color_x+plr.blk_color_y*8+1]
-			common.net_send(nil, common.net_pack("BBBBB",
-				0x18, 0x00,
-				plr.blk_color[1],plr.blk_color[2],plr.blk_color[3]))
-		elseif plr.alive and key == BTSK_COLORUP then
-			plr.blk_color_y = plr.blk_color_y - 1
-			if plr.blk_color_y < 0 then
-				plr.blk_color_y = 7
-			end
-			plr.blk_color = cpalette[plr.blk_color_x+plr.blk_color_y*8+1]
-			common.net_send(nil, common.net_pack("BBBBB",
-				0x18, 0x00,
-				plr.blk_color[1],plr.blk_color[2],plr.blk_color[3]))
-		elseif plr.alive and key == BTSK_COLORDOWN then
-			plr.blk_color_y = plr.blk_color_y + 1
-			if plr.blk_color_y > 7 then
-				plr.blk_color_y = 0
-			end
-			plr.blk_color = cpalette[plr.blk_color_x+plr.blk_color_y*8+1]
-			common.net_send(nil, common.net_pack("BBBBB",
-				0x18, 0x00,
-				plr.blk_color[1],plr.blk_color[2],plr.blk_color[3]))
-		end
+	elseif plr then
+		return plr.on_key(key, state, modif)
 	end
 end
 
@@ -998,36 +915,8 @@ function h_mouse_button(button, state)
 	-- FIXME: no reassignable mouse button controls?
 
 	local plr = players[players.current]
-	if not plr then return end
-
-	if plr.tool == TOOL_GUN and plr.alive then
-		plr.wpn.click(button, state)
-	end
-
-	if button == 1 then
-		-- LMB
-		plr.ev_lmb = state
-		if plr.ev_lmb then
-			plr.ev_rmb = false
-		end
-	elseif button == 3 then
-		-- RMB
-		plr.ev_rmb = state
-		if plr.ev_rmb then
-			plr.ev_lmb = false
-		end
-	elseif button == 4 then
-		-- mousewheelup
-		if state then
-			plr.tool_switch_prev()
-        end
-	elseif button == 5 then
-		-- mousewheeldown
-		if state then
-			plr.tool_switch_next()
-        end
-	elseif button == 2 then
-		-- middleclick
+	if plr then
+		return plr.on_mouse_button(button, state)
 	end
 end
 
@@ -1050,9 +939,9 @@ function h_mouse_motion(x, y, dx, dy)
 	end
 
 	local plr = players[players.current]
-
-	plr.dangy = plr.dangy - dx*math.pi*sensitivity/plr.zoom
-	plr.dangx = plr.dangx + dy*math.pi*sensitivity/plr.zoom
+	if plr then
+		return plr.on_mouse_motion(x, y, dx, dy)
+	end
 end
 
 -- load map

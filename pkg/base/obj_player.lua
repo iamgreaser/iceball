@@ -1561,6 +1561,132 @@ function new_player(settings)
 		
 		this.scene = scene
 	end
+	
+	function this.on_mouse_button(button, state)
+		if this.tool == TOOL_GUN and this.alive then
+			this.wpn.click(button, state)
+		end
+		
+		if button == 1 then
+			-- LMB
+			this.ev_lmb = state
+			if this.ev_lmb then
+				this.ev_rmb = false
+			end
+		elseif button == 3 then
+			-- RMB
+			this.ev_rmb = state
+			if this.ev_rmb then
+				this.ev_lmb = false
+			end
+		elseif button == 4 then
+			-- mousewheelup
+			if state then
+				this.tool_switch_prev()
+		end
+		elseif button == 5 then
+			-- mousewheeldown
+			if state then
+				this.tool_switch_next()
+		end
+		elseif button == 2 then
+			-- middleclick
+		end
+	end
+	
+	function this.on_mouse_motion(x, y, dx, dy)
+		this.dangy = this.dangy - dx*math.pi*sensitivity/this.zoom
+		this.dangx = this.dangx + dy*math.pi*sensitivity/this.zoom
+	end
+	
+	function this.on_key(key, state, modif)
+		if key == BTSK_FORWARD then
+			this.ev_forward = state
+		elseif key == BTSK_BACK then
+			this.ev_back = state
+		elseif key == BTSK_LEFT then
+			this.ev_left = state
+		elseif key == BTSK_RIGHT then
+			this.ev_right = state
+		elseif key == BTSK_CROUCH then
+			this.ev_crouch = state
+		elseif key == BTSK_JUMP then
+			this.ev_jump = state
+		elseif key == BTSK_SNEAK then
+			this.ev_sneak = state
+		elseif key == BTSK_SCORES then
+			show_scores = state
+		elseif state then
+			if key == BTSK_DEBUG then
+				debug_enabled = not debug_enabled
+			elseif key == SDLK_F10 then
+				local s = "clsave/"..common.base_dir.."/vol/lastsav.icemap"
+				print(s)
+				--client.map_load(s)
+				client.map_save(map_loaded, s, "icemap")
+				chat_add(chat_text, sec_last, "Map saved to "..s, 0xFFC00000)
+			elseif key == BTSK_RELOAD then
+				if this.alive and this.wpn and this.tool == TOOL_GUN then
+					this.wpn.reload()
+				end
+			elseif key == BTSK_TOOL1 then
+				this.tool_switch(TOOL_SPADE)
+			elseif key == BTSK_TOOL2 then
+				this.tool_switch(TOOL_BLOCK)
+			elseif key == BTSK_TOOL3 then
+				this.tool_switch(TOOL_GUN)
+			elseif key == BTSK_TOOL4 then
+				this.tool_switch(TOOL_NADE)
+			elseif key == BTSK_TOOL5 then
+				-- TODO
+			elseif key == BTSK_CHAT then
+				typing_type = "Chat: "
+				typing_msg = ""
+			elseif key == BTSK_COMMAND then
+				typing_type = "Chat: "
+				typing_msg = "/"
+			elseif key == BTSK_TEAMCHAT then
+				typing_type = "Team: "
+				typing_msg = ""
+			elseif this.alive and key == BTSK_COLORLEFT then
+				this.blk_color_x = this.blk_color_x - 1
+				if this.blk_color_x < 0 then
+					this.blk_color_x = 7
+				end
+				this.blk_color = cpalette[this.blk_color_x+this.blk_color_y*8+1]
+				common.net_send(nil, common.net_pack("BBBBB",
+					0x18, 0x00,
+					this.blk_color[1],this.blk_color[2],this.blk_color[3]))
+			elseif this.alive and key == BTSK_COLORRIGHT then
+				this.blk_color_x = this.blk_color_x + 1
+				if this.blk_color_x > 7 then
+					this.blk_color_x = 0
+				end
+				this.blk_color = cpalette[this.blk_color_x+this.blk_color_y*8+1]
+				common.net_send(nil, common.net_pack("BBBBB",
+					0x18, 0x00,
+					this.blk_color[1],this.blk_color[2],this.blk_color[3]))
+			elseif this.alive and key == BTSK_COLORUP then
+				this.blk_color_y = this.blk_color_y - 1
+				if this.blk_color_y < 0 then
+					this.blk_color_y = 7
+				end
+				this.blk_color = cpalette[this.blk_color_x+this.blk_color_y*8+1]
+				common.net_send(nil, common.net_pack("BBBBB",
+					0x18, 0x00,
+					this.blk_color[1],this.blk_color[2],this.blk_color[3]))
+			elseif this.alive and key == BTSK_COLORDOWN then
+				this.blk_color_y = this.blk_color_y + 1
+				if this.blk_color_y > 7 then
+					this.blk_color_y = 0
+				end
+				this.blk_color = cpalette[this.blk_color_x+this.blk_color_y*8+1]
+				common.net_send(nil, common.net_pack("BBBBB",
+					0x18, 0x00,
+					this.blk_color[1],this.blk_color[2],this.blk_color[3]))
+			end
+		end
+	end
 
 	function this.show_hud()
 		local fogr,fogg,fogb,fogd = client.map_fog_get()
