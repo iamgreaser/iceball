@@ -1206,7 +1206,7 @@ function new_player(settings)
 			function() return 0xFFC0C0C0 end
 		}
 		local tool_textgen = {
-			function() return "" end,
+			function() return ""..this.blocks end,
 			function() return ""..this.blocks end,
 			function() return ""..this.wpn.ammo_clip.."-"..this.wpn.ammo_reserve end,
 			function() return ""..this.grenades end
