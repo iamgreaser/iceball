@@ -34,5 +34,5 @@ VERSION_BUGS = {
 {intro=nil, fix=4, msg="Sound is not supported"},
 {intro=4, fix=5, msg="Dedicated server build was broken"},
 {intro=5, fix=6, msg="CRASHES ON CHANNEL WRAPAROUND - PLEASE UPDATE TO 0.0-6!"},
-{intro=nil, fix=7, msg="Camera roll / camera_point_sky not implemented - drunken cam will not work"},
+{intro=nil, fix=7, msg="Camera roll / camera_point_sky not implemented - drunken cam will not roll properly"},
 }

@@ -15,6 +15,49 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
+function vcross(x1,y1,z1,x2,y2,z2)
+	return    y1*z2 - z1*y2
+		, z1*x2 - x1*z2
+		, x1*y2 - y1*x2
+end
+
+function vdot(x1,y1,z1,x2,y2,z2)
+	return x1*x2 + y1*y2 + z1*z2
+end
+
+function vlen2(x,y,z)
+	return x*x + y*y + z*z
+end
+
+function vlen(x,y,z)
+	return math.sqrt(vlen2(x,y,z))
+end
+
+function vnorm(x,y,z)
+	local d = math.max(0.0000001,vlen(x,y,z))
+	return x/d, y/d, z/d
+end
+
+function vrotate(theta,x,y,z,bx,by,bz)
+	-- glRotate as specified by SGI :D
+	bx,by,bz = vnorm(bx,by,bz)
+	
+	-- S = [  0 -z  y ]
+	--     [  z  0 -x ]
+	--     [ -y  x  0 ]
+	-- R = uuT + cosO (I - uuT) + sinO S
+	-- alternatively
+	-- R = uuT * (1 - cosO) + IcosO + sinO S
+	
+	local ct = math.cos(theta)
+	local st = math.sin(theta)
+	
+	return
+		x*(bx*bx*(1-ct)+ct)       + y*(bx*by*(1-ct) + st*-bz)  + z*(bx*bz*(1-ct) + st*by),
+		x*(by*bx*(1-ct) + st*bz)  + y*(by*by*(1-ct)*(1-ct)+ct) + z*(by*bz*(1-ct) + st*-bx),
+		x*(bz*bx*(1-ct) + st*-by) + y*(bz*by*(1-ct) + st*bx)   + z*(bz*bz*(1-ct)+ct)
+end
+
 function trace_gap(x,y,z)
 	local xlen,ylen,zlen
 	xlen,ylen,zlen = common.map_get_dims()

@@ -641,19 +641,69 @@ function new_player(settings)
 			end
 		end
 		
-		-- apply delta angle
-		this.angx = this.angx + this.dangx
-		this.angy = this.angy + this.dangy
+		-- calc X delta angle
+		local nax = this.angx + this.dangx
+		if nax > math.pi*0.49 then
+			nax = math.pi*0.49
+		elseif nax < -math.pi*0.49 then
+			nax = -math.pi*0.49
+		end
+		this.dangx = (nax - this.angx)
+		
+		-- apply delta angles
+		if MODE_DRUNKCAM_LOCALTURN and this.dangy ~= 0 then
+			this.angx = this.angx + this.dangx
+			
+			local fx,fy,fz -- forward
+			local sx,sy,sz -- sky
+			local ax,ay,az -- horiz side
+			local bx,by,bz -- vert side
+			
+			local sya = math.sin(this.angy)
+			local cya = math.cos(this.angy)
+			local sxa = math.sin(this.angx)
+			local cxa = math.cos(this.angx)
+			
+			-- get vectors
+			fx,fy,fz = vnorm(sya*cxa, sxa, cya*cxa)
+			sx,sy,sz = vnorm(this.sx, this.sy, this.sz)
+			ax,ay,az = vnorm(vcross(fx,fy,fz,sx,sy,sz))
+			bx,by,bz = vnorm(vcross(fx,fy,fz,ax,ay,az))
+			
+			
+			-- rotate forward and sky
+			
+			fx,fy,fz = vrotate(this.dangy,fx,fy,fz,bx,by,bz)
+			sx,sy,sz = vrotate(this.dangy,sx,sy,sz,bx,by,bz)
+			
+			-- normalise F and S
+			fx,fy,fz = vnorm(fx,fy,fz)
+			sx,sy,sz = vnorm(sx,sy,sz)
+			
+			-- stash sky arrow
+			this.sx = sx
+			this.sy = sy
+			this.sz = sz
+			
+			-- convert forward from vector to polar
+			this.angx = math.asin(fy)
+			local langx = this.angx
+			
+			if math.cos(langx) <= 0.0 then
+				fx = -fx
+				fz = -fz
+			end
+			
+			this.angy = math.atan2(fx,fz)
+			
+			--print("polar",this.angx, this.angy)
+			
+		else
+			this.angy = this.angy + this.dangy
+		end
 		this.dangx = 0
 		this.dangy = 0
-
-		-- clamp angle, YOU MUST NOT LOOK DIRECTLY UP OR DOWN!
-		if this.angx > math.pi*0.499 then
-			this.angx = math.pi*0.499
-		elseif this.angx < -math.pi*0.499 then
-			this.angx = -math.pi*0.499
-		end
-
+		
 		if this.zooming then
 			this.zoom = 3.0
 		else
@@ -1005,7 +1055,7 @@ function new_player(settings)
 		fwx,fwy,fwz = sya*cxa, sxa, cya*cxa
 		
 		-- drunkencam correction
-		this.sy = this.sy - 10.0*sec_delta
+		this.sy = this.sy - 2.0*sec_delta
 		local ds = math.sqrt(this.sx*this.sx + this.sy*this.sy + this.sz*this.sz)
 		this.sx = this.sx / ds
 		this.sy = this.sy / ds
