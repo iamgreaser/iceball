@@ -1,5 +1,5 @@
 # HTML doc generator by GreaseMonkey, 2013. Public domain.
-# Contents of said manual are also public domain.
+# Contents of said manual are also public domain, except where otherwise specified.
 
 import os
 
@@ -48,6 +48,7 @@ m_li = mktag("li")
 m_b = mktag("b")
 m_i = mktag("i")
 m_u = mktag("u")
+m_tt = mktag("tt")
 
 m_a = mktag("a")
 

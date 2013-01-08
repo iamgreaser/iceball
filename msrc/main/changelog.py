@@ -7,6 +7,7 @@ SECTIONS = [
 ]
 
 BODY = m_html(m_head(m_title(TITLE)), m_body(*([
-	m_h1(TITLE)] +
+	m_h1(TITLE),
+	m_hr()] +
 	gen_list(SECTIONS, level=2)
 )))
