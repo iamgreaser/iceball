@@ -1517,13 +1517,16 @@ function new_player(settings)
 		end
 		
 		-- spacer test
-		--[[
-		local spacer = scene.hspacer{x=w/2,y=h/2,spread=8}
+		--[[local spacer = scene.hspacer{x=w/2,y=h/2,spread=8}
 		scene.root.add_child(spacer)
 		local boxes = {}
 		local i
 		for i=1, 10 do
-			local box = scene.rect_frame{frame_col=0xFFAA880088, width=20+math.random(50), height=20+math.random(50)}
+			local box = scene.tile9{
+				width=20+math.random(50), 
+				height=20+math.random(50), 
+				tiles=img_tiles_roundrect
+			}
 			table.insert(boxes, box)
 			spacer.add_child(box)
 		end
@@ -1534,8 +1537,7 @@ function new_player(settings)
 				boxes[i].height=20+math.random(50)
 			end
 			spacer.reflow()
-		end)
-		]]
+		end)]]
 		
 		this.quit_msg.add_listener(GE_BUTTON, quit_events)
 		this.team_change.add_listener(GE_BUTTON, teamchange_events)

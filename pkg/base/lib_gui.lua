@@ -23,6 +23,8 @@ dofile("pkg/base/lib_util.lua")
 local img_font_numbers = common.img_load("pkg/base/gfx/font-numbers.tga")
 local img_font_mini = common.img_load("pkg/base/gfx/font-mini.tga")
 local img_font_large = common.img_load("pkg/base/gfx/font-large.tga")
+img_tiles_roundrect = client.img_load("pkg/base/gfx/roundrect.tga")
+
 --[[
 client.img_free(img_font_numbers)
 img_font_numbers = nil -- PLEASE DO THIS, GUYS!
@@ -492,6 +494,78 @@ function gui_create_scene(width, height, shared_rate)
 				common.img_pixel_set(img, 0, iy, frame_col)
 				common.img_pixel_set(img, w-1, iy, frame_col)
 			end
+		end
+
+		return this
+
+	end
+	
+	function scene.tile9(options)
+
+		local this = scene.display_object(options)
+
+		this.tiles = options.tiles
+		if this.tiles == nil then error('tile9 requires a tiles image specified') end
+		
+		this.tile_width, this.tile_height = common.img_get_dims(this.tiles)
+		this.tile_width = math.floor(this.tile_width / 3)
+		this.tile_height = math.floor(this.tile_height / 3)
+
+		this.use_img = true
+		this.dirty = true
+
+		function this.draw_update()
+			local w = math.ceil(this.width)
+			local h = math.ceil(this.height)
+			local img = this.img
+			local tw = this.tile_width
+			local th = this.tile_height
+			common.img_fill(img, 0)
+			-- corners
+			client.img_blit_to(img, this.tiles, 0, 0, tw, th, 0, 0)
+			client.img_blit_to(img, this.tiles, w-tw, 0, tw, th, tw*2, 0)
+			client.img_blit_to(img, this.tiles, 0, h-th, tw, th, 0, th*2)
+			client.img_blit_to(img, this.tiles, w-tw, h-th, tw, th, tw*2, th*2)
+			-- sides
+			local cap_x = 0
+			for ix = tw, w-tw*2, tw do
+				client.img_blit_to(img, this.tiles, ix, 0, tw, th, tw, 0)
+				client.img_blit_to(img, this.tiles, ix, h-th, tw, th, tw, th*2)
+				cap_x = ix
+			end
+			cap_x = cap_x + tw
+			
+			local cap_y = 0
+			for iy = th, h-th*2, th do
+				client.img_blit_to(img, this.tiles, 0, iy, tw, th, 0, th)
+				client.img_blit_to(img, this.tiles, w-tw, iy, tw, th, tw*2, th)
+				cap_y = iy
+			end
+			cap_y = cap_y + th
+			
+			-- middle
+			for ix = tw, w-tw*2, tw do
+				for iy = th, h-th*2, th do
+					client.img_blit_to(img, this.tiles, ix, iy, tw, th, tw, th)
+				end
+			end
+			
+			-- fill gaps with partial tiles
+			
+			client.img_blit_to(img, this.tiles, cap_x, 0, w-tw-cap_x, th, tw, 0)
+			client.img_blit_to(img, this.tiles, cap_x, h-th, w-tw-cap_x, th, tw, th*2)
+			for iy = th, h-th*2, th do
+				client.img_blit_to(img, this.tiles, cap_x, iy, w-tw-cap_x, th, tw, th)
+			end
+			
+			client.img_blit_to(img, this.tiles, 0, cap_y, tw, h-th-cap_y, 0, th)
+			client.img_blit_to(img, this.tiles, w-tw, cap_y, tw, h-th-cap_y, tw*2, th)
+			for ix = tw, w-tw*2, tw do
+				client.img_blit_to(img, this.tiles, ix, cap_y, tw, h-th-cap_y, tw, th)
+			end
+			
+			client.img_blit_to(img, this.tiles, cap_x, cap_y, w-tw-cap_x, h-th-cap_y, tw, th)
+			
 		end
 
 		return this
