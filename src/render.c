@@ -495,10 +495,146 @@ void render_vxl_rect_ftb_fast(uint32_t *ccolor, float *cdepth, int x1, int y1, i
 #endif
 }
 
+void render_vxl_cube_htrap(uint32_t *ccolor, float *cdepth,
+	int x1a, int x1b, int y1, int x2a, int x2b, int y2, uint32_t color, float depth)
+{
+	// dropout
+	if(x1b <= 0 && x2b <= 0)
+		return;
+	if(x1a >= cubemap_size && x2a >= cubemap_size)
+		return;
+	if(y2 <= 0)
+		return;
+	if(y1 >= cubemap_size)
+		return;
+	if(x1a >= x1b || x2a >= x2b)
+		return;
+	if(y1 >= y2)
+		return;
+	
+	// calc gradients
+	int m_x1a = (((x2a-x1a)<<16)+0x8000)/(y2-y1);
+	int m_x1b = (((x2b-x1b)<<16)+0x8000)/(y2-y1);
+	int sub_x1a = 0;
+	int sub_x1b = 0;
+	
+	// Y clamp
+	// TODO: clamp y1 properly
+	if(y2 >= cubemap_size)
+		y2 = cubemap_size;
+	
+	// render
+	//uint32_t *cptr = &ccolor[(y1<<cubemap_shift)+x1a];
+	//float *dptr = &cdepth[(y1<<cubemap_shift)+x1a];
+	uint32_t *cptr = ccolor;
+	float *dptr = cdepth;
+	int x,y;
+	for(y = y1; y < y2; y++)
+	{
+		if(y >= 0)
+		{
+			int rx1a = (x1a < 0 ? 0 : x1a);
+			int rx1b = (x1b >= cubemap_size ? cubemap_size : x1b);
+			
+			cptr = &ccolor[(y<<cubemap_shift)+rx1a];
+			dptr = &cdepth[(y<<cubemap_shift)+rx1a];
+			
+			for(x = rx1a; x < rx1b; x++)
+			{
+				if(*cptr == fog_color)
+				{
+					*cptr = color;
+					*dptr = depth;
+				}
+				cptr++;
+				dptr++;
+			}
+		}
+		
+		sub_x1a += m_x1a;
+		sub_x1b += m_x1b;
+		x1a += (sub_x1a>>16);
+		x1b += (sub_x1b>>16);
+		sub_x1a &= 0xFFFF;
+		sub_x1b &= 0xFFFF;
+	}
+}
+
+void render_vxl_cube_vtrap(uint32_t *ccolor, float *cdepth,
+	int x1, int y1a, int y1b, int x2, int y2a, int y2b, uint32_t color, float depth)
+{
+	// TODO: make this not so bloody horrible for the cache
+	
+	// dropout
+	if(y1b <= 0 && y2b <= 0)
+		return;
+	if(y1a >= cubemap_size && y2a >= cubemap_size)
+		return;
+	if(x2 <= 0)
+		return;
+	if(x1 >= cubemap_size)
+		return;
+	if(y1a >= y1b || y2a >= y2b)
+		return;
+	if(x1 >= x2)
+		return;
+	
+	// calc gradients
+	int m_y1a = ((y2a-y1a)<<16);
+	int m_y1b = ((y2b-y1b)<<16);
+	m_y1a /= (x2-x1);
+	m_y1b /= (x2-x1);
+	int sub_y1a = 0;
+	int sub_y1b = 0;
+	
+	// X clamp
+	// TODO: clamp x1 properly
+	// TODO: fix the leaks properly
+	x2++; y1b++; y2b++;
+	if(x2 >= cubemap_size)
+		x2 = cubemap_size;
+	
+	// render
+	//uint32_t *cptr = &ccolor[(y1<<cubemap_shift)+x1a];
+	//float *dptr = &cdepth[(y1<<cubemap_shift)+x1a];
+	uint32_t *cptr = ccolor;
+	float *dptr = cdepth;
+	int pitch = cubemap_size;
+	int x,y;
+	for(x = x1; x < x2; x++)
+	{
+		if(x >= 0)
+		{
+			int ry1a = (y1a < 0 ? 0 : y1a);
+			int ry1b = (y1b >= cubemap_size ? cubemap_size : y1b);
+			
+			cptr = &ccolor[(ry1a<<cubemap_shift)+x];
+			dptr = &cdepth[(ry1a<<cubemap_shift)+x];
+			
+			for(y = ry1a; y < ry1b; y++)
+			{
+				if(*cptr == fog_color)
+				{
+					*cptr = color;
+					*dptr = depth;
+				}
+				cptr += pitch;
+				dptr += pitch;
+			}
+		}
+		
+		sub_y1a += m_y1a;
+		sub_y1b += m_y1b;
+		y1a += (sub_y1a>>16);
+		y1b += (sub_y1b>>16);
+		sub_y1a &= 0xFFFF;
+		sub_y1b &= 0xFFFF;
+	}
+}
+
 void render_vxl_cube_sides(uint32_t *ccolor, float *cdepth, int x1, int y1, int x2, int y2, uint32_t color, float depth)
 {
 	int hsize = (cubemap_size>>1);
-	
 	
 	if(depth > CUBESUX_MARKER)
 	{
@@ -515,33 +651,32 @@ void render_vxl_cube_sides(uint32_t *ccolor, float *cdepth, int x1, int y1, int 
 		return;
 	}
 	
-	int x3 = ((x1-hsize)*depth)/(depth+0.5f)+hsize;
-	int y3 = ((y1-hsize)*depth)/(depth+0.5f)+hsize;
-	int x4 = ((x2-hsize)*depth)/(depth+0.5f)+hsize;
-	int y4 = ((y2-hsize)*depth)/(depth+0.5f)+hsize;
+	int x3 = ((x1-hsize)*depth)/(depth+1.0f)+hsize;
+	int y3 = ((y1-hsize)*depth)/(depth+1.0f)+hsize;
+	int x4 = ((x2-hsize)*depth)/(depth+1.0f)+hsize;
+	int y4 = ((y2-hsize)*depth)/(depth+1.0f)+hsize+1;
 	
 	render_vxl_rect_ftb_fast(ccolor, cdepth, x1, y1, x2, y2, color, depth);
 	
 	depth += 0.5f;
 	
-	// TODO: replace these with trapezium drawing routines
-	if(x3 < x1)
-		render_vxl_rect_ftb_fast(ccolor, cdepth,
-			(int)x3, (int)y3, (int)x1, (int)y4,
-			color, depth);
-	else if(x2 < x4)
-		render_vxl_rect_ftb_fast(ccolor, cdepth,
-			(int)x2, (int)y3, (int)x4, (int)y4,
-			color, depth);
-	
 	if(y3 < y1)
-		render_vxl_rect_ftb_fast(ccolor, cdepth,
-			(int)x3, (int)y3, (int)x4, (int)y1,
-			color, depth);
+		render_vxl_cube_htrap(ccolor, cdepth,
+			x3, x4, y3, x1, x2, y1,
+			color, depth+1.0f);
 	else if(y2 < y4)
-		render_vxl_rect_ftb_fast(ccolor, cdepth,
-			(int)x3, (int)y2, (int)x4, (int)y4,
-			color, depth);
+		render_vxl_cube_htrap(ccolor, cdepth,
+			x1, x2, y2, x3, x4, y4,
+			color, depth+1.0f);
+	
+	if(x3 < x1)
+		render_vxl_cube_vtrap(ccolor, cdepth,
+			x3, y3, y4, x1, y1, y2,
+			color, depth+1.0f);
+	else if(x2 < x4)
+		render_vxl_cube_vtrap(ccolor, cdepth,
+			x2, y1, y2, x4, y3, y4,
+			color, depth+1.0f);
 }
 
 void render_vxl_cube(uint32_t *ccolor, float *cdepth, int x1, int y1, int x2, int y2, uint32_t color, float depth)

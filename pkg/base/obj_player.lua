@@ -699,6 +699,7 @@ function new_player(settings)
 			--print("polar",this.angx, this.angy)
 			
 		else
+			this.angx = this.angx + this.dangx
 			this.angy = this.angy + this.dangy
 		end
 		this.dangx = 0

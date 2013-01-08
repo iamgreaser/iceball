@@ -57,7 +57,9 @@ pmfedit_z = 0
 pmfedit_size = 16
 pmfedit_data = {}
 pmfedit_model = common.model_new(1)
-pmfedit_model, pmfedit_model_bone = common.model_bone_new(pmfedit_model)
+pmfedit_idx = 1
+pmfedit_model_bone = {}
+pmfedit_model, pmfedit_model_bone[pmfedit_idx] = common.model_bone_new(pmfedit_model)
 pmfedit_data[#pmfedit_data+1] = {x=0,y=0,z=0,r=0,g=0,b=0,radius=1}
 pmfedit_ry = 0
 pmfedit_rx = 0
@@ -110,7 +112,7 @@ function client.hook_tick(sec_current, sec_delta)
 		g=math.sin(sec_current)*127+128,
 		b=math.sin(sec_current+2*math.pi/3)*127+128,
 		radius=pmfedit_size}
-	common.model_bone_set(pmfedit_model, pmfedit_model_bone, "edit", pmfedit_data)
+	common.model_bone_set(pmfedit_model, pmfedit_model_bone[pmfedit_idx], "edit", pmfedit_data)
 
 	return 0.005
 end
@@ -213,9 +215,9 @@ function client.hook_key(key, state)
 			if xpmf then
 				common.model_free(pmfedit_model) -- YECCH! Forgot this line!
 				pmfedit_model = xpmf
-				pmfedit_model_bone = 0
+				pmfedit_model_bone[pmfedit_idx] = 0
 				local bname
-				bname, pmfedit_data = common.model_bone_get(pmfedit_model, pmfedit_model_bone)
+				bname, pmfedit_data = common.model_bone_get(pmfedit_model, pmfedit_model_bone[pmfedit_idx])
 				pmfedit_data[#pmfedit_data+1] = {}
 				print("loaded!")
 			else
@@ -225,8 +227,8 @@ function client.hook_key(key, state)
 			local xpt = pmfedit_data[#pmfedit_data]
 			pmfedit_data[#pmfedit_data] = nil
 			local bname, blah
-			bname, blah = common.model_bone_get(pmfedit_model, pmfedit_model_bone)
-			common.model_bone_set(pmfedit_model, pmfedit_model_bone, bname, pmfedit_data)
+			bname, blah = common.model_bone_get(pmfedit_model, pmfedit_model_bone[pmfedit_idx])
+			common.model_bone_set(pmfedit_model, pmfedit_model_bone[pmfedit_idx], bname, pmfedit_data)
 			if common.model_save_pmf(pmfedit_model, PMFEDIT_FNAME) then
 				print("saved!")
 			else
@@ -250,7 +252,7 @@ function client.hook_render()
 		,pmfedit_rx
 		,pmfedit_ry2))
 
-	client.model_render_bone_local(pmfedit_model, pmfedit_model_bone,
+	client.model_render_bone_local(pmfedit_model, pmfedit_model_bone[pmfedit_idx],
 		0,0,1,
 		pmfedit_ry,pmfedit_rx,pmfedit_ry2,
 		0.7)
@@ -261,9 +263,9 @@ if preload then
 	if xpmf then
 		common.model_free(pmfedit_model) -- YECCH! Forgot this line!
 		pmfedit_model = xpmf
-		pmfedit_model_bone = 0
+		pmfedit_model_bone[pmfedit_idx] = 0
 		local bname
-		bname, pmfedit_data = common.model_bone_get(pmfedit_model, pmfedit_model_bone)
+		bname, pmfedit_data = common.model_bone_get(pmfedit_model, pmfedit_model_bone[pmfedit_idx])
 		pmfedit_data[#pmfedit_data+1] = {}
 		print("loaded!")
 	else
