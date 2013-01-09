@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,0,0,0,7},
-	num=7,
-	str="0.0-7",
+	cmp={0,0,0,0,9},
+	num=9,
+	str="0.0-9",
 }
 
 VERSION_MOD = {
@@ -36,4 +36,5 @@ VERSION_BUGS = {
 {intro=5, fix=6, msg="CRASHES ON CHANNEL WRAPAROUND - PLEASE UPDATE TO 0.0-6!"},
 {intro=nil, fix=7, msg="Camera roll / camera_point_sky not implemented - drunken cam will not roll properly"},
 {intro=nil, fix=8, msg="Renderer uses double-rect approximation of cube instead of using trapezia"},
+{intro=nil, fix=9, msg="Mouse warping not implemented"},
 }

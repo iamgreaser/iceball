@@ -804,12 +804,37 @@ local function push_keypress(key, state, modif)
 	end
 end
 
+local w, h = client.screen_get_dims()
+stored_pointer = {x=w/4, y=h*3/4} -- default to around the lower-left, where the text box is
+
+function enter_typing_state()
+	mouse_released = true
+	client.mouse_lock_set(false)
+	client.mouse_visible_set(true)
+	if client.mouse_warp ~= nil then
+		client.mouse_warp(stored_pointer.x, stored_pointer.y)
+	end
+end
+
+function discard_typing_state()
+	typing_type = nil
+	typing_msg = nil
+	gui_focus = nil
+	mouse_released = false
+	client.mouse_lock_set(true)
+	client.mouse_visible_set(false)
+	if client.mouse_warp ~= nil then
+		stored_pointer.x = mouse_xy.x
+		stored_pointer.y = mouse_xy.y
+		local w, h = client.screen_get_dims()
+		client.mouse_warp(w/2, h/2)
+	end
+end
+
 function key_type(key, state, modif)
 	if state then
 		if key == SDLK_ESCAPE then
-			typing_type = nil
-			typing_msg = nil
-			gui_focus = nil
+			discard_typing_state()
 		elseif key == SDLK_RETURN then
 			if typing_msg ~= "" then
 				if typing_type == "Chat: " then
@@ -820,9 +845,7 @@ function key_type(key, state, modif)
 					common.net_send(nil, common.net_pack("Bz", 0x0D, typing_msg))
 				end
 			end
-			typing_type = nil
-			typing_msg = nil
-			gui_focus = nil
+			discard_typing_state()
 		else
 			typing_msg = gui_string_edit(typing_msg, MODE_CHAT_STRMAX, key, modif)
 		end
@@ -903,7 +926,7 @@ function h_mouse_button(button, state)
 		push_mouse_button(button, state)
 	end
 	
-	if mouse_released then
+	if mouse_released and gui_focus == nil then
 		mouse_released = false
 		client.mouse_lock_set(true)
 		client.mouse_visible_set(false)
@@ -914,7 +937,7 @@ function h_mouse_button(button, state)
 	-- FIXME: no reassignable mouse button controls?
 
 	local plr = players[players.current]
-	if plr then
+	if plr and gui_focus == nil then
 		return plr.on_mouse_button(button, state)
 	end
 end
@@ -938,7 +961,7 @@ function h_mouse_motion(x, y, dx, dy)
 	end
 
 	local plr = players[players.current]
-	if plr then
+	if plr and gui_focus == nil then
 		return plr.on_mouse_motion(x, y, dx, dy)
 	end
 end

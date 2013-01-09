@@ -43,3 +43,16 @@ int icelua_fn_client_mouse_visible_set(lua_State *L)
 	
 	return 0;
 }
+
+int icelua_fn_client_mouse_warp(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 2, 2);
+	
+#ifdef DEDI
+	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
+#else
+	SDL_WarpMouse(lua_tonumber(L, 1), lua_tonumber(L, 2));
+#endif
+	
+	return 0;
+}

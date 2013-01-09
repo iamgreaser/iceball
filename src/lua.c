@@ -73,6 +73,8 @@ int icelua_force_get_integer(lua_State *L, int table, char *name)
 struct icelua_entry icelua_client[] = {
 	{icelua_fn_client_mouse_lock_set, "mouse_lock_set"},
 	{icelua_fn_client_mouse_visible_set, "mouse_visible_set"},
+	{icelua_fn_client_mouse_visible_set, "mouse_visible_set"},
+	{icelua_fn_client_mouse_warp, "mouse_warp"},
 	{icelua_fn_client_map_fog_get, "map_fog_get"},
 	{icelua_fn_client_map_fog_set, "map_fog_set"},
 	{icelua_fn_client_camera_point, "camera_point"},

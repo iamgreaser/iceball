@@ -1645,14 +1645,17 @@ function new_player(settings)
 				typing_type = "Chat: "
 				typing_msg = ""
 				gui_focus = this
+				enter_typing_state()
 			elseif key == BTSK_COMMAND then
 				typing_type = "Chat: "
 				typing_msg = "/"
 				gui_focus = this
+				enter_typing_state()
 			elseif key == BTSK_TEAMCHAT then
 				typing_type = "Team: "
 				typing_msg = ""
 				gui_focus = this
+				enter_typing_state()
 			elseif this.alive and key == BTSK_COLORLEFT then
 				this.blk_color_x = this.blk_color_x - 1
 				if this.blk_color_x < 0 then
