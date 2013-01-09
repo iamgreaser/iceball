@@ -1056,7 +1056,7 @@ function new_player(settings)
 		fwx,fwy,fwz = sya*cxa, sxa, cya*cxa
 		
 		-- drunkencam correction
-		this.sy = this.sy - 2.0*sec_delta
+		this.sy = this.sy - MODE_DRUNKCAM_CORRECTSPEED*sec_delta
 		local ds = math.sqrt(this.sx*this.sx + this.sy*this.sy + this.sz*this.sz)
 		this.sx = this.sx / ds
 		this.sy = this.sy / ds
