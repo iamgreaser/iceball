@@ -201,12 +201,13 @@ MinGW Install Help
 Dependencies:
 
 http://www.lua.org/ftp/lua-5.1.5.tar.gz
-http://www.libsdl.org/release/SDL-1.2.15.tar.gz
 http://www.libsdl.org/release/SDL-devel-1.2.15-mingw32.tar.gz
 http://zlib.net/zlib-1.2.7.tar.gz
 
 Download each one and extract outside of /buldthensnip (which we will call $ICEBALL)
 For each dependency cd to the root path and follow the listed commands.
+
+TODO: change these so they work with MS-DOS "copy", w/o requiring MSYS.
 
 zlib:
 
@@ -224,11 +225,9 @@ cp src/*.dll $ICEBALL
 
 SDL:
 
-./configure; make; cp src $ICEBALL/winlibs/SDL; cp include $ICEBALL/winlibs
-
-SDL-devel
-
-make; cp bin/*.DLL $ICEBALL
+cp bin/*.dll $ICEBALL
+cp lib/* $ICEBALL/winlibs
+cp include/SDL $ICEBALL/winlibs
 
 ##############
 Final build (from MINGW32)
@@ -236,6 +235,6 @@ Final build (from MINGW32)
 # unoptimized build
 make clean all -f Makefile.mingw
 # optimized with SSE2
-make clean all -f Makefile.mingw CFLAGS_EXTRA="-msse2 -mfpmath=sse"
+make clean all -f Makefile.mingw CC=gcc CFLAGS_EXTRA="-msse2 -mfpmath=sse"
 
 You may find that it's not correctly pointing at gcc.exe in which case you can copy the file or change the Makefile.
