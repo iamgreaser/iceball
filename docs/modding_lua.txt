@@ -142,6 +142,9 @@ client.mouse_lock_set(state) @
 client.mouse_visible_set(state) @
 	shows / hides the mouse depending on "state"
 
+client.mouse_warp(x, y) @
+	moves the mouse to x,y
+
 obj = common.fetch_start(ftype, fname)
 	initiates a file fetch
 	
