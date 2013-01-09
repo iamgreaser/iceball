@@ -1422,8 +1422,8 @@ function new_player(settings)
 		local function menus_visible()
 			return this.quit_msg.visible or this.team_change.visible
 		end
-		local function is_typing()
-			return typing_type
+		local function is_view_released()
+			return gui_focus ~= nil
 		end
 		
 		local function quit_events(options)
@@ -1435,14 +1435,16 @@ function new_player(settings)
 					elseif options.key == BTSK_NO then
 						this.quit_msg.visible = false
 					end
-				elseif options.key == BTSK_QUIT and not menus_visible() then
+				elseif options.key == BTSK_QUIT and 
+					not menus_visible() and 
+					not is_view_released() then
 					this.quit_msg.visible = true
 				end
 			end
 		end
 		local function teamchange_events(options)
 			local viz = this.team_change.visible
-			if options.state and not is_typing() then
+			if options.state and not is_view_released() then
 				if viz then
 				
 					local team
@@ -1466,7 +1468,7 @@ function new_player(settings)
 			this.team_change.visible = viz
 		end
 		local function toggle_map_state(options)
-			if options.state and options.key == BTSK_MAP and not is_typing() then
+			if options.state and options.key == BTSK_MAP and not is_view_released() then
 				this.mini_map.visible = not this.mini_map.visible
 				this.large_map.visible = not this.large_map.visible
 			end
@@ -1475,9 +1477,6 @@ function new_player(settings)
 			this.chat_text.ctab = chat_text.render()
 			this.kill_text.ctab = chat_killfeed.render()
 		end
-		
-		-- FIXME: chat typing isn't aware of the widgets, so it'll open up e.g. if you have the quit message open
-		-- (plan is to ultimately make the typing box a textfield, then is_typing becomes the typing box's visibility)
 		
 		this.crosshair = scene.image{img=img_crosshair, x=w/2, y=h/2}
 		this.cpal = scene.image{img=img_cpal, x=0, y=h, align_x=0, align_y=1}
@@ -1645,12 +1644,15 @@ function new_player(settings)
 			elseif key == BTSK_CHAT then
 				typing_type = "Chat: "
 				typing_msg = ""
+				gui_focus = this
 			elseif key == BTSK_COMMAND then
 				typing_type = "Chat: "
 				typing_msg = "/"
+				gui_focus = this
 			elseif key == BTSK_TEAMCHAT then
 				typing_type = "Team: "
 				typing_msg = ""
+				gui_focus = this
 			elseif this.alive and key == BTSK_COLORLEFT then
 				this.blk_color_x = this.blk_color_x - 1
 				if this.blk_color_x < 0 then

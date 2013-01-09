@@ -376,6 +376,7 @@ hold_to_zoom = user_config.hold_to_zoom or false
 mouse_skip = 3
 input_events = {}
 
+gui_focus = nil
 typing_type = nil
 typing_msg = nil
 
@@ -795,19 +796,6 @@ function h_tick_init(sec_current, sec_delta)
 	client.hook_tick = h_tick_main
 	return client.hook_tick(sec_current, sec_delta)
 end
-
---[[
-	As it's currently architected, the hooks each take in stuff immediately and drive polling constants.
-	the SDL events are similar to icegui events, but not exactly the same.
-	The push_mouse and push_keypress are intended to be inlined in the hook functions eventually.
-
-	Triplefox:
-
-	GM wired everything directly to the first-person view when building these hooks,
-and we need to get some distance from that model to let the gui - or any alternate control schemes like vehicles/spectate - breathe.
-Migrating the view stuff into the player object would help keep the client-global focused on just being infrastructure.
-I've marked the points where it becomes an "ai controller" to help guide this.
-]]
 	
 local function push_keypress(key, state, modif)
 	table.insert(input_events, {GE_KEY, {key=key,state=state,modif=modif}})
@@ -816,16 +804,35 @@ local function push_keypress(key, state, modif)
 	end
 end
 
+function key_type(key, state, modif)
+	if state then
+		if key == SDLK_ESCAPE then
+			typing_type = nil
+			typing_msg = nil
+			gui_focus = nil
+		elseif key == SDLK_RETURN then
+			if typing_msg ~= "" then
+				if typing_type == "Chat: " then
+					if not common.net_send(nil, common.net_pack("Bz", 0x0C, typing_msg)) then
+						print("ERR!")
+					end
+				elseif typing_type == "Team: " then
+					common.net_send(nil, common.net_pack("Bz", 0x0D, typing_msg))
+				end
+			end
+			typing_type = nil
+			typing_msg = nil
+			gui_focus = nil
+		else
+			typing_msg = gui_string_edit(typing_msg, MODE_CHAT_STRMAX, key, modif)
+		end
+	end
+end
+
 function h_key(key, state, modif)
 	
 	push_keypress(key, state, modif)
 
-	if state and key == SDLK_F5 then
-		mouse_released = true
-		client.mouse_lock_set(false)
-		client.mouse_visible_set(true)
-	end
-	
 	-- disconnected ai
 	
 	if not players[players.current] then
@@ -836,32 +843,24 @@ function h_key(key, state, modif)
 		return
 	end
 	
+	-- chat
+	
+	if gui_focus ~= nil then
+		mouse_released = true
+		client.mouse_lock_set(false)
+		client.mouse_visible_set(true)
+		key_type(key, state, modif)
+		return
+	end
+	
 	-- player entity ai
 	
 	local plr = players[players.current]
 
-	if typing_type then
-		if state then
-			if key == SDLK_ESCAPE then
-				typing_type = nil
-				typing_msg = nil
-			elseif key == SDLK_RETURN then
-				if typing_msg ~= "" then
-					if typing_type == "Chat: " then
-						if not common.net_send(nil, common.net_pack("Bz", 0x0C, typing_msg)) then
-							print("ERR!")
-						end
-					elseif typing_type == "Team: " then
-						common.net_send(nil, common.net_pack("Bz", 0x0D, typing_msg))
-					end
-				end
-				typing_type = nil
-				typing_msg = nil
-			else
-				typing_msg = gui_string_edit(typing_msg, MODE_CHAT_STRMAX, key, modif)
-			end
-		end
-	elseif plr then
+	if plr then
+		mouse_released = false
+		client.mouse_lock_set(true)
+		client.mouse_visible_set(false)
 		return plr.on_key(key, state, modif)
 	end
 end
