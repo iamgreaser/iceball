@@ -48,3 +48,4 @@ STUFF TO DO BEFORE 0.1 CAN BE RELEASED:
 - JSON writer
 - make kicking not suck
 - correct render order for upper blocks
+- draw the ceiling

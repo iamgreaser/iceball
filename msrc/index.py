@@ -12,7 +12,7 @@ SECTIONS = [
 			("Compiling the engine", "compile", None),
 			("How to play", "play", None),
 		]),
-		("Users' Guide", "setup/", [
+		("Users' Guide", "guide/", [
 			("What goes where", "where", None),
 			("Engine config (clsave/config.json)", "config", None),
 			("User config (clsave/pub/user.json)", "user", None),
