@@ -74,6 +74,18 @@ function net_broadcast_team(tidx, msg)
 	end
 end
 
+function net_broadcast_squad(tidx, squad, msg)
+	local i
+	for i=1,#(client_list.fdlist) do
+		local cli = client_list[client_list.fdlist[i]]
+		local plr = cli and players[cli.plrid]
+		if plr and plr.team == tidx and plr.squad == squad then
+			--print("to", client_list.fdlist[i], type(msg))
+			common.net_send(client_list.fdlist[i], msg)
+		end
+	end
+end
+
 
 function server.hook_file(sockfd, ftype, fname)
 	print("hook_file:", sockfd, ftype, fname)
@@ -300,6 +312,21 @@ function server.hook_tick(sec_current, sec_delta)
 				local cb = teams[plr.team].color_chat
 				local c = argb_split_to_merged(cb[1],cb[2],cb[3])
 				net_broadcast_team(plr.team, common.net_pack("BIz", 0x0E, c, s))
+			end
+		elseif cid == 0x1E and plr and plr.squad then
+			-- squadchat
+			local msg
+			msg, pkt = common.net_unpack("z", pkt)
+			
+			local s = nil
+			if string.sub(msg,1,4) == "/me " then
+				s = "* "..plr.name.." "..string.sub(msg,5)
+			else
+				s = plr.name..": "..msg
+			end
+			
+			if s then
+				net_broadcast_squad(plr.team, plr.squad, common.net_pack("BIz", 0x0E, 0xFFFFFF55, s))
 			end
 		elseif cid == 0x11 and plr then
 			local tidx, wpn, name

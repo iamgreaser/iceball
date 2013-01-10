@@ -32,6 +32,7 @@
 	"colordown": 274,
 	"chat": 116,
 	"teamchat": 121,
+	"squadchat": 117,
 	"scores": 9,
 	"quit": 27,
 	"map": 109,

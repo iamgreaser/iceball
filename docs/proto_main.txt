@@ -278,3 +278,6 @@ Iceball Base Mod:
 		reload gun
 		
 		TODO: make the ammo counts serverside
+	
+	0x1E msg.z (C->S) @
+		send squadchat message

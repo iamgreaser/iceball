@@ -83,10 +83,11 @@ BTSK_COLORRIGHT = controls_config.colorright or SDLK_RIGHT
 BTSK_COLORUP    = controls_config.colorup or SDLK_UP
 BTSK_COLORDOWN  = controls_config.colordown or SDLK_DOWN
 
-BTSK_CHAT     = controls_config.chat or SDLK_t
-BTSK_COMMAND  = SDLK_SLASH
-BTSK_TEAMCHAT = controls_config.teamchat or SDLK_y
-BTSK_SCORES   = controls_config.scores or SDLK_TAB
+BTSK_CHAT      = controls_config.chat or SDLK_t
+BTSK_COMMAND   = SDLK_SLASH
+BTSK_TEAMCHAT  = controls_config.teamchat or SDLK_y
+BTSK_SQUADCHAT = controls_config.squadchat or SDLK_u
+BTSK_SCORES    = controls_config.scores or SDLK_TAB
 
 BTSK_QUIT = controls_config.quit or SDLK_ESCAPE
 BTSK_YES  = SDLK_y
@@ -828,6 +829,7 @@ function discard_typing_state()
 		stored_pointer.y = mouse_xy.y
 		local w, h = client.screen_get_dims()
 		client.mouse_warp(w/2, h/2)
+		mouse_skip = 1
 	end
 end
 
@@ -838,11 +840,11 @@ function key_type(key, state, modif)
 		elseif key == SDLK_RETURN then
 			if typing_msg ~= "" then
 				if typing_type == "Chat: " then
-					if not common.net_send(nil, common.net_pack("Bz", 0x0C, typing_msg)) then
-						print("ERR!")
-					end
+					common.net_send(nil, common.net_pack("Bz", 0x0C, typing_msg))
 				elseif typing_type == "Team: " then
 					common.net_send(nil, common.net_pack("Bz", 0x0D, typing_msg))
+				elseif typing_type == "Squad: " then
+					common.net_send(nil, common.net_pack("Bz", 0x1E, typing_msg))
 				end
 			end
 			discard_typing_state()
