@@ -100,4 +100,24 @@ def gen_list(l, pbase="", level=1):
 	
 	return list_data
 
+def gen_lua_api_docs(l):
+	list_data = []
+	for rets, name, args, optargs, isimp, tags in l:
+		s = name + "("
+		
+		if rets:
+			s = ", ".join(rets) + " = " + s
+		l2 = []
+		for n in args:
+			l2.append(n)
+		
+		for n, v in optargs:
+			l2.append(n + " = " + v)
+		
+		s += ", ".join(l2) + "):"
+		list_data.append(m_h2(m_tt(s)))
+		list_data += tags
+	
+	return list_data
+
 mkpage("index")

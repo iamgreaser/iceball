@@ -26,9 +26,26 @@ SECTIONS = [
 		]),
 		("Modding The Game", "mods/", [
 			("Coding conventions", "conv", None),
-			("Base game API", "basegame", None),
-			("Lua API reference", "lua", None),
 			("Networking protocol", "network", None),
+			("Base game API", "base/", [
+				("Preloader", "preload", None),
+				("Libraries", "lib", None),
+			]),
+			("Lua API reference", "lua/", [
+				("Notes", "notes", None),
+				("Sections", "sect/", [
+					("Function hooks", "hook", None),
+					("camera", "camera", None),
+					("fetch", "fetch", None),
+					("image", "image", None),
+					("json", "json", None),
+					("map", "map", None),
+					("model", "model", None),
+					("mouse", "mouse", None),
+					("net", "net", None),
+					("wav", "wav", None),
+				]),
+			]),
 		]),
 		("File Formats", "fmt/", [
 			("[vxl] Ace of Spades Map", "vxl", None),
