@@ -1,4 +1,4 @@
-This section is obsolete.
+This section is obsolete (mostly, some stuff is still updated here).
 The documentation here is most likely out of date.
 
 Read the HTML manual in MANUAL/.

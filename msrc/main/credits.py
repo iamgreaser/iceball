@@ -25,6 +25,12 @@ SECTIONS = [
 		])
 	]),
 	
+	("Dany0", None, [
+		("Beginning contributor", None, [
+			("Czech translation", None, None),
+		])
+	]),
+	
 	("Ericson2314 / SonarPulse", None, [
 		("Engine programmer", None, [
 			("Rearranged the build tree", None, None),

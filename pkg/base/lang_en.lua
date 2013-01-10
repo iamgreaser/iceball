@@ -15,6 +15,8 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
+-- TODO: organise this into the correct files
+
 lang_en = {
 	["join"] = function (p,t) return "* "..p.." has joined the "..t.." team" end
 	["quit"] = function (p) return "* "..p.." disconnected" end
@@ -24,4 +26,20 @@ lang_en = {
 	["kill"] = function (ps,pd,w) return ""..ps.." killed "..pd.." ("..w..")" end
 	["diefall"] = function (p) return ""..p.." fell too far" end
 	["tkill"] = function (ps,pd,w) return ""..ps.." teamkilled "..pd.." ("..w..")" end
+}
+
+lang_cz = {
+        ["join"] = function (p,t) return "* "..p.." se připojil do týmu "..t end
+        ["quit"] = function (p) return "* "..p.." se odpojil" end
+        ["chteam"] = function (p) return "* "..p.." změnil tým" end
+        ["chwpn"] = function (p) return "* "..p.." změnil zbraň" end
+        ["chat"] = function (p,m) return "<"..p.."> "..m end
+        ["kill"] = function (ps,pd,w) return ""..ps.." zabil "..pd.." ("..w..")" end
+        ["diefall"] = function (p) return ""..p.." udělal takovou tu věc alá lumíci" end
+        ["tkill"] = function (ps,pd,w) return ""..ps.." zabil spoluhráče "..pd.." ("..w..")" end
+}
+
+lang_list = {
+	["en"] = lang_en,
+	["en"] = lang_cz,
 }

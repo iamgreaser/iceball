@@ -16,6 +16,9 @@ BR:
 	"Are you sure?" on quit
 	Improved key binding system
 
+Dany0:
+	Czech translation
+
 Ericson2314:
 	Rearranged the build tree
 	Added an SSE-optimised matrix-vector multiply

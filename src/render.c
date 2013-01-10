@@ -836,6 +836,8 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 	float by = blky + suby;
 	float bz = blkz + subz;
 	
+	int byi = blky;
+	
 	// check if we need to reallocate the mark table and block list
 	{
 		int markbase = xlen * zlen;
@@ -879,6 +881,10 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 	while(rayc_data_head < rayc_data_len)
 	{
 		raydata_t *rd = &(rayc_data[rayc_data_head++]);
+		
+		// back this up so we can flip the top
+		rayblock_t *b_pstart = &(rayc_block[rayc_block_len]);
+		rayblock_t *b_pmid = b_pstart;
 		
 		// get delta
 		float dx = rd->x - bx;
@@ -959,24 +965,45 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 			b->y = iy2;
 			b->color = 0xFF0000FF;
 		}
+		b_pstart += 2;
+		b_pmid += 2;
 #endif
 		// add the top blocks (if they exist and we can see them)
 		if(lastn == 0)
 		{
 			if(y1 > 0.0f) y1 = 0;
 			y2 = p[1];
-		} else if(p[3] >= rd->y1-1) {
+		} else if(rayc_data_head == 1) {
 			y1 = p[3];
 			y2 = p[1];
-			uint32_t *c = (uint32_t *)(&p[-4]);
+			// just the immediate ceiling, thanks.
 #ifndef DEBUG_HIDE_MAIN
-			for(i = p[3]-1; i >= p[3]-topcount && i >= iy1; i--)
 			{
 				rayblock_t *b = &rayc_block[rayc_block_len++];
 				b->x = rd->x;
 				b->z = rd->z;
+				b->y = p[3]-1;
+				b->color = *(uint32_t *)(&p[-4]);
+			}
+#endif
+		} else if(p[3] >= rd->y1-1) {
+			y1 = p[3];
+			y2 = p[1];
+			uint32_t *c = (uint32_t *)(&p[-4*topcount]);
+#ifndef DEBUG_HIDE_MAIN
+			for(i = p[3]-topcount; i <= p[3]-1; i++)
+			{
+				if(i < iy1)
+				{
+					c++;
+					continue;
+				}
+				
+				rayblock_t *b = &rayc_block[rayc_block_len++];
+				b->x = rd->x;
+				b->z = rd->z;
 				b->y = i;
-				b->color = *(c--);
+				b->color = *(c++);
 			}
 #endif
 		}
@@ -1010,22 +1037,35 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 			if(p[1] != p[3] && rd->y2 >= p[3])
 				y2 = p[1];
 			
-			c = (uint32_t *)(&p[-4]);
+			c = (uint32_t *)(&p[-4*topcount]);
 #ifndef DEBUG_HIDE_MAIN
-			for(i = p[3]-1; i >= p[3]-topcount; i--)
+			for(i = p[3]-topcount; i <= p[3]-1 && i <= iy2; i++)
 			{
-				if(i > iy2)
-				{
-					c--;
-					continue;
-				}
 				rayblock_t *b = &rayc_block[rayc_block_len++];
 				b->x = rd->x;
 				b->z = rd->z;
 				b->y = i;
-				b->color = *(c--);
+				b->color = *(c++);
 			}
 #endif
+		}
+		
+		// find the y middle
+		while(b_pmid < &rayc_block[rayc_block_len] && b_pmid->y < byi)
+			b_pmid++;
+		b_pmid--;
+		
+		// flip!
+		while(b_pstart < b_pmid)
+		{
+			rayblock_t t;
+			
+			t = *b_pstart;
+			*b_pstart = *b_pmid;
+			*b_pmid = t;
+			
+			b_pstart++;
+			b_pmid--;
 		}
 		
 		// correct the y spread
