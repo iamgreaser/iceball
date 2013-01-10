@@ -5,6 +5,7 @@ SECTIONS = [
 		("Changelog", "main/changelog", None),
 		("Credits", "main/credits", None),
 		("Licences", "main/lic", None),
+		("System requirements", "main/req", None),
 		("Important Tutorials", "tut/", [
 			(m_b(m_i("READ THIS FIRST")), "rtfm", None),
 			("Command line tutorial", "cmd", None),
@@ -42,6 +43,10 @@ SECTIONS = [
 
 BODY = m_html(m_head(m_title(TITLE)), m_body(*([
 	m_h1(TITLE),
-	m_hr()] +
+	m_hr(),
+	m_p(
+		"NOTE: the HTML documentation is incomplete. Sorry guys. ",
+		"It should be mostly there by 0.1."
+	)] +
 	gen_list(SECTIONS, level=2)
 )))

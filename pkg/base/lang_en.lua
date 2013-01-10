@@ -28,6 +28,7 @@ lang_en = {
 	["tkill"] = function (ps,pd,w) return ""..ps.." teamkilled "..pd.." ("..w..")" end
 }
 
+-- TODO: add an extra font so we can actually USE this translation
 lang_cz = {
         ["join"] = function (p,t) return "* "..p.." se připojil do týmu "..t end
         ["quit"] = function (p) return "* "..p.." se odpojil" end
