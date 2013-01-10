@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,0,0,0,9},
-	num=9,
-	str="0.0-9",
+	cmp={0,0,0,0,10},
+	num=10,
+	str="0.0-10",
 }
 
 VERSION_MOD = {
@@ -37,4 +37,6 @@ VERSION_BUGS = {
 {intro=nil, fix=7, msg="Camera roll / camera_point_sky not implemented - drunken cam will not roll properly"},
 {intro=nil, fix=8, msg="Renderer uses double-rect approximation of cube instead of using trapezia"},
 {intro=nil, fix=9, msg="Mouse warping not implemented"},
+{intro=nil, fix=10, msg="Immediate ceiling isn't drawn"},
+{intro=nil, fix=10, msg="Blocks appear inverted in common cases"},
 }
