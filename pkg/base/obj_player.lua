@@ -1515,6 +1515,46 @@ function new_player(settings)
 			this.ammo_text.text = tool_textgen[tool]()
 		end
 		
+		this.typing_type = scene.textfield{
+			text="",
+			color=0xFFFFFFFF,
+			align_x = 0,
+			align_y = 0,
+			x = 0,
+			y = 0}
+		this.typing_text = scene.textfield{
+			text="",
+			color=0xFFFFFFFF,
+			align_x = 0,
+			align_y = 0,
+			x = 0,
+			y = 0,
+			take_input = true}
+		this.typing_layout = scene.hspacer{x=4, y=h - 80, spread = 0, align_x=0, align_y=0}
+		this.typing_layout.add_child(this.typing_type)
+		this.typing_layout.add_child(this.typing_text)
+		this.typing_layout.visible = false
+		
+		function this.typing_text.done_typing(options)
+			this.typing_layout.visible = false
+			discard_typing_state()
+		end
+		
+		function this.typing_text.on_return(options)
+			
+			if this.typing_text.text ~= "" then
+				if this.typing_type.text == "Chat: " then
+					common.net_send(nil, common.net_pack("Bz", 0x0C, this.typing_text.text))
+				elseif this.typing_type.text == "Team: " then
+					common.net_send(nil, common.net_pack("Bz", 0x0D, this.typing_text.text))
+				elseif this.typing_type.text == "Squad: " then
+					common.net_send(nil, common.net_pack("Bz", 0x1E, this.typing_text.text))
+				end
+			end
+			
+			this.typing_text.done_typing()
+		end
+		
 		-- spacer test
 		--[[local spacer = scene.hspacer{x=w/2,y=h/2,spread=8}
 		scene.root.add_child(spacer)
@@ -1556,6 +1596,7 @@ function new_player(settings)
 		scene.root.add_child(this.ammo_text)
 		scene.root.add_child(this.chat_text)
 		scene.root.add_child(this.kill_text)
+		scene.root.add_child(this.typing_layout)
 		this.team_change.add_child(this.team_change_msg_b)
 		this.team_change.add_child(this.team_change_msg_g)
 		scene.root.add_child(this.team_change)
@@ -1642,25 +1683,33 @@ function new_player(settings)
 			elseif key == BTSK_TOOL5 then
 				-- TODO
 			elseif key == BTSK_CHAT then
-				typing_type = "Chat: "
-				typing_msg = ""
-				gui_focus = this
+				this.typing_type.text = "Chat: "
+				gui_focus = this.typing_text
+				this.typing_text.text = ""
 				enter_typing_state()
+				this.typing_layout.reflow()
+				this.typing_layout.visible = true
 			elseif key == BTSK_COMMAND then
-				typing_type = "Chat: "
-				typing_msg = "/"
-				gui_focus = this
+				this.typing_type.text = "Chat: "
+				gui_focus = this.typing_text
+				this.typing_text.text = "/"
 				enter_typing_state()
+				this.typing_layout.reflow()
+				this.typing_layout.visible = true
 			elseif key == BTSK_TEAMCHAT then
-				typing_type = "Team: "
-				typing_msg = ""
-				gui_focus = this
+				this.typing_type.text = "Team: "
+				gui_focus = this.typing_text
+				this.typing_text.text = ""
 				enter_typing_state()
+				this.typing_layout.reflow()
+				this.typing_layout.visible = true
 			elseif key == BTSK_SQUADCHAT then
-				typing_type = "Squad: "
-				typing_msg = ""
-				gui_focus = this
+				this.typing_type.text = "Squad: "
+				gui_focus = this.typing_text
+				this.typing_text.text = ""
 				enter_typing_state()
+				this.typing_layout.reflow()
+				this.typing_layout.visible = true
 			elseif this.alive and key == BTSK_COLORLEFT then
 				this.blk_color_x = this.blk_color_x - 1
 				if this.blk_color_x < 0 then
@@ -1814,11 +1863,6 @@ function new_player(settings)
 				, camx, camy, camz, this.jerkoffs, (this.crouching and 1) or 0)
 
 			font_mini.print(4, 4, 0x80FFFFFF, cam_pos_str)
-		end
-
-		if typing_type then
-			local s = typing_type..typing_msg.."_"
-			font_mini.print(4, h-80, 0xFFFFFFFF, s)
 		end
 
 		if show_scores then

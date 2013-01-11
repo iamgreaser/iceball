@@ -378,8 +378,6 @@ mouse_skip = 3
 input_events = {}
 
 gui_focus = nil
-typing_type = nil
-typing_msg = nil
 
 show_scores = false
 
@@ -818,8 +816,6 @@ function enter_typing_state()
 end
 
 function discard_typing_state()
-	typing_type = nil
-	typing_msg = nil
 	gui_focus = nil
 	mouse_released = false
 	client.mouse_lock_set(true)
@@ -829,28 +825,7 @@ function discard_typing_state()
 		stored_pointer.y = mouse_xy.y
 		local w, h = client.screen_get_dims()
 		client.mouse_warp(w/2, h/2)
-		mouse_skip = 1
-	end
-end
-
-function key_type(key, state, modif)
-	if state then
-		if key == SDLK_ESCAPE then
-			discard_typing_state()
-		elseif key == SDLK_RETURN then
-			if typing_msg ~= "" then
-				if typing_type == "Chat: " then
-					common.net_send(nil, common.net_pack("Bz", 0x0C, typing_msg))
-				elseif typing_type == "Team: " then
-					common.net_send(nil, common.net_pack("Bz", 0x0D, typing_msg))
-				elseif typing_type == "Squad: " then
-					common.net_send(nil, common.net_pack("Bz", 0x1E, typing_msg))
-				end
-			end
-			discard_typing_state()
-		else
-			typing_msg = gui_string_edit(typing_msg, MODE_CHAT_STRMAX, key, modif)
-		end
+		mouse_skip = 2
 	end
 end
 
@@ -868,13 +843,13 @@ function h_key(key, state, modif)
 		return
 	end
 	
-	-- chat
+	-- typing text
 	
 	if gui_focus ~= nil then
 		mouse_released = true
 		client.mouse_lock_set(false)
 		client.mouse_visible_set(true)
-		key_type(key, state, modif)
+		gui_focus.on_key(key, state, modif)
 		return
 	end
 	

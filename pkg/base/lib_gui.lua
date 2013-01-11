@@ -429,7 +429,9 @@ function gui_create_scene(width, height, shared_rate)
 	function scene.hspacer(options)
 		local this = widgets.hspacer(options)
 		this.draw = function()
-			for k,v in pairs(this.children) do v.draw() end
+			if this.visible then
+				for k,v in pairs(this.children) do v.draw() end
+			end
 		end
 		this.pump_listeners = function(dT, events)
 			for k,v in pairs(this.children) do v.pump_listeners(dT, events) end
@@ -440,7 +442,9 @@ function gui_create_scene(width, height, shared_rate)
 	function scene.vspacer(options)
 		local this = widgets.vspacer(options)
 		this.draw = function()
-			for k,v in pairs(this.children) do v.draw() end
+			if this.visible then
+				for k,v in pairs(this.children) do v.draw() end
+			end
 		end
 		this.pump_listeners = function(dT, events)
 			for k,v in pairs(this.children) do v.pump_listeners(dT, events) end
@@ -580,6 +584,8 @@ function gui_create_scene(width, height, shared_rate)
 		this.autosize = options.autosize or true
 		this.font = options.font or font_mini
 		this.use_img = true
+		this.take_input = options.take_input
+		if options.take_input==nil then this.take_input = false end
 
 		-- so, we are computing the text around offset 0, 0
 		-- but when we go to display or collide with it, we're going to have to
@@ -686,6 +692,30 @@ function gui_create_scene(width, height, shared_rate)
 
 		this.text = options.text or ""
 		if options.ctab ~= nil then this.ctab = options.ctab end
+		
+		function this.on_return(key, state, modif)
+			this.done_typing()
+		end
+		
+		function this.done_typing()
+			discard_typing_state()
+		end
+		
+		function this.on_key(key, state, modif)
+			if this.take_input then
+				if state then
+					if key == SDLK_ESCAPE then
+						this.done_typing()
+					elseif key == SDLK_RETURN then
+						this.on_return(key, state, modif)
+					else
+						this.text = gui_string_edit(this.text, MODE_CHAT_STRMAX, key, modif)
+					end
+				end				
+			end
+		end
+		
+		this.add_listener(GE_KEY, this.on_key)
 
 		return this
 
