@@ -1642,6 +1642,15 @@ function new_player(settings)
 		this.dangx = this.dangx + dy*math.pi*sensitivity/this.zoom
 	end
 	
+	function this.focus_typing(typing_type, default_text)
+		this.typing_type.text = typing_type
+		gui_focus = this.typing_text
+		this.typing_text.text = default_text
+		enter_typing_state()
+		this.typing_layout.reflow()
+		this.typing_layout.visible = true		
+	end
+	
 	function this.on_key(key, state, modif)
 		if key == BTSK_FORWARD then
 			this.ev_forward = state
@@ -1683,33 +1692,13 @@ function new_player(settings)
 			elseif key == BTSK_TOOL5 then
 				-- TODO
 			elseif key == BTSK_CHAT then
-				this.typing_type.text = "Chat: "
-				gui_focus = this.typing_text
-				this.typing_text.text = ""
-				enter_typing_state()
-				this.typing_layout.reflow()
-				this.typing_layout.visible = true
+				this.focus_typing("Chat: ", "")
 			elseif key == BTSK_COMMAND then
-				this.typing_type.text = "Chat: "
-				gui_focus = this.typing_text
-				this.typing_text.text = "/"
-				enter_typing_state()
-				this.typing_layout.reflow()
-				this.typing_layout.visible = true
+				this.focus_typing("Chat: ", "/")
 			elseif key == BTSK_TEAMCHAT then
-				this.typing_type.text = "Team: "
-				gui_focus = this.typing_text
-				this.typing_text.text = ""
-				enter_typing_state()
-				this.typing_layout.reflow()
-				this.typing_layout.visible = true
+				this.focus_typing("Team: ", "")
 			elseif key == BTSK_SQUADCHAT then
-				this.typing_type.text = "Squad: "
-				gui_focus = this.typing_text
-				this.typing_text.text = ""
-				enter_typing_state()
-				this.typing_layout.reflow()
-				this.typing_layout.visible = true
+				this.focus_typing("Squad: ", "")
 			elseif this.alive and key == BTSK_COLORLEFT then
 				this.blk_color_x = this.blk_color_x - 1
 				if this.blk_color_x < 0 then

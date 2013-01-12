@@ -472,7 +472,7 @@ function gui_create_scene(width, height, shared_rate)
 	
 	function scene.draw() root.draw() end
 	function scene.free() root.free() end
-
+	
 	function scene.rect_frame(options)
 
 		local this = scene.display_object(options)
@@ -571,7 +571,7 @@ function gui_create_scene(width, height, shared_rate)
 			client.img_blit_to(img, this.tiles, cap_x, cap_y, w-tw-cap_x, h-th-cap_y, tw, th)
 			
 		end
-
+		
 		return this
 
 	end
@@ -716,6 +716,18 @@ function gui_create_scene(width, height, shared_rate)
 		end
 		
 		this.add_listener(GE_KEY, this.on_key)
+		
+		this.cursor_position = 0
+		function this.get_cursor_xy()
+			if this.text_cache == nil or #this.text == 0 then 
+				return {x=0, y=0} 
+			else
+				local lastrow = this.text_cache[#this.text_cache]
+				local lastchar = lastrow[#lastrow]
+				-- 3=x 4=y
+				return {x=lastchar[3] + this.font.width, y=lastchar[4]}
+			end
+		end
 
 		return this
 
@@ -811,7 +823,47 @@ function gui_create_scene(width, height, shared_rate)
 	shared_rate = shared_rate or 1./60
 	scene.shared_alarm = alarm{time=shared_rate, loop=true,
 		on_trigger=scene.on_shared_alarm }
-
+		
+	scene.text_cursor = scene.rect_frame{
+				frame_col = 0x33004488, 
+				fill_col = 0x66004488,
+				align_x = 0,
+				align_y = 0,
+				x = 0,
+				y = 0,
+				visible = false
+			}
+	scene.text_cursor.add_listener(GE_SHARED_ALARM, function()
+		local this = scene.text_cursor
+		-- TODO: Figure out if gui_focus should really be global
+		if gui_focus ~= nil and gui_focus.font ~=nil then
+			
+			local font = gui_focus.font
+			
+			this.width = font.width
+			this.height = font.height
+			scene.text_cursor.set_parent(gui_focus)
+			
+			local target = gui_focus.get_cursor_xy()
+			
+			-- tweening
+			
+			if this.visible == false then
+				this.x = target.x
+				this.y = target.y
+			else
+				this.x = this.x + (target.x - this.x) * 0.3
+				this.y = this.y + (target.y - this.y) * 0.3
+			end
+			
+			this.visible = true			
+		else
+			this.visible = false
+			scene.text_cursor.set_parent(scene.root)
+		end
+	end)
+	scene.text_cursor.set_parent(scene.root)
+	
 	-- TEST CODE
 	--[[local frame = scene.rect_frame{width=320,height=320, x=width/2, y=height/2}
 	local frame2 = scene.rect_frame{width=32,height=32, x=0, y=0}

@@ -181,10 +181,12 @@ function P.widget(options)
 	-- remove the parent-child connection but do not deallocate the objects
 	function this.remove_all_children() for k,child in pairs(this.children) do this.remove_child(child) end end
 	-- create a relationship between the parent and child's size and coordinates (with optional sort position)
-	function this.add_child(child, position) 
-		position = position or #this.children+1 
-		child.detach(); child.parent = this; 
-		table.insert(this.children, position, child)
+	function this.add_child(child, position)
+		if child.parent ~= this then
+			position = position or #this.children+1 
+			child.detach(); child.parent = this; 
+			table.insert(this.children, position, child)
+		end
 	end
 	-- create a relationship between the parent and child's size and coordinates
 	function this.set_parent(parent) parent.add_child(this) end
