@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,0,0,0,10},
-	num=10,
-	str="0.0-10",
+	cmp={0,0,0,0,11},
+	num=11,
+	str="0.0-11",
 }
 
 VERSION_BUGS = {
@@ -33,5 +33,5 @@ VERSION_BUGS = {
 {intro=nil, fix=8, msg="Renderer uses double-rect approximation of cube instead of using trapezia"},
 {intro=nil, fix=9, msg="Mouse warping not implemented"},
 {intro=nil, fix=10, msg="Immediate ceiling isn't drawn"},
-{intro=nil, fix=10, msg="Blocks appear inverted in common cases"},
+{intro=nil, fix=11, msg="Blocks appear inverted in common cases"},
 }

@@ -1051,7 +1051,7 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 		}
 		
 		// find the y middle
-		while(b_pmid < &rayc_block[rayc_block_len] && b_pmid->y < byi)
+		while(b_pmid < &rayc_block[rayc_block_len] && b_pmid->y <= byi)
 			b_pmid++;
 		b_pmid--;
 		

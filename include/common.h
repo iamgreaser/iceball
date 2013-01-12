@@ -19,9 +19,10 @@
 #define VERSION_X 0
 #define VERSION_Y 0
 #define VERSION_A 0
-#define VERSION_Z 10
+#define VERSION_Z 11
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
+// Remember to document API changes in a new version!
 // Z can only be 0 for official releases!
 
 #define MODEL_BONE_MAX  256
