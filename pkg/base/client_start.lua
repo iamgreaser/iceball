@@ -42,6 +42,8 @@ dofile("pkg/base/common.lua")
 tracers = {head = 1, tail = 0, time = 0}
 bhealth = {head = 1, tail = 0, time = 0, map = {}}
 
+client_tick_accum = 0.
+
 --[[
 while true do
 	local pkt, sockfd, cid
@@ -692,10 +694,10 @@ function h_tick_main(sec_current, sec_delta)
 	bhealth_prune(sec_current)
 
 	local tickrate = 1/60.
-	local dT = sec_delta
 	local moment = sec_current - sec_delta
+	client_tick_accum = client_tick_accum + sec_delta
 	
-	while dT > tickrate do
+	while client_tick_accum > tickrate do
 		moment = moment + tickrate
 		local i
 		for i=1,players.max do
@@ -712,7 +714,7 @@ function h_tick_main(sec_current, sec_delta)
 		for i=1,#intent do
 			intent[i].tick(moment, tickrate)
 		end				
-		dT = dT - tickrate
+		client_tick_accum = client_tick_accum - tickrate
 	end
 	
 	if players.current and players[players.current] then

@@ -1419,7 +1419,7 @@ function new_player(settings)
 			end
 		end
 		
-		local function menus_visible()
+		function this.menus_visible()
 			return this.quit_msg.visible or this.team_change.visible
 		end
 		local function is_view_released()
@@ -1436,7 +1436,7 @@ function new_player(settings)
 						this.quit_msg.visible = false
 					end
 				elseif options.key == BTSK_QUIT and 
-					not menus_visible() and 
+					not this.menus_visible() and 
 					not is_view_released() then
 					this.quit_msg.visible = true
 				end
@@ -1461,7 +1461,7 @@ function new_player(settings)
 						common.net_send(nil, common.net_pack("Bbbz", 0x11, team, WPN_RIFLE, plr.name or ""))
 					end					
 					
-				elseif options.key == BTSK_TEAM and not menus_visible() then
+				elseif options.key == BTSK_TEAM and not this.menus_visible() then
 					viz = true
 				end
 			end		
@@ -1677,64 +1677,66 @@ function new_player(settings)
 				--client.map_load(s)
 				client.map_save(map_loaded, s, "icemap")
 				chat_add(chat_text, sec_last, "Map saved to "..s, 0xFFC00000)
-			elseif key == BTSK_RELOAD then
-				if this.alive and this.wpn and this.tool == TOOL_GUN then
-					this.wpn.reload()
+			elseif not this.menus_visible() then
+				if key == BTSK_RELOAD then
+					if this.alive and this.wpn and this.tool == TOOL_GUN then
+						this.wpn.reload()
+					end
+				elseif key == BTSK_TOOL1 then
+					this.tool_switch(TOOL_SPADE)
+				elseif key == BTSK_TOOL2 then
+					this.tool_switch(TOOL_BLOCK)
+				elseif key == BTSK_TOOL3 then
+					this.tool_switch(TOOL_GUN)
+				elseif key == BTSK_TOOL4 then
+					this.tool_switch(TOOL_NADE)
+				elseif key == BTSK_TOOL5 then
+					-- TODO
+				elseif key == BTSK_CHAT then
+					this.focus_typing("Chat: ", "")
+				elseif key == BTSK_COMMAND then
+					this.focus_typing("Chat: ", "/")
+				elseif key == BTSK_TEAMCHAT then
+					this.focus_typing("Team: ", "")
+				elseif key == BTSK_SQUADCHAT then
+					this.focus_typing("Squad: ", "")
+				elseif this.alive and key == BTSK_COLORLEFT then
+					this.blk_color_x = this.blk_color_x - 1
+					if this.blk_color_x < 0 then
+						this.blk_color_x = 7
+					end
+					this.blk_color = cpalette[this.blk_color_x+this.blk_color_y*8+1]
+					common.net_send(nil, common.net_pack("BBBBB",
+						0x18, 0x00,
+						this.blk_color[1],this.blk_color[2],this.blk_color[3]))
+				elseif this.alive and key == BTSK_COLORRIGHT then
+					this.blk_color_x = this.blk_color_x + 1
+					if this.blk_color_x > 7 then
+						this.blk_color_x = 0
+					end
+					this.blk_color = cpalette[this.blk_color_x+this.blk_color_y*8+1]
+					common.net_send(nil, common.net_pack("BBBBB",
+						0x18, 0x00,
+						this.blk_color[1],this.blk_color[2],this.blk_color[3]))
+				elseif this.alive and key == BTSK_COLORUP then
+					this.blk_color_y = this.blk_color_y - 1
+					if this.blk_color_y < 0 then
+						this.blk_color_y = 7
+					end
+					this.blk_color = cpalette[this.blk_color_x+this.blk_color_y*8+1]
+					common.net_send(nil, common.net_pack("BBBBB",
+						0x18, 0x00,
+						this.blk_color[1],this.blk_color[2],this.blk_color[3]))
+				elseif this.alive and key == BTSK_COLORDOWN then
+					this.blk_color_y = this.blk_color_y + 1
+					if this.blk_color_y > 7 then
+						this.blk_color_y = 0
+					end
+					this.blk_color = cpalette[this.blk_color_x+this.blk_color_y*8+1]
+					common.net_send(nil, common.net_pack("BBBBB",
+						0x18, 0x00,
+						this.blk_color[1],this.blk_color[2],this.blk_color[3]))
 				end
-			elseif key == BTSK_TOOL1 then
-				this.tool_switch(TOOL_SPADE)
-			elseif key == BTSK_TOOL2 then
-				this.tool_switch(TOOL_BLOCK)
-			elseif key == BTSK_TOOL3 then
-				this.tool_switch(TOOL_GUN)
-			elseif key == BTSK_TOOL4 then
-				this.tool_switch(TOOL_NADE)
-			elseif key == BTSK_TOOL5 then
-				-- TODO
-			elseif key == BTSK_CHAT then
-				this.focus_typing("Chat: ", "")
-			elseif key == BTSK_COMMAND then
-				this.focus_typing("Chat: ", "/")
-			elseif key == BTSK_TEAMCHAT then
-				this.focus_typing("Team: ", "")
-			elseif key == BTSK_SQUADCHAT then
-				this.focus_typing("Squad: ", "")
-			elseif this.alive and key == BTSK_COLORLEFT then
-				this.blk_color_x = this.blk_color_x - 1
-				if this.blk_color_x < 0 then
-					this.blk_color_x = 7
-				end
-				this.blk_color = cpalette[this.blk_color_x+this.blk_color_y*8+1]
-				common.net_send(nil, common.net_pack("BBBBB",
-					0x18, 0x00,
-					this.blk_color[1],this.blk_color[2],this.blk_color[3]))
-			elseif this.alive and key == BTSK_COLORRIGHT then
-				this.blk_color_x = this.blk_color_x + 1
-				if this.blk_color_x > 7 then
-					this.blk_color_x = 0
-				end
-				this.blk_color = cpalette[this.blk_color_x+this.blk_color_y*8+1]
-				common.net_send(nil, common.net_pack("BBBBB",
-					0x18, 0x00,
-					this.blk_color[1],this.blk_color[2],this.blk_color[3]))
-			elseif this.alive and key == BTSK_COLORUP then
-				this.blk_color_y = this.blk_color_y - 1
-				if this.blk_color_y < 0 then
-					this.blk_color_y = 7
-				end
-				this.blk_color = cpalette[this.blk_color_x+this.blk_color_y*8+1]
-				common.net_send(nil, common.net_pack("BBBBB",
-					0x18, 0x00,
-					this.blk_color[1],this.blk_color[2],this.blk_color[3]))
-			elseif this.alive and key == BTSK_COLORDOWN then
-				this.blk_color_y = this.blk_color_y + 1
-				if this.blk_color_y > 7 then
-					this.blk_color_y = 0
-				end
-				this.blk_color = cpalette[this.blk_color_x+this.blk_color_y*8+1]
-				common.net_send(nil, common.net_pack("BBBBB",
-					0x18, 0x00,
-					this.blk_color[1],this.blk_color[2],this.blk_color[3]))
 			end
 		end
 	end

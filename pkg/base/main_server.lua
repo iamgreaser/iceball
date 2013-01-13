@@ -27,6 +27,7 @@ end
 dofile("pkg/base/common.lua")
 
 client_list = {fdlist={}}
+server_tick_accum = 0.
 
 function slot_add(sockfd, tidx, wpn, name)
 	local i
@@ -470,10 +471,10 @@ function server.hook_tick(sec_current, sec_delta)
 	end
 	
 	local tickrate = 1/60.
-	local dT = sec_delta
 	local moment = sec_current - sec_delta
+	server_tick_accum = server_tick_accum + sec_delta
 	
-	while dT > tickrate do
+	while server_tick_accum > tickrate do
 		moment = moment + tickrate
 		local i
 		for i=1,players.max do
@@ -490,7 +491,7 @@ function server.hook_tick(sec_current, sec_delta)
 		for i=1,#intent do
 			intent[i].tick(moment, tickrate)
 		end				
-		dT = dT - tickrate
+		server_tick_accum = server_tick_accum - tickrate
 	end
 	
 	return 0.005
