@@ -333,6 +333,7 @@ function gui_create_scene(width, height, shared_rate)
 		this.img = options.img or nil
 		this.listeners = options.listeners or {}
 		this.alarms = options.alarms or {} -- ticked if seen. Will NOT dispose finished alarms for you!
+		this.static_alarms = options.static_alarms or {}
 		
 		function this.free()
 			common.img_free(this.img) for k,v in pairs(this.children) do v.free() end
@@ -383,8 +384,8 @@ function gui_create_scene(width, height, shared_rate)
 			local flat = this.flatten()
 			for k, v in pairs(flat) do
 				if v.alarms ~= nil then
-					for i=1, #v.alarms do
-						v.alarms[i].tick(dT)
+					for i, j in pairs(v.alarms) do
+						j.tick(dT)
 					end
 				end
 				for i=1, #events do
@@ -417,11 +418,12 @@ function gui_create_scene(width, height, shared_rate)
 			"name" option so that at most 1 of this alarm exists at one time.]]
 		function this.static_alarm(options)
 			local a = alarm(options)
-			this.alarms[options.name] = a
+			if options.name == nil then error('no static alarm name given') end
+			this.static_alarms[options.name] = a
 			local on_trigger = a.on_trigger
 			local function wrap()
 				on_trigger()
-				this.alarms[options.name] = nil
+				this.static_alarms[options.name] = nil
 			end
 			a.on_trigger = wrap
 		end
@@ -439,9 +441,6 @@ function gui_create_scene(width, height, shared_rate)
 				for k,v in pairs(this.children) do v.draw() end
 			end
 		end
-		this.pump_listeners = function(dT, events)
-			for k,v in pairs(this.children) do v.pump_listeners(dT, events) end
-		end
 		return this
 	end
 	
@@ -452,11 +451,11 @@ function gui_create_scene(width, height, shared_rate)
 				for k,v in pairs(this.children) do v.draw() end
 			end
 		end
-		this.pump_listeners = function(dT, events)
-			for k,v in pairs(this.children) do v.pump_listeners(dT, events) end
-		end
 		return this
 	end
+	
+	local shared_rate = shared_rate or 1./60
+	local sharecount = 0
 	
 	function scene.pump_listeners(dT, events)
 		-- copy incoming events
@@ -466,10 +465,10 @@ function gui_create_scene(width, height, shared_rate)
 			table.insert(e, events[i])
 		end
 		-- tick timers
-		scene.shared_alarm_trigger = 0
-		scene.shared_alarm.tick(dT)
-		for i=1,scene.shared_alarm_trigger do
-			table.insert(e, {GE_SHARED_ALARM, scene.shared_alarm.time})
+		sharecount = sharecount + dT
+		while sharecount > shared_rate do
+			table.insert(e, {GE_SHARED_ALARM, sharecount})
+			sharecount = sharecount - shared_rate
 		end
 		table.insert(e, {GE_DELTA_TIME, dT})
 		-- propogate
@@ -821,14 +820,6 @@ function gui_create_scene(width, height, shared_rate)
 		The shared alarm records "whether it went off" this frame.
 		Each count of the trigger injects a SHARED_ALARM event into this frame.
 	]]
-	
-	function scene.on_shared_alarm(dT)
-		scene.shared_alarm_trigger = scene.shared_alarm_trigger + 1
-	end
-	
-	shared_rate = shared_rate or 1./60
-	scene.shared_alarm = alarm{time=shared_rate, loop=true,
-		on_trigger=scene.on_shared_alarm }
 		
 	scene.text_cursor = scene.rect_frame{
 				frame_col = 0x33004488, 
