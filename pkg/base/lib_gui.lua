@@ -563,7 +563,7 @@ function gui_create_scene(width, height, shared_rate)
 				
 				-- now draw the actual waveform
 				
-				if #samples > 0 then
+				if #samples > 1 then
 				
 					-- (inlined rescale_value)
 					local adist = amax - amin;
@@ -575,7 +575,7 @@ function gui_create_scene(width, height, shared_rate)
 					local last = bmin + (samples[1] - amin) * ratio
 					
 					for n=1, w do
-						local cur = bmin + (samples[math.ceil(n*scaleX)] - amin) * ratio
+						local cur = bmin + (samples[math.floor(n*scaleX)+1] - amin) * ratio
 						local top = math.floor(math.max(cur, last));
 						local bot = math.floor(math.min(cur, last));
 						for z=bot, top do
