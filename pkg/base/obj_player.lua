@@ -520,14 +520,16 @@ function new_player(settings)
 			math.floor(n.vz*256+0.5),
 			math.floor(n.fuse*100+0.5)))
 	end
+	
+	function this.tick_listeners(sec_current, sec_delta)
+		if this.scene then
+			this.scene.pump_listeners(sec_delta, input_events)
+		end	
+	end
 
 	function this.tick(sec_current, sec_delta)
 		local xlen,ylen,zlen
 		xlen,ylen,zlen = common.map_get_dims()
-
-		if this.scene then
-			this.scene.pump_listeners(sec_delta, input_events)
-		end
 		
 		if not this.spawned then
 			return

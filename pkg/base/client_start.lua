@@ -703,6 +703,13 @@ function h_tick_main(sec_current, sec_delta)
 	local moment = sec_current - sec_delta
 	client_tick_accum = client_tick_accum + sec_delta
 	
+	for i=1,players.max do
+		local plr = players[i]
+		if plr then
+			plr.tick_listeners(sec_current, sec_delta)
+		end
+	end
+	
 	while client_tick_accum > tickrate do
 		moment = moment + tickrate
 		local i
