@@ -424,3 +424,10 @@ function sort_players()
 		end
 	)
 end
+
+local players_mt = {}
+function players_mt.__newindex(self, key, value)
+	rawset(self, key, value)	
+	sort_players()
+end
+setmetatable(players, players_mt)
