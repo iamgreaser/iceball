@@ -694,6 +694,11 @@ function h_tick_main(sec_current, sec_delta)
 	bhealth_prune(sec_current)
 
 	local tickrate = 1/60.
+	local lowest_fps = 15
+	local max_ticksize = 1/lowest_fps
+	
+	if sec_delta > max_ticksize then sec_delta = max_ticksize end
+	
 	local moment = sec_current - sec_delta
 	client_tick_accum = client_tick_accum + sec_delta
 	

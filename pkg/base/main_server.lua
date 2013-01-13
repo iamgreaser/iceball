@@ -471,6 +471,11 @@ function server.hook_tick(sec_current, sec_delta)
 	end
 	
 	local tickrate = 1/60.
+	local lowest_fps = 15
+	local max_ticksize = 1/lowest_fps
+	
+	if sec_delta > max_ticksize then sec_delta = max_ticksize end
+	
 	local moment = sec_current - sec_delta
 	server_tick_accum = server_tick_accum + sec_delta
 	
