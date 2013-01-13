@@ -469,21 +469,28 @@ function server.hook_tick(sec_current, sec_delta)
 		-- TODO!
 	end
 	
-	local i
-	for i=1,players.max do
-		local plr = players[i]
-		if plr then
-			plr.tick(sec_current, sec_delta)
+	local tickrate = 1/60.
+	local dT = sec_delta
+	local moment = sec_current - sec_delta
+	
+	while dT > tickrate do
+		moment = moment + tickrate
+		local i
+		for i=1,players.max do
+			local plr = players[i]
+			if plr then
+				plr.tick(moment, tickrate)
+			end
 		end
-	end
-	
-	for i=nades.head,nades.tail do
-		if nades[i] then nades[i].tick(sec_current, sec_delta) end
-	end
-	nade_prune(sec_current)
-	
-	for i=1,#intent do
-		intent[i].tick(sec_current, sec_delta)
+		for i=nades.head,nades.tail do
+			if nades[i] then nades[i].tick(moment, tickrate) end
+		end
+		nade_prune(sec_current)
+		
+		for i=1,#intent do
+			intent[i].tick(moment, tickrate)
+		end				
+		dT = dT - tickrate
 	end
 	
 	return 0.005
