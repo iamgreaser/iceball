@@ -380,19 +380,25 @@ function gui_create_scene(width, height, shared_rate)
 		end
 		-- given a dT and list of events [ge_type, data] call the listeners with matching type and progress any alarms
 		function this.pump_listeners(dT, events)
-			for k, v in pairs(this.alarms) do
-				this.alarms[k].tick(dT)
-			end
-			for i=1, #events do
-				local ev = events[i]
-				local listen_list = this.listeners[ev[1]]
-				if listen_list ~= nil then
-					for j=1, #listen_list do
-						listen_list[j](ev[2])
+			local flat = this.flatten()
+			for k, v in pairs(flat) do
+				if v.alarms ~= nil then
+					for i=1, #v.alarms do
+						v.alarms[i].tick(dT)
+					end
+				end
+				for i=1, #events do
+					local ev = events[i]
+					if v.listeners ~= nil then
+						local listen_set = v.listeners[ev[1]]
+						if listen_set ~= nil then
+							for j=1, #listen_set do
+								listen_set[j](ev[2])
+							end
+						end
 					end
 				end
 			end
-			for k,v in pairs(this.children) do v.pump_listeners(dT, events) end
 		end
 		--Declare a self-cleaning alarm using the common.lua alarm syntax.
 		function this.alarm(options)

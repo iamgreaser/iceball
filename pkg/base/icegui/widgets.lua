@@ -218,6 +218,19 @@ function P.widget(options)
 	-- when using spacers, this walks through the tree and reflows them
 	function this.reflow() for k, v in pairs(this.children) do v.reflow() end end
 	
+	--[[Return a concatenated list of children so that they can be batch processed
+	even if tree position changes midflight.]]
+	function this.flatten()
+		local flat = {this}
+		for k,v in pairs(this.children) do
+			local sublist = v.flatten()
+			for i=1, #sublist do
+				table.insert(flat, sublist[i])
+			end
+		end
+		return flat
+	end
+	
 	return this
 end
 
