@@ -509,6 +509,98 @@ function gui_create_scene(width, height, shared_rate)
 
 	end
 	
+	--[[
+		Draws any number of sampled waveforms as a graph.
+		To use, "sample_sets" should contain at least one table of
+		{{samples},color_1,color_2,low_lim,hi_lim} where 
+		samples is any number of floating point values,
+		color_1 is the "light" color of the waveform(body/highlights),
+		color_2 is the "dark" color of the waveform(edges),
+		low_lim is the lower limit of the samples,
+		hi_lim is higher limit of the samples.
+	]]
+	function scene.waveform(options)
+		
+		local this = scene.display_object(options)
+
+		this.sample_sets = options.sample_sets or {
+			{0.},0xFF888888,0xFF444444,-1,1}
+		this.bg_col = options.bg_col or 0x44000000
+		this.midpoint_col = options.bg_col or 0x44888888
+
+		this.use_img = true
+		this.dirty = true
+
+		function this.draw_update()
+			local w = math.ceil(this.width)
+			local h = math.ceil(this.height)
+			local img = this.img
+			local bg_col = this.bg_col
+			local midpoint_col = this.midpoint_col
+			common.img_fill(img, bg_col)
+			
+			local half_h = h/2
+			local lim = h / 2 - 1;
+			
+			for k,sample_packet in pairs(this.sample_sets) do
+				local samples = sample_packet[1]
+				local col_1 = sample_packet[2]
+				local col_2 = sample_packet[3]
+				local scaleX = (#samples-1) / w;
+				local amin = sample_packet[4]
+				local amax = sample_packet[5]
+				
+				-- draw midpoint and edges
+				
+				for n=1, w do
+					common.img_pixel_set(
+						img, math.floor(n), 0, this.midpoint_col);
+					common.img_pixel_set(
+						img, math.floor(half_h + lim), 0, this.midpoint_col);
+					common.img_pixel_set(
+						img, math.floor(half_h - lim), 0, this.midpoint_col);
+				end
+				
+				-- now draw the actual waveform
+				
+				if #samples > 0 then
+				
+					-- (inlined rescale_value)
+					local adist = amax - amin;
+					local bmin = -lim
+					local bmax = lim
+					local bdist = bmax - bmin;
+					local ratio = bdist / adist;
+					
+					local last = bmin + (samples[1] - amin) * ratio
+					
+					for n=1, w do
+						local cur = bmin + (samples[math.ceil(n*scaleX)] - amin) * ratio
+						local top = math.floor(math.max(cur, last));
+						local bot = math.floor(math.min(cur, last));
+						for z=bot, top do
+							common.img_pixel_set(
+								img, math.floor(n), z, col_2);
+						end
+						common.img_pixel_set(img, math.floor(n), cur, col_1);
+						last = cur;
+					end
+				
+				end
+				
+			end
+			
+		end
+		
+		function this.push(sample_sets)
+			this.sample_sets = sample_sets
+			this.dirty = true
+		end
+
+		return this		
+		
+	end
+	
 	function scene.tile9(options)
 
 		local this = scene.display_object(options)

@@ -170,6 +170,14 @@ function alarm(options)
 	return this
 end
 
+-- Rescale an "aval" between "amin" and "amax" to values between "bmin" and "bmax".
+function rescale_value(amin, amax, bmin, bmax, aval)
+	local adist = amax - amin;
+	local bdist = bmax - bmin;
+	local ratio = bdist / adist;
+	return bmin + (aval - amin) * ratio;
+end
+
 -- GUI Events
 
 -- DELTA_TIME: 

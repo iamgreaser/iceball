@@ -371,6 +371,7 @@ mspr_tent = {
 -- set stuff
 rotpos = 0.0
 sec_last = 0.
+delta_last = 0.
 debug_enabled = false
 mouse_released = false
 sensitivity = user_config.sensitivity or 1.0
@@ -756,6 +757,7 @@ function h_tick_main(sec_current, sec_delta)
 	input_events = {}
 	
 	sec_last = sec_current
+	delta_last = sec_delta
 	
 	-- wait a bit
 	return 0.005

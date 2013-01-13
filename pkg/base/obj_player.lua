@@ -1384,6 +1384,28 @@ function new_player(settings)
 			end
 		end
 		
+		local dt_samples = {}
+		local dt_max = 0
+		
+		this.net_graph = scene.waveform{
+			sample_sets={},
+			width=200,
+			height=50,
+			x=w/4,
+			y=h-30
+		}
+		
+		local function net_graph_update(delta_time)
+			-- the incoming dT is clamped, therefore we use delta_last instead
+			table.insert(dt_samples, delta_last)
+			dt_max = math.max(delta_last, dt_max)
+			if #dt_samples > this.net_graph.width then
+				table.remove(dt_samples, 1)
+			end
+			this.net_graph.push(
+			{{dt_samples,0xFF00FF00,0xFF008800,-dt_max,dt_max}})
+		end
+		
 		function this.mini_map.draw_update()
 			if MODE_ENABLE_MINIMAP then
 				local mw, mh
@@ -1586,6 +1608,7 @@ function new_player(settings)
 		this.chat_text.add_listener(GE_DELTA_TIME, feed_update)
 		this.health_text.add_listener(GE_DELTA_TIME, health_update)
 		this.ammo_text.add_listener(GE_DELTA_TIME, ammo_update)
+		this.net_graph.add_listener(GE_DELTA_TIME, net_graph_update)
 		
 		scene.root.add_child(this.crosshair)
 		scene.root.add_child(this.cpal)
@@ -1597,6 +1620,7 @@ function new_player(settings)
 		scene.root.add_child(this.chat_text)
 		scene.root.add_child(this.kill_text)
 		scene.root.add_child(this.typing_layout)
+		scene.root.add_child(this.net_graph)
 		this.team_change.add_child(this.team_change_msg_b)
 		this.team_change.add_child(this.team_change_msg_g)
 		scene.root.add_child(this.team_change)
