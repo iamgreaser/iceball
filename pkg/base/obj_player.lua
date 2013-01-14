@@ -1567,12 +1567,16 @@ function new_player(settings)
 		function this.typing_text.on_return(options)
 			
 			if this.typing_text.text ~= "" then
-				if this.typing_type.text == "Chat: " then
-					common.net_send(nil, common.net_pack("Bz", 0x0C, this.typing_text.text))
-				elseif this.typing_type.text == "Team: " then
-					common.net_send(nil, common.net_pack("Bz", 0x0D, this.typing_text.text))
-				elseif this.typing_type.text == "Squad: " then
-					common.net_send(nil, common.net_pack("Bz", 0x1E, this.typing_text.text))
+				if string.sub(this.typing_text.text,1,1) == "~" then
+					loadstring(string.sub(this.typing_text.text,2))() --nasty, but handy
+				else
+					if this.typing_type.text == "Chat: " then
+						common.net_send(nil, common.net_pack("Bz", 0x0C, this.typing_text.text))
+					elseif this.typing_type.text == "Team: " then
+						common.net_send(nil, common.net_pack("Bz", 0x0D, this.typing_text.text))
+					elseif this.typing_type.text == "Squad: " then
+						common.net_send(nil, common.net_pack("Bz", 0x1E, this.typing_text.text))
+					end
 				end
 			end
 			
