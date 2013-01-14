@@ -290,7 +290,26 @@ function server.hook_tick(sec_current, sec_delta)
 						net_broadcast(nil, common.net_pack("BIz", 0x0E, usage_colour, "Usage: /goto #X ; where # is letter, X is number in the map's grid system"))
 					end
 				elseif params[1] == "teleport" or params[1] == "tp" then
-					if table.getn(params) == 4 then
+					if table.getn(params) == 2 then
+						params[2] = tostring(params[2])
+						if params[2]:sub(0, 1) == "#" then
+							target = players[tonumber(params[2]:sub(2))]
+						end
+						for i=1,players.max do
+							if players[i] ~= nil and players[i].name == params[2] then
+								target = players[i]
+								break
+							end
+						end
+						if target then
+							x, y, z = target.x, target.y, target.z
+							plr.set_pos_recv(x, y, z)
+							net_broadcast(nil, common.net_pack("BBhhh",
+								0x03, cli.plrid, x * 32.0, y * 32.0, z * 32.0))
+						else
+							net_broadcast(nil, common.net_pack("BIz", 0x0E, usage_colour, "Player not found"))
+						end
+					elseif table.getn(params) == 4 then
 						--NOTE: I protest that y is down/same way AoS was
 						x, y, z = tonumber(params[2]), tonumber(params[3]), tonumber(params[4])
 						plr.set_pos_recv(x, y, z)
@@ -298,6 +317,7 @@ function server.hook_tick(sec_current, sec_delta)
 							0x03, cli.plrid, x * 32.0, y * 32.0, z * 32.0))
 					else
 						net_broadcast(nil, common.net_pack("BIz", 0x0E, usage_colour, "Usage: /teleport x y z ; where y is down"))
+						net_broadcast(nil, common.net_pack("BIz", 0x0E, usage_colour, "Usage: /teleport player"))
 					end
 				end
 			else
