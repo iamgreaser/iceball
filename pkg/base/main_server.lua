@@ -294,7 +294,7 @@ function server.hook_tick(sec_current, sec_delta)
 						--NOTE: I protest that y is down/same way AoS was
 						x, y, z = tonumber(params[2]), tonumber(params[3]), tonumber(params[4])
 						plr.set_pos_recv(x, y, z)
-						net_broadcast(sockfd, common.net_pack("BBhhh",
+						net_broadcast(nil, common.net_pack("BBhhh",
 							0x03, cli.plrid, x * 32.0, y * 32.0, z * 32.0))
 					else
 						net_broadcast(nil, common.net_pack("BIz", 0x0E, usage_colour, "Usage: /teleport x y z ; where y is down"))
