@@ -211,7 +211,7 @@ TODO: change these so they work with MS-DOS "copy", w/o requiring MSYS.
 
 zlib:
 
-make
+make -f win32/Makefile.gcc
 cp *.h $ICEBALL/winlibs
 cp *.a $ICEBALL/winlibs
 cp *.dll $ICEBALL/winlibs
