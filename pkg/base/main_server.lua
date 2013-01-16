@@ -538,8 +538,14 @@ local loose, user_toggles, user_settings = parse_commandline_options({...})
 
 -- load map
 map_fname = loose[1]
-map_fname = map_fname or MAP_DEFAULT
+--[[map_fname = map_fname or MAP_DEFAULT
 map_loaded = common.map_load(map_fname, "auto")
+]]
+if map_fname then
+	map_loaded = common.map_load(map_fname, "auto")
+else
+	map_loaded = loadfile("pkg/base/gen_classic.lua")()
+end
 common.map_set(map_loaded)
 
 intent[#intent+1] = new_intel({team = 0, iid = #intent+1})
