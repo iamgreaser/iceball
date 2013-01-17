@@ -19,7 +19,7 @@
 #define VERSION_X 0
 #define VERSION_Y 0
 #define VERSION_A 0
-#define VERSION_Z 12
+#define VERSION_Z 13
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!
@@ -438,6 +438,7 @@ extern int render_face_remain;
 #define FOG_INIT_DISTANCE 60.0f
 extern float fog_distance;
 extern uint32_t fog_color;
+extern uint32_t cam_shading[6];
 void render_vxl_redraw(camera_t *camera, map_t *map);
 void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t *camera, map_t *map);
 void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_t *cam_base,

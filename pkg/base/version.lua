@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,0,0,0,12},
-	num=12,
-	str="0.0-12",
+	cmp={0,0,0,0,13},
+	num=13,
+	str="0.0-13",
 }
 
 VERSION_BUGS = {
@@ -35,4 +35,6 @@ VERSION_BUGS = {
 {intro=nil, fix=10, msg="Immediate ceiling isn't drawn"},
 {intro=nil, fix=11, msg="Blocks appear inverted in common cases"},
 {intro=nil, fix=12, msg="TGA loader prone to crashing on unsanitised data"},
+{intro=nil, fix=13, msg="No per-face shading"},
+{intro=nil, fix=nil, msg="Per-face shading is only preliminary"},
 }

@@ -141,3 +141,23 @@ int icelua_fn_client_screen_get_dims(lua_State *L)
 	
 	return 2;
 }
+
+int icelua_fn_client_camera_shading_set(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 6, 6);
+	
+	int i;
+	for(i = 0; i < 6; i++)
+	{
+		float v = lua_tonumber(L, i+1);
+		if(v < 0.0f) v = 0.0f;
+		if(v > 1.0f) v = 1.0f;
+		uint32_t s = v*255;
+		if(s >= 128) s++;
+		s *= 0x010001;
+		cam_shading[i] = s;
+	}
+		
+	return 0;
+}
+
