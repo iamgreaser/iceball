@@ -101,12 +101,10 @@ img_t *img_parse_tga(int len, const char *data)
 					memcpy(&tmp_col, p, bplen);
 					p += bplen;
 					
-					// TODO: clip at width
-					for(i = 0; i <= rle; i++, x++)
+					for(i = 0; i <= rle && x < head.width && p < dend; i++, x++)
 						img->pixels[idx++] = tmp_col;
 				} else {
-					// TODO: clip at width
-					for(i = 0; i <= rle; i++, x++)
+					for(i = 0; i <= rle && x < head.width && p < dend; i++, x++)
 					{
 						memcpy(&tmp_col, p, bplen);
 						p += bplen;
@@ -118,7 +116,7 @@ img_t *img_parse_tga(int len, const char *data)
 		} else {
 			// raw
 			uint32_t tmp_col;
-			for(x = 0; x < head.width; x++)
+			for(x = 0; x < head.width && p < dend; x++)
 			{
 				memcpy(&tmp_col, p, bplen);
 				p += bplen;

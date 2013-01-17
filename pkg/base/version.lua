@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,0,0,0,11},
-	num=11,
-	str="0.0-11",
+	cmp={0,0,0,0,12},
+	num=12,
+	str="0.0-12",
 }
 
 VERSION_BUGS = {
@@ -34,4 +34,5 @@ VERSION_BUGS = {
 {intro=nil, fix=9, msg="Mouse warping not implemented"},
 {intro=nil, fix=10, msg="Immediate ceiling isn't drawn"},
 {intro=nil, fix=11, msg="Blocks appear inverted in common cases"},
+{intro=nil, fix=12, msg="TGA loader prone to crashing on unsanitised data"},
 }
