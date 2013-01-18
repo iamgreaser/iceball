@@ -1209,7 +1209,13 @@ function new_player(settings)
 				cr,cg,cb = this.blk_color[1],this.blk_color[2],this.blk_color[3]
 				return (cr*256+cg)*256+cb+0xFF000000
 			end,
-			function() return 0xFFC0C0C0 end,
+			function()
+				if this.wpn.ammo_clip == 0 then
+					return 0xFFFF3232
+				else
+					return 0xFFC0C0C0
+				end
+			end,
 			function() return 0xFFC0C0C0 end
 		}
 		local tool_textgen = {
