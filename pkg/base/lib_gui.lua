@@ -388,6 +388,11 @@ function gui_create_scene(width, height, shared_rate)
 						j.tick(dT)
 					end
 				end
+				if v.static_alarms ~= nil then
+					for i, j in pairs(v.static_alarms) do
+						j.tick(dT)
+					end
+				end
 				for i=1, #events do
 					local ev = events[i]
 					if v.listeners ~= nil then
