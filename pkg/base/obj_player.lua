@@ -641,6 +641,10 @@ function new_player(settings)
 			else
 				this.t_step = nil
 			end
+
+			if this.wpn.reloading then
+				this.reload_msg.visible = false
+			end
 		end
 		
 		-- calc X delta angle
@@ -1248,6 +1252,10 @@ function new_player(settings)
 		this.quit_msg = scene.textfield{wordwrap=false, color=0xFFFF3232, font=font_large, 
 			text="Are you sure? (Y/N)", x = w/2, y = h/4, align_x = 0.5, align_y = 0.5,
 			visible=false}
+
+		this.reload_msg = scene.textfield{wordwrap=false, color=0xFFFF3232, font=font_large, 
+			text="RELOAD", x = w/2, y = h/2+15, align_x = 0.5, align_y = 0,
+			visible=false}
 		
 		--TODO: update bluetext/greentext with the actual keys (if changed in controls.json)
 		this.team_change_msg_b = scene.textfield{wordwrap=false, color=0xFF0000FF, font=font_large, 
@@ -1631,6 +1639,7 @@ function new_player(settings)
 		this.team_change.add_child(this.team_change_msg_g)
 		scene.root.add_child(this.team_change)
 		scene.root.add_child(this.quit_msg)
+		scene.root.add_child(this.reload_msg);
 		
 		this.scene = scene
 	end
@@ -1639,12 +1648,16 @@ function new_player(settings)
 		if this.tool == TOOL_GUN and this.alive then
 			this.wpn.click(button, state)
 		end
-		
 		if button == 1 then
 			-- LMB
 			this.ev_lmb = state
 			if this.ev_lmb then
 				this.ev_rmb = false
+			end
+			if state and this.tool == TOOL_GUN and this.alive and this.wpn.ammo_clip == 0 then
+				this.reload_msg.visible = true
+				this.reload_msg.static_alarm{name='reloadviz',
+					time=0.5, on_trigger=function() this.reload_msg.visible = false end}
 			end
 		elseif button == 3 then
 			-- RMB
