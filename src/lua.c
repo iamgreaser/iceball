@@ -62,6 +62,7 @@ int icelua_force_get_integer(lua_State *L, int table, char *name)
 #include "lua_model.h"
 #include "lua_net.h"
 #include "lua_wav.h"
+#include "lua_util.h"
 
 // common functions
 
@@ -139,6 +140,8 @@ struct icelua_entry icelua_common[] = {
 	{icelua_fn_common_net_recv, "net_recv"},
 	{icelua_fn_common_wav_load, "wav_load"},
 	{icelua_fn_common_wav_free, "wav_free"},
+	{icelua_fn_common_argb_split_to_merged, "argb_split_to_merged"},
+	{icelua_fn_common_argb_merged_to_split, "argb_merged_to_split"},
 	
 	{NULL, NULL}
 };

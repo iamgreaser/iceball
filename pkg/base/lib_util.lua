@@ -15,30 +15,38 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
-function argb_split_to_merged(r,g,b,a)
-	a = a or 0xFF
-	r = math.min(math.max(0,math.floor(r+0.5)),255)
-	g = math.min(math.max(0,math.floor(g+0.5)),255)
-	b = math.min(math.max(0,math.floor(b+0.5)),255)
-	a = math.min(math.max(0,math.floor(a+0.5)),255)
-	return 256*(256*(256*a+r)+g)+b
+if common.argb_split_to_merged then
+	argb_split_to_merged = common.argb_split_to_merged
+else
+	function argb_split_to_merged(r,g,b,a)
+		a = a or 0xFF
+		r = math.min(math.max(0,math.floor(r+0.5)),255)
+		g = math.min(math.max(0,math.floor(g+0.5)),255)
+		b = math.min(math.max(0,math.floor(b+0.5)),255)
+		a = math.min(math.max(0,math.floor(a+0.5)),255)
+		return 256*(256*(256*a+r)+g)+b
+	end
 end
-
+	
 function abgr_split_to_merged(r,g,b,a)
 	return argb_split_to_merged(b,g,r,a)
 end
 
-function argb_merged_to_split(c)
-	-- yuck
-	local b = c % (2 ^ 8)
-	local g = math.floor(c / (2 ^ 8) % (2 ^ 8))
-	local r = math.floor(c / (2 ^ 16) % (2 ^ 8))
-	local a = math.floor(c / (2 ^ 24))
-	if a < 0 then a = 0 end
-	--print(string.format("%08X %d %d %d %d", c, r, g, b, a))
-	return a, r, g, b
+if common.argb_merged_to_split then
+	argb_merged_to_split = common.argb_merged_to_split
+else
+	function argb_merged_to_split(c)
+		-- yuck
+		local b = c % (2 ^ 8)
+		local g = math.floor(c / (2 ^ 8) % (2 ^ 8))
+		local r = math.floor(c / (2 ^ 16) % (2 ^ 8))
+		local a = math.floor(c / (2 ^ 24))
+		if a < 0 then a = 0 end
+		--print(string.format("%08X %d %d %d %d", c, r, g, b, a))
+		return a, r, g, b
+	end
 end
-
+	
 function recolor_component(r,g,b,mdata)
 	for i=1,#mdata do
 		if mdata[i].r == 0 and mdata[i].g == 0 and mdata[i].b == 0 then
