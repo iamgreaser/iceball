@@ -126,6 +126,7 @@ if client then
 	wav_hammer = common.wav_load(DIR_PKG_WAV.."/hammer.wav")
 	wav_jump_up = common.wav_load(DIR_PKG_WAV.."/jump-up.wav")
 	wav_jump_down = common.wav_load(DIR_PKG_WAV.."/jump-down.wav")
+	wav_pin = common.wav_load(DIR_PKG_WAV.."/pin.wav")
 	wav_steps = {}
 	local i
 	for i=1,8 do

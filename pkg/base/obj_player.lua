@@ -1650,14 +1650,15 @@ function new_player(settings)
 		end
 		if button == 1 then
 			-- LMB
-			this.ev_lmb = state
-			if this.ev_lmb then
-				this.ev_rmb = false
-			end
-			if state and this.tool == TOOL_GUN and this.alive and this.wpn.ammo_clip == 0 then
+			if state and not this.ev_lmb and this.tool == TOOL_GUN and this.alive and this.wpn.ammo_clip == 0 then
+				client.wav_play_global(wav_pin, this.x, this.y, this.z)
 				this.reload_msg.visible = true
 				this.reload_msg.static_alarm{name='reloadviz',
 					time=0.5, on_trigger=function() this.reload_msg.visible = false end}
+			end
+			this.ev_lmb = state
+			if this.ev_lmb then
+				this.ev_rmb = false
 			end
 		elseif button == 3 then
 			-- RMB
