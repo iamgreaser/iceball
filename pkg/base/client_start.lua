@@ -390,6 +390,8 @@ img_crosshair = client.img_load("pkg/base/gfx/crosshair.tga")
 -- load/make models
 mdl_test = client.model_load_pmf("pkg/base/pmf/test.pmf")
 mdl_test_bone = client.model_bone_find(mdl_test, "test")
+mdl_cube = client.model_load_pmf("pkg/base/pmf/cube.pmf")
+mdl_cube_bone = client.model_bone_find(mdl_cube, "bncube")
 mdl_spade, mdl_spade_bone = client.model_load_pmf("pkg/base/pmf/spade.pmf"), 0
 mdl_block, mdl_block_bone = client.model_load_pmf("pkg/base/pmf/block.pmf"), 0
 weapon_models[WPN_RIFLE] = client.model_load_pmf("pkg/base/pmf/rifle.pmf")

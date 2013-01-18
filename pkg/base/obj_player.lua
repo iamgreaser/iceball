@@ -1809,7 +1809,26 @@ function new_player(settings)
 		-- TODO: palettise this more nicely
 		prv_recolor_block(this.blk_color[1],this.blk_color[2],this.blk_color[3])
 
-		if (this.tool == TOOL_SPADE or this.tool == TOOL_BLOCK) and this.blx1 then
+		-- TODO: wireframe cube
+		if this.tool == TOOL_BLOCK and this.blx1 then
+			bname, mdl_data = client.model_bone_get(mdl_cube, mdl_cube_bone)
+			
+			mdl_data_backup = mdl_data
+			
+			for i=1,#mdl_data do
+				if mdl_data[i].r > 4 then
+					mdl_data[i].r = math.max(this.blk_color[1], 5) --going all the way down to
+					mdl_data[i].g = math.max(this.blk_color[2], 5) --to 4 breaks it and you'd
+					mdl_data[i].b = math.max(this.blk_color[3], 5) --have to reload the model
+				end
+			end
+			
+			client.model_bone_set(mdl_cube, mdl_cube_bone, bname, mdl_data)
+			
+			client.model_render_bone_global(mdl_cube, mdl_cube_bone,
+				this.blx1+0.5, this.bly1+0.5, this.blz1+0.5,
+				0.0, 0.0, 0.0, 24.0) --no rotation, 24 roughly equals the cube size
+		elseif this.tool == TOOL_SPADE and this.blx1 then
 			client.model_render_bone_global(mdl_test, mdl_test_bone,
 				this.blx1+0.5, this.bly1+0.5, this.blz1+0.5,
 				rotpos*0.01, rotpos*0.004, 0.0, 0.1+0.01*math.sin(rotpos*0.071))
