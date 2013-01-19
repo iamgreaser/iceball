@@ -49,10 +49,10 @@ enum
 
 int cam_shading_map[6][4] = {
 	{CM_PZ, CM_NZ, CM_PY, CM_NY},
-	{CM_NX, CM_PX, CM_PZ, CM_NZ},
+	{CM_NX, CM_PX, CM_NZ, CM_PZ},
 	{CM_NX, CM_PX, CM_PY, CM_NY},
 	{CM_NZ, CM_PZ, CM_PY, CM_NY},
-	{CM_PX, CM_NX, CM_NZ, CM_PZ},
+	{CM_PX, CM_NX, CM_PZ, CM_NZ},
 	{CM_PX, CM_NX, CM_PY, CM_NY},
 };
 
@@ -652,10 +652,12 @@ uint32_t render_shade(uint32_t color, int face)
 		|((((((color>>8)&0x00FF00FF)*fc))&0xFF00FF00))|0x01000000;
 }
 
-void render_vxl_cube_sides(uint32_t *ccolor, float *cdepth, int x1, int y1, int x2, int y2, uint32_t color, float depth, int face)
-{
-	int hsize = (cubemap_size>>1);
+void render_vxl_cube_sides(uint32_t *ccolor, float *cdepth, int x1, int y1, int x2, int y2, uint32_t color, float depth, int face, float fdist)
+{		
 	
+	int hsize = (cubemap_size>>1);
+
+#if 0	
 	if(depth > CUBESUX_MARKER)
 	{
 		int x3 = ((x1-hsize)*depth)/(depth+1.0f)+hsize;
@@ -670,38 +672,39 @@ void render_vxl_cube_sides(uint32_t *ccolor, float *cdepth, int x1, int y1, int 
 		render_vxl_rect_ftb_fast(ccolor, cdepth, x1, y1, x2, y2, render_shade(color, face), depth+0.5f);
 		return;
 	}
+#endif
 	
 	int x3 = ((x1-hsize)*depth)/(depth+1.0f)+hsize;
 	int y3 = ((y1-hsize)*depth)/(depth+1.0f)+hsize;
 	int x4 = ((x2-hsize)*depth)/(depth+1.0f)+hsize;
 	int y4 = ((y2-hsize)*depth)/(depth+1.0f)+hsize+1;
 	
-	render_vxl_rect_ftb_fast(ccolor, cdepth, x1, y1, x2, y2, render_shade(color, face), depth);
+	render_vxl_rect_ftb_fast(ccolor, cdepth, x1, y1, x2, y2, render_fog_apply_new(render_shade(color, face), fdist), depth);
 	
 	depth += 0.5f;
 	
 	if(y3 < y1)
 		render_vxl_cube_htrap(ccolor, cdepth,
 			x3, x4, y3, x1, x2, y1,
-			render_shade(color, cam_shading_map[face][2]), depth+1.0f);
+			render_fog_apply_new(render_shade(color, cam_shading_map[face][2]), fdist), depth+1.0f);
 	else if(y2 < y4)
 		render_vxl_cube_htrap(ccolor, cdepth,
 			x1, x2, y2, x3, x4, y4,
-			render_shade(color, cam_shading_map[face][3]), depth+1.0f);
+			render_fog_apply_new(render_shade(color, cam_shading_map[face][3]), fdist), depth+1.0f);
 	
 	if(x3 < x1)
 		render_vxl_cube_vtrap(ccolor, cdepth,
 			x3, y3, y4, x1, y1, y2,
-			render_shade(color, cam_shading_map[face][0]), depth+1.0f);
+			render_fog_apply_new(render_shade(color, cam_shading_map[face][0]), fdist), depth+1.0f);
 	else if(x2 < x4)
 		render_vxl_cube_vtrap(ccolor, cdepth,
 			x2, y1, y2, x4, y3, y4,
-			render_shade(color, cam_shading_map[face][1]), depth+1.0f);
+			render_fog_apply_new(render_shade(color, cam_shading_map[face][1]), fdist), depth+1.0f);
 }
 
-void render_vxl_cube(uint32_t *ccolor, float *cdepth, int x1, int y1, int x2, int y2, uint32_t color, float depth, int face)
+void render_vxl_cube(uint32_t *ccolor, float *cdepth, int x1, int y1, int x2, int y2, uint32_t color, float depth, int face, float fdist)
 {
-	render_vxl_cube_sides(ccolor, cdepth, x1, y1, x2, y2, color, depth, face);
+	render_vxl_cube_sides(ccolor, cdepth, x1, y1, x2, y2, color, depth, face, fdist);
 }
 
 void render_vxl_face_raycast(int blkx, int blky, int blkz,
@@ -797,11 +800,9 @@ void render_vxl_face_raycast(int blkx, int blky, int blkz,
 		float px2 = px1+boxsize;
 		float py2 = py1+boxsize;
 		
-		uint32_t xcolor = render_fog_apply_new(b->color, sx*sx+sy*sy+sz*sz);
-		
 		render_vxl_cube(ccolor, cdepth,
 			(int)px1, (int)py1, (int)px2, (int)py2,
-			xcolor, sz, face);
+			b->color, sz, face, sx*sx+sy*sy+sz*sz);
 	}
 }
 

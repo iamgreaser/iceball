@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,0,0,0,15},
-	num=15,
-	str="0.0-15",
+	cmp={0,0,0,0,16},
+	num=16,
+	str="0.0-16",
 }
 
 VERSION_BUGS = {
@@ -37,5 +37,5 @@ VERSION_BUGS = {
 {intro=nil, fix=12, msg="TGA loader prone to crashing on unsanitised data"},
 {intro=nil, fix=13, msg="No per-face shading"},
 {intro=nil, fix=14, msg="Color conversion functions are using hacky Lua code"},
-{intro=nil, fix=15, msg="Per-face shading is only preliminary"},
+{intro=nil, fix=16, msg="Per-face shading is only preliminary"},
 }
