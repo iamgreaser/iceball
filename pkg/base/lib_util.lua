@@ -217,8 +217,3 @@ GE_MOUSE = 5
 -- Mouse button is pressed or released.
 -- callback passes in {button(int), down(bool)}
 GE_MOUSE_BUTTON = 6
-
--- MOUSELOCK:
--- Mouse cursor has been either locked and hidden or released and visible
--- (define result object)
-GE_MOUSELOCK = 7
