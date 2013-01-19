@@ -538,6 +538,9 @@ function new_player(settings)
 		if (not this.alive) and (not this.t_respawn) then
 			this.t_respawn = sec_current + MODE_RESPAWN_TIME
 			this.input_reset()
+			this.wpn.firing = false
+			this.wpn.reloading = false
+			this.zooming = false
 		end
 
 		if this.t_respawn then
@@ -1810,7 +1813,7 @@ function new_player(settings)
 		prv_recolor_block(this.blk_color[1],this.blk_color[2],this.blk_color[3])
 
 		-- TODO: wireframe cube
-		if this.tool == TOOL_BLOCK and this.blx1 then
+		if this.tool == TOOL_BLOCK and this.blx1 and (this.alive or this.respawning) then
 			bname, mdl_data = client.model_bone_get(mdl_cube, mdl_cube_bone)
 			
 			mdl_data_backup = mdl_data
@@ -1828,7 +1831,7 @@ function new_player(settings)
 			client.model_render_bone_global(mdl_cube, mdl_cube_bone,
 				this.blx1+0.5, this.bly1+0.5, this.blz1+0.5,
 				0.0, 0.0, 0.0, 24.0) --no rotation, 24 roughly equals the cube size
-		elseif this.tool == TOOL_SPADE and this.blx1 then
+		elseif this.tool == TOOL_SPADE and this.blx1 and (this.alive or this.respawning) then
 			client.model_render_bone_global(mdl_test, mdl_test_bone,
 				this.blx1+0.5, this.bly1+0.5, this.blz1+0.5,
 				rotpos*0.01, rotpos*0.004, 0.0, 0.1+0.01*math.sin(rotpos*0.071))
