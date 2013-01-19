@@ -214,6 +214,9 @@ do
 		client.hook_mouse_motion = old_mouse_motion
 		
 		common.map_set(map)
+		if client.camera_shading_set then
+			client.camera_shading_set(0.8,0.6,0.7,0.8,1.0,0.9)
+		end
 		client.map_fog_set(r,g,b,dist)
 		
 		if cacheable then

@@ -295,6 +295,7 @@ dx, dy, dz = client.camera_get_forward() @
 
 client.camera_shade_set(xn, yn, zn, xp, yp, zp)
 	sets the face shading levels per face (0 <= v <= 1)
+    sides relative to map are: east, bottom, south, west, top, north
 
 pmf = common.model_new(bonemax = 5) @
 	creates a new model

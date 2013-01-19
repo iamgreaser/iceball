@@ -85,6 +85,7 @@ struct icelua_entry icelua_client[] = {
 	{icelua_fn_client_camera_move_to, "camera_move_to"},
 	{icelua_fn_client_camera_get_pos, "camera_get_pos"},
 	{icelua_fn_client_camera_get_forward, "camera_get_forward"},
+	{icelua_fn_client_camera_shading_set, "camera_shading_set"},
 	{icelua_fn_client_screen_get_dims, "screen_get_dims"},
 	{icelua_fn_client_model_render_bone_global, "model_render_bone_global"},
 	{icelua_fn_client_model_render_bone_local, "model_render_bone_local"},

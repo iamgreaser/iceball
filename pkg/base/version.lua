@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,0,0,0,14},
-	num=14,
-	str="0.0-14",
+	cmp={0,0,0,0,15},
+	num=15,
+	str="0.0-15",
 }
 
 VERSION_BUGS = {
@@ -36,6 +36,6 @@ VERSION_BUGS = {
 {intro=nil, fix=11, msg="Blocks appear inverted in common cases"},
 {intro=nil, fix=12, msg="TGA loader prone to crashing on unsanitised data"},
 {intro=nil, fix=13, msg="No per-face shading"},
-{intro=nil, fix=nil, msg="Per-face shading is only preliminary"},
 {intro=nil, fix=14, msg="Color conversion functions are using hacky Lua code"},
+{intro=nil, fix=15, msg="Per-face shading is only preliminary"},
 }
