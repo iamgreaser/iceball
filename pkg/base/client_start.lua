@@ -541,6 +541,7 @@ function h_tick_main(sec_current, sec_delta)
 			-- TODO fix crash bug
 			--players[pid].free()
 			players[pid] = nil
+			sort_players()
 		elseif cid == 0x08 then
 			local x,y,z,cb,cg,cr,ct
 			x,y,z,cb,cg,cr,ct,pkt = common.net_unpack("HHHBBBB", pkt)
