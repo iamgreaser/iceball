@@ -733,7 +733,7 @@ function new_player(settings)
 			if this.tool == TOOL_BLOCK and this.blx1 then
 				if (not this.t_newblock) and this.blocks > 0 then
 				if this.blx1 >= 0 and this.blx1 < xlen and this.blz1 >= 0 and this.blz1 < zlen then
-				if this.bly1 <= ylen-3 then
+				if this.bly1 <= ylen-3 and map_is_buildable(this.blx1, this.bly1, this.blz1) then
 					common.net_send(nil, common.net_pack("BHHHBBBB",
 						0x08,
 						this.blx1, this.bly1, this.blz1,
@@ -1037,8 +1037,9 @@ function new_player(settings)
 			td,
 			this.blx1, this.bly1, this.blz1,
 			this.blx2, this.bly2, this.blz2
-			= trace_map_ray_dist(camx,camy,camz, fwx,fwy,fwz, 5)
-			
+			= trace_map_ray_dist(camx,camy,camz, fwx,fwy,fwz, 5, false)
+						
+
 			this.bld1 = td
 			this.bld2 = td
 			
@@ -1814,24 +1815,32 @@ function new_player(settings)
 
 		-- TODO: wireframe cube
 		if this.tool == TOOL_BLOCK and this.blx1 and (this.alive or this.respawning) then
-			bname, mdl_data = client.model_bone_get(mdl_cube, mdl_cube_bone)
-			
-			mdl_data_backup = mdl_data
-			
-			for i=1,#mdl_data do
-				if mdl_data[i].r > 4 then
-					mdl_data[i].r = math.max(this.blk_color[1], 5) --going all the way down to
-					mdl_data[i].g = math.max(this.blk_color[2], 5) --to 4 breaks it and you'd
-					mdl_data[i].b = math.max(this.blk_color[3], 5) --have to reload the model
+			if map_is_buildable(this.blx1, this.bly1, this.blz1) or MODE_BLOCK_PLACE_IN_AIR then
+				bname, mdl_data = client.model_bone_get(mdl_cube, mdl_cube_bone)
+				
+				mdl_data_backup = mdl_data
+				
+				for i=1,#mdl_data do
+					if mdl_data[i].r > 4 then
+						mdl_data[i].r = math.max(this.blk_color[1], 5) --going all the way down to
+						mdl_data[i].g = math.max(this.blk_color[2], 5) --to 4 breaks it and you'd
+						mdl_data[i].b = math.max(this.blk_color[3], 5) --have to reload the model
+					end
 				end
+				
+				client.model_bone_set(mdl_cube, mdl_cube_bone, bname, mdl_data)
+				
+				client.model_render_bone_global(mdl_cube, mdl_cube_bone,
+					this.blx1+0.5, this.bly1+0.5, this.blz1+0.5,
+					0.0, 0.0, 0.0, 24.0) --no rotation, 24 roughly equals the cube size
+			
+			else
+				client.model_render_bone_global(mdl_Xcube, mdl_Xcube_bone,
+					this.blx1+0.5, this.bly1+0.5, this.blz1+0.5,
+					0.0, 0.0, 0.0, 24.0)
+				print(this.blx1.." "..this.bly1.." "..this.blz1)
 			end
-			
-			client.model_bone_set(mdl_cube, mdl_cube_bone, bname, mdl_data)
-			
-			client.model_render_bone_global(mdl_cube, mdl_cube_bone,
-				this.blx1+0.5, this.bly1+0.5, this.blz1+0.5,
-				0.0, 0.0, 0.0, 24.0) --no rotation, 24 roughly equals the cube size
-		elseif this.tool == TOOL_SPADE and this.blx1 and (this.alive or this.respawning) then
+		elseif this.tool == TOOL_SPADE and this.blx1 and (this.alive or this.respawning) and map_block_get(this.blx2, this.bly2, this.blz2) then
 			client.model_render_bone_global(mdl_test, mdl_test_bone,
 				this.blx1+0.5, this.bly1+0.5, this.blz1+0.5,
 				rotpos*0.01, rotpos*0.004, 0.0, 0.1+0.01*math.sin(rotpos*0.071))

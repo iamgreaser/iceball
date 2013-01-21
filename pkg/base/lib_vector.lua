@@ -115,7 +115,9 @@ function box_is_clear(x1,y1,z1,x2,y2,z2,canwrap)
 	return true
 end
 
-function trace_map_ray_dist(x1,y1,z1, vx,vy,vz, maxdist)
+function trace_map_ray_dist(x1,y1,z1, vx,vy,vz, maxdist, nil_on_maxdist)
+	if nil_on_maxdist == nil then nil_on_maxdist = true end
+
 	local function depsilon(d)
 		if d < 0.0000001 then
 			return 0.0000001
@@ -187,7 +189,12 @@ function trace_map_ray_dist(x1,y1,z1, vx,vy,vz, maxdist)
 		end
 		
 		dist = dist + t
-		if dist > maxdist then return nil, nil, nil, nil, nil, nil, nil end
+		
+		if dist > maxdist and nil_on_maxdist then
+			return nil, nil, nil, nil, nil, nil, nil
+		elseif dist > maxdist and not nil_on_maxdist then
+			return dist, cx, cy, cz, ncx, ncy, ncz
+		end
 		
 		local i=1
 		while true do

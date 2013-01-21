@@ -451,5 +451,23 @@ function map_block_pick(x,y,z)
 	local t = map_pillar_raw_get(x,z)
 	local c = t[y+1]
 	
+	if c==nil then error(x..","..y..","..z) end
+	
 	return c[1],c[2],c[3],c[4]
+end
+
+--checks for neighbors
+function map_is_buildable(x, y, z)
+	local xlen,ylen,zlen
+	xlen,ylen,zlen = common.map_get_dims()
+	--warning! a long condition
+	if map_block_get(x,y,z) == nil then
+		if map_block_get(x + 1,y,z) ~= nil or map_block_get(x - 1,y,z) ~= nil or map_block_get(x,y + 1,z) ~= nil or map_block_get(x,y - 1,z) ~= nil or map_block_get(x,y,z - 1) ~= nil or map_block_get(x,y,z + 1) ~= nil then
+			if x >=0 and x < xlen and y >= 0 and y < ylen - 2 and z >= 0 and z < zlen then
+				return true;
+			end
+		end
+	else
+		return false;
+	end
 end
