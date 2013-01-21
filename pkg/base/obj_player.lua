@@ -1834,7 +1834,7 @@ function new_player(settings)
 					this.blx1+0.5, this.bly1+0.5, this.blz1+0.5,
 					0.0, 0.0, 0.0, 24.0) --no rotation, 24 roughly equals the cube size
 			
-			else
+			elseif not MODE_BLOCK_NO_RED_MARKER
 				client.model_render_bone_global(mdl_Xcube, mdl_Xcube_bone,
 					this.blx1+0.5, this.bly1+0.5, this.blz1+0.5,
 					0.0, 0.0, 0.0, 24.0)
