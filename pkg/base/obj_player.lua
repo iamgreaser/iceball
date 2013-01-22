@@ -38,6 +38,20 @@ function new_player(settings)
 	this.score = 0
 	this.kills = 0
 	this.deaths = 0
+	
+	this.permissions = {}
+	
+	function this.has_permission(perm)
+		return perm == nil or this.permissions[perm] ~= nil
+	end
+	
+	function this.add_permission(perm)
+		this.permissions[perm] = true
+	end
+	
+	function this.remove_permission(perm)
+		this.permissions[perm] = nil
+	end
 
 	local function prv_recolor_team(r,g,b)
 		if not client then return end
