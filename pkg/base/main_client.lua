@@ -116,8 +116,16 @@ do
 	
 	local fnlist = {}
 	function load_screen_fetch(ftype, fname)
+		if widgets ~= nil then
+			w, h = client.screen_get_dims()
+			scene = gui_create_scene(w, h)
+			loading_img = scene.image{img=img_loading, x=w/2, y=h/2}
+			scene.root.add_child(loading_img)
+		end
+		
 		local cname = ftype.."!"..fname
 		local cacheable = ftype ~= "map" and ftype ~= "icemap" and ftype ~= "vxl"
+		
 		if cacheable and scriptcache[cname] then
 			fnlist[#fnlist+1] = fname.." [CACHED]"
 			return scriptcache[cname]
@@ -158,6 +166,10 @@ do
 		local loadstr = "Fetching..."
 		
 		function client.hook_render()
+			if scene then
+				scene.draw()
+			end
+			
 			if chn_mus and not client.wav_chn_exists(chn_mus) then
 				chn_mus = client.wav_play_local(wav_mus)
 			end
@@ -179,6 +191,9 @@ do
 		end
 		
 		function client.hook_tick(sec_current, sec_delta)
+			if scene ~= nil then
+				scene.pump_listeners(sec_delta, {})
+			end
 			-- TODO!
 			--print("tick called.")
 			return 0.005
@@ -188,10 +203,17 @@ do
 		usize = nil
 		amount = 0.0
 		if obj == true then
+			rgb = 85
 			while true do
 				obj, csize, usize, amount = common.fetch_poll()
 				--print("obj:", obj, csize, usize, amount)
 				if obj ~= false then break end
+				
+				if fnlist[#fnlist] == "*MAP" then
+					rgb = 85 + amount * 170.0
+					client.map_fog_set(rgb, rgb, rgb, 127.5)
+					loading_img.x = loading_img.x + amount * (w / 60)
+				end
 				
 				if csize then
 					loadstr = "Fetching... "
