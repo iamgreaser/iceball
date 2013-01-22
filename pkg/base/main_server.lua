@@ -200,7 +200,7 @@ function server.hook_tick(sec_current, sec_delta)
 			x,y,z,cb,cg,cr,ct,pkt = common.net_unpack("HHHBBBB", pkt)
 			if x >= 0 and x < xlen and z >= 0 and z < zlen then
 			if y >= 0 and y <= ylen-3 then
-				if plr.blocks > 0 then
+				if plr.blocks > 0 and map_is_buildable(x,y,z) then
 					plr.blocks = plr.blocks - 1
 					map_block_set(x,y,z,ct,cr,cg,cb)
 					net_broadcast(nil, common.net_pack("BHHHBBBB",
