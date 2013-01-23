@@ -269,7 +269,7 @@ function server.hook_tick(sec_current, sec_delta)
 			if string.sub(msg,1,1) == "/" then
 				--TODO: Better parameter parsing (param1 "param two" "param \"three\"")
 				local params = string.split(string.sub(msg,2), " ")
-				command_handle(plr, cli.plrid, sockfd, params, msg)
+				s = command_handle(plr, cli.plrid, sockfd, params, msg)
 			else
 				s = plr.name.." ("..teams[plr.team].name.."): "..msg
 			end
