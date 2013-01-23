@@ -1852,7 +1852,7 @@ function new_player(settings)
 				client.model_render_bone_global(mdl_Xcube, mdl_Xcube_bone,
 					this.blx1+0.5, this.bly1+0.5, this.blz1+0.5,
 					0.0, 0.0, 0.0, 24.0)
-				print(this.blx1.." "..this.bly1.." "..this.blz1)
+				--print(this.blx1.." "..this.bly1.." "..this.blz1)
 			end
 		elseif this.tool == TOOL_SPADE and this.blx1 and (this.alive or this.respawning) and map_block_get(this.blx2, this.bly2, this.blz2) then
 			client.model_render_bone_global(mdl_test, mdl_test_bone,
