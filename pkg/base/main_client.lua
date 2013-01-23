@@ -212,7 +212,7 @@ do
 				if fnlist[#fnlist] == "*MAP" then
 					rgb = 85 + amount * 170.0
 					client.map_fog_set(rgb, rgb, rgb, 127.5)
-					loading_img.x = loading_img.x + amount * (w / 60)
+					loading_img.x = w/2 + amount * w
 				end
 				
 				if csize then

@@ -6,8 +6,9 @@ ECHO -------------------------------------
 ECHO 1. Single-player
 ECHO 2. Dev server
 ECHO 3. Lighting test
-ECHO 4. Map editor
-ECHO 5. PMF editor
+ECHO 4. Snow weather test
+ECHO 5. Map editor
+ECHO 6. PMF editor
 ECHO -------------------------------------
 ECHO 0. Exit
 ECHO -------------------------------------
@@ -19,8 +20,9 @@ SET /P INPUT=Please select a number:
 IF /I '%INPUT%'=='1' GOTO SinglePlayer
 IF /I '%INPUT%'=='2' GOTO DevServer
 IF /I '%INPUT%'=='3' GOTO LightingTest
-IF /I '%INPUT%'=='4' GOTO MapEditor
-IF /I '%INPUT%'=='5' GOTO PMFEditor
+IF /I '%INPUT%'=='4' GOTO SnowTest
+IF /I '%INPUT%'=='5' GOTO MapEditor
+IF /I '%INPUT%'=='6' GOTO PMFEditor
 IF /I '%INPUT%'=='0' EXIT
 
 ECHO Invalid option
@@ -41,6 +43,12 @@ GOTO Menu
 :LightingTest
 ECHO Starting lighting test...
 iceball.exe -s 0 pkg/iceball/radtest
+ECHO.
+GOTO Menu
+
+:SnowTest
+ECHO Starting snow weather test...
+iceball.exe -s 0 pkg/iceball/snowtest
 ECHO.
 GOTO Menu
 
