@@ -53,7 +53,7 @@ end
 function command_handle(player, plrid, sockfd, params, msg)
 	cmd = string.lower(params[1])
 	if commands[cmd] ~= nil then
-	table.remove(params, 1)
+		table.remove(params, 1)
 		commands[cmd].exec(player, plrid, sockfd, params, msg)
 	else
 		common.net_send(sockfd, common.net_pack("BIz", 0x0E, command_colour_error, "Error: No such command"))
