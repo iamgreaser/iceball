@@ -633,7 +633,7 @@ function new_player(settings)
 		end
 		
 		if client then
-			local moving = (this.ev_left or this.ev_right or this.ev_forward or this.ev_back)
+			local moving = ((this.ev_left == not this.ev_right) or (this.ev_forward == not this.ev_back))
 			local sneaking = (this.ev_crouch or this.ev_sneak or this.zooming)
 			
 			if moving and not sneaking then
