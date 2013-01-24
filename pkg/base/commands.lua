@@ -181,3 +181,30 @@ command_register({
 	end
 })
 command_register_alias("teleport", "tp")
+
+command_register({
+	command = "goto",
+	permission = nil,
+	usage = "/goto #X ; where # is letter, X is number in the map's grid system",
+	func = function(plr, plrid, sockfd, prms, msg)
+		if table.getn(prms) == 1 then
+			prms[1] = tostring(prms[1])
+			local x, z
+			local success = pcall(function()
+				x = (string.byte(prms[1]:lower()) - 97) * 64
+				z = (tonumber(prms[1]:sub(2, 2)) - 1) * 64
+			end)
+			local xlen, _, zlen = common.map_get_dims()
+			if (success and x >= 0 and x < xlen and z >= 0 and z < zlen) then
+				local y = common.map_pillar_get(x, z)[1+1]
+				plr.set_pos_recv(x, y, z)
+				net_broadcast(nil, common.net_pack("BBhhh",
+					0x03, plrid, x * 32.0, y * 32.0, z * 32.0))
+			else
+				common.net_send(sockfd, common.net_pack("BIz", 0x0E, command_colour_error, "Error: Invalid coordinates"))
+			end
+		else
+			commands["help"].func(plr, plrid, sockfd, {"goto"})
+		end
+	end
+})
