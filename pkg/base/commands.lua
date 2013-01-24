@@ -208,3 +208,21 @@ command_register({
 		end
 	end
 })
+
+command_register({
+	command = "intel",
+	permission = nil,
+	usage = "/intel",
+	func = function(plr, plrid, sockfd, prms, msg)
+		if table.getn(prms) == 0 then
+			local i
+			for i=1,#intent do
+				if intent[i] ~= nil then
+					common.net_send(sockfd, common.net_pack("BIz", 0x0E, command_colour_text, teams[intent[i].team].name..": "..intent[i].x..", "..intent[i].y..", "..intent[i].z))
+				end
+			end
+		else
+			commands["help"].func(plr, plrid, sockfd, {"intel"})
+		end
+	end
+})
