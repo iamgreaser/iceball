@@ -148,7 +148,7 @@ command_register({
 command_register({
 	command = "teleport",
 	permission = nil,
-	usage = "/teleport <player>|<x, y, z>",
+	usage = "/teleport <player>|<x y z>",
 	func = function(plr, plrid, sockfd, prms, msg)
 		if table.getn(prms) == 1 then
 			prms[1] = tostring(prms[1])
