@@ -118,11 +118,32 @@ function new_intel(settings)
 	end
 	
 	function this.intel_capture(sec_current)
-		local i
-		for i=1,players.max do
-			local plr = players[i]
-			if plr and plr.team == this.player.team then
-				plr.t_rcirc = sec_current + MODE_RCIRC_LINGER
+		teams[this.player.team].score = teams[this.player.team].score + 1
+		net_broadcast(nil, common.net_pack("Bbh", 0x1F, this.player.team, teams[this.player.team].score))
+		if teams[this.player.team].score >= TEAM_INTEL_LIMIT then
+			local i
+			for i=1,players.max do
+				if players[i] ~= nil then
+					players[i].spawn()
+					net_broadcast(nil, common.net_pack("BBfffBB",
+						0x10, i,
+						players[i].x, players[i].y, players[i].z,
+						players[i].angy*128/math.pi, players[i].angx*256/math.pi))
+				end
+			end
+			for i=0,teams.max do
+				if teams[i] ~= nil then
+					teams[i].score = 0
+					net_broadcast(nil, common.net_pack("Bbh", 0x1F, i, teams[i].score))
+				end
+			end
+		else
+			local i
+			for i=1,players.max do
+				local plr = players[i]
+				if plr and plr.team == this.player.team then
+					plr.t_rcirc = sec_current + MODE_RCIRC_LINGER
+				end
 			end
 		end
 		local plr = this.player

@@ -369,6 +369,11 @@ function server.hook_tick(sec_current, sec_delta)
 							0x16, i, plr.pid))
 					end
 				end
+
+				-- relay score to this player
+				for i=0,teams.max do
+					common.net_send(sockfd, common.net_pack("Bbh", 0x1F, i, teams[i].score))
+				end
 				
 				-- relay this player to everyone
 				net_broadcast(nil, common.net_pack("BBBBhhhzz",

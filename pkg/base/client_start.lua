@@ -694,6 +694,10 @@ function h_tick_main(sec_current, sec_delta)
 			if plr then
 				client.wav_play_global(wav_rifle_reload, plr.x, plr.y, plr.z)
 			end
+		elseif cid == 0x1F then
+			local tidx, score
+			tidx, score = common.net_unpack("bh", pkt)
+			teams[tidx].score = score
 		end
 	end
 	tracer_prune(sec_current)

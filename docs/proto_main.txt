@@ -281,3 +281,6 @@ Iceball Base Mod:
 	
 	0x1E msg.z (C->S) @
 		send squadchat message
+
+	0x1F team score.u16 (S->C) @
+		update team scores

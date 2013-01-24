@@ -1952,6 +1952,8 @@ function new_player(settings)
 		end
 
 		if show_scores then
+			font_large.print(w / 2 + 50, 100, argb_split_to_merged(150, 255, 150, 255), teams[1].score.."-"..TEAM_INTEL_LIMIT)
+			font_large.print(w / 2 - 50, 100, argb_split_to_merged(150, 150, 255, 255), teams[0].score.."-"..TEAM_INTEL_LIMIT)
 			local bi, gi
 			bi = 1
 			gi = 1
