@@ -1615,6 +1615,51 @@ function new_player(settings)
 			this.typing_text.done_typing()
 		end
 		
+		local spacer = scene.hspacer{x=w/2,y=h/2,spread=8}
+		scene.root.add_child(spacer)
+		local boxes = {}
+		local i
+		for i=0, teams.max do
+			local box = scene.tile9{
+				width=20+math.random(50), 
+				height=20+math.random(50), 
+				tiles=img_tiles_roundrect
+			}
+			table.insert(boxes, box)
+			spacer.add_child(box)
+		end
+		spacer.reflow()
+		boxes[1].add_listener(GE_DELTA_TIME, function(dT)
+			if spacer.visible then
+				local tables = {}
+				for i=1, players.max do
+					local plr = players[i]
+					if plr ~= nil then
+						if tables[plr.team]==nil then tables[plr.team]={} end
+						local squad = ""
+						if plr.squad ~= nil then squad = tostring(plr.squad)
+						table.insert(tables[plr.team], {
+							tostring(plr.name),
+							squad,
+							tostring(plr.score),
+							tostring(plr.kills),
+							tostring(plr.deaths)})
+					end
+				end
+				for k,v in pairs(tables) do
+					table.sort(v, player_ranking)
+				end
+				-- next: format the string per line of each table.
+				-- find the min_width.
+				-- create an appropriately sized box per team.
+				-- fill in the headers.
+				spacer.reflow()
+			end
+		end)
+		-- OK. Now create a textfield that reflows in fixed-width form.
+		-- Iterate over each col of the field and find its width.
+		
+		
 		-- spacer test
 		--[[local spacer = scene.hspacer{x=w/2,y=h/2,spread=8}
 		scene.root.add_child(spacer)
