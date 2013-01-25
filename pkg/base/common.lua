@@ -252,8 +252,6 @@ weapons = {
 				end
 			end
 			
-			-- TODO: fire a tracer
-			
 			-- apply recoil
 			-- attempting to emulate classic behaviour provided i have it right
 			plr.recoil(sec_current, this.cfg.recoil_y, this.cfg.recoil_x)
