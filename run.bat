@@ -17,6 +17,7 @@ ECHO.
 SET INPUT=
 SET /P INPUT=Please select a number: 
 
+cls
 IF /I '%INPUT%'=='1' GOTO SinglePlayer
 IF /I '%INPUT%'=='2' GOTO DevServer
 IF /I '%INPUT%'=='3' GOTO LightingTest
@@ -26,40 +27,48 @@ IF /I '%INPUT%'=='6' GOTO PMFEditor
 IF /I '%INPUT%'=='0' EXIT
 
 ECHO Invalid option
+pause
+cls
 GOTO Menu
 
 :SinglePlayer
 ECHO Starting local server...
 iceball.exe -s 0 pkg/base pkg/maps/mesa.vxl
 ECHO.
+cls
 GOTO Menu
 
 :DevServer
 ECHO Connecting to dev server...
 iceball.exe -c iceballga.me 20737
 ECHO.
+cls
 GOTO Menu
 
 :LightingTest
 ECHO Starting lighting test...
 iceball.exe -s 0 pkg/iceball/radtest
 ECHO.
+cls
 GOTO Menu
 
 :SnowTest
 ECHO Starting snow weather test...
 iceball.exe -s 0 pkg/iceball/snowtest
 ECHO.
+cls
 GOTO Menu
 
 :MapEditor
 ECHO Starting map editor...
 iceball.exe -s 0 pkg/iceball/mapedit
 ECHO.
+cls
 GOTO Menu
 
 :PMFEditor
 ECHO Starting PMF editor...
 iceball.exe -s 0 pkg/iceball/pmfedit
 ECHO.
+cls
 GOTO Menu
