@@ -431,18 +431,3 @@ function player_ranking(x, y)
 	end
 	return x.score > y.score
 end
-
-function sort_players()
-	players_sorted = {}
-	for k,v in ipairs(players) do
-		players_sorted[k] = v
-	end
-	table.sort(players_sorted, player_ranking)
-end
-
-local players_mt = {}
-function players_mt.__newindex(self, key, value)
-	rawset(self, key, value)	
-	sort_players()
-end
-setmetatable(players, players_mt)

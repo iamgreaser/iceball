@@ -318,7 +318,6 @@ function new_player(settings)
 			this.team, this.weapon,
 			this.score, this.kills, this.deaths,
 			this.name, this.squad))
-		sort_players()
 	end
 	
 	function this.tent_restock()

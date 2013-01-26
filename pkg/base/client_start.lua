@@ -187,7 +187,6 @@ NET_MOVE_DELAY = 0.5
 NET_ORIENT_DELAY = 0.1
 t_net_move = nil
 t_net_orient = nil
-players_sorted = {}
 
 function bhealth_clear(x,y,z,repaint)
 	local map = bhealth.map
@@ -545,7 +544,6 @@ function h_tick_main(sec_current, sec_delta)
 			players[pid].score = score
 			players[pid].kills = kills
 			players[pid].deaths = deaths
-			sort_players()
 		elseif cid == 0x06 then
 			local pid, pkt = common.net_unpack("B", pkt)
 			players.current = pid
@@ -554,7 +552,6 @@ function h_tick_main(sec_current, sec_delta)
 			-- TODO fix crash bug
 			--players[pid].free()
 			players[pid] = nil
-			sort_players()
 		elseif cid == 0x08 then
 			local x,y,z,cb,cg,cr,ct
 			x,y,z,cb,cg,cr,ct,pkt = common.net_unpack("HHHBBBB", pkt)
