@@ -1545,7 +1545,8 @@ function new_player(settings)
 		
 		cpal_update()
 		
-		this.health_text = scene.textfield{font=font_digits,
+		this.health_text = scene.textfield{
+			font=font_digits,
 			text="100", 
 			color=0xFFA1FFA1,
 			align_x=0.5, 
@@ -1557,7 +1558,8 @@ function new_player(settings)
 			this.health_text.text = ""..this.health
 		end
 		
-		this.ammo_text = scene.textfield{font=font_digits,
+		this.ammo_text = scene.textfield{
+			font=font_digits,
 			text="",
 			color=0xFFC0C0C0,
 			align_x = 1,
@@ -1615,29 +1617,59 @@ function new_player(settings)
 			this.typing_text.done_typing()
 		end
 		
-		local spacer = scene.hspacer{x=w/2,y=h/2,spread=8}
-		scene.root.add_child(spacer)
-		local boxes = {}
+		local box_spacer = scene.hspacer{x=w/2,y=h/2,spread=8}
+		scene.root.add_child(box_spacer)
+		local scoreboard_frames = {}
+		local scoreboard_headers = {}
+		local scoreboard_team_points = {}
+		local scoreboard_individuals = {}
 		local i
 		for i=0, teams.max do
+			local team_color = argb_split_to_merged(
+				teams[i].color_chat[1],
+				teams[i].color_chat[2],
+				teams[i].color_chat[3]
+				)
 			local box = scene.tile9{
-				width=20+math.random(50), 
-				height=20+math.random(50), 
+				width=20, 
+				height=20, 
 				tiles=img_tiles_roundrect
 			}
-			table.insert(boxes, box)
-			spacer.add_child(box)
+			local header_text = scene.textfield{
+				text=teams[i].name,
+				color=team_color
+			}
+			local team_point_text = scene.textfield{
+				text="0-10",
+				font=font_digits,
+				color=team_color
+			}
+			local individual_text = scene.textfield{
+				text="moo",
+				color=team_color
+			}
+			table.insert(scoreboard_frames, box)
+			table.insert(scoreboard_headers, header_text)
+			box_spacer.add_child(box)
+			local vspace = scene.vspacer{x=0, y=0, spread = 8}
+			box.add_child(vspace)
+			vspace.add_child(team_point_text)
+			vspace.add_child(header_text)
+			vspace.add_child(individual_text)
+			local dim = vspace.full_dimensions
+			box.width = dim.r - dim.l + 64
+			box.height = dim.b - dim.t + 64
 		end
-		spacer.reflow()
-		boxes[1].add_listener(GE_DELTA_TIME, function(dT)
-			if spacer.visible then
+		box_spacer.reflow()
+		scoreboard_frames[1].add_listener(GE_DELTA_TIME, function(dT)
+			if box_spacer.visible then
 				local tables = {}
 				for i=1, players.max do
 					local plr = players[i]
 					if plr ~= nil then
 						if tables[plr.team]==nil then tables[plr.team]={} end
 						local squad = ""
-						if plr.squad ~= nil then squad = tostring(plr.squad)
+						if plr.squad ~= nil then squad = tostring(plr.squad) end
 						table.insert(tables[plr.team], {
 							tostring(plr.name),
 							squad,
@@ -1646,14 +1678,36 @@ function new_player(settings)
 							tostring(plr.deaths)})
 					end
 				end
+				-- we format each column by exploiting the fixed-width text.
+				local table_concat = {}
 				for k,v in pairs(tables) do
+					-- find the max width of each column
 					table.sort(v, player_ranking)
+					local widths = {}
+					for row=1, #v do
+						for col=1, #v[row] do
+							widths[col] = math.max(#v[row][col], widths[col] or 0)
+						end
+					end
+					-- pad the strings to the target width.
+					table_concat[k] = {}
+					for row_idx,row in pairs(v) do
+						table_concat[k] = ""
+						for col_idx,str in pairs(row) do
+							local concat = table_concat[k]
+							concat = str
+							while #concat < widths[col_idx] do
+								concat = concat .. " "
+							end
+						end
+					end
 				end
-				-- next: format the string per line of each table.
+				-- now create a formatted ctab result...spawn a textfield to test it
+				-- we need one textfield per team.
 				-- find the min_width.
 				-- create an appropriately sized box per team.
 				-- fill in the headers.
-				spacer.reflow()
+				box_spacer.reflow()
 			end
 		end)
 		-- OK. Now create a textfield that reflows in fixed-width form.

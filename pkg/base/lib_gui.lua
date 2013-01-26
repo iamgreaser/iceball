@@ -716,6 +716,7 @@ function gui_create_scene(width, height, shared_rate)
 		local _text
 		local _ctab
 		local _color = options.color or 0xFF880088
+		if type(_color) ~= "number" then error("color "..tostring(_color).." is not a number") end
 		
 		local function recalc_glyphs()
 			if _ctab ~= nil then
@@ -791,6 +792,7 @@ function gui_create_scene(width, height, shared_rate)
 		end
 		
 		function this.setter_keys.color(v)
+			if type(v) ~= "number" then error("color "..tostring(v).." is not a number") end
 			_color = v
 			recalc_glyphs()
 		end
@@ -833,6 +835,8 @@ function gui_create_scene(width, height, shared_rate)
 				return {x=lastchar[3] + this.font.width, y=lastchar[4]}
 			end
 		end
+		
+		recalc_size()
 
 		return this
 
