@@ -370,6 +370,16 @@ teams = {
 	},
 }
 
+function team_players(team)
+	local result = {}
+	for k,v in ipairs(players) do
+		if v.team == team then
+			table.insert(result, v)
+		end
+	end
+	return result
+end
+
 cpalette_base = {
 	0x7F,0x7F,0x7F,
 	0xFF,0x00,0x00,

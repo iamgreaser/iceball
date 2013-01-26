@@ -1671,6 +1671,7 @@ function new_player(settings)
 		local scoreboard_headers = {}
 		local scoreboard_team_points = {}
 		local scoreboard_individuals = {}
+		local scoreboard_vspacers = {}
 		local i
 		for i=0, teams.max do
 			local team_color = argb_split_to_merged(
@@ -1696,71 +1697,97 @@ function new_player(settings)
 				text="moo",
 				color=team_color
 			}
-			table.insert(scoreboard_frames, box)
-			table.insert(scoreboard_headers, header_text)
+			scoreboard_frames[i] = box
+			scoreboard_headers[i] = header_text
+			scoreboard_individuals[i] = individual_text
+			scoreboard_team_points[i] = team_point_text
 			box_spacer.add_child(box)
-			local vspace = scene.vspacer{x=0, y=0, spread = 8}
-			box.add_child(vspace)
-			vspace.add_child(team_point_text)
-			vspace.add_child(header_text)
-			vspace.add_child(individual_text)
-			local dim = vspace.full_dimensions
-			box.width = dim.r - dim.l + 64
-			box.height = dim.b - dim.t + 64
+			local vspacer = scene.vspacer{x=0, y=0, spread = 8}
+			box.add_child(vspacer)
+			vspacer.add_child(team_point_text)
+			vspacer.add_child(header_text)
+			vspacer.add_child(individual_text)
+			scoreboard_vspacers[i] = vspacer
+			box_spacer.visible = false;
 		end
+
 		box_spacer.reflow()
 		scoreboard_frames[1].add_listener(GE_DELTA_TIME, function(dT)
+			box_spacer.visible = show_scores
 			if box_spacer.visible then
 				local tables = {}
-				for i=1, players.max do
-					local plr = players[i]
-					if plr ~= nil then
-						if tables[plr.team]==nil then tables[plr.team]={} end
-						local squad = ""
-						if plr.squad ~= nil then squad = tostring(plr.squad) end
-						table.insert(tables[plr.team], {
-							tostring(plr.name),
-							squad,
-							tostring(plr.score),
-							tostring(plr.kills),
-							tostring(plr.deaths)})
-					end
+				for i=0, teams.max do
+					tables[i] = team_players(i)
+					table.sort(tables[i], player_ranking)
 				end
 				-- we format each column by exploiting the fixed-width text.
-				local table_concat = {}
 				for k,v in pairs(tables) do
-					-- find the max width of each column
-					table.sort(v, player_ranking)
-					local widths = {}
-					for row=1, #v do
-						for col=1, #v[row] do
-							widths[col] = math.max(#v[row][col], widths[col] or 0)
+					
+					local table_concat = {}
+					if #v == 0 then
+						table_concat = {{msg="NO PLAYERS",color=0xFFFFFFFF}}
+					else
+						-- find the max width of each column
+						local strtable = {}
+						table.insert(strtable, {
+							"Name",
+							"Squad",
+							"#",
+							"Score",
+							"K",
+							"D"})
+						for row=1, #v do
+							local squad = ""
+							local plr = v[row]
+							if plr.squad ~= nil then 
+								squad = "["..tostring(plr.squad).."]"
+							end
+							table.insert(strtable, {
+								tostring(plr.name),
+								squad,
+								tostring(plr.pid),
+								tostring(plr.score),
+								tostring(plr.kills),
+								tostring(plr.deaths)})
 						end
-					end
-					-- pad the strings to the target width.
-					table_concat[k] = {}
-					for row_idx,row in pairs(v) do
-						table_concat[k] = ""
-						for col_idx,str in pairs(row) do
-							local concat = table_concat[k]
-							concat = str
-							while #concat < widths[col_idx] do
-								concat = concat .. " "
+						local widths = {}
+						for row=1, #strtable do
+							for col=1, #strtable[row] do
+								widths[col] = math.max(#strtable[row][col], widths[col] or 0)
 							end
 						end
+						-- pad the strings to the target width.
+						for row_idx,row in pairs(strtable) do
+							local concat = {msg="", color=0xAAAAAAFF}
+							if row[1] == this.name then -- highlight the client's name
+								concat.color = 0xFFFFFFFF
+							end
+							for col_idx, val in pairs(row) do
+								local msg = val
+								while #msg < widths[col_idx] do
+									msg = msg .. " "
+								end
+								concat.msg = concat.msg .. msg .. "  "
+							end
+							table.insert(table_concat, concat)
+						end
 					end
+					
+					scoreboard_individuals[k].ctab = table_concat
+					scoreboard_team_points[k].text = teams[k].score .. "-" .. TEAM_INTEL_LIMIT
+					local box = scoreboard_frames[k]
+					local vspacer = scoreboard_vspacers[k]
+					local dim = vspacer.full_dimensions
+					box.width = dim.r - dim.l + 32
+					box.height = dim.b - dim.t + 64
+					
 				end
-				-- now create a formatted ctab result...spawn a textfield to test it
-				-- we need one textfield per team.
-				-- find the min_width.
-				-- create an appropriately sized box per team.
-				-- fill in the headers.
 				box_spacer.reflow()
 			end
 		end)
-		-- OK. Now create a textfield that reflows in fixed-width form.
-		-- Iterate over each col of the field and find its width.
-		
+		-- Almost there.
+		-- Table is not generated properly.
+		-- Empty team case is not handled properly.		
 		
 		-- spacer test
 		--[[local spacer = scene.hspacer{x=w/2,y=h/2,spread=8}
@@ -2099,36 +2126,6 @@ function new_player(settings)
 
 			font_mini.print(4, 4, 0x80FFFFFF, cam_pos_str)
 		end
-
-		if show_scores then
-			font_large.print(w / 2 + 50, 100, argb_split_to_merged(150, 255, 150, 255), teams[1].score.."-"..TEAM_INTEL_LIMIT)
-			font_large.print(w / 2 - 50, 100, argb_split_to_merged(150, 150, 255, 255), teams[0].score.."-"..TEAM_INTEL_LIMIT)
-			local bi, gi
-			bi = 1
-			gi = 1
-			for i=1,players.max do
-				local plr = players_sorted[i]
-				if plr ~= nil then
-					local sn = plr.name
-					if plr.squad then
-						sn = sn.." ["..plr.squad.."]"
-					end
-					local s = sn.." #"..i..": "
-						..plr.score.." ("..plr.kills.."/"..plr.deaths..")"
-					if plr.team == 1 then
-						font_mini.print(w / 2 + 50, gi * 15 + 150
-							, argb_split_to_merged(150, 255, 150, 255)
-							, s)
-						gi = gi + 1
-					else
-						font_mini.print(w / 2 - 50 - (6 * #s), bi * 15 + 150
-							, argb_split_to_merged(150, 150, 255, 255)
-							, s)
-						bi = bi + 1
-					end
-				end
- 			end
- 		end
 
 	end
 
