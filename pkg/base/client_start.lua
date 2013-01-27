@@ -408,6 +408,7 @@ mdl_Xcube_bone = client.model_bone_find(mdl_cube, "bnXcube")
 mdl_spade, mdl_spade_bone = client.model_load_pmf("pkg/base/pmf/spade.pmf"), 0
 mdl_block, mdl_block_bone = client.model_load_pmf("pkg/base/pmf/block.pmf"), 0
 weapon_models[WPN_RIFLE] = client.model_load_pmf("pkg/base/pmf/rifle.pmf")
+weapon_models[WPN_LEERIFLE] = client.model_load_pmf("pkg/base/pmf/leerifle.pmf")
 mdl_nade, mdl_nade_bone = client.model_load_pmf("pkg/base/pmf/nade.pmf"), 0
 
 mdl_tent, mdl_tent_bone = client.model_load_pmf("pkg/base/pmf/tent.pmf"), 0
