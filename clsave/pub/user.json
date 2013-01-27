@@ -19,8 +19,8 @@
 		For more info on the syntax itself, see http://json.org/
 	",
 	
-	"name": null,
-	"kick_on_join": true,
+	"name": "Dany0",
+	"kick_on_join": false,
 	"sensitivity": 1.0,
 	"hold_to_zoom": false,
 	
@@ -29,7 +29,7 @@
 	},
 	
 	"bio": {
-		"description": "I'm too lazy to learn how to edit my config. Laugh at me.",
+		"description": "I'm Dany0 and I love game programming. I'm lazy too.",
 		"languages": ["pt", "pl"]
 	}
 }
