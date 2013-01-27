@@ -1582,6 +1582,7 @@ function new_player(settings)
 		end
 		
 		this.crosshair = scene.image{img=img_crosshair, x=w/2, y=h/2}
+		this.crosshairhit = scene.image{img=img_crosshairhit, x=w/2, y=h/2, visible=false}
 		this.cpal = scene.image{img=img_cpal, x=0, y=h, align_x=0, align_y=1}
 		this.cpal_rect = scene.image{img=img_cpal_rect, align_x=0, align_y=0}
 		
@@ -1823,6 +1824,7 @@ function new_player(settings)
 		this.enemy_name_msg.add_listener(GE_DELTA_TIME, enemy_name_update)
 		
 		scene.root.add_child(this.crosshair)
+		scene.root.add_child(this.crosshairhit)
 		scene.root.add_child(this.cpal)
 		scene.root.add_child(this.cpal_rect)
 		scene.root.add_child(this.mini_map)
@@ -1841,6 +1843,16 @@ function new_player(settings)
 		scene.root.add_child(this.enemy_name_msg)
 		
 		this.scene = scene
+	end
+	
+	function this.show_hit()
+		this.crosshair.visible = false
+		this.crosshairhit.visible = true
+		this.crosshairhit.static_alarm{name='hitviz', time=0.25, on_trigger=function()
+			this.crosshair.visible = true
+			this.crosshairhit.visible = false
+		end}
+
 	end
 	
 	function this.on_mouse_button(button, state)

@@ -240,6 +240,7 @@ weapons = {
 				else
 					common.net_send(nil, common.net_pack("BBB"
 						, 0x13, hurt_idx, hurt_part_idx))
+					plr.show_hit()
 				end
 			else
 				if client then

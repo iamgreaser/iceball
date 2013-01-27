@@ -396,6 +396,7 @@ show_scores = false
 
 -- load images
 img_crosshair = client.img_load("pkg/base/gfx/crosshair.tga")
+img_crosshairhit = client.img_load("pkg/base/gfx/crosshairhit.tga")
 
 -- load/make models
 mdl_test = client.model_load_pmf("pkg/base/pmf/test.pmf")
