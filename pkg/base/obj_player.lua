@@ -882,6 +882,12 @@ function new_player(settings)
 		mvx = mvx / mvd
 		mvz = mvz / mvd
 
+		-- apply tool speedup
+		if this.tool == TOOL_SPADE or this.tool == TOOL_BLOCK then
+			mvx = mvx * 1.25
+			mvz = mvz * 1.25
+		end
+
 		-- apply base slowdown
 		local mvspd = 8.0
 		local mvchange = 10.0
