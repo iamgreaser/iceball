@@ -38,13 +38,18 @@ function slot_add(sockfd, tidx, wpn, name)
 				-- TODO: actually balance this properly!
 				tidx = (i-1) % 2
 			end
+			if MODE_TEAM_GUNS then
+				_wpn = tidx + 1
+			else
+				_wpn = WPN_RIFLE
+			end
 			players[i] = new_player({
 				name = name,
 				--[[squad = squads[(i-1) % 2][
 					(math.floor((i-1)/2) % 4)+1],]]
 				squad = nil,
 				team = tidx, -- 0 == blue, 1 == green
-				weapon = WPN_RIFLE,
+				weapon = _wpn,
 				pid = i,
 			})
 			return i

@@ -1548,11 +1548,10 @@ function new_player(settings)
 			local d,cx1,cy1,cz1,cx2,cy2,cz2
 			d,cx1,cy1,cz1,cx2,cy2,cz2
 			= trace_map_ray_dist(this.x+sya*0.4,this.y,this.z+cya*0.4, fwx,fwy,fwz, 127.5)
-			d = d or 127.5
+			d = d or 75
 			
-			-- see if there's anyone we can kill
-			local hurt_idx = nil
-			local hurt_dist = d*d
+			local target_idx = nil
+			local target_dist = d*d
 			local i,j
 			
 			for i=1,players.max do
@@ -1567,21 +1566,22 @@ function new_player(settings)
 						
 						local dotk = dx*fwx+dy*fwy+dz*fwz
 						local dot = math.sqrt(dd-dotk*dotk)
-						if dot < 0.55 and dd < hurt_dist then
-							hurt_idx = i
+						if dot < 0.55 and dd < target_dist then
+							target_idx = i
 							break
 						end
 						dy = dy + 1.0
 					end
 				end
 			end
-			this.enemy_name_msg.visible = hurt_idx ~= nil
-			if hurt_idx ~= nil then
-				this.enemy_name_msg.text = players[hurt_idx].name
+			this.enemy_name_msg.visible = target_idx ~= nil
+			if target_idx ~= nil then
+				this.enemy_name_msg.text = players[target_idx].name
 			end
 		end
 		
 		this.crosshair = scene.image{img=img_crosshair, x=w/2, y=h/2}
+		this.crosshairhit = scene.image{img=img_crosshairhit, x=w/2, y=h/2, visible=false}
 		this.cpal = scene.image{img=img_cpal, x=0, y=h, align_x=0, align_y=1}
 		this.cpal_rect = scene.image{img=img_cpal_rect, align_x=0, align_y=0}
 		
@@ -1823,6 +1823,7 @@ function new_player(settings)
 		this.enemy_name_msg.add_listener(GE_DELTA_TIME, enemy_name_update)
 		
 		scene.root.add_child(this.crosshair)
+		scene.root.add_child(this.crosshairhit)
 		scene.root.add_child(this.cpal)
 		scene.root.add_child(this.cpal_rect)
 		scene.root.add_child(this.mini_map)
@@ -1841,6 +1842,16 @@ function new_player(settings)
 		scene.root.add_child(this.enemy_name_msg)
 		
 		this.scene = scene
+	end
+	
+	function this.show_hit()
+		this.crosshair.visible = false
+		this.crosshairhit.visible = true
+		this.crosshairhit.static_alarm{name='hitviz', time=0.25, on_trigger=function()
+			this.crosshair.visible = true
+			this.crosshairhit.visible = false
+		end}
+
 	end
 	
 	function this.on_mouse_button(button, state)
