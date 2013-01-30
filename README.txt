@@ -47,4 +47,3 @@ STUFF TO DO BEFORE 0.1 CAN BE RELEASED:
 - make net_pack more solid
 - JSON writer
 - make kicking not suck
-- face-dependent shading

@@ -119,7 +119,7 @@ If you wish to screw with the base game, check docs/modding_101.txt.
 It's advised that you don't screw with the engine, though,
 unless you wish to improve the mainline engine,
 in which case you should prod me (GreaseMonkey) on IRC, 
-#AoS @ QuakeNet.
+#AoS @ QuakeNet or #iceball @ irc.outs.in.
 
 -------------------------------------------------------------------------------
 
@@ -167,7 +167,6 @@ A few notes:
 -------------------------------------------------------------------------------
 
 You MUST edit your config to start with.
-[ TODO: this will eventually be true! ]
 
 See docs/setup_json.txt for more information.
 
