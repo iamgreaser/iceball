@@ -23,7 +23,7 @@ dofile("pkg/base/lib_util.lua")
 local img_font_numbers = common.img_load("pkg/base/gfx/font-numbers.tga")
 local img_font_mini = common.img_load("pkg/base/gfx/font-mini.tga")
 local img_font_large = common.img_load("pkg/base/gfx/font-large.tga")
-img_loading = img_loading or client.img_load("pkg/base/gfx/loading_default.tga")
+img_loading = img_loading or client.img_load("pkg/base/gfx/loading_default-64c.tga")
 img_tiles_roundrect = client.img_load("pkg/base/gfx/roundrect.tga")
 
 --[[
