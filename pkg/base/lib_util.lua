@@ -186,6 +186,21 @@ function rescale_value(amin, amax, bmin, bmax, aval)
 	return bmin + (aval - amin) * ratio;
 end
 
+-- Creates a shallow copy of a table
+function copy_table(orig)
+    local orig_type = type(orig)
+    local copy
+    if orig_type == 'table' then
+        copy = {}
+        for orig_key, orig_value in pairs(orig) do
+            copy[orig_key] = orig_value
+        end
+    else -- number, string, boolean, etc
+        copy = orig
+    end
+    return copy
+end
+
 -- GUI Events
 
 -- DELTA_TIME: 
