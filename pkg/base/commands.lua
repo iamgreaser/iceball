@@ -62,13 +62,6 @@ function command_handle(player, plrid, sockfd, params, msg)
 end
 
 command_register({
-	command = "derp",
-	permission = nil,
-	usage = "/derp",
-	func = function(plr, plrid, sockfd, prms, msg) print "derpherp" end
-})
-
-command_register({
 	command = "help",
 	permission = nil,
 	usage = "/help [command name]",
@@ -129,19 +122,6 @@ command_register({
 			plr.set_health_damage(0, 0xFF800000, plr.name.." shuffled off this mortal coil", plr)
 		else
 			commands["help"].func(plr, plrid, sockfd, {"kill"})
-		end
-	end
-})
-
-command_register({
-	command = "goto",
-	permission = nil,
-	usage = "/goto <grid square>",
-	func = function(plr, plrid, sockfd, prms, msg)
-		if table.getn(prms) == 1 then
-			--TODO: actually do the goto
-		else
-			commands["help"].func(plr, plrid, sockfd, {"goto"})
 		end
 	end
 })
