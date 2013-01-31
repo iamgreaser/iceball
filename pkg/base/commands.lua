@@ -18,6 +18,7 @@
 commands = {}
 command_colour_error = 0xFFFF6666
 command_colour_usage = 0xFF6666FF
+command_colour_success = 0xFF66FF66
 command_colour_text = 0xFFDDDDFF
 
 function command_deregister(command)
@@ -90,7 +91,7 @@ command_register({
 
 command_register({
 	command = "me",
-	permission = nil,
+	permission = "me",
 	usage = "/me <action>",
 	func = function(plr, plrid, sockfd, prms, msg)
 		if table.getn(prms) > 0 then
@@ -103,7 +104,7 @@ command_register({
 
 command_register({
 	command = "squad",
-	permission = nil,
+	permission = "squad",
 	usage = "/squad <squad name> (Use \"none\" to leave your squad)",
 	func = function(plr, plrid, sockfd, prms, msg)
 		if table.getn(prms) > 0 then
@@ -121,7 +122,7 @@ command_register({
 
 command_register({
 	command = "kill",
-	permission = nil,
+	permission = "kill",
 	usage = "/kill",
 	func = function(plr, plrid, sockfd, prms, msg)
 		if table.getn(prms) == 0 then
@@ -147,7 +148,7 @@ command_register({
 
 command_register({
 	command = "teleport",
-	permission = nil,
+	permission = "teleport",
 	usage = "/teleport <player>|<x y z>",
 	func = function(plr, plrid, sockfd, prms, msg)
 		if table.getn(prms) == 1 then
@@ -184,7 +185,7 @@ command_register_alias("teleport", "tp")
 
 command_register({
 	command = "goto",
-	permission = nil,
+	permission = "goto",
 	usage = "/goto #X ; where # is letter, X is number in the map's grid system",
 	func = function(plr, plrid, sockfd, prms, msg)
 		if table.getn(prms) == 1 then
@@ -211,7 +212,7 @@ command_register({
 
 command_register({
 	command = "intel",
-	permission = nil,
+	permission = "intel",
 	usage = "/intel",
 	func = function(plr, plrid, sockfd, prms, msg)
 		if table.getn(prms) == 0 then
@@ -223,6 +224,29 @@ command_register({
 			end
 		else
 			commands["help"].func(plr, plrid, sockfd, {"intel"})
+		end
+	end
+})
+
+command_register({
+	command = "login",
+	permission = nil,
+	usage = "/login <group> <password>",
+	func = function(plr, plrid, sockfd, prms, msg)
+		if table.getn(prms) == 2 then
+			local success = false
+			if permissions[prms[1]] ~= nil and prms[2] == permissions[prms[1]].password then
+				-- Should logging in change permissions or add to them? Should you be able to log out?
+				plr.permissions = permissions[prms[1]].perms
+				success = true
+			end
+			if success then
+				common.net_send(sockfd, common.net_pack("BIz", 0x0E, command_colour_success, "You have successfully logged in as "..prms[1]))
+			else
+				common.net_send(sockfd, common.net_pack("BIz", 0x0E, command_colour_error, "Could not log in to group"..prms[1].." with that password"))
+			end
+		else
+			commands["help"].func(plr, plrid, sockfd, {"login"})
 		end
 	end
 })

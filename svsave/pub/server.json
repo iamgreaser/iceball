@@ -1,0 +1,35 @@
+{
+	"name": "Iceball Server",
+	"motd": "Welcome to Iceball",
+	"permissions": {
+		"default" : {
+			"permissions" : [
+				"buld",
+				"snip"
+			]
+		},
+		"rakiru" : {
+			"password" : "123456",
+			"permissions" : [
+				"god"
+			]
+		},
+		"moderator" : {
+			"password" : "iceball",
+			"permissions" : [
+				"god",
+				"kick",
+				"tempban",
+				"teleport",
+				"goto"
+			]
+		},
+		"admin" : {
+			"password" : "Password1",
+			"extends" : "moderator",
+			"permissions" : [
+				"ban"
+			]
+		}
+	}
+}

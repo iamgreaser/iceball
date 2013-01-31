@@ -495,7 +495,45 @@ end
 
 -- parse arguments
 
-local loose, user_toggles, user_settings = parse_commandline_options({...})
+local loose, user_toggles, server_settings = parse_commandline_options({...})
+local server_config_filename = server_settings['server'] or "svsave/pub/server.json"
+server_config = common.json_load(server_config_filename)
+-- TODO: Check that server_config ~= nil
+
+permissions = {}
+
+if server_config.permissions ~= nil then
+	print "Permissions:"
+	-- For some reason, this gives them in reverse order, so extends doesn't work properly atm
+	for group, perms in pairs(server_config.permissions) do
+		print("  Group: "..group)
+		permissions[group] = {}
+		if perms.password ~= nil then
+			permissions[group]["password"] = perms.password
+		else
+			permissions[group]["password"] = ""
+		end
+		print("    Password: "..permissions[group]["password"])
+		if perms.extends ~= nil then
+			if permissions[perms.extends] ~= nil then
+				print("    Extends: "..perms.extends)
+				permissions[group]["perms"] = copy_table(permissions[perms.extends])
+			else
+				print("    Extends: "..perms.extends.." (doesn't exist)")
+				permissions[group]["perms"] = {}
+			end
+		else
+			permissions[group]["perms"] = {}
+		end
+		if perms.permissions ~= nil then
+			print("    Permissions:")
+			for k, v in pairs(perms.permissions) do
+				print("      * "..v)
+				permissions[group]["perms"][v] = true
+			end
+		end
+	end
+end
 
 -- load map
 map_fname = loose[1]
