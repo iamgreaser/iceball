@@ -23,7 +23,7 @@ end
 function nade_prune(sec_current)
 	local i
 	for i=nades.head,nades.tail do
-		if nades[i].dead then
+		if nades[i] and nades[i].dead then
 			nades[i] = nil
 			if i == nades.head then
 				nades.head = nades.head + 1
