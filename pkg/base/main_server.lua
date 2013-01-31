@@ -52,6 +52,12 @@ function slot_add(sockfd, tidx, wpn, name)
 				weapon = _wpn,
 				pid = i,
 			})
+			if permissions["default"] ~= nil then
+				players[i].permissions = permissions["default"].perms
+				print("Adding default permissions for user")
+			else
+				print("Default permissions do not exist")
+			end
 			return i
 		end
 	end
