@@ -505,7 +505,7 @@ map_loaded = common.map_load(map_fname, "auto")
 if map_fname then
 	map_loaded = common.map_load(map_fname, "auto")
 else
-	map_loaded = loadfile("pkg/base/gen_classic.lua")()
+	map_loaded = loadfile("pkg/base/gen_classic.lua")(loose, user_toggles, user_settings)
 end
 common.map_set(map_loaded)
 

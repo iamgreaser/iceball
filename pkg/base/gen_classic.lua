@@ -16,6 +16,15 @@
 ]]
 
 do
+	local loose, user_toggles, user_settings
+	loose, user_toggles, user_settings = ...
+	local mw,mh
+	mw = user_settings["mw"] or 512
+	mh = user_settings["mh"] or 512
+	local xs,zs
+	xs = math.floor(512/mw)
+	zs = math.floor(512/mh)
+
 	local lmap = common.map_get()
 	local function rnd()
 		return (math.random()*2-1)
@@ -32,7 +41,7 @@ do
 		return rl
 	end
 
-	local ret = common.map_new(512, 96, 512)
+	local ret = common.map_new(mw, 96, mh)
 	common.map_set(ret)
 	local hmap = {}
 	local x,y,z
@@ -90,12 +99,12 @@ do
 		end
 	end
 
-	for z=0,511 do for x=0,511 do
+	for z=0,511,zs do for x=0,511,xs do
 		local cb=hmap[z+1][x+1]
-		local cx1 = hmap[z+1][(x-1)%512+1]
-		local cx2 = hmap[z+1][(x+1)%512+1]
-		local cz1 = hmap[(z-1)%512+1][x+1]
-		local cz2 = hmap[(z+1)%512+1][x+1]
+		local cx1 = hmap[z+1][(x-xs)%512+1]
+		local cx2 = hmap[z+1][(x+xs)%512+1]
+		local cz1 = hmap[(z-zs)%512+1][x+1]
+		local cz2 = hmap[(z+zs)%512+1][x+1]
 
 		local y1 = math.floor(0.5+math.min(math.min(cx1,cx2),math.min(cz1,cz2)))
 		local y2 = math.floor(0.5+math.max(math.max(cx1,cx2),math.max(cz1,cz2)))
@@ -107,7 +116,7 @@ do
 			l[#l+1] = cpal(cb)
 			cb = cb + 1
 		end
-		common.map_pillar_set(x, z, lfilt(l))
+		common.map_pillar_set(x/xs, z/zs, lfilt(l))
 	end end
 
 	common.map_set(lmap)
