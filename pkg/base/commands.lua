@@ -216,8 +216,7 @@ command_register({
 		if table.getn(prms) == 2 then
 			local success = false
 			if permissions[prms[1]] ~= nil and prms[2] == permissions[prms[1]].password then
-				-- Should logging in change permissions or add to them? Should you be able to log out?
-				plr.permissions = permissions[prms[1]].perms
+				plr.add_permission_group(permissions[prms[1]].perms)
 				success = true
 			end
 			if success then
