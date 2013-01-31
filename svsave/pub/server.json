@@ -4,8 +4,9 @@
 	"permissions": {
 		"default" : {
 			"permissions" : [
-				"buld",
-				"snip"
+				"me",
+				"kill",
+				"squad"
 			]
 		},
 		"rakiru" : {
