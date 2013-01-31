@@ -501,7 +501,7 @@ end
 
 -- parse arguments
 
-local loose, user_toggles, server_settings = parse_commandline_options({...})
+local loose, server_toggles, server_settings = parse_commandline_options({...})
 local server_config_filename = server_settings['server'] or "svsave/pub/server.json"
 server_config = common.json_load(server_config_filename)
 -- TODO: Check that server_config ~= nil
@@ -565,7 +565,7 @@ map_loaded = common.map_load(map_fname, "auto")
 if map_fname then
 	map_loaded = common.map_load(map_fname, "auto")
 else
-	map_loaded = loadfile("pkg/base/gen_classic.lua")(loose, user_toggles, user_settings)
+	map_loaded = loadfile("pkg/base/gen_classic.lua")(loose, server_toggles, server_settings)
 end
 common.map_set(map_loaded)
 
