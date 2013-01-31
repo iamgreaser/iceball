@@ -28,7 +28,7 @@ Ice Lua Components contains some content from libSDL,
   which is licensed under the LGPL version 2.1.
 It is marked accordingly.
 
-The manual is in the public domain, except where
+The manual is in the public domain, except where otherwise specified.
 
 REQUIREMENTS:
 - a C compiler that isn't crap (read: not MSVC++)
