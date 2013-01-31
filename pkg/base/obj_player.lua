@@ -54,13 +54,13 @@ function new_player(settings)
 	end
 	
 	function this.add_permission_group(perms)
-		for k,v in perms do
+		for k,v in pairs(perms) do
 			this.permissions[v] = true
 		end
 	end
 	
 	function this.remove_permission_group(perms)
-		for k,v in perms do
+		for k,v in pairs(perms) do
 			this.permissions[v] = nil
 		end
 	end
