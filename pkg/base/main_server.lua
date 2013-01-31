@@ -511,7 +511,23 @@ permissions = {}
 if server_config.permissions ~= nil then
 	print "Permissions:"
 	-- For some reason, this gives them in reverse order, so extends doesn't work properly atm
-	for group, perms in pairs(server_config.permissions) do
+	-- GOGO HORRIBLE WORKAROUND
+	local temp_table_of_horror = {}
+	local temp_int_of_horror = 1
+	for k,v in pairs(server_config.permissions) do
+		temp_table_of_horror[temp_int_of_horror] = {k,v}
+		temp_int_of_horror = temp_int_of_horror + 1
+	end
+	local size_of_horror = table.getn(temp_table_of_horror)
+	for temp_int_of_horror = 1, size_of_horror/2, 1 do
+		local temp_thing_of_horror = temp_table_of_horror[temp_int_of_horror]
+		temp_table_of_horror[temp_int_of_horror] = temp_table_of_horror[size_of_horror - (temp_int_of_horror - 1)]
+		temp_table_of_horror[size_of_horror - (temp_int_of_horror - 1)] = temp_thing_of_horror
+	end
+	-- OHGODWHATHAVEIDONE
+	for horror_one, horror_two in pairs(temp_table_of_horror) do
+		local group = horror_two[1]
+		local perms = horror_two[2]
 		print("  Group: "..group)
 		permissions[group] = {}
 		if perms.password ~= nil then
