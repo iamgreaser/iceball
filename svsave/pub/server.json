@@ -24,6 +24,7 @@
 				"kick",
 				"tempban",
 				"teleport",
+				"gmode",
 				"goto"
 			]
 		},

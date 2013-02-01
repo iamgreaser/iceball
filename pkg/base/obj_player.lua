@@ -15,6 +15,10 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
+PLM_NORMAL = 1
+PLM_SPECTATE = 2
+PLM_EDITOR = 3
+
 function new_player(settings)
 	local this = {} this.this = this this.this.this = this this = this.this
 
@@ -25,6 +29,7 @@ function new_player(settings)
 	this.alive = false
 	this.spawned = false
 	this.zooming = false
+	this.mode = settings.mode or PLM_NORMAL
 
 	this.mdl_block = common.model_new(1)
 	this.mdl_block = common.model_bone_new(this.mdl_block)
@@ -325,9 +330,9 @@ function new_player(settings)
 	end
 	
 	function this.update_score()
-		net_broadcast(nil, common.net_pack("BBBBhhhzz",
+		net_broadcast(nil, common.net_pack("BBBBBhhhzz",
 			0x05, this.pid,
-			this.team, this.weapon,
+			this.team, this.weapon, this.mode,
 			this.score, this.kills, this.deaths,
 			this.name, this.squad))
 	end
@@ -379,6 +384,10 @@ function new_player(settings)
 	end
 
 	function this.damage(amt, kcol, kmsg, enemy)
+		if this.mode ~= PLM_NORMAL then
+			return nil
+		end
+
 		return this.set_health_damage(
 			this.health - amt, kcol, kmsg, enemy)
 	end
@@ -443,6 +452,9 @@ function new_player(settings)
 	end
 
 	function this.grenade_damage(amt, enemy)
+		if enemy.mode ~= PLM_NORMAL then
+			return nil
+		end
 		--print("damage",this.name,part,amt)
 		local midmsg = " grenaded "
 		if this.team == enemy.team and this ~= enemy then
@@ -466,7 +478,7 @@ function new_player(settings)
 	end
 
 	function this.intel_pickup(intel)
-		if this.has_intel or intel.team == this.team then
+		if this.mode ~= PLM_NORMAL or this.has_intel or intel.team == this.team then
 			return false
 		end
 		
@@ -685,7 +697,7 @@ function new_player(settings)
 		this.dangx = (nax - this.angx)
 		
 		-- apply delta angles
-		if MODE_DRUNKCAM_LOCALTURN and this.dangy ~= 0 then
+		if (this.mode ~= PLM_NORMAL or MODE_DRUNKCAM_LOCALTURN) and this.dangy ~= 0 then
 			this.angx = this.angx + this.dangx
 			
 			local fx,fy,fz -- forward
@@ -754,7 +766,7 @@ function new_player(settings)
 		fwx,fwy,fwz = sya*cxa, sxa, cya*cxa
 		
 		if client and this.alive and (not this.t_switch) then
-		if this.ev_lmb then
+		if this.ev_lmb and this.mode ~= PLM_SPECTATE then
 			if this.tool == TOOL_BLOCK and this.blx1 then
 				if (not this.t_newblock) and this.blocks > 0 then
 				if this.blx1 >= 0 and this.blx1 < xlen and this.blz1 >= 0 and this.blz1 < zlen then
@@ -766,7 +778,9 @@ function new_player(settings)
 						this.blk_color[2],
 						this.blk_color[1],
 						1))
-					this.blocks = this.blocks - 1
+					if this.mode == PLM_NORMAL then
+						this.blocks = this.blocks - 1
+					end
 					this.t_newblock = sec_current + MODE_DELAY_BLOCK_BUILD
 					this.t_switch = this.t_newblock
 				end
@@ -776,7 +790,7 @@ function new_player(settings)
 				if (not this.t_newspade1) then
 				
 				-- see if there's anyone we can kill
-				local d = this.bld2 or 5 -- NOTE: cannot spade through walls anymore. Sorry guys :/
+				local d = this.bld2 or 4 -- NOTE: cannot spade through walls anymore. Sorry guys :/
 				local hurt_idx = nil
 				local hurt_part = nil
 				local hurt_part_idx = 0
@@ -829,14 +843,16 @@ function new_player(settings)
 			elseif this.tool == TOOL_NADE then
 				if (not this.t_newnade) and this.grenades > 0 then
 					if (not this.t_nadeboom) then
-						this.grenades = this.grenades - 1
+						if this.mode == PLM_NORMAL then
+							this.grenades = this.grenades - 1
+						end
 						this.t_nadeboom = sec_current + MODE_NADE_FUSE
 					end
 				end
 			else
 				
 			end
-		elseif this.ev_rmb then
+		elseif this.mode ~= PLM_SPECTATE and this.ev_rmb then
 			if this.tool == TOOL_BLOCK and this.blx3 and this.alive then
 				local ct,cr,cg,cb
 				ct,cr,cg,cb = map_block_pick(this.blx3, this.bly3, this.blz3)
@@ -874,28 +890,38 @@ function new_player(settings)
 			mvx = mvx - 1.0
 		end
 
-		if this.ev_crouch then
-			if this.grounded and not this.crouching then
-				if MODE_SOFTCROUCH then this.jerkoffs = this.jerkoffs - 1 end
-				this.y = this.y + 1
+		if this.mode == PLM_NORMAL then
+			if this.ev_crouch then
+				if this.grounded and not this.crouching then
+					if MODE_SOFTCROUCH then this.jerkoffs = this.jerkoffs - 1 end
+					this.y = this.y + 1
+				end
+				this.crouching = true
 			end
-			this.crouching = true
-		end
-		if this.ev_jump and this.alive and (MODE_CHEAT_FLY or this.grounded) then
-			this.vy = -7
-			this.ev_jump = false
-			if client then
-				client.wav_play_global(wav_jump_up, this.x, this.y, this.z)
+			if this.ev_jump and this.alive and (MODE_CHEAT_FLY or this.grounded) then
+				this.vy = -7
+				this.ev_jump = false
+				if client then
+					client.wav_play_global(wav_jump_up, this.x, this.y, this.z)
+				end
+			end
+		else
+			if this.ev_crouch then
+				mvy = mvy + 1.0
+			end
+			if this.ev_jump then
+				mvy = mvy - 1.0
 			end
 		end
 
-		-- normalise mvx,mvz
-		local mvd = math.max(0.00001,math.sqrt(mvx*mvx + mvz*mvz))
+		-- normalise mvx,mvy,mvz
+		local mvd = math.max(0.00001,math.sqrt(mvx*mvx + mvy*mvy + mvz*mvz))
 		mvx = mvx / mvd
+		mvy = mvy / mvd
 		mvz = mvz / mvd
 
 		-- apply tool speedup
-		if this.tool == TOOL_SPADE or this.tool == TOOL_BLOCK then
+		if this.mode == PLM_NORMAL and (this.tool == TOOL_SPADE or this.tool == TOOL_BLOCK) then
 			mvx = mvx * 1.25
 			mvz = mvz * 1.25
 		end
@@ -904,25 +930,28 @@ function new_player(settings)
 		local mvspd = 8.0
 		local mvchange = 10.0
 		mvx = mvx * mvspd
+		mvy = mvy * mvspd
 		mvz = mvz * mvspd
 
 		-- apply extra slowdowns
-		if not this.grounded then
-			mvx = mvx * 0.6
-			mvz = mvz * 0.6
-			mvchange = mvchange * 0.3
-		end
-		if inwater then
-			mvx = mvx * 0.6
-			mvz = mvz * 0.6
-		end
-		if this.crouching then
-			mvx = mvx * 0.5
-			mvz = mvz * 0.5
-		end
-		if this.zooming or this.ev_sneak then
-			mvx = mvx * 0.5
-			mvz = mvz * 0.5
+		if this.mode == PLM_NORMAL then
+			if not this.grounded then
+				mvx = mvx * 0.6
+				mvz = mvz * 0.6
+				mvchange = mvchange * 0.3
+			end
+			if inwater then
+				mvx = mvx * 0.6
+				mvz = mvz * 0.6
+			end
+			if this.crouching then
+				mvx = mvx * 0.5
+				mvz = mvz * 0.5
+			end
+			if this.zooming or this.ev_sneak then
+				mvx = mvx * 0.5
+				mvz = mvz * 0.5
+			end
 		end
 
 		-- apply rotation
@@ -930,7 +959,11 @@ function new_player(settings)
 
 		this.vx = this.vx + (mvx - this.vx)*(1.0-math.exp(-sec_delta*mvchange))
 		this.vz = this.vz + (mvz - this.vz)*(1.0-math.exp(-sec_delta*mvchange))
-		this.vy = this.vy + 2*9.81*sec_delta
+		if this.mode == PLM_NORMAL then
+			this.vy = this.vy + 2*9.81*sec_delta
+		else
+			this.vy = this.vy + (mvy - this.vy)*(1.0-math.exp(-sec_delta*mvchange))
+		end
 
 		local ox, oy, oz
 		local nx, ny, nz
@@ -1620,7 +1653,11 @@ function new_player(settings)
 			y = h-48}
 			
 		local function health_update(options)
-			this.health_text.text = ""..this.health
+			if this.mode == PLM_NORMAL then
+				this.health_text.text = ""..this.health
+			else
+				this.health_text.text = ""
+			end
 		end
 		
 		this.ammo_text = scene.textfield{

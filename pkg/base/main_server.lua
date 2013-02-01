@@ -213,7 +213,9 @@ function server.hook_tick(sec_current, sec_delta)
 			if x >= 0 and x < xlen and z >= 0 and z < zlen then
 			if y >= 0 and y <= ylen-3 then
 				if plr.blocks > 0 and map_is_buildable(x,y,z) then
-					plr.blocks = plr.blocks - 1
+					if plr.mode == PLM_NORMAL then
+						plr.blocks = plr.blocks - 1
+					end
 					map_block_set(x,y,z,ct,cr,cg,cb)
 					net_broadcast(nil, common.net_pack("BHHHBBBB",
 						0x08,x,y,z,cb,cg,cr,ct))
@@ -326,9 +328,9 @@ function server.hook_tick(sec_current, sec_delta)
 			name = (name ~= "" and name) or name_generate()
 			plr.set_health_damage(0, 0xFF800000, plr.name.." changed teams", nil)
 			plr.team = tidx
-			net_broadcast(nil, common.net_pack("BBBBhhhzz",
+			net_broadcast(nil, common.net_pack("BBBBBhhhzz",
 					0x05, plr.pid,
-					plr.team, plr.weapon,
+					plr.team, plr.weapon, plr.mode,
 					plr.score, plr.kills, plr.deaths,
 					plr.name, plr.squad))
 			net_broadcast(nil, common.net_pack("BIz", 0x0E, 0xFF800000,
@@ -350,9 +352,9 @@ function server.hook_tick(sec_current, sec_delta)
 				for i=1,players.max do
 					local plr = players[i]
 					if plr then
-						common.net_send(sockfd, common.net_pack("BBBBhhhzz",
+						common.net_send(sockfd, common.net_pack("BBBBBhhhzz",
 							0x05, i,
-							plr.team, plr.weapon,
+							plr.team, plr.weapon, plr.mode,
 							plr.score, plr.kills, plr.deaths,
 							plr.name, plr.squad))
 						common.net_send(sockfd, common.net_pack("BBfffBB",
@@ -387,9 +389,9 @@ function server.hook_tick(sec_current, sec_delta)
 				end
 				
 				-- relay this player to everyone
-				net_broadcast(nil, common.net_pack("BBBBhhhzz",
+				net_broadcast(nil, common.net_pack("BBBBBhhhzz",
 					0x05, cli.plrid,
-					plr.team, plr.weapon,
+					plr.team, plr.weapon, plr.mode,
 					plr.score, plr.kills, plr.deaths,
 					plr.name, plr.squad))
 				net_broadcast(nil, common.net_pack("BBfffBB",
@@ -443,7 +445,9 @@ function server.hook_tick(sec_current, sec_delta)
 					, 0x18, cli.plrid, cr, cg, cb))
 			end
 		elseif cid == 0x1B and plr and plr.grenades > 0 then
-			plr.grenades = plr.grenades - 1
+			if plr.mode == PLM_NORMAL then
+				plr.grenades = plr.grenades - 1
+			end
 			local x,y,z,vx,vy,vz,fuse
 			x,y,z,vx,vy,vz,fuse, pkt = common.net_unpack("hhhhhhH", pkt)
 			local n = new_nade({
