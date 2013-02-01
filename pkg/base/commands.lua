@@ -172,15 +172,15 @@ command_register({
 			prms[1] = tostring(prms[1])
 			local x, z
 			local success = pcall(function()
-				x = (string.byte(prms[1]:lower()) - 97) * 64
-				z = (tonumber(prms[1]:sub(2, 2)) - 1) * 64
+				x = (string.byte(prms[1]:lower()) - 97) * 64 + 32
+				z = (tonumber(prms[1]:sub(2, 2)) - 1) * 64 + 32
 			end)
 			local xlen, _, zlen = common.map_get_dims()
 			if (success and x >= 0 and x < xlen and z >= 0 and z < zlen) then
-				local y = common.map_pillar_get(x, z)[1+1]
+				local y = common.map_pillar_get(x, z)[1+1] - 3
 				plr.set_pos_recv(x, y, z)
 				net_broadcast(nil, common.net_pack("BBhhh",
-					0x03, plrid, x * 32.0, y * 32.0, z * 32.0))
+					0x03, plrid, x * 32.0 + 16, y * 32.0, z * 32.0 + 16))
 			else
 				common.net_send(sockfd, common.net_pack("BIz", 0x0E, command_colour_error, "Error: Invalid coordinates"))
 			end
