@@ -795,7 +795,7 @@ function new_player(settings)
 							
 							local dotk = dx*fwx+dy*fwy+dz*fwz
 							local dot = math.sqrt(dd-dotk*dotk)
-							if dot < 0.55 and dd < hurt_dist then
+							if dotk > 0 and dot < 0.55 and dd < hurt_dist then
 								hurt_idx = i
 								hurt_dist = dd
 								hurt_part_idx = j
@@ -1584,7 +1584,7 @@ function new_player(settings)
 						
 						local dotk = dx*fwx+dy*fwy+dz*fwz
 						local dot = math.sqrt(dd-dotk*dotk)
-						if dot < 0.55 and dd < target_dist then
+						if dotk > 0.0 and dot < 0.55 and dd < target_dist then
 							target_idx = i
 							break
 						end
