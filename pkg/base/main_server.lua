@@ -505,6 +505,9 @@ local loose, server_toggles, server_settings = parse_commandline_options({...})
 local server_config_filename = server_settings['server'] or "svsave/pub/server.json"
 server_config = common.json_load(server_config_filename)
 -- TODO: Check that server_config ~= nil
+if server_settings.svseed then
+	math.randomseed(0+server_settings.svseed)
+end
 
 permissions = {}
 

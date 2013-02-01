@@ -75,6 +75,10 @@ do
 		s = s / 2
 	end
 	
+	local function hbias(x,y)
+		return -math.sin(math.pi*0.125+math.pi*2*x/512)
+	end
+	
 	local m1,m2
 	m1=hmap[1][1]
 	m2=m1
@@ -85,16 +89,20 @@ do
 	end end
 	
 	for y=1,512 do for x=1,512 do
-		hmap[y][x] = (hmap[y][x] - m1)/(m2-m1)*32+(95-40)-24*math.sin(math.pi*2*x/512)
+		hmap[y][x] = (hmap[y][x] - m1)/(m2-m1)*2.2 + hbias(x,y)
+		hmap[y][x] = math.sin(hmap[y][x]*math.pi*1.1/4)*32+64
 	end end
 	
+	local cw2
+	cw2 = 97
 	local function cpal(y)
-		if y > 110 then
-			return {128,0,0,1}
-		elseif y > 97 then
-			return {(110-y)/(110-97)*127+128,(110-y)/(110-97)*32,0,1} 
+		y = y + 1.5 
+		if y > cw2 then
+			return {192,0,0,1}
+		elseif y > 96 then
+			return {(cw2-y)/(cw2-96)*63+192,(cw2-y)/(cw2-96)*32,0,1} 
 		else
-			local r = math.min(1,(97-y)/70)
+			local r = math.min(1,(96-y)/70)
 			return {255*r,128+127*r,32+223*r,1}
 		end
 	end
