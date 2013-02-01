@@ -219,11 +219,8 @@ weapons = {
 					local dz = p.z-plr.z
 					
 					for j=1,3 do
-						local dd = dx*dx+dy*dy+dz*dz
-						
-						local dotk = dx*fwx+dy*fwy+dz*fwz
-						local dot = math.sqrt(dd-dotk*dotk)
-						if dotk > 0.0 and dot < 0.55 and dd < hurt_dist then
+						local dot = isect_line_sphere_delta(dx,dy,dz,fwx,fwy,fwz)
+						if dot and dot < 0.55 and dd < hurt_dist then
 							hurt_idx = i
 							hurt_dist = dd
 							hurt_part_idx = j
@@ -425,11 +422,8 @@ weapons = {
 					local dz = p.z-plr.z
 					
 					for j=1,3 do
-						local dd = dx*dx+dy*dy+dz*dz
-						
-						local dotk = dx*fwx+dy*fwy+dz*fwz
-						local dot = math.sqrt(dd-dotk*dotk)
-						if dot < 0.55 and dd < hurt_dist then
+						local dot = isect_line_sphere_delta(dx,dy,dz,fwx,fwy,fwz)
+						if dot and dot < 0.55 and dd < hurt_dist then
 							hurt_idx = i
 							hurt_dist = dd
 							hurt_part_idx = j
