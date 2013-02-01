@@ -232,6 +232,7 @@ function new_player(settings)
 
 	function this.tool_switch(tool)
 		if not this.alive then return end
+		if this.mode == PLM_SPECTATE then return end
 
 		if this.tool == TOOL_GUN then
 			if this.wpn then
@@ -929,6 +930,7 @@ function new_player(settings)
 		-- apply base slowdown
 		local mvspd = 8.0
 		local mvchange = 10.0
+		if this.mode ~= PLM_NORMAL then mvspd = 20.0 end
 		mvx = mvx * mvspd
 		mvy = mvy * mvspd
 		mvz = mvz * mvspd
@@ -1145,6 +1147,8 @@ function new_player(settings)
 	end
 
 	function this.render()
+		if this.mode == PLM_SPECTATE then return end
+
 		local ays,ayc,axs,axc
 		ays = math.sin(this.angy)
 		ayc = math.cos(this.angy)
@@ -1673,6 +1677,9 @@ function new_player(settings)
 			local tool = this.tool + 1
 			this.ammo_text.color = tool_textcolor[tool]()
 			this.ammo_text.text = tool_textgen[tool]()
+			if this.mode == PLM_SPECTATE then
+				this.ammo_text.text = ""
+			end
 		end
 		
 		this.typing_type = scene.textfield{
@@ -1910,6 +1917,9 @@ function new_player(settings)
 	end
 	
 	function this.on_mouse_button(button, state)
+		if this.mode == PLM_SPECTATE then
+			return
+		end
 		if this.tool == TOOL_GUN and this.alive then
 			this.wpn.click(button, state)
 		end
@@ -1988,7 +1998,7 @@ function new_player(settings)
 				chat_add(chat_text, sec_last, "Map saved to "..s, 0xFFC00000)
 			elseif not this.menus_visible() then
 				if key == BTSK_RELOAD then
-					if this.alive and this.wpn and this.tool == TOOL_GUN then
+					if this.mode ~= PLM_SPECTATE and this.alive and this.wpn and this.tool == TOOL_GUN then
 						this.wpn.reload()
 					end
 				elseif key == BTSK_TOOL1 then
@@ -2069,6 +2079,7 @@ function new_player(settings)
 		prv_recolor_block(this.blk_color[1],this.blk_color[2],this.blk_color[3])
 
 		-- TODO: wireframe cube
+		if this.mode ~= PLM_SPECTATE then
 		if this.tool == TOOL_BLOCK and this.blx1 and (this.alive or this.respawning) then
 			if map_is_buildable(this.blx1, this.bly1, this.blz1) or MODE_BLOCK_PLACE_IN_AIR then
 				bname, mdl_data = client.model_bone_get(mdl_cube, mdl_cube_bone)
@@ -2105,6 +2116,7 @@ function new_player(settings)
 				(this.blz1*2+this.blz2)/3+0.5,
 				-rotpos*0.01, -rotpos*0.004, 0.0, 0.1+0.01*math.sin(-rotpos*0.071))
 		end
+		end
 		--[[
 		client.model_render_bone_local(mdl_test, mdl_test_bone,
 			1-0.2, 600/800-0.2, 1.0,
@@ -2115,7 +2127,9 @@ function new_player(settings)
 			this.create_hud()
 		end
 		
-		this.render()
+		if this.mode ~= PLM_SPECTATE then
+			this.render()
+		end
 
 		if MODE_DEBUG_SHOWBOXES then
 			client.model_render_bone_global(mdl_bbox,
@@ -2129,7 +2143,7 @@ function new_player(settings)
 				plr.render()
 				if plr.alive and plr.team == this.team then
 					local px,py
-					local dx,dy,dzNULL
+					local dx,dy,dz
 					dx,dy,dz = plr.x-this.x,
 						plr.y+plr.jerkoffs-this.y-this.jerkoffs-0.5,
 						plr.z-this.z
@@ -2181,6 +2195,14 @@ function new_player(settings)
 			end
 		end
 		
+		if this.mode == PLM_SPECTATE then
+			this.cpal.visible = false
+			this.cpal_rect.visible = false
+		else
+			this.cpal.visible = true
+			this.cpal_rect.visible = true
+		end
+
 		this.scene.draw()
 
 		if debug_enabled then

@@ -129,10 +129,10 @@ command_register({
 command_register({
 	command = "gmode",
 	permission = "gmode",
-	usage = "/gmode #; where 1=normal, 2=editor, 3=spectate", 
+	usage = "/gmode #; where 1=normal, 2=spectate, 3=editor", 
 	func = function(plr, plrid, sockfd, prms, msg)
 		if table.getn(prms) == 1 then
-			local n = math.floor(tonumber(prms[1]))
+			local n = math.floor(tonumber(prms[1] or 0))
 			if n >= 1 and n <= 3 then
 				plr.mode = n
 				plr.update_score()
