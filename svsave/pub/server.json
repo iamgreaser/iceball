@@ -10,14 +10,14 @@
 			]
 		},
 		"rakiru" : {
-			"password" : "123456",
+			"password" : "change me (don't use spaces)",
 			"extends" : "default",
 			"permissions" : [
 				"god"
 			]
 		},
 		"moderator" : {
-			"password" : "iceball",
+			"password" : "change me (don't use spaces)",
 			"extends" : "default",
 			"permissions" : [
 				"god",
@@ -28,7 +28,7 @@
 			]
 		},
 		"admin" : {
-			"password" : "Password1",
+			"password" : "change me (don't use spaces)",
 			"extends" : "moderator",
 			"permissions" : [
 				"ban"
