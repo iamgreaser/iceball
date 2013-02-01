@@ -513,48 +513,40 @@ permissions = {}
 
 if server_config.permissions ~= nil then
 	print "Permissions:"
-	-- For some reason, this gives them in reverse order, so extends doesn't work properly atm
-	-- GOGO HORRIBLE WORKAROUND
-	local temp_table_of_horror = {}
-	local temp_int_of_horror = 1
-	for k,v in pairs(server_config.permissions) do
-		temp_table_of_horror[temp_int_of_horror] = {k,v}
-		temp_int_of_horror = temp_int_of_horror + 1
-	end
-	local size_of_horror = table.getn(temp_table_of_horror)
-	for temp_int_of_horror = 1, size_of_horror/2, 1 do
-		local temp_thing_of_horror = temp_table_of_horror[temp_int_of_horror]
-		temp_table_of_horror[temp_int_of_horror] = temp_table_of_horror[size_of_horror - (temp_int_of_horror - 1)]
-		temp_table_of_horror[size_of_horror - (temp_int_of_horror - 1)] = temp_thing_of_horror
-	end
-	-- OHGODWHATHAVEIDONE
-	for horror_one, horror_two in pairs(temp_table_of_horror) do
-		local group = horror_two[1]
-		local perms = horror_two[2]
+	for group, perms in pairs(server_config.permissions) do
 		print("  Group: "..group)
 		permissions[group] = {}
+		permissions[group]["perms"] = {}
 		if perms.password ~= nil then
 			permissions[group]["password"] = perms.password
 		else
 			permissions[group]["password"] = ""
 		end
-		print("    Password: "..permissions[group]["password"])
 		if perms.extends ~= nil then
-			if permissions[perms.extends] ~= nil then
-				print("    Extends: "..perms.extends)
-				permissions[group]["perms"] = copy_table(permissions[perms.extends])
-			else
-				print("    Extends: "..perms.extends.." (doesn't exist)")
-				permissions[group]["perms"] = {}
-			end
+			permissions[group]["extends"] = perms.extends
 		else
-			permissions[group]["perms"] = {}
+			permissions[group]["extends"] = ""
 		end
+		print("    Password: "..permissions[group]["password"])
+		print("    Extends: "..permissions[group]["extends"])
 		if perms.permissions ~= nil then
 			print("    Permissions:")
 			for k, v in pairs(perms.permissions) do
 				print("      * "..v)
 				permissions[group]["perms"][v] = true
+			end
+		end
+	end
+	-- Do inheritance
+	-- We do it this way to avoid costly lookups later, and possible infinite loops from looping inheritance
+	for group, perms in pairs(permissions) do
+		if perms["extends"] ~= "" then
+			if permissions[perms["extends"]] ~= nil then
+				for k,v in pairs(permissions[perms["extends"]]) do
+					perms["perms"][k] = v
+				end
+			else
+				print("Error: Group \""..group.."\" extends nonexistent group \""..perms["extends"].."\"")
 			end
 		end
 	end
