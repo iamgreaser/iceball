@@ -89,7 +89,7 @@ return function (plr)
 				local dz = p.z-plr.z
 				
 				for j=1,3 do
-					local dot = isect_line_sphere_delta(dx,dy,dz,fwx,fwy,fwz)
+					local dot, dd = isect_line_sphere_delta(dx,dy,dz,fwx,fwy,fwz)
 					if dot and dot < 0.55 and dd < hurt_dist then
 						hurt_idx = i
 						hurt_dist = dd

@@ -371,7 +371,7 @@ function isect_line_sphere_delta(dx,dy,dz,fwx,fwy,fwz)
 	local dotk = dx*fwx+dy*fwy+dz*fwz
 	if dotk <= 0 then return nil end
 	local dot = math.sqrt(dd-dotk*dotk)
-	return dot
+	return dot, dd
 end
 
 function isect_line_sphere(x1,y1,z1,fx,fy,fz,x2,y2,z2)
