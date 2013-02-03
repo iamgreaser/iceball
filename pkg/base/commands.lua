@@ -239,7 +239,7 @@ command_register({
 			if success then
 				common.net_send(sockfd, common.net_pack("BIz", 0x0E, command_colour_success, "You have successfully logged in as "..prms[1]))
 			else
-				common.net_send(sockfd, common.net_pack("BIz", 0x0E, command_colour_error, "Could not log in to group"..prms[1].." with that password"))
+				common.net_send(sockfd, common.net_pack("BIz", 0x0E, command_colour_error, "Could not log in to group "..prms[1].." with that password"))
 			end
 		else
 			commands["help"].func(plr, plrid, sockfd, {"login"})
