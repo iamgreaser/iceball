@@ -351,6 +351,27 @@ function new_player(settings)
 		end
 	end
 
+	local function blood_particles()
+		local i
+		local blood_particlecount = math.random() * 10 + 20
+		local pvel = 0.5
+		for i=1,blood_particlecount do
+			particles_add(new_particle{
+				x = this.x,
+				y = this.y,
+				z = this.z,
+				vx = pvel*(2*math.random()-1),
+				vy = pvel*(2*math.random()-1.8),
+				vz = pvel*(2*math.random()-1),
+				r = 200 + math.random() * 55,
+				g = 60 + math.random() * 20,
+				b = 60 + math.random() * 20,
+				size = 8 + math.random() * 16,
+				lifetime = 1
+			})
+		end
+	end
+
 	function this.set_health_damage(amt, kcol, kmsg, enemy)
 		this.health = amt
 		
@@ -381,6 +402,10 @@ function new_player(settings)
 		
 		if server then
 			net_broadcast(nil, common.net_pack("BBB", 0x14, this.pid, this.health))
+		end
+		
+		if client then
+			blood_particles()	
 		end
 	end
 
