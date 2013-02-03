@@ -466,6 +466,10 @@ function server.hook_tick(sec_current, sec_delta)
 		elseif cid == 0x1D and plr then
 			-- TODO: actually reload with serverside counts
 			net_broadcast(sockfd, common.net_pack("BB", 0x1D, cli.plrid))
+		elseif cid == 0x20 and plr then
+			local x, y, z, amt
+			x, y, z, amt = common.net_unpack("HHHH", pkt)
+			net_broadcast(nil, common.net_pack("BHHHH", 0x20, x, y, z, amt))
 		end
 		-- TODO!
 	end

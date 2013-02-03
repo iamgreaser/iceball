@@ -856,7 +856,7 @@ function new_player(settings)
 				elseif this.blx2 then
 				if this.blx2 >= 0 and this.blx2 < xlen and this.blz2 >= 0 and this.blz2 < zlen then
 				if this.bly2 <= ylen-3 then
-					bhealth_damage(this.blx2, this.bly2, this.blz2, MODE_BLOCK_DAMAGE_SPADE)
+					common.net_send(nil, common.net_pack("BHHHH", 0x20, this.blx2, this.bly2, this.blz2, MODE_BLOCK_DAMAGE_SPADE))
 					this.t_newspade1 = sec_current + MODE_DELAY_SPADE_HIT
 				end
 				end

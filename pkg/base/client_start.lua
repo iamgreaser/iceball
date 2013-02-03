@@ -739,6 +739,10 @@ function h_tick_main(sec_current, sec_delta)
 			local tidx, score
 			tidx, score = common.net_unpack("bh", pkt)
 			teams[tidx].score = score
+		elseif cid == 0x20 then
+			local x, y, z, amt
+			x, y, z, amt = common.net_unpack("HHHH", pkt)
+			bhealth_damage(x, y, z, amt)
 		end
 	end
 	tracer_prune(sec_current)

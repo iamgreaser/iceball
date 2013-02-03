@@ -133,7 +133,7 @@ return function (plr)
 			end
 			
 			if cx2 and cy2 <= ylen-3 then
-				bhealth_damage(cx2,cy2,cz2,MODE_BLOCK_DAMAGE_RIFLE)
+				common.net_send(nil, common.net_pack("BHHHH", 0x20, cx2, cy2, cz2, MODE_BLOCK_DAMAGE_RIFLE))
 			end
 		end
 		
