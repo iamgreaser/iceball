@@ -93,17 +93,23 @@ do
 		hmap[y][x] = math.sin(hmap[y][x]*math.pi*1.1/4)*32+64
 	end end
 	
-	local cw2
-	cw2 = 97
-	local function cpal(y)
-		y = y + 1.5 
-		if y > cw2 then
-			return {192,0,0,1}
-		elseif y > 96 then
-			return {(cw2-y)/(cw2-96)*63+192,(cw2-y)/(cw2-96)*32,0,1} 
+	local water_lo = 97
+	local water_hi = water_lo - 2
+	local water_dist = water_lo - water_hi
+	local land_lo = water_hi - 4
+	local function cpal(y, highest)
+		if water_hi < y or highest >= water_hi then
+			local water_depth = math.min(1, math.max(0,(water_lo-y)/water_dist))
+			return {water_depth*63+192,
+					water_depth*32,
+					0,
+					1} 
 		else
-			local r = math.min(1,(96-y)/70)
-			return {255*r,128+127*r,32+223*r,1}
+			local land_height = math.min(1,(water_hi-y)/land_lo)
+			return {255*land_height,
+					128+127*land_height,
+					32+223*land_height,
+					1}
 		end
 	end
 
@@ -121,7 +127,7 @@ do
 
 		local l = {{0, ps, pe, 0}}
 		for y=ps,pe do
-			l[#l+1] = cpal(cb)
+			l[#l+1] = cpal(cb, ps)
 			cb = cb + 1
 		end
 		common.map_pillar_set(x/xs, z/zs, lfilt(l))
