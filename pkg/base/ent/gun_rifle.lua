@@ -59,6 +59,20 @@ return function (plr)
 				plr.angy,plr.angx)
 			
 			client.wav_play_global(wav_rifle_shot, plr.x, plr.y, plr.z)
+			
+			particles_add(new_particle{
+				x = plr.x,
+				y = plr.y,
+				z = plr.z,
+				vx = math.sin(plr.angy - math.pi / 4) / 2 + math.random() * 0.25,
+				vy = 0.1 + math.random() * 0.25,
+				vz = math.cos(plr.angy - math.pi / 4) / 2 + math.random() * 0.25,
+				r = 250,
+				g = 215,
+				b = 0,
+				size = 8,
+				lifetime = 5
+			})
 		end
 		
 		local sya = math.sin(plr.angy)

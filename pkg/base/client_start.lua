@@ -676,6 +676,19 @@ function h_tick_main(sec_current, sec_delta)
 					plr.angy,plr.angx,
 					sec_current)
 				client.wav_play_global(wav_rifle_shot, plr.x, plr.y, plr.z)
+				particles_add(new_particle{
+					x = plr.x,
+					y = plr.y,
+					z = plr.z,
+					vx = math.sin(plr.angy - math.pi / 4) / 2,
+					vy = 0.1,
+					vz = math.cos(plr.angy - math.pi / 4) / 2,
+					r = 250,
+					g = 215,
+					b = 0,
+					size = 8,
+					lifetime = 5
+				})
 			end
 		elseif cid == 0x1B then
 			local x,y,z,vx,vy,vz,fuse
