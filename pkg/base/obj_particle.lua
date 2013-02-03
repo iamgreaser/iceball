@@ -90,7 +90,7 @@ function new_particle(settings)
 			db)
 		
 		local df = 1.0
-		if d then
+		if d and not this.noclip then
 			df = math.max(0,d/db-0.001)
 			--print("df",df,d,db)
 		end
