@@ -245,6 +245,22 @@ function bhealth_damage(x,y,z,amt)
 	bhealth[bhealth.tail] = {x=x,y=y,z=z,time=blk.time}
 	
 	blk.qidx = bhealth.tail
+	
+	local block_particlecount = math.random() * 20 + 10
+	for i=1,block_particlecount do
+		particles_add(new_particle{
+			x = x + 0.5,
+			y = y + 0.5,
+			z = z + 0.5,
+			vx = math.random() * 2 - 1,
+			vy = math.random(),
+			vz = math.random() * 2 - 1,
+			r = math.floor(c[2]*light+0.5),
+			g = math.floor(c[3]*light+0.5),
+			b = math.floor(c[4]*light+0.5),
+			lifetime = 0.5 + math.random() * 0.25
+		})
+	end
 end
 
 function bhealth_prune(time)
