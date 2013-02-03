@@ -45,7 +45,9 @@ LIB_LIST = LIB_LIST or {
 	DIR_PKG_LIB.."/obj_player.lua",
 	DIR_PKG_LIB.."/obj_intent.lua",
 	DIR_PKG_LIB.."/obj_nade.lua",
-}
+	DIR_PKG_LIB.."/obj_particle.lua",
+
+	DIR_PKG_LIB.."/tools.lua",
 
 -- load libs
 local i

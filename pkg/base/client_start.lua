@@ -743,7 +743,11 @@ function h_tick_main(sec_current, sec_delta)
 		for i=nades.head,nades.tail do
 			if nades[i] then nades[i].tick(moment, tickrate) end
 		end
+		for i=particles.head,particles.tail do
+			if particles[i] then particles[i].tick(moment, tickrate) end
+		end
 		nade_prune(sec_current)
+		particles_prune(sec_current)
 		
 		for i=1,#intent do
 			intent[i].tick(moment, tickrate)
@@ -1097,6 +1101,10 @@ function client.hook_render()
 	
 	for i=nades.head,nades.tail do
 		if nades[i] then nades[i].render() end
+	end
+	
+	for i=particles.head,particles.tail do
+		if particles[i] then particles[i].render() end
 	end
 	
 end
