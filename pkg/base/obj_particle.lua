@@ -136,6 +136,7 @@ function new_particle(settings)
 		
 		this.lifetime = this.lifetime - sec_delta
 		if this.lifetime <= 0 then
+			common.model_free(mdl_particle)
 			this.dead = true
 		end
 	end
