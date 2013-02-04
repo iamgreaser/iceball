@@ -15,7 +15,6 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
--- y30j
 function tool_template(plr)
 	local this = {} this.this = this
 	this.plr = plr
