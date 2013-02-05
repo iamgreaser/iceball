@@ -69,6 +69,10 @@ function new_player(settings)
 			this.remove_permission(k)
 		end
 	end
+	
+	function this.clear_permissions(perms)
+		this.permissions = {}
+	end
 
 	local function prv_recolor_team(r,g,b)
 		if not client then return end

@@ -246,3 +246,18 @@ command_register({
 		end
 	end
 })
+
+command_register({
+	command = "logout",
+	permission = "logout",
+	usage = "/logout",
+	func = function(plr, plrid, sockfd, prms, msg)
+		if table.getn(prms) == 0 then
+			plr.clear_permissions()
+			plr.add_permission_group(permissions["default"].perms)
+			common.net_send(sockfd, common.net_pack("BIz", 0x0E, command_colour_success, "You have successfully logged out"))
+		else
+			commands["help"].func(plr, plrid, sockfd, {"logout"})
+		end
+	end
+})
