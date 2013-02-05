@@ -556,59 +556,37 @@ if server_config.permissions ~= nil then
 	while do_extends and changed do
 		changed = false
 		for group, perms in pairs(permissions) do
-			print("Doing group "..group)
 			if groups_done[group] == nil then
-				print(group.." has not been done")
 				if perms["extends"] ~= "" then
-					print(group.." does extend something")
 					if permissions[perms["extends"]]["extends"] == "" then
-						print(group.." extends a group that extends nothing")
 						groups_done[perms["extends"]] = true
 						--extend away!
-						print("Extending group "..group.." from "..perms["extends"])
 						for k,v in pairs(permissions[perms["extends"]]["perms"]) do
-							if perms["perms"]["-"..k] ~= nil then
-								print("Negative node \""..k.."\" in group \""..group.."\", ignoring node from extended group \""..perms["extends"].."\"")
-							else
-								print("Adding node \""..k.."\" to group \""..group.."\" from extended group \""..perms["extends"].."\"")
+							if perms["perms"]["-"..k] == nil then
 								perms["perms"][k] = v
 							end
 						end
 						groups_done[group] = true
 						changed = true
 					else
-						print(group.." extends a group that extends something")
 						if groups_done[perms["extends"]] then
-							print(group.." extends a group that has been done")
-							print("Extended group has been done")
 							--extend away!
-							print("Extending group "..group.." from "..perms["extends"])
 							for k,v in pairs(permissions[perms["extends"]]["perms"]) do
 								if perms["perms"]["-"..k] ~= nil then
-									print("Negative node \""..k.."\" in group \""..group.."\", ignoring node from extended group \""..perms["extends"].."\"")
-								else
-									print("Adding node \""..k.."\" to group \""..group.."\" from extended group \""..perms["extends"].."\"")
 									perms["perms"][k] = v
 								end
 							end
 							groups_done[group] = true
 							changed = true
-						else
-							print(group.." extends a group that hasn't been done: "..perms["extends"])
 						end
 					end
 				else
-					print(group.." extends nothing - set as done")
 					groups_done[group] = true
 				end
-			else
-				print(group.." has been done already")
 			end
 		end
 		do_extends = table.getn(groups_done) < groups_to_do
 	end
-	print(do_extends)
-	print(changed)
 	
 	-- Print final permissions
 	print "Final Permissions:"
