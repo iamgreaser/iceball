@@ -572,7 +572,7 @@ if server_config.permissions ~= nil then
 						if groups_done[perms["extends"]] then
 							--extend away!
 							for k,v in pairs(permissions[perms["extends"]]["perms"]) do
-								if perms["perms"]["-"..k] ~= nil then
+								if perms["perms"]["-"..k] == nil then
 									perms["perms"][k] = v
 								end
 							end
