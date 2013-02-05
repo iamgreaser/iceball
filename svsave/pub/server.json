@@ -6,7 +6,16 @@
 			"permissions" : [
 				"me",
 				"kill",
-				"squad"
+				"squad",
+                "logout"
+			]
+		},
+		"griefer" : {
+			"extends" : "default",
+			"permissions" : [
+				"-logout",
+				"-build",
+				"-teamkill"
 			]
 		},
 		"rakiru" : {

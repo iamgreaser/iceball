@@ -520,7 +520,8 @@ end
 permissions = {}
 
 if server_config.permissions ~= nil then
-	print "Permissions:"
+	local groups_to_do = 0
+	print "Loaded Permissions:"
 	for group, perms in pairs(server_config.permissions) do
 		print("  Group: "..group)
 		permissions[group] = {}
@@ -531,6 +532,7 @@ if server_config.permissions ~= nil then
 			permissions[group]["password"] = ""
 		end
 		if perms.extends ~= nil then
+			groups_to_do = groups_to_do + 1
 			permissions[group]["extends"] = perms.extends
 		else
 			permissions[group]["extends"] = ""
@@ -545,17 +547,78 @@ if server_config.permissions ~= nil then
 			end
 		end
 	end
-	-- Do inheritance
-	-- We do it this way to avoid costly lookups later, and possible infinite loops from looping inheritance
-	for group, perms in pairs(permissions) do
-		if perms["extends"] ~= "" then
-			if permissions[perms["extends"]] ~= nil then
-				for k,v in pairs(permissions[perms["extends"]]["perms"]) do
-					perms["perms"][k] = v
+	
+	-- Hopefully this should allow full inheritance without an infinite loop
+	-- I know it's messy - if you don't like it, feel free to redo it ;)
+	local groups_done = {}
+	local do_extends = true
+	local changed = true
+	while do_extends and changed do
+		changed = false
+		for group, perms in pairs(permissions) do
+			print("Doing group "..group)
+			if groups_done[group] == nil then
+				print(group.." has not been done")
+				if perms["extends"] ~= "" then
+					print(group.." does extend something")
+					if permissions[perms["extends"]]["extends"] == "" then
+						print(group.." extends a group that extends nothing")
+						groups_done[perms["extends"]] = true
+						--extend away!
+						print("Extending group "..group.." from "..perms["extends"])
+						for k,v in pairs(permissions[perms["extends"]]["perms"]) do
+							if perms["perms"]["-"..k] ~= nil then
+								print("Negative node \""..k.."\" in group \""..group.."\", ignoring node from extended group \""..perms["extends"].."\"")
+							else
+								print("Adding node \""..k.."\" to group \""..group.."\" from extended group \""..perms["extends"].."\"")
+								perms["perms"][k] = v
+							end
+						end
+						groups_done[group] = true
+						changed = true
+					else
+						print(group.." extends a group that extends something")
+						if groups_done[perms["extends"]] then
+							print(group.." extends a group that has been done")
+							print("Extended group has been done")
+							--extend away!
+							print("Extending group "..group.." from "..perms["extends"])
+							for k,v in pairs(permissions[perms["extends"]]["perms"]) do
+								if perms["perms"]["-"..k] ~= nil then
+									print("Negative node \""..k.."\" in group \""..group.."\", ignoring node from extended group \""..perms["extends"].."\"")
+								else
+									print("Adding node \""..k.."\" to group \""..group.."\" from extended group \""..perms["extends"].."\"")
+									perms["perms"][k] = v
+								end
+							end
+							groups_done[group] = true
+							changed = true
+						else
+							print(group.." extends a group that hasn't been done: "..perms["extends"])
+						end
+					end
+				else
+					print(group.." extends nothing - set as done")
+					groups_done[group] = true
 				end
 			else
-				print("Error: Group \""..group.."\" extends nonexistent group \""..perms["extends"].."\"")
+				print(group.." has been done already")
 			end
+		end
+		do_extends = table.getn(groups_done) < groups_to_do
+	end
+	print(do_extends)
+	print(changed)
+	
+	-- Print final permissions
+	print "Final Permissions:"
+	for group, perms in pairs(permissions) do
+		print("  Group: "..group)
+		print("    Password: "..perms.password)
+		print("    Extends: "..perms.extends)
+		print("    Permissions:")
+		for k, v in pairs(perms.perms) do
+			print("      * "..k)
 		end
 	end
 end
