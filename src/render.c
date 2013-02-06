@@ -101,6 +101,10 @@ int rayc_block_len, rayc_block_head;
 int rayc_data_len, rayc_data_head;
 raydata_t rayc_data[RAYC_MAX];
 rayblock_t *rayc_block = NULL;
+#ifdef RENDER_CUBES_MULTITHREADED
+int *rayc_stack_len = NULL;
+int *rayc_stack_ordlen = NULL;
+#endif
 int *rayc_mark = NULL;
 int rayc_block_size = 0;
 int rayc_mark_size = 0;
@@ -766,43 +770,68 @@ void render_vxl_face_raycast(int blkx, int blky, int blkz,
 	
 	// now crawl through the block list
 #ifdef DEBUG_INVERT_DRAW_DIR
-	rayblock_t *b = &rayc_block[rayc_block_len-1];
-	rayblock_t *b_end = &rayc_block[0];
-	for(; b >= b_end; b--)
-#else
-	rayblock_t *b = &rayc_block[0];
-	rayblock_t *b_end = &rayc_block[rayc_block_len];
-	for(; b < b_end; b++)
-#endif
 	{
-		// get block delta
-		float dx = b->x - bx;
-		float dy = b->y - by;
-		float dz = b->z - bz;
-		
-		// get correct screen positions
-		float sx = dx*xgx+dy*xgy+dz*xgz;
-		float sy = dx*ygx+dy*ygy+dz*ygz;
-		float sz = dx* gx+dy* gy+dz* gz;
-		
-		// check distance
-		if(sz < 0.001f || sz >= fog_distance)
-			continue;
-		
-		// frustum cull
-		if(fabsf(sx) > fabsf(sz+2.0f) || fabsf(sy) > fabsf(sz+2.0f))
-			continue;
-		
-		// draw
-		float boxsize = tracemul/fabsf(sz);
-		float px1 = sx*boxsize+traceadd;
-		float py1 = sy*boxsize+traceadd;
-		float px2 = px1+boxsize;
-		float py2 = py1+boxsize;
-		
-		render_vxl_cube(ccolor, cdepth,
-			(int)px1, (int)py1, (int)px2, (int)py2,
-			b->color, sz, face, sx*sx+sy*sy+sz*sz);
+		{
+			int bctr;
+			for(bctr = rayc_block_len-1; bctr >= 0; bctr--)
+#else
+#ifndef RENDER_CUBES_MULTITHREADED 
+	{
+		{
+			int bctr;
+			for(bctr = 0; bctr <= rayc_block_len; bctr++)
+#else
+	int ord_accum_start = 0;
+	int ord_accum_end = 0;
+	int ord_idx;
+	//printf("start\n");
+	for(ord_idx = 0; rayc_stack_ordlen[ord_idx] != -1; ord_idx++)
+	{
+		ord_accum_start = ord_accum_end;
+		ord_accum_end += rayc_stack_ordlen[ord_idx];
+		//printf("%i\n", ord_accum_end);
+		int pil_idx;
+		#pragma omp parallel for
+		for(pil_idx = ord_accum_start; pil_idx < ord_accum_end; pil_idx++)
+		{
+			int bctr;
+			int bc_start = rayc_stack_len[pil_idx];
+			int bc_end = rayc_stack_len[pil_idx+1];
+			for(bctr = bc_start; bctr < bc_end && bctr < rayc_block_len; bctr++)
+#endif
+#endif
+			{
+				rayblock_t *b = &rayc_block[bctr];
+				// get block delta
+				float dx = b->x - bx;
+				float dy = b->y - by;
+				float dz = b->z - bz;
+				
+				// get correct screen positions
+				float sx = dx*xgx+dy*xgy+dz*xgz;
+				float sy = dx*ygx+dy*ygy+dz*ygz;
+				float sz = dx* gx+dy* gy+dz* gz;
+				
+				// check distance
+				if(sz < 0.001f || sz >= fog_distance)
+					continue;
+				
+				// frustum cull
+				if(fabsf(sx) > fabsf(sz+2.0f) || fabsf(sy) > fabsf(sz+2.0f))
+					continue;
+				
+				// draw
+				float boxsize = tracemul/fabsf(sz);
+				float px1 = sx*boxsize+traceadd;
+				float py1 = sy*boxsize+traceadd;
+				float px2 = px1+boxsize;
+				float py2 = py1+boxsize;
+				
+				render_vxl_cube(ccolor, cdepth,
+					(int)px1, (int)py1, (int)px2, (int)py2,
+					b->color, sz, face, sx*sx+sy*sy+sz*sz);
+			}
+		}
 	}
 }
 
@@ -868,6 +897,10 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 		{
 			rayc_mark_size = markbase;
 			rayc_mark = realloc(rayc_mark, rayc_mark_size*sizeof(int));
+#ifdef RENDER_CUBES_MULTITHREADED
+			rayc_stack_len = realloc(rayc_stack_len, rayc_mark_size*8*sizeof(int));
+			rayc_stack_ordlen = realloc(rayc_stack_ordlen, rayc_mark_size*8*sizeof(int));
+#endif
 		}
 		
 		if(rayc_block_size != blockbase)
@@ -898,9 +931,18 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 	rayc_data[0].sz = subz;
 	rayc_mark[blkx + blkz*xlen] = 1;
 	
+#ifdef RENDER_CUBES_MULTITHREADED
+	// get the block order stack set up for multiprocessing stuff
+	int stack_ordidx = 0;
+	int stack_pilidx = 0;
+	int stack_ordrem = 1;
+	int stack_ordptr = 0;
+	int stack_pilptr = 0;
+#endif
+	
 	// build your way up
 	while(rayc_data_head < rayc_data_len)
-	{
+	{	
 		raydata_t *rd = &(rayc_data[rayc_data_head++]);
 		
 		// back this up so we can flip the top
@@ -1089,6 +1131,12 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 			b_pmid--;
 		}
 		
+#ifdef RENDER_CUBES_MULTITHREADED
+		// add blockdata to span length table
+		rayc_stack_len[stack_pilidx++] = rayc_block_len - stack_pilptr;
+		stack_pilptr = rayc_block_len;
+#endif
+		
 		// correct the y spread
 		if(y1 < by1)
 			y1 = by1;
@@ -1142,7 +1190,35 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 			}
 		} while(ofx != 1);
 		
+#ifdef RENDER_CUBES_MULTITHREADED
+		// add data to ordered span count table if necessary
+		if(--stack_ordrem <= 0)
+		{
+			rayc_stack_ordlen[stack_ordidx++] = stack_ordrem = rayc_data_len - stack_ordptr;
+			stack_ordptr = rayc_data_len;
+		}
+#endif
 	}
+	
+#ifdef RENDER_CUBES_MULTITHREADED
+	// terminate stack lists
+	rayc_stack_len[stack_pilidx++] = 0;
+	rayc_stack_len[stack_pilidx] = -1;
+	rayc_stack_ordlen[stack_ordidx++] = rayc_data_len - stack_ordptr; 
+	rayc_stack_ordlen[stack_ordidx] = -1;
+
+	// apply running sum to stack lists
+	{
+		int rsum = 0;
+		for(i = 0; rayc_stack_len[i] != -1; i++)
+		{
+			rsum += rayc_stack_len[i];
+			rayc_stack_len[i] = rsum;
+		}
+	}	
+#endif
+
+	//printf("%i %i %i\n", stack_pilidx, stack_ordidx, stack_ordrem);
 	
 	// render each face
 #ifdef RENDER_FACE_COUNT
@@ -1176,7 +1252,7 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 		render_face_remain--;
 	}
 #else
-#if 0
+#if 1
 	render_vxl_face_raycast(blkx, blky, blkz, subx, suby, subz, CM_NX, -1,  0,  0);
 	render_vxl_face_raycast(blkx, blky, blkz, subx, suby, subz, CM_NY,  0, -1,  0);
 	render_vxl_face_raycast(blkx, blky, blkz, subx, suby, subz, CM_NZ,  0,  0, -1);
