@@ -1176,12 +1176,30 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 		render_face_remain--;
 	}
 #else
+#if 0
 	render_vxl_face_raycast(blkx, blky, blkz, subx, suby, subz, CM_NX, -1,  0,  0);
 	render_vxl_face_raycast(blkx, blky, blkz, subx, suby, subz, CM_NY,  0, -1,  0);
 	render_vxl_face_raycast(blkx, blky, blkz, subx, suby, subz, CM_NZ,  0,  0, -1);
 	render_vxl_face_raycast(blkx, blky, blkz, subx, suby, subz, CM_PX,  1,  0,  0);
 	render_vxl_face_raycast(blkx, blky, blkz, subx, suby, subz, CM_PY,  0,  1,  0);
 	render_vxl_face_raycast(blkx, blky, blkz, subx, suby, subz, CM_PZ,  0,  0,  1);
+#else
+#pragma omp sections
+{
+#pragma omp section
+	render_vxl_face_raycast(blkx, blky, blkz, subx, suby, subz, CM_NX, -1,  0,  0);
+#pragma omp section
+	render_vxl_face_raycast(blkx, blky, blkz, subx, suby, subz, CM_NY,  0, -1,  0);
+#pragma omp section
+	render_vxl_face_raycast(blkx, blky, blkz, subx, suby, subz, CM_NZ,  0,  0, -1);
+#pragma omp section
+	render_vxl_face_raycast(blkx, blky, blkz, subx, suby, subz, CM_PX,  1,  0,  0);
+#pragma omp section
+	render_vxl_face_raycast(blkx, blky, blkz, subx, suby, subz, CM_PY,  0,  1,  0);
+#pragma omp section
+	render_vxl_face_raycast(blkx, blky, blkz, subx, suby, subz, CM_PZ,  0,  0,  1);
+}
+#endif
 #endif
 }
 
@@ -1527,28 +1545,58 @@ void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t
 	float ctrz4 = (camera->mzz-camera->mxz+camera->myz);
 	
 	// calculate deltas
-	float fbx = ctrx1, fby = ctry1, fbz = ctrz1; // base
-	float fex = ctrx2, fey = ctry2, fez = ctrz2; // end
-	float flx = ctrx3-fbx, fly = ctry3-fby, flz = ctrz3-fbz; // left side
-	float frx = ctrx4-fex, fry = ctry4-fey, frz = ctrz4-fez; // right side
+	float fbxq = ctrx1, fbyq = ctry1, fbzq = ctrz1; // base
+	float fexq = ctrx2, feyq = ctry2, fezq = ctrz2; // end
+	float flx = ctrx3-fbxq, fly = ctry3-fbyq, flz = ctrz3-fbzq; // left side
+	float frx = ctrx4-fexq, fry = ctry4-feyq, frz = ctrz4-fezq; // right side
 	flx /= (float)width; fly /= (float)width; flz /= (float)width;
 	frx /= (float)width; fry /= (float)width; frz /= (float)width;
 	
 	// scale cubemap correctly
-	fbx += flx*((float)(width-height))/2.0f;
-	fby += fly*((float)(width-height))/2.0f;
-	fbz += flz*((float)(width-height))/2.0f;
-	fex += frx*((float)(width-height))/2.0f;
-	fey += fry*((float)(width-height))/2.0f;
-	fez += frz*((float)(width-height))/2.0f;
+	fbxq += flx*((float)(width-height))/2.0f;
+	fbyq += fly*((float)(width-height))/2.0f;
+	fbzq += flz*((float)(width-height))/2.0f;
+	fexq += frx*((float)(width-height))/2.0f;
+	feyq += fry*((float)(width-height))/2.0f;
+	fezq += frz*((float)(width-height))/2.0f;
 	
 	// raytrace it
 	// TODO: find some faster method
-	uint32_t *p = pixels;
-	float *d = dbuf;
 	int hwidth = width/2;
 	int hheight = height/2;
+#if 0
+	uint32_t *p = pixels;
+	float *d = dbuf;
 	for(y = -hheight; y < hheight; y++)
+#else
+#pragma omp parallel
+{
+	int x,y,z;
+	float fex = fexq;
+	float fey = feyq;
+	float fez = fezq;
+	float fbx = fbxq;
+	float fby = fbyq;
+	float fbz = fbzq;
+
+	uint32_t *p = pixels;
+	float *d = dbuf;
+	int t_count = omp_get_num_threads();
+	int t_idx = omp_get_thread_num();
+	int y_start = (height*t_idx)/t_count-hheight; 
+	int y_end = (height*(t_idx+1))/t_count-hheight; 
+	p += (y_start+hheight)*pitch;
+	d += (y_start+hheight)*width; 
+
+	fbx += flx*(y_start+hheight);
+	fby += fly*(y_start+hheight);
+	fbz += flz*(y_start+hheight);
+	
+	fex += frx*(y_start+hheight);
+	fey += fry*(y_start+hheight);
+	fez += frz*(y_start+hheight);
+	for(y = y_start; y < y_end; y++)
+#endif
 	{
 		float fx = fbx;
 		float fy = fby;
@@ -1606,6 +1654,10 @@ void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t
 		fey += fry;
 		fez += frz;
 	}
+#if 0
+#else
+}
+#endif
 	
 	/*
 	// TEST: draw something

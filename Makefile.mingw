@@ -13,10 +13,11 @@ CFLAGS = -O2 -fno-strict-aliasing -g -Wall -Wextra \
 	-Wno-unused-but-set-variable \
 	-Iwinlibs -Iwinlibs/SDL \
 	-msse2 -mfpmath=sse \
+	-fopenmp \
 	$(CFLAGS_EXTRA) \
 	-I $(INCDIR)
 
-LDFLAGS = -g $(LDFLAGS_EXTRA)
+LDFLAGS = -g -fopenmp $(LDFLAGS_EXTRA)
 LIBS_SDL = -lSDLmain -lSDL
 LIBS_Lua = -llua
 LIBS_Winsuck = -lws2_32

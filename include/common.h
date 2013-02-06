@@ -19,7 +19,7 @@
 #define VERSION_X 0
 #define VERSION_Y 0
 #define VERSION_A 0
-#define VERSION_Z 16
+#define VERSION_Z 17
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!
@@ -41,6 +41,7 @@
 //define RENDER_FACE_COUNT 2
 
 #include <immintrin.h>
+#include <omp.h>
 
 #include <string.h>
 #include <stdlib.h>

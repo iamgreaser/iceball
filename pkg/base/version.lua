@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,0,0,0,16},
-	num=16,
-	str="0.0-16",
+	cmp={0,0,0,0,17},
+	num=17,
+	str="0.0-17",
 }
 
 VERSION_BUGS = {
@@ -38,4 +38,5 @@ VERSION_BUGS = {
 {intro=nil, fix=13, msg="No per-face shading"},
 {intro=nil, fix=14, msg="Color conversion functions are using hacky Lua code"},
 {intro=nil, fix=16, msg="Per-face shading is only preliminary"},
+{intro=nil, fix=17, msg="OpenMP not supported"},
 }
