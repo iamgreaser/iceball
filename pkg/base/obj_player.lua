@@ -161,6 +161,7 @@ function new_player(settings)
 		this.t_step = nil
 		
 		this.dangx, this.dangy = 0, 0
+		this.angx, this.angy = 0, 0
 		this.vx, this.vy, this.vz = 0, 0, 0
 		
 		this.blx1, this.bly1, this.blz1 = nil, nil, nil
