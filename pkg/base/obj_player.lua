@@ -1437,7 +1437,7 @@ function new_player(settings)
 					else
 						c = 0xFFFF0000
 						drawit = drawit and (this.t_rcirc ~= nil and
-							(MODE_MINIMAP_RCIRC or large_map))
+							(MODE_MINIMAP_RCIRC or this.large_map.visible))
 					end
 
 					if drawit then
