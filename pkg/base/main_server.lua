@@ -219,7 +219,7 @@ function server.hook_tick(sec_current, sec_delta)
 					map_block_set(x,y,z,ct,cr,cg,cb)
 					net_broadcast(nil, common.net_pack("BHHHBBBB",
 						0x08,x,y,z,cb,cg,cr,ct))
-				else
+				elseif plr.blocks < 0 then
 					plr.blocks = 0
 				end
 				if plr.blocks == 0 then
