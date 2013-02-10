@@ -89,6 +89,7 @@ BTSK_TOOL2 = controls_config.tool2 or SDLK_2
 BTSK_TOOL3 = controls_config.tool3 or SDLK_3
 BTSK_TOOL4 = controls_config.tool4 or SDLK_4
 BTSK_TOOL5 = controls_config.tool5 or SDLK_5
+BTSK_TOOLLAST = controls_config.toollast or SDLK_q
 
 BTSK_COLORLEFT  = controls_config.colorleft or SDLK_LEFT
 BTSK_COLORRIGHT = controls_config.colorright or SDLK_RIGHT

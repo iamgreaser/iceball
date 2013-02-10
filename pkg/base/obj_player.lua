@@ -189,6 +189,7 @@ function new_player(settings)
 		this.wpn = weapons[this.weapon](this)
 		
 		this.tool = 2
+		this.tool_last = 0
 		
 		this.has_intel = nil
 	end
@@ -239,6 +240,8 @@ function new_player(settings)
 	function this.tool_switch(tool)
 		if not this.alive then return end
 		if this.mode == PLM_SPECTATE then return end
+
+		this.tool_last = this.tool
 
 		if this.tool == TOOL_GUN then
 			if this.wpn then
@@ -2036,6 +2039,8 @@ function new_player(settings)
 					this.tool_switch(TOOL_NADE)
 				elseif key == BTSK_TOOL5 then
 					-- TODO
+				elseif key == BTSK_TOOLLAST then
+					this.tool_switch(this.tool_last)
 				elseif key == BTSK_CHAT then
 					this.focus_typing("Chat: ", "")
 				elseif key == BTSK_COMMAND then
