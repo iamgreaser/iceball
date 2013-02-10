@@ -51,7 +51,6 @@ print("bio desc:", user_config.bio and user_config.bio.description)
 dofile("pkg/base/common.lua")
 
 tracers = {head = 1, tail = 0, time = 0}
-bhealth = {head = 1, tail = 0, time = 0, map = {}}
 
 client_tick_accum = 0.
 
@@ -187,111 +186,6 @@ NET_MOVE_DELAY = 0.5
 NET_ORIENT_DELAY = 0.1
 t_net_move = nil
 t_net_orient = nil
-
-function bhealth_clear(x,y,z,repaint)
-	local map = bhealth.map
-	
-	local bh = map[x] and map[x][y] and map[x][y][z]
-	
-	if bh then
-		if repaint then
-			map_block_paint(bh.x,bh.y,bh.z,
-				bh.c[1],bh.c[2],bh.c[3],bh.c[4])
-		end
-		
-		map[x][y][z] = nil
-	end
-end
-
-function bhealth_damage(x,y,z,amt)
-	local c = map_block_get(x,y,z)
-	if c == false then
-		map_pillar_aerate(x,z)
-		c = map_block_get(x,y,z)
-	end
-	if not c then return end
-	
-	local map = bhealth.map
-	
-	map[x] = map[x] or {}
-	map[x][y] = map[x][y] or {}
-	map[x][y][z] = map[x][y][z] or {
-		c = c,
-		damage = 0,
-		time = nil,
-		qidx = nil,
-		x = x, y = y, z = z,
-	}
-	local blk = map[x][y][z]
-	
-	blk.time = bhealth.time + MODE_BLOCK_REGEN_TIME
-	blk.damage = blk.damage + amt
-	
-	if blk.damage >= MODE_BLOCK_HEALTH then
-		common.net_send(nil, common.net_pack("BHHH",
-			0x09, x, y, z))
-	end
-	
-	local c = blk.c
-	local darkfac = 0.8*MODE_BLOCK_HEALTH
-	local light = darkfac/(darkfac + blk.damage)
-	
-	map_block_paint(x,y,z,c[1],
-		math.floor(c[2]*light+0.5),
-		math.floor(c[3]*light+0.5),
-		math.floor(c[4]*light+0.5))
-	
-	bhealth.tail = bhealth.tail + 1
-	bhealth[bhealth.tail] = {x=x,y=y,z=z,time=blk.time}
-	
-	blk.qidx = bhealth.tail
-	
-	local block_particlecount = math.random() * 20 + 10
-	for i=1,block_particlecount do
-		particles_add(new_particle{
-			x = x + 0.5,
-			y = y + 0.5,
-			z = z + 0.5,
-			vx = math.random() * 2 - 1,
-			vy = math.random(),
-			vz = math.random() * 2 - 1,
-			r = math.floor(c[2]*light+0.5),
-			g = math.floor(c[3]*light+0.5),
-			b = math.floor(c[4]*light+0.5),
-			lifetime = 0.5 + math.random() * 0.25
-		})
-	end
-end
-
-function bhealth_prune(time)
-	--print("prune", bhealth.head, bhealth.tail)
-	while bhealth.head <= bhealth.tail do
-		local bhi = bhealth[bhealth.head]
-		if time < bhi.time then break end
-		bhealth[bhealth.head] = nil
-		
-		--print("bhi", bhi.x,bhi.y,bhi.z,bhi.time,time)
-		
-		local map = bhealth.map
-		local bh = map[bhi.x] and map[bhi.x][bhi.y] and map[bhi.x][bhi.y][bhi.z]
-		
-		if bh and bh.qidx == bhealth.head then
-			map_block_paint(bh.x,bh.y,bh.z,
-				bh.c[1],bh.c[2],bh.c[3],bh.c[4])
-			bhealth.map[bh.x][bh.y][bh.z] = nil
-		end
-		
-		bhealth.head = bhealth.head + 1
-	end
-	
-	if bhealth.head > bhealth.tail then
-		bhealth.head = 1
-		bhealth.tail = 0
-	end
-	
-	bhealth.time = time
-	
-end
 
 function tracer_add(x,y,z,ya,xa,time)
 	local tc = {
@@ -558,6 +452,7 @@ function h_tick_main(sec_current, sec_delta)
 					weapon = wpn,
 					mode = mode,
 					pid = pid,
+					sockfd = sockfd
 				})
 			end
 			

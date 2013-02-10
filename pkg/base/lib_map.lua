@@ -390,6 +390,8 @@ function map_block_set(x,y,z,typ,r,g,b)
 	map_pillar_aerate(x+1,z)
 	map_pillar_aerate(x,z-1)
 	map_pillar_aerate(x,z+1)
+	
+	bhealth_clear(x,y,z,false)
 end
 
 function map_block_paint(x,y,z,typ,r,g,b)
@@ -421,6 +423,8 @@ function map_block_break(x,y,z)
 	map_pillar_aerate(x,z+1)
 	
 	map_chkdisbrk(x,y,z)
+	
+	bhealth_clear(x,y,z,false)
 	
 	return true
 end

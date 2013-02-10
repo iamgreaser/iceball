@@ -26,6 +26,7 @@ function new_player(settings)
 	this.squad = settings.squad or nil
 	this.weapon = settings.weapon or WPN_RIFLE
 	this.pid = settings.pid or error("pid must be set when creating player!")
+	this.sockfd = settings.sockfd
 	this.alive = false
 	this.spawned = false
 	this.zooming = false

@@ -51,6 +51,7 @@ function slot_add(sockfd, tidx, wpn, name)
 				team = tidx, -- 0 == blue, 1 == green
 				weapon = _wpn,
 				pid = i,
+				sockfd = sockfd
 			})
 			if permissions["default"] ~= nil then
 				players[i].add_permission_group(permissions["default"].perms)
@@ -470,9 +471,11 @@ function server.hook_tick(sec_current, sec_delta)
 			local x, y, z, amt
 			x, y, z, amt = common.net_unpack("HHHH", pkt)
 			net_broadcast(nil, common.net_pack("BHHHH", 0x20, x, y, z, amt))
+			bhealth_damage(x, y, z, amt, plr)
 		end
 		-- TODO!
 	end
+	bhealth_prune(sec_current)
 	
 	local tickrate = 1/60.
 	local lowest_fps = 15
