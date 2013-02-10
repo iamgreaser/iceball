@@ -174,9 +174,13 @@ teams = {
 
 function team_players(team)
 	local result = {}
-	for k,v in ipairs(players) do
-		if v.team == team then
-			table.insert(result, v)
+	local k
+	for k=1,players.max do
+		if k then
+			local v = players[k]
+			if v and v.team == team then
+				table.insert(result, v)
+			end
 		end
 	end
 	return result
