@@ -289,3 +289,6 @@ Iceball Base Mod:
 
 	0x1F team score.u16 (S->C) @
 		update team scores
+
+	0x20 x.u16 y.u16 z.u16 damage.u16 @
+		damage a block
