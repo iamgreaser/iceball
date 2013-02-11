@@ -822,39 +822,67 @@ function gui_create_scene(width, height, shared_rate)
 			discard_typing_state()
 		end
 		
+		this.repeating_key = nil
+		this.repeating_modif = nil
+		
+		function this.key_repeated()
+			local state = true
+			local key = this.repeating_key
+			local modif = this.repeating_modif
+			if key == SDLK_ESCAPE then
+				this.done_typing()
+			elseif key == SDLK_RETURN then
+				this.on_return(key, state, modif)
+			elseif key == SDLK_LEFT then
+				this.cursor_backwards()
+			elseif key == SDLK_RIGHT then
+				this.cursor_forwards()
+			elseif key == SDLK_HOME then
+				this.cursor_to_text_start()
+			elseif key == SDLK_END then
+				this.cursor_to_text_end()
+			else
+				local text_len = #this.text
+				this.text = gui_string_edit(
+					this.text, 
+					this.cursor_position, 
+					MODE_CHAT_STRMAX, 
+					key, 
+					modif)
+				if key ~= SDLK_DELETE then
+					this.cursor_position = math.max(
+						1, 
+						this.cursor_position + (#this.text - text_len))
+				else
+					this.cursor_position = math.max(1,
+						this.cursor_position)
+				end
+			end
+		end
+		
 		function this.on_key(key, state, modif)
 			if this.take_input then
 				if state then
-					if key == SDLK_ESCAPE then
-						this.done_typing()
-					elseif key == SDLK_RETURN then
-						this.on_return(key, state, modif)
-					elseif key == SDLK_LEFT then
-						this.cursor_backwards()
-					elseif key == SDLK_RIGHT then
-						this.cursor_forwards()
-					elseif key == SDLK_HOME then
-						this.cursor_to_text_start()
-					elseif key == SDLK_END then
-						this.cursor_to_text_end()
-					else
-						local text_len = #this.text
-						this.text = gui_string_edit(
-							this.text, 
-							this.cursor_position, 
-							MODE_CHAT_STRMAX, 
-							key, 
-							modif)
-						if key ~= SDLK_DELETE then
-							this.cursor_position = math.max(
-								1, 
-								this.cursor_position + (#this.text - text_len))
-						else
-							this.cursor_position = math.max(1,
-								this.cursor_position)
+					this.repeating_key = key
+					this.repeating_modif = modif
+					this.static_alarm{name='key_waitbuf', time=0.45,preserve_accumulator=false,on_trigger=function()
+						if this.repeating_key ~= nil then
+							this.key_repeated()
+							this.static_alarms['key_repeat'] = 
+							alarm{time=0.035, loop=true, preserve_accumulator=false, on_trigger=function()
+								if this.repeating_key ~= nil then
+									this.key_repeated()
+								end
+							end}
 						end
-					end
-				end				
+					end}
+					this.key_repeated()
+				elseif state == false then -- this is specifically the key up. there are other key events...
+					this.repeating_key = nil
+					this.repeating_modif = nil
+					this.repeating_delay = 0
+					this.static_alarms['key_repeat'] = nil
+				end
 			end
 		end
 		
@@ -865,7 +893,6 @@ function gui_create_scene(width, height, shared_rate)
 		function this.cursor_backwards()
 			this.cursor_position = math.max(1, this.cursor_position - 1)
 		end
-		-- underlying assumption of these two: edited text only has one "row"
 		function this.cursor_forwards()
 			this.cursor_position = math.min(#this.text + 1, this.cursor_position + 1)
 		end
