@@ -124,9 +124,7 @@ function new_nade(settings)
 					local nd
 					nd = trace_map_ray_dist(this.x,this.y,this.z, dx,dy,dz, dd)
 					if not nd then
-						local dmg = ((MODE_NADE_RANGE-dd)/MODE_NADE_RANGE)
-						dmg = dmg * dmg
-						dmg = dmg * MODE_NADE_DAMAGE
+						local dmg = (-(math.pow(dd / MODE_NADE_RANGE, 4)) + 1) * MODE_NADE_DAMAGE
 						
 						plr.grenade_damage(dmg, hplr)
 					end
