@@ -302,14 +302,28 @@ function gui_get_char(key, modif)
 	return nil
 end
 
-function gui_string_edit(str, maxlen, key, modif)
+function gui_string_edit(str, insert_position, maxlen, key, modif)
 	if key == SDLK_BACKSPACE then
-		str = string.sub(str, 1, #str-1)
+		if insert_position <= 1 then 
+			str = string.sub(str, 2, #str)
+		else
+			str = string.sub(str, 1, insert_position - 2) .. 
+				  string.sub(str, insert_position, #str)
+		end
+	elseif key == SDLK_DELETE then
+		if insert_position <= 1 then 
+			str = string.sub(str, 2, #str)
+		else
+			str = string.sub(str, 1, insert_position - 1) .. 
+				  string.sub(str, insert_position + 1, #str)
+		end
 	else
 		local k = gui_get_char(key, modif)
 
 		if #str < maxlen and k then
-			str = str .. k
+			str = string.sub(str, 1, insert_position - 1) .. 
+				  k .. 
+				  string.sub(str, insert_position, #str)
 		end
 	end
 
@@ -815,8 +829,30 @@ function gui_create_scene(width, height, shared_rate)
 						this.done_typing()
 					elseif key == SDLK_RETURN then
 						this.on_return(key, state, modif)
+					elseif key == SDLK_LEFT then
+						this.cursor_backwards()
+					elseif key == SDLK_RIGHT then
+						this.cursor_forwards()
+					elseif key == SDLK_HOME then
+						this.cursor_to_text_start()
+					elseif key == SDLK_END then
+						this.cursor_to_text_end()
 					else
-						this.text = gui_string_edit(this.text, MODE_CHAT_STRMAX, key, modif)
+						local text_len = #this.text
+						this.text = gui_string_edit(
+							this.text, 
+							this.cursor_position, 
+							MODE_CHAT_STRMAX, 
+							key, 
+							modif)
+						if key ~= SDLK_DELETE then
+							this.cursor_position = math.max(
+								1, 
+								this.cursor_position + (#this.text - text_len))
+						else
+							this.cursor_position = math.max(1,
+								this.cursor_position)
+						end
 					end
 				end				
 			end
@@ -824,15 +860,32 @@ function gui_create_scene(width, height, shared_rate)
 		
 		this.add_listener(GE_KEY, this.on_key)
 		
-		this.cursor_position = 0
+		this.cursor_position = 1
+		
+		function this.cursor_backwards()
+			this.cursor_position = math.max(1, this.cursor_position - 1)
+		end
+		-- underlying assumption of these two: edited text only has one "row"
+		function this.cursor_forwards()
+			this.cursor_position = math.min(#this.text + 1, this.cursor_position + 1)
+		end
+		function this.cursor_to_text_start()
+			this.cursor_position = 1
+		end
+		function this.cursor_to_text_end()
+			this.cursor_position = #this.text + 1
+		end
+		
 		function this.get_cursor_xy()
 			if this.text_cache == nil or #this.text == 0 then 
 				return {x=0, y=0} 
 			else
+				this.cursor_position = math.min(this.cursor_position, #this.text + 1)
 				local lastrow = this.text_cache[#this.text_cache]
 				local lastchar = lastrow[#lastrow]
-				-- 3=x 4=y
-				return {x=lastchar[3] + this.font.width, y=lastchar[4]}
+				-- of lastchar: 3=x 4=y
+				return {x=(this.cursor_position - 1) * this.font.width, 
+						y=lastchar[4]}
 			end
 		end
 		
