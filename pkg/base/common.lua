@@ -18,6 +18,7 @@
 print("base dir:",common.base_dir)
 
 dofile("pkg/base/version.lua")
+dofile("pkg/base/network.lua")
 
 -- base dir stuff
 DIR_PKG_ROOT = DIR_PKG_ROOT or "pkg/base"
@@ -148,6 +149,10 @@ weapon_models = {}
 weapons = {
 	[WPN_RIFLE] = loadfile(DIR_PKG_ROOT.."/ent/gun_rifle.lua")(),
 	[WPN_LEERIFLE] = loadfile(DIR_PKG_ROOT.."/ent/gun_leerifle.lua")(),
+}
+
+tools = {
+	[TOOL_SPADE] = loadfile(DIR_PKG_ROOT.."/ent/tool_spade.lua")(),
 }
 
 weapons_enabled = {}
@@ -361,5 +366,4 @@ function bhealth_prune(time)
 	end
 	
 	bhealth.time = time
-	
 end

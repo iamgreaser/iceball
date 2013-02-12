@@ -54,19 +54,6 @@ tracers = {head = 1, tail = 0, time = 0}
 
 client_tick_accum = 0.
 
---[[
-while true do
-	local pkt, sockfd, cid
-	pkt, sockfd = common.net_recv()
-	cid, pkt = common.net_unpack("B", pkt)
-	if cid == 0xE0 then
-		map_fname, pkt = common.net_unpack("z", pkt)
-		break
-	else
-		error("should not receive non-map-filename packets until map filename arrives!")
-	end
-end]]
-
 map_fname = "*MAP"
 
 if common.version.num < 5 then

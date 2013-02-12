@@ -152,6 +152,9 @@ function new_player(settings)
 		this.arm_rest_right = 0.0
 		this.arm_rest_left = 1.0
 		
+		this.tools = {}
+		this.tools[#(this.tools)+1] = tools[TOOL_SPADE](this)
+		
 		this.t_respawn = nil
 		this.t_switch = nil
 		this.t_nadeboom = nil

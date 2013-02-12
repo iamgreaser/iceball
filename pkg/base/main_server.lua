@@ -66,40 +66,6 @@ function slot_add(sockfd, tidx, wpn, name)
 	return nil
 end
 
-function net_broadcast(sockfd, msg)
-	local i
-	for i=1,#(client_list.fdlist) do
-		if client_list.fdlist[i] ~= sockfd then
-			--print("to", client_list.fdlist[i], type(msg))
-			common.net_send(client_list.fdlist[i], msg)
-		end
-	end
-end
-
-function net_broadcast_team(tidx, msg)
-	local i
-	for i=1,#(client_list.fdlist) do
-		local cli = client_list[client_list.fdlist[i]]
-		local plr = cli and players[cli.plrid]
-		if plr and plr.team == tidx then
-			--print("to", client_list.fdlist[i], type(msg))
-			common.net_send(client_list.fdlist[i], msg)
-		end
-	end
-end
-
-function net_broadcast_squad(tidx, squad, msg)
-	local i
-	for i=1,#(client_list.fdlist) do
-		local cli = client_list[client_list.fdlist[i]]
-		local plr = cli and players[cli.plrid]
-		if plr and plr.team == tidx and plr.squad == squad then
-			--print("to", client_list.fdlist[i], type(msg))
-			common.net_send(client_list.fdlist[i], msg)
-		end
-	end
-end
-
 
 function server.hook_file(sockfd, ftype, fname)
 	print("hook_file:", sockfd, ftype, fname)
@@ -130,8 +96,6 @@ function server.hook_connect(sockfd, addrinfo)
 	--[[net_broadcast(nil, common.net_pack("BIz", 0x0E, 0xFF800000,
 		"Connected: player on sockfd "..ss))]]
 	print("Connected: player on sockfd "..ss)
-	
-	common.net_send(sockfd, common.net_pack("Bz", 0xE0, map_fname))
 end
 
 function server.hook_disconnect(sockfd, server_force, reason)
