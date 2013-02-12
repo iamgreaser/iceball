@@ -1732,7 +1732,7 @@ function new_player(settings)
 		
 		function this.typing_text.done_typing(options)
 			this.typing_layout.visible = false
-			discard_typing_state()
+			discard_typing_state(this.typing_text)
 		end
 		
 		function this.typing_text.on_return(options)
@@ -1993,6 +1993,7 @@ function new_player(settings)
 		this.typing_type.text = typing_type
 		gui_focus = this.typing_text
 		this.typing_text.text = default_text
+		this.typing_text.cursor_to_text_end()
 		enter_typing_state()
 		this.typing_layout.reflow()
 		this.typing_layout.visible = true		

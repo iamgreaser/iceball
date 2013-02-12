@@ -818,8 +818,15 @@ function gui_create_scene(width, height, shared_rate)
 			this.done_typing()
 		end
 		
+		function this.clear_keyrepeat()
+			this.static_alarms['key_waitbuf'] = nil
+			this.static_alarms['key_repeat'] = nil
+			this.repeating_key = nil
+			this.repeating_modif = nil
+		end
+		
 		function this.done_typing()
-			discard_typing_state()
+			discard_typing_state(this)
 		end
 		
 		this.repeating_key = nil
@@ -832,11 +839,16 @@ function gui_create_scene(width, height, shared_rate)
 			if key == SDLK_ESCAPE then
 				this.done_typing()
 			elseif key == SDLK_RETURN then
+				if #this.text>0 then this.buffer_register_new() end
 				this.on_return(key, state, modif)
 			elseif key == SDLK_LEFT then
 				this.cursor_backwards()
 			elseif key == SDLK_RIGHT then
 				this.cursor_forwards()
+			elseif key == SDLK_UP then
+				this.buffer_backwards()
+			elseif key == SDLK_DOWN then
+				this.buffer_forwards()
 			elseif key == SDLK_HOME then
 				this.cursor_to_text_start()
 			elseif key == SDLK_END then
@@ -857,6 +869,7 @@ function gui_create_scene(width, height, shared_rate)
 					this.cursor_position = math.max(1,
 						this.cursor_position)
 				end
+				this.input_buffer.edit(this.text)
 			end
 		end
 		
@@ -865,7 +878,7 @@ function gui_create_scene(width, height, shared_rate)
 				if state then
 					this.repeating_key = key
 					this.repeating_modif = modif
-					this.static_alarm{name='key_waitbuf', time=0.45,preserve_accumulator=false,on_trigger=function()
+					this.static_alarm{name='key_waitbuf', time=0.45,on_trigger=function()
 						if this.repeating_key ~= nil then
 							this.key_repeated()
 							this.static_alarms['key_repeat'] = 
@@ -878,10 +891,7 @@ function gui_create_scene(width, height, shared_rate)
 					end}
 					this.key_repeated()
 				elseif state == false then -- this is specifically the key up. there are other key events...
-					this.repeating_key = nil
-					this.repeating_modif = nil
-					this.repeating_delay = 0
-					this.static_alarms['key_repeat'] = nil
+					this.clear_keyrepeat()
 				end
 			end
 		end
@@ -889,6 +899,7 @@ function gui_create_scene(width, height, shared_rate)
 		this.add_listener(GE_KEY, this.on_key)
 		
 		this.cursor_position = 1
+		this.input_buffer = collect_new_history_buf()
 		
 		function this.cursor_backwards()
 			this.cursor_position = math.max(1, this.cursor_position - 1)
@@ -901,6 +912,19 @@ function gui_create_scene(width, height, shared_rate)
 		end
 		function this.cursor_to_text_end()
 			this.cursor_position = #this.text + 1
+		end
+		
+		function this.buffer_backwards()
+			this.text = this.input_buffer.prev()
+			this.cursor_to_text_end()
+		end
+		function this.buffer_forwards()
+			this.text = this.input_buffer.next()
+			this.cursor_to_text_end()
+		end
+		function this.buffer_register_new(text)
+			this.input_buffer.append()
+			if this.input_buffer.length() > 100 then this.input_buffer.shift() end
 		end
 		
 		function this.get_cursor_xy()

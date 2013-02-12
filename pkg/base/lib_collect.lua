@@ -95,3 +95,40 @@ function collect_new_prioq(fn_compare)
 	
 	return this
 end
+
+function collect_new_history_buf()
+	local this = {history={""}, pos=1}
+	
+	-- Return the first value from the history.
+	function this.shift()
+		return table.remove(this.history, 1)
+	end
+	
+	-- Get the length of the history.
+	function this.length()
+		return #this.history
+	end
+	
+	function this.next()
+		this.pos = math.min(#this.history, this.pos + 1)
+		return this.history[this.pos]
+	end
+	
+	function this.prev()
+		this.pos = math.max(1, this.pos - 1)
+		return this.history[this.pos]
+	end
+	
+	-- Update the newest node
+	function this.edit(text)
+		this.history[#this.history] = text 
+	end
+	
+	-- Commit the current node
+	function this.append()
+		table.insert(this.history, "")
+		this.pos = #this.history
+	end
+	
+	return this
+end

@@ -792,8 +792,9 @@ function enter_typing_state()
 	end
 end
 
-function discard_typing_state()
+function discard_typing_state(widget)
 	gui_focus = nil
+	if widget.clear_keyrepeat then widget.clear_keyrepeat() end
 	mouse_released = false
 	client.mouse_lock_set(true)
 	client.mouse_visible_set(false)
