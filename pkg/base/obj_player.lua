@@ -206,18 +206,20 @@ function new_player(settings)
 	end
 
 	function this.spawn_at(x,y,z,ya,xa)
+		prv_spawn_cont1()
+
 		this.x = x
 		this.y = y
 		this.z = z
 		this.angy = ya
 		this.angx = xa
-
-		return prv_spawn_cont1()
 	end
 
 	function this.spawn()
 		local xlen,ylen,zlen
 		xlen,ylen,zlen = common.map_get_dims()
+
+		prv_spawn_cont1()
 
 		while true do
 			this.x = math.floor(math.random()*xlen/4.0)+0.5
@@ -229,8 +231,6 @@ function new_player(settings)
 		this.y = this.y - 3.0
 		this.angy, this.angx = math.pi/2.0, 0.0
 		if this.team == 1 then this.angy = this.angy-math.pi end
-
-		return prv_spawn_cont1()
 	end
 
 	this.name = settings.name or "Noob"
