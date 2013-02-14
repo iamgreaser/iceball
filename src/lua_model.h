@@ -290,6 +290,10 @@ int icelua_fn_common_model_bone_set(lua_State *L)
 		
 		bone->ptlen++;
 	}
+
+#ifdef USE_OPENGL
+	bone->vbo_dirty = 1;
+#endif
 	
 	return 0;
 }

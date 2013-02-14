@@ -19,7 +19,7 @@
 #define VERSION_X 0
 #define VERSION_Y 0
 #define VERSION_A 0
-#define VERSION_Z 21
+#define VERSION_Z 22
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!
@@ -63,7 +63,7 @@
 #ifndef DEDI
 #include <SDL.h>
 #ifdef USE_OPENGL
-#include <GL/gl.h>
+#include <GL/glew.h>
 #endif
 #endif
 

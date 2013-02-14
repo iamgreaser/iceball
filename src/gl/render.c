@@ -16,7 +16,6 @@
 */
 
 #include "common.h"
-#include <GL/gl.h>
 
 const GLfloat mtx_baseproj[16] = {
 	-1, 0, 0, 0,
@@ -266,10 +265,27 @@ void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t
 	int x,y,z;
 	float cx,cy,cz;
 
-	glClearColor(((fog_color>>16)&255)/255.0,((fog_color>>8)&255)/255.0,((fog_color)&255)/255.0, 1);
+	float fog[4] = {
+		((fog_color>>16)&255)/255.0,((fog_color>>8)&255)/255.0,((fog_color)&255)/255.0,1
+	};
+
+	float cfx,cfy,cfz;
+	cfx = camera->mzx;
+	cfy = camera->mzy;
+	cfz = camera->mzz;
+	float cfd2 = cfx*cfx+cfy*cfy+cfz*cfz;
+	cfd2 = 1.0f/cfd2;
+
+	glClearColor(fog[0], fog[1], fog[2], 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_FOG);
+	glFogi(GL_FOG_MODE, GL_LINEAR);
+	float cdist = fog_distance/sqrtf(2.0f*cfd2);
+	glFogf(GL_FOG_START, cdist/2.0f);
+	glFogf(GL_FOG_END, cdist);
+	glFogfv(GL_FOG_COLOR, fog);
 
 	cx = camera->mpx;
 	cy = camera->mpy;

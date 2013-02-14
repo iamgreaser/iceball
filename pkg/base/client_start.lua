@@ -59,6 +59,9 @@ map_fname = "*MAP"
 if common.version.num < 5 then
 	error("Your version is too old! Please upgrade to 0.0-5 at least!")
 end
+if common.version.num >= 19 and common.version.num <= 21 then
+	error("0.0-19 through 0.0-21 have an incomplete OpenGL renderer. Due to the potential abuse, these versions are not allowed. Please upgrade to 0.0-22 at the least!")
+end
 
 -- define keys
 controls_config = common.json_load(controls_config_filename) or {}

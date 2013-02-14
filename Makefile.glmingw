@@ -13,18 +13,17 @@ CFLAGS = -O2 -fno-strict-aliasing -g -Wall -Wextra \
 	-Wno-unused-but-set-variable \
 	-Iwinlibs -Iwinlibs/SDL \
 	-msse2 -mfpmath=sse \
-	-fopenmp \
 	-DUSE_OPENGL -DGL_BGRA=0x80E1 \
 	$(CFLAGS_EXTRA) \
 	-I $(INCDIR)
 
-LDFLAGS = -g -fopenmp $(LDFLAGS_EXTRA)
+LDFLAGS = -g $(LDFLAGS_EXTRA)
 LIBS_SDL = -lSDLmain -lSDL
 LIBS_Lua = -llua
 LIBS_Winsuck = -lws2_32
 # Lua is not an acronym. Get used to typing it with lower case u/a.
 LIBS_zlib = -lz
-LIBS = -Lwinlibs -lm -lmingw32 $(LIBS_Lua) $(LIBS_SDL) $(LIBS_zlib) $(LIBS_Winsuck) -lopengl32
+LIBS = -Lwinlibs -lm -lmingw32 $(LIBS_Lua) $(LIBS_SDL) $(LIBS_zlib) $(LIBS_Winsuck) -lopengl32 -lglew32
 BINNAME = iceball-gl.exe
 RENDERER = gl
 

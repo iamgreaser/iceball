@@ -78,6 +78,17 @@ int video_init(void)
 	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	screen = SDL_SetVideoMode(screen_width, screen_height, 32, SDL_OPENGL);
+	GLenum err_glew = glewInit();
+	if(err_glew != GLEW_OK)
+	{
+		fprintf(stderr, "GLEW failed to init: %s\n", glewGetErrorString(err_glew));
+		return 1;
+	}
+	if(!GL_ARB_texture_non_power_of_two)
+	{
+		fprintf(stderr, "ERROR: GL_ARB_texture_non_power_of_two not supported by your GPU. Either get a better GPU, or use the software renderer.\n");
+		return 1;
+	}
 #else
 	screen = SDL_SetVideoMode(screen_width, screen_height, 32, 0);
 #endif

@@ -16,7 +16,6 @@
 */
 
 #include "common.h"
-#include <GL/gl.h>
 
 void render_blit_img_toimg(uint32_t *pixels, int width, int height, int pitch,
 	img_t *src, int dx, int dy, int bw, int bh, int sx, int sy, uint32_t color);
