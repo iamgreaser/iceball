@@ -95,6 +95,12 @@ map_t *map_parse_root(const char *dend, const char *data, int xlen, int ylen, in
 		// TODO: check if NULL
 		memcpy(map->pillars[pi], pillar_temp, ti);
 	}
+
+#ifdef USE_OPENGL
+	map->vbo = 0;
+	map->vbo_dirty = 1;
+	map->vbo_arr = NULL;
+#endif
 	
 	return map;
 }
@@ -191,8 +197,14 @@ map_t *map_parse_icemap(int len, const char *data)
 		map_free(map);
 		return NULL;
 	}
+
+#ifdef USE_OPENGL
+	map->vbo = 0;
+	map->vbo_dirty = 1;
+	map->vbo_arr = NULL;
+#endif
 	
-	printf("all good.\n");
+	//printf("all good.\n");
 	return map;
 }
 
@@ -393,6 +405,15 @@ void map_free(map_t *map)
 	
 	if(map->pillars != NULL)
 		free(map->pillars);
+#ifdef USE_OPENGL
+	/*
+	if(map->vbo != 0)
+		glDeleteBuffers(1, &(map->vbo));
+	*/
+	if(map->vbo_arr != NULL)
+		free(map->vbo_arr);
+#endif
 	
 	free(map);
 }
+

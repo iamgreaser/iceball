@@ -19,7 +19,7 @@
 #define VERSION_X 0
 #define VERSION_Y 0
 #define VERSION_A 0
-#define VERSION_Z 19
+#define VERSION_Z 20
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!
@@ -62,6 +62,9 @@
 
 #ifndef DEDI
 #include <SDL.h>
+#ifdef USE_OPENGL
+#include <GL/gl.h>
+#endif
 #endif
 
 #include <zlib.h>
@@ -157,6 +160,12 @@ typedef struct model_bone
 	model_t *parent;
 	int parent_idx;
 	int ptlen, ptmax;
+#ifdef USE_OPENGL
+	GLuint vbo;
+	int vbo_dirty;
+	float *vbo_arr;
+	int vbo_arr_len, vbo_arr_max;
+#endif
 	model_point_t pts[];
 } model_bone_t;
 
@@ -254,6 +263,13 @@ typedef struct map
 {
 	int udtype;
 	int xlen, ylen, zlen;
+#ifdef USE_OPENGL
+	GLuint vbo;
+	int vbo_dirty;
+	float *vbo_arr;
+	int vbo_arr_len, vbo_arr_max;
+	int vbo_cx, vbo_cz;
+#endif
 	uint8_t **pillars;
 	// TODO ? heap allocator ?
 } map_t;

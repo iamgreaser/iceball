@@ -84,6 +84,11 @@ int icelua_fn_common_map_new(lua_State *L)
 		*(p++) = 0; *(p++) = b; *(p++) = b; *(p++) = 0;
 		*(p++) = v; *(p++) = v; *(p++) = v; *(p++) = 1;
 	}
+#ifdef USE_OPENGL
+	map->vbo = 0;
+	map->vbo_dirty = 1;
+	map->vbo_arr = NULL;
+#endif
 	
 	lua_pushlightuserdata(L, map);
 	return 1;
@@ -320,6 +325,10 @@ int icelua_fn_common_map_pillar_set(lua_State *L)
 		*(p++) = (uint8_t)lua_tointeger(L, -1);
 		lua_pop(L, 1);
 	}
+
+#ifdef USE_OPENGL
+	map->vbo_dirty = 1;
+#endif
 	
 	force_redraw = 1;
 	

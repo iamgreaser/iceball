@@ -77,6 +77,8 @@ uint32_t cam_shading[6] = {
 	 0x000C0, 0x000A0, 0x000D0, 0x000E0, 0x00FF, 0x000D0,
 };
 
+void render_pillar(map_t *map, int x, int z);
+
 /*
  * REFERENCE IMPLEMENTATION
  * 
@@ -87,6 +89,25 @@ uint32_t render_shade(uint32_t color, int face)
 	uint32_t fc = cam_shading[face];
 	return (((((color&0x00FF00FF)*fc)>>8)&0x00FF00FF))
 		|((((((color>>8)&0x00FF00FF)*fc))&0xFF00FF00))|0x01000000;
+}
+
+void render_update_vbo(float **arr, int *len, int *max, int newlen)
+{
+	int xlen = 0;
+	
+	if(*arr == NULL)
+	{
+		xlen = newlen + 10;
+	} else if(newlen <= *max) {
+		return;
+	} else {
+		xlen = ((*max)*3)/2+1;
+		if(xlen < newlen)
+			xlen = newlen + 10;
+	}
+
+	*arr = realloc(*arr, xlen*sizeof(float)*6);
+	*max = xlen;
 }
 
 void render_gl_cube_pmf(float x, float y, float z, float r, float g, float b, float rad)
@@ -119,43 +140,52 @@ void render_gl_cube_pmf(float x, float y, float z, float r, float g, float b, fl
 	glEnd();
 }
 
-void render_gl_cube(float x, float y, float z, float r, float g, float b, float rad)
+void render_gl_cube_map(map_t *map, float x, float y, float z, float r, float g, float b, float rad)
 {
 	int i;
 	float ua,ub,uc;
 	float va,vb,vc;
 
-	glBegin(GL_QUADS);
-		for(i = 0; i < 3; i++)
-		{
-			ua = vfinf_cube[i*6+0];
-			ub = vfinf_cube[i*6+1];
-			uc = vfinf_cube[i*6+2];
-			va = vfinf_cube[i*6+3];
-			vb = vfinf_cube[i*6+4];
-			vc = vfinf_cube[i*6+5];
+	render_update_vbo(&(map->vbo_arr), &(map->vbo_arr_len), &(map->vbo_arr_max), map->vbo_arr_len+4*6);
+	float *arr = map->vbo_arr;
+	arr += map->vbo_arr_len*6;
+	map->vbo_arr_len += 4*6;
 
-			float s2 = ((int)cam_shading[i+0])/255.0f;
-			float s1 = ((int)cam_shading[i+3])/255.0f;
+	for(i = 0; i < 3; i++)
+	{
+		ua = vfinf_cube[i*6+0];
+		ub = vfinf_cube[i*6+1];
+		uc = vfinf_cube[i*6+2];
+		va = vfinf_cube[i*6+3];
+		vb = vfinf_cube[i*6+4];
+		vc = vfinf_cube[i*6+5];
 
-			glColor3f(r*s1,g*s1,b*s1);
-			glVertex3f(x,y,z);
-			glVertex3f(x+rad*ua,y+rad*ub,z+rad*uc);
-			glVertex3f(x+rad*(ua+va),y+rad*(ub+vb),z+rad*(uc+vc));
-			glVertex3f(x+rad*va,y+rad*vb,z+rad*vc);
+		float s2 = ((int)cam_shading[i+0])/255.0f;
+		float s1 = ((int)cam_shading[i+3])/255.0f;
+		float cr,cg,cb;
+	
+#define ARR_ADD(vx,vy,vz) \
+		*(arr++) = vx; *(arr++) = vy; *(arr++) = vz; \
+		*(arr++) = cr; *(arr++) = cg; *(arr++) = cb;
 
-			glColor3f(r*s2,g*s2,b*s2);
-			glVertex3f(x+rad,y+rad,z+rad);
-			glVertex3f(x+rad*(1-va),y+rad*(1-vb),z+rad*(1-vc));
-			glVertex3f(x+rad*(1-ua-va),y+rad*(1-ub-vb),z+rad*(1-uc-vc));
-			glVertex3f(x+rad*(1-ua),y+rad*(1-ub),z+rad*(1-uc));
-		}
-	glEnd();
+		cr = r*s1; cg = g*s1, cb = b*s1;
+		ARR_ADD(x,y,z);
+		ARR_ADD(x+rad*ua,y+rad*ub,z+rad*uc);
+		ARR_ADD(x+rad*(ua+va),y+rad*(ub+vb),z+rad*(uc+vc));
+		ARR_ADD(x+rad*va,y+rad*vb,z+rad*vc);
+
+		cr = r*s2; cg = g*s2, cb = b*s2;
+		ARR_ADD(x+rad,y+rad,z+rad);
+		ARR_ADD(x+rad*(1-va),y+rad*(1-vb),z+rad*(1-vc));
+		ARR_ADD(x+rad*(1-ua-va),y+rad*(1-ub-vb),z+rad*(1-uc-vc));
+		ARR_ADD(x+rad*(1-ua),y+rad*(1-ub),z+rad*(1-uc));
+#undef ARR_ADD
+	}
 }
 
-void render_vxl_cube(int x, int y, int z, uint8_t *color)
+void render_vxl_cube(map_t *map, int x, int y, int z, uint8_t *color)
 {
-	render_gl_cube(x, y, z, color[2]/255.0f, color[1]/255.0f, color[0]/255.0f, 1);
+	render_gl_cube_map(map, x, y, z, color[2]/255.0f, color[1]/255.0f, color[0]/255.0f, 1);
 }
 
 void render_pmf_cube(float x, float y, float z, int r, int g, int b, float rad)
@@ -166,7 +196,31 @@ void render_pmf_cube(float x, float y, float z, int r, int g, int b, float rad)
 
 void render_vxl_redraw(camera_t *camera, map_t *map)
 {
-	// TODO: update VBOs and stuff when we get to that point
+	if(map == NULL)
+		return;
+	
+	int x,y,z;
+	int cx,cy,cz;
+
+	cx = camera->mpx;
+	cy = camera->mpy;
+	cz = camera->mpz;
+
+	if((!map->vbo_dirty) && map->vbo_cx == cx && map->vbo_cz == cz)
+		return;
+
+	// TODO: split map up into several arrays
+	map->vbo_arr_len = 0;
+	for(z = (int)(cz-fog_distance-1); z <= (int)(cz+fog_distance); z++) 
+	for(x = (int)(cx-fog_distance-1); x <= (int)(cx+fog_distance); x++) 
+	{
+		// TODO: proper fog dist check
+		render_pillar(map,x,z);
+	}
+
+	map->vbo_cx = cx;
+	map->vbo_cz = cz;
+	map->vbo_dirty = 0;
 }
 
 void render_pillar(map_t *map, int x, int z)
@@ -183,7 +237,7 @@ void render_pillar(map_t *map, int x, int z)
 	for(;;)
 	{
 		for(y = data[1]; y <= data[2]; y++)
-			render_vxl_cube(x, y, z, &data[4*(y-data[1]+1)]);
+			render_vxl_cube(map, x, y, z, &data[4*(y-data[1]+1)]);
 
 		lastct = -(data[2]-data[1]+1);
 		if(lastct < 0)
@@ -196,7 +250,7 @@ void render_pillar(map_t *map, int x, int z)
 		data += 4*(int)data[0];
 
 		for(y = data[3]-lastct; y < data[3]; y++)
-			render_vxl_cube(x, y, z, &data[4*(y-data[3])]);
+			render_vxl_cube(map, x, y, z, &data[4*(y-data[3])]);
 	}
 }
 
@@ -224,15 +278,17 @@ void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t
 	glMatrixMode(GL_MODELVIEW);
 	glLoadMatrixf(mtx_mv);
 	glTranslatef(-cx,-cy,-cz);
-
-	//
-	for(z = (int)(cz-fog_distance-1); z <= (int)(cz+fog_distance); z++) 
-	for(x = (int)(cx-fog_distance-1); x <= (int)(cx+fog_distance); x++) 
-	{
-		// TODO: proper fog dist check
-		render_pillar(map,x,z);
-	}
-
+	
+	if(map == NULL)
+		return;
+	
+	glVertexPointer(3, GL_FLOAT, sizeof(float)*6, map->vbo_arr);
+	glColorPointer(3, GL_FLOAT, sizeof(float)*6, map->vbo_arr+3);
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_COLOR_ARRAY);
+	glDrawArrays(GL_QUADS, 0, map->vbo_arr_len);
+	glDisableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_COLOR_ARRAY);
 }
 
 void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_t *cam_base,
