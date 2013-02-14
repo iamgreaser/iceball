@@ -72,7 +72,15 @@ int video_init(void)
 {
 	SDL_WM_SetCaption("iceball",NULL);
 	
+#ifdef USE_OPENGL
+	SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
+	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
+	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
+	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+	screen = SDL_SetVideoMode(screen_width, screen_height, 32, SDL_OPENGL);
+#else
 	screen = SDL_SetVideoMode(screen_width, screen_height, 32, 0);
+#endif
 	
 	if(screen == NULL)
 		return error_sdl("SDL_SetVideoMode");
@@ -196,7 +204,11 @@ int update_client_cont1(void)
 	}
 	
 	SDL_UnlockSurface(screen);
+#ifdef USE_OPENGL
+	SDL_GL_SwapBuffers();
+#else
 	SDL_Flip(screen);
+#endif
 	
 	int msec_wait = 10*(int)(sec_wait*100.0f+0.5f);
 	if(msec_wait > 0)

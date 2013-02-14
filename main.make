@@ -2,7 +2,10 @@
 
 TOOLS = 
 
+ifndef RENDERER
 RENDERER = softgm
+endif
+
 SRCDIR = src
 INCDIR = include
 INCLUDES = $(INCDIR)/common.h

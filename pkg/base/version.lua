@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,0,0,0,18},
-	num=18,
-	str="0.0-18",
+	cmp={0,0,0,0,19},
+	num=19,
+	str="0.0-19",
 }
 
 VERSION_BUGS = {
@@ -39,4 +39,6 @@ VERSION_BUGS = {
 {intro=nil, fix=14, msg="Color conversion functions are using hacky Lua code"},
 {intro=nil, fix=16, msg="Per-face shading is only preliminary"},
 {intro=nil, fix=17, msg="OpenMP not supported"},
+{intro=nil, fix=19, msg="OpenGL not supported"},
+{intro=19, fix=nil, msg="Preliminary OpenGL support (fog not supported yet)"},
 }
