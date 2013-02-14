@@ -14,6 +14,7 @@ CFLAGS = -O2 -fno-strict-aliasing -g -Wall -Wextra \
 	-Iwinlibs -Iwinlibs/SDL \
 	-msse2 -mfpmath=sse \
 	-fopenmp \
+	-DUSE_OPENGL -DGL_BGRA=0x80E1 \
 	$(CFLAGS_EXTRA) \
 	-I $(INCDIR)
 
@@ -23,10 +24,11 @@ LIBS_Lua = -llua
 LIBS_Winsuck = -lws2_32
 # Lua is not an acronym. Get used to typing it with lower case u/a.
 LIBS_zlib = -lz
-LIBS = -Lwinlibs -lm -lmingw32 $(LIBS_Lua) $(LIBS_SDL) $(LIBS_zlib) $(LIBS_Winsuck)
-BINNAME = iceball.exe
+LIBS = -Lwinlibs -lm -lmingw32 $(LIBS_Lua) $(LIBS_SDL) $(LIBS_zlib) $(LIBS_Winsuck) -lopengl32
+BINNAME = iceball-gl.exe
+RENDERER = gl
 
-OBJDIR = build/mingw32_gl
+OBJDIR = build/mingw32
 
 MINGPREFIX = i686-pc-mingw32
 CC = $(MINGPREFIX)-gcc
