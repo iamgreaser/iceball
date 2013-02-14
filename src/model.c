@@ -58,6 +58,12 @@ model_bone_t *model_bone_new(model_t *pmf, int ptmax)
 	bone->parent = pmf;
 	bone->parent_idx = pmf->bonelen++;
 	pmf->bones[bone->parent_idx] = bone;
+
+#ifdef USE_OPENGL
+	bone->vbo_dirty = 1;
+	bone->vbo = 0;
+	bone->vbo_arr = NULL;
+#endif
 	
 	return bone;
 }

@@ -110,34 +110,41 @@ void render_update_vbo(float **arr, int *len, int *max, int newlen)
 	*max = xlen;
 }
 
-void render_gl_cube_pmf(float x, float y, float z, float r, float g, float b, float rad)
+void render_gl_cube_pmf(model_bone_t *bone, float x, float y, float z, float r, float g, float b, float rad)
 {
 	int i;
 	float ua,ub,uc;
 	float va,vb,vc;
 
-	glColor3f(r,g,b);
-	glBegin(GL_QUADS);
-		for(i = 0; i < 3; i++)
-		{
-			ua = vfinf_cube[i*6+0];
-			ub = vfinf_cube[i*6+1];
-			uc = vfinf_cube[i*6+2];
-			va = vfinf_cube[i*6+3];
-			vb = vfinf_cube[i*6+4];
-			vc = vfinf_cube[i*6+5];
+	render_update_vbo(&(bone->vbo_arr), &(bone->vbo_arr_len), &(bone->vbo_arr_max), bone->vbo_arr_len+4*6);
+	float *arr = bone->vbo_arr;
+	arr += bone->vbo_arr_len*6;
+	bone->vbo_arr_len += 4*6;
 
-			glVertex3f(x,y,z);
-			glVertex3f(x+rad*ua,y+rad*ub,z+rad*uc);
-			glVertex3f(x+rad*(ua+va),y+rad*(ub+vb),z+rad*(uc+vc));
-			glVertex3f(x+rad*va,y+rad*vb,z+rad*vc);
+	for(i = 0; i < 3; i++)
+	{
+		ua = vfinf_cube[i*6+0];
+		ub = vfinf_cube[i*6+1];
+		uc = vfinf_cube[i*6+2];
+		va = vfinf_cube[i*6+3];
+		vb = vfinf_cube[i*6+4];
+		vc = vfinf_cube[i*6+5];
+		
+#define ARR_ADD(vx,vy,vz) \
+		*(arr++) = vx; *(arr++) = vy; *(arr++) = vz; \
+		*(arr++) = r; *(arr++) = g; *(arr++) = b;
 
-			glVertex3f(x+rad,y+rad,z+rad);
-			glVertex3f(x+rad*(1-va),y+rad*(1-vb),z+rad*(1-vc));
-			glVertex3f(x+rad*(1-ua-va),y+rad*(1-ub-vb),z+rad*(1-uc-vc));
-			glVertex3f(x+rad*(1-ua),y+rad*(1-ub),z+rad*(1-uc));
-		}
-	glEnd();
+		ARR_ADD(x,y,z);
+		ARR_ADD(x+rad*ua,y+rad*ub,z+rad*uc);
+		ARR_ADD(x+rad*(ua+va),y+rad*(ub+vb),z+rad*(uc+vc));
+		ARR_ADD(x+rad*va,y+rad*vb,z+rad*vc);
+
+		ARR_ADD(x+rad,y+rad,z+rad);
+		ARR_ADD(x+rad*(1-va),y+rad*(1-vb),z+rad*(1-vc));
+		ARR_ADD(x+rad*(1-ua-va),y+rad*(1-ub-vb),z+rad*(1-uc-vc));
+		ARR_ADD(x+rad*(1-ua),y+rad*(1-ub),z+rad*(1-uc));
+#undef ARR_ADD
+	}
 }
 
 void render_gl_cube_map(map_t *map, float x, float y, float z, float r, float g, float b, float rad)
@@ -188,10 +195,10 @@ void render_vxl_cube(map_t *map, int x, int y, int z, uint8_t *color)
 	render_gl_cube_map(map, x, y, z, color[2]/255.0f, color[1]/255.0f, color[0]/255.0f, 1);
 }
 
-void render_pmf_cube(float x, float y, float z, int r, int g, int b, float rad)
+void render_pmf_cube(model_bone_t *bone, float x, float y, float z, int r, int g, int b, float rad)
 {
 	float hrad = rad/2.0f;
-	render_gl_cube_pmf(x-hrad, y-hrad, z-hrad, r/255.0f, g/255.0f, b/255.0f, rad);
+	render_gl_cube_pmf(bone, x-hrad, y-hrad, z-hrad, r/255.0f, g/255.0f, b/255.0f, rad);
 }
 
 void render_vxl_redraw(camera_t *camera, map_t *map)
@@ -295,20 +302,36 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 	model_bone_t *bone, int islocal,
 	float px, float py, float pz, float ry, float rx, float ry2, float scale)
 {
+	int i;
+
 	glEnable(GL_DEPTH_TEST);
 	glPushMatrix();
+	if(islocal)
+		glLoadIdentity();
 	glTranslatef(px, py, pz);
 	glScalef(scale,scale,scale);
 	glRotatef(ry2*180.0f/M_PI, 0.0f, 1.0f, 0.0f);
 	glRotatef(rx*180.0f/M_PI, 1.0f, 0.0f, 0.0f);
 	glRotatef(ry*180.0f/M_PI, 0.0f, 1.0f, 0.0f);
 
-	int i;
-	for(i = 0; i < bone->ptlen; i++)
+	if(bone->vbo_dirty)
 	{
-		model_point_t *pt = &(bone->pts[i]);
-		render_pmf_cube(pt->x/256.0f, pt->y/256.0f, pt->z/256.0f, pt->r, pt->g, pt->b, pt->radius*2.0f/256.0f);
+		bone->vbo_arr_len = 0;
+		for(i = 0; i < bone->ptlen; i++)
+		{
+			model_point_t *pt = &(bone->pts[i]);
+			render_pmf_cube(bone, pt->x/256.0f, pt->y/256.0f, pt->z/256.0f, pt->r, pt->g, pt->b, pt->radius*2.0f/256.0f);
+		}
+		bone->vbo_dirty = 0;
 	}
+
+	glVertexPointer(3, GL_FLOAT, sizeof(float)*6, bone->vbo_arr);
+	glColorPointer(3, GL_FLOAT, sizeof(float)*6, bone->vbo_arr+3);
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_COLOR_ARRAY);
+	glDrawArrays(GL_QUADS, 0, bone->vbo_arr_len);
+	glDisableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_COLOR_ARRAY);
 
 	glPopMatrix();
 }

@@ -41,4 +41,5 @@ VERSION_BUGS = {
 {intro=nil, fix=17, msg="OpenMP not supported"},
 {intro=nil, fix=19, msg="OpenGL not supported"},
 {intro=19, fix=nil, msg="Preliminary OpenGL support (fog not supported yet)"},
+{intro=19, fix=21, msg="OpenGL renderer ignores islocal flag when rendering PMFs"},
 }
