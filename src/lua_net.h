@@ -161,7 +161,7 @@ int icelua_fn_common_net_pack(lua_State *L)
 				*(s++) = (xint>>8) & 0xFF;
 				*(s++) = (xint>>16) & 0xFF;
 				*(s++) = (xint>>24) & 0xFF;
-				xint = ((int *)(float *)&xdouble)[4];
+				xint = ((int *)(float *)&xdouble)[1];
 				*(s++) = xint & 0xFF;
 				*(s++) = (xint>>8) & 0xFF;
 				*(s++) = (xint>>16) & 0xFF;
