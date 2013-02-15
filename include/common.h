@@ -40,25 +40,44 @@
 
 //define RENDER_FACE_COUNT 2
 
+#ifndef _MSC_VER
+#define PACK_START
+#define PACK_END
 #include <immintrin.h>
+#include <stdint.h>
+#else
+#define __attribute__(x)
+#define PACK_START __pragma( pack(push, 1) )
+#define PACK_END __pragma( pack(pop) )
+typedef unsigned int uint32_t;
+#define snprintf	sprintf_s
+#define _USE_MATH_DEFINES	//M_PI and whatnot from math.h
+#pragma warning( disable: 4200 4244 4996)
+#endif
 #include <omp.h>
 
 #include <string.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <errno.h>
 
-#include <sys/time.h>
 #ifndef WIN32
+#include <sys/time.h>
 #include <signal.h>
 #endif
 
 #include <math.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
+#ifdef __cplusplus
+};
+#endif
+
 
 #ifndef DEDI
 #include <SDL.h>
@@ -76,7 +95,6 @@
 #define _WIN32_WINNT 0x0501
 #include <winsock2.h>
 #include <ws2tcpip.h>
-extern WSADATA windows_sucks;
 
 #else
 
@@ -118,6 +136,7 @@ enum
 #ifdef __SSE__
 __attribute__((aligned(16)))
 #endif
+PACK_START
 typedef union vec4f
 {
 	struct { float x,y,z,w; } __attribute__((__packed__)) p;
@@ -135,6 +154,7 @@ typedef struct matrix
 	//column-major!
 	vec4f_t c[4];
 } __attribute__((__packed__)) matrix_t;
+PACK_END
 
 typedef struct camera
 {
@@ -145,12 +165,14 @@ typedef struct camera
 	float mpx,mpy,mpz,mppad;
 } camera_t;
 
+PACK_START
 typedef struct model_point
 {
 	uint16_t radius;
 	int16_t x,y,z;
 	uint8_t b,g,r,resv1;
 } __attribute__((__packed__)) model_point_t;
+PACK_END
 
 typedef struct model model_t;
 typedef struct model_bone
@@ -176,6 +198,7 @@ struct model
 	model_bone_t *bones[];
 };
 
+PACK_START
 // source: http://paulbourke.net/dataformats/tga/
 typedef struct img_tgahead
 {
@@ -192,6 +215,7 @@ typedef struct img_tgahead
 	uint8_t bpp;
 	uint8_t flags;
 } __attribute__((__packed__)) img_tgahead_t;
+PACK_END
 
 typedef struct img
 {
@@ -319,10 +343,6 @@ typedef struct client
 	int spkt_ppos,spkt_len;
 } client_t;
 
-struct netdata
-{
-	int sockfd;
-} netdata_t;
 
 #define SOCKFD_NONE -1
 #define SOCKFD_LOCAL -2

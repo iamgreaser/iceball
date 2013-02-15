@@ -25,3 +25,11 @@ gmon.out
 # kate
 *.kate-swp
 
+#visual studio files (personal config and whatnot)
+*.suo
+*.ncb
+*.user
+
+msvc/Debug
+msvc/Release
+build/msvc

@@ -18,7 +18,19 @@
 #include "common.h"
 
 #ifdef WIN32
-WSADATA windows_sucks;
+WSADATA wsaStartup;
+#define close(x)	closesocket(x)
+#if _MSC_VER
+int bind( SOCKET s, void* name, int namelen )
+{
+	return bind( s, (const sockaddr*)name, namelen );
+}
+int setsockopt( SOCKET s, int level, int optname,  void* optval, int optlen )
+{
+	return setsockopt( s, level, optname, (const char*)optval, optlen );
+}
+
+#endif
 #endif
 
 int server_sockfd_ipv4 = -1;
@@ -77,7 +89,7 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t cnt)
 		if (cnt < INET_ADDRSTRLEN)
 			return NULL;
 		
-		p = src;
+		p = (const uint8_t*)src;
 		snprintf(dst, cnt, "%u.%u.%u.%u",
 			(unsigned int) (p[0] & 0xff), (unsigned int) (p[1] & 0xff),
 			(unsigned int) (p[2] & 0xff), (unsigned int) (p[3] & 0xff));
@@ -85,7 +97,7 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t cnt)
 		if (cnt < 5*8)
 			return NULL;
 		
-		p = src;
+		p = (const uint8_t*)src;
 		snprintf(dst, cnt, "%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x",
 			(unsigned int) (p[0] & 0xff), (unsigned int) (p[1] & 0xff),
 			(unsigned int) (p[2] & 0xff), (unsigned int) (p[3] & 0xff),
@@ -119,7 +131,7 @@ int net_packet_push(int len, const char *data, int sockfd, packet_t **head, pack
 		return 1;
 	}
 	
-	packet_t *pkt = malloc(sizeof(packet_t)+len);
+	packet_t *pkt = (packet_t*)malloc(sizeof(packet_t)+len);
 	if(pkt == NULL)
 	{
 		error_perror("net_packet_new");
@@ -161,7 +173,7 @@ int net_packet_push_lua(int len, const char *data, int sockfd, packet_t **head, 
 	
 	int poffs = (len >= 64 ? 3 : 1);
 	
-	packet_t *pkt = malloc(sizeof(packet_t)+len+poffs);
+	packet_t *pkt = (packet_t*)malloc(sizeof(packet_t)+len+poffs);
 	if(pkt == NULL)
 	{
 		error_perror("net_packet_new");
@@ -331,7 +343,7 @@ char *net_fetch_file(const char *fname, int *flen)
 	
 	int buf_len = 512;
 	int buf_pos = 0;
-	char *buf = malloc(buf_len+1);
+	char *buf = (char*)malloc(buf_len+1);
 	// TODO: check if NULL
 	int buf_cpy;
 	
@@ -352,7 +364,7 @@ char *net_fetch_file(const char *fname, int *flen)
 			break;
 		
 		buf_len += (buf_len>>1)+1;
-		buf = realloc(buf, buf_len+1);
+		buf = (char*)realloc(buf, buf_len+1);
 	}
 	
 	fclose(fp);
@@ -440,7 +452,7 @@ void net_eat_c2s(client_t *cli)
 									use_serialised = -1;
 									break;
 								}
-								map_t *map = lua_touserdata(lstate_server, -1);
+								map_t *map = (map_t*)lua_touserdata(lstate_server, -1);
 								lua_pop(lstate_server, 1);
 								other->sfetch_ubuf = map_serialise_icemap(
 									map, &(other->sfetch_ulen));
@@ -493,7 +505,7 @@ void net_eat_c2s(client_t *cli)
 					other->sfetch_udtype = udtype;
 					
 					uLongf cbound = compressBound(other->sfetch_ulen);
-					other->sfetch_cbuf = malloc(cbound);
+					other->sfetch_cbuf = (char*)malloc(cbound);
 					// TODO: check if NULL
 					if(compress((Bytef *)(other->sfetch_cbuf), &cbound,
 						(Bytef *)(other->sfetch_ubuf), other->sfetch_ulen))
@@ -621,7 +633,7 @@ void net_eat_s2c(client_t *cli)
 				//printf("clen=%i ulen=%i\n", clen, ulen);
 				cli->cfetch_clen = clen;
 				cli->cfetch_ulen = ulen;
-				cli->cfetch_cbuf = malloc(clen);
+				cli->cfetch_cbuf = (char*)malloc(clen);
 				cli->cfetch_ubuf = NULL;
 				cli->cfetch_cpos = 0;
 				// TODO: check if NULL
@@ -632,7 +644,7 @@ void net_eat_s2c(client_t *cli)
 				// 0x32:
 				// file transfer end
 				//printf("transfer END\n");
-				cli->cfetch_ubuf = malloc(cli->cfetch_ulen);
+				cli->cfetch_ubuf = (char*)malloc(cli->cfetch_ulen);
 				// TODO: check if NULL
 				
 				uLongf dlen = cli->cfetch_ulen;
@@ -832,7 +844,6 @@ void net_flush_parse_s2c(client_t *cli)
 client_t *net_find_sockfd(int sockfd)
 {
 	int i;
-	client_t *cli;
 	
 	if(sockfd == SOCKFD_LOCAL)
 	{
@@ -960,7 +971,7 @@ void net_flush_accept_one(int sockfd, struct sockaddr_storage *ss, socklen_t sle
 	// set connection nonblocking
 	yes = 1;
 #ifdef WIN32
-	if(ioctlsocket(sockfd,FIONBIO,(void *)&yes) == -1) {
+	if(ioctlsocket(sockfd,FIONBIO,(u_long *)&yes) == -1) {
 #else
 	if(fcntl(sockfd, F_SETFL,
 			fcntl(sockfd, F_GETFL) | O_NONBLOCK) == -1) {
@@ -1351,7 +1362,7 @@ int net_connect(void)
 			
 			int yes = 1;
 #ifdef WIN32
-			if(ioctlsocket(sockfd, FIONBIO, (void *)&yes))
+			if(ioctlsocket(sockfd, FIONBIO, (u_long *)&yes))
 #else
 			if(fcntl(sockfd, F_SETFL,
 				fcntl(sockfd, F_GETFL) | O_NONBLOCK))
@@ -1421,7 +1432,6 @@ int net_bind(void)
 	sa4.sin_addr.s_addr = INADDR_ANY;
 	
 	int yes = 1; // who the hell uses solaris anyway
-	int tflags;
 	if(setsockopt(server_sockfd_ipv6, SOL_SOCKET, SO_REUSEADDR, (void *)&yes, sizeof(yes)) == -1)
 	{
 		perror("net_bind(reuseaddr.6)");
@@ -1445,7 +1455,7 @@ int net_bind(void)
 			perror("net_bind(listen.6)");
 			server_sockfd_ipv6 = -1;
 #ifdef WIN32
-		} else if(ioctlsocket(server_sockfd_ipv6,FIONBIO,(void *)&yes)) {
+		} else if(ioctlsocket(server_sockfd_ipv6,FIONBIO,(u_long *)&yes)) {
 #else
 		} else if(fcntl(server_sockfd_ipv6, F_SETFL,
 			fcntl(server_sockfd_ipv6, F_GETFL) | O_NONBLOCK)) {
@@ -1466,7 +1476,7 @@ int net_bind(void)
 			perror("net_bind(listen.4)");
 			server_sockfd_ipv4 = -1;
 #ifdef WIN32
-		} else if(ioctlsocket(server_sockfd_ipv4,FIONBIO,(void *)&yes)) {
+		} else if(ioctlsocket(server_sockfd_ipv4,FIONBIO,(u_long *)&yes)) {
 #else
 		} else if(fcntl(server_sockfd_ipv4, F_SETFL,
 			fcntl(server_sockfd_ipv4, F_GETFL) | O_NONBLOCK)) {
@@ -1507,7 +1517,7 @@ int net_init(void)
 	
 #ifdef WIN32
 	// complete hackjob
-	if(WSAStartup(MAKEWORD(2,0), &windows_sucks) != 0)
+	if(WSAStartup(MAKEWORD(2,0), &wsaStartup) != 0)
 	{
 		fprintf(stderr, "net_init: WSAStartup failed\n");
 		return 1;

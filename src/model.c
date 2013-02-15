@@ -19,7 +19,7 @@
 
 model_t *model_new(int bonemax)
 {
-	model_t *pmf = malloc(sizeof(model_t)+sizeof(model_bone_t *)*bonemax);
+	model_t *pmf = (model_t*)malloc(sizeof(model_t)+sizeof(model_bone_t *)*bonemax);
 	// TODO: check if NULL
 	
 	pmf->bonelen = 0;
@@ -31,7 +31,7 @@ model_t *model_new(int bonemax)
 
 model_t *model_extend(model_t *pmf, int bonemax)
 {
-	pmf = realloc(pmf, sizeof(model_t)+sizeof(model_bone_t *)*bonemax);
+	pmf = (model_t*)realloc(pmf, sizeof(model_t)+sizeof(model_bone_t *)*bonemax);
 	// TODO: check if NULL
 	
 	pmf->bonemax = bonemax;
@@ -49,7 +49,7 @@ void model_free(model_t *pmf)
 
 model_bone_t *model_bone_new(model_t *pmf, int ptmax)
 {
-	model_bone_t *bone = malloc(sizeof(model_bone_t)+sizeof(model_point_t)*ptmax);
+	model_bone_t *bone = (model_bone_t*)malloc(sizeof(model_bone_t)+sizeof(model_point_t)*ptmax);
 	// TODO: check if NULL
 	
 	bone->ptlen = 0;
@@ -71,7 +71,7 @@ model_bone_t *model_bone_new(model_t *pmf, int ptmax)
 model_bone_t *model_bone_extend(model_bone_t *bone, int ptmax)
 {
 	model_t *pmf = bone->parent;
-	bone = realloc(bone, sizeof(model_bone_t)+sizeof(model_point_t)*ptmax);
+	bone = (model_bone_t*)realloc(bone, sizeof(model_bone_t)+sizeof(model_point_t)*ptmax);
 	// TODO: check if NULL
 	
 	pmf->bones[bone->parent_idx] = bone;
@@ -101,8 +101,6 @@ model_t *model_parse_pmf(int len, const char *data)
 	// and now we crawl through the spec.
 	
 	// start with the header of "PMF",0x1A,1,0,0,0
-	char head[8];
-	
 	if(memcmp(p, "PMF\x1A\x01\x00\x00\x00", 8))
 	{
 		fprintf(stderr, "model_load_pmf: not a valid PMF v1 file\n");
@@ -199,7 +197,7 @@ model_t *model_load_pmf(const char *fname)
 
 int model_save_pmf(model_t *pmf, const char *fname)
 {
-	int i,j;
+	int i;
 	
 	FILE *fp = fopen(fname, "wb");
 	
@@ -210,8 +208,6 @@ int model_save_pmf(model_t *pmf, const char *fname)
 	// and now we crawl through the spec.
 	
 	// start with the header of "PMF",0x1A,1,0,0,0
-	char head[8];
-	
 	fwrite("PMF\x1A\x01\x00\x00\x00", 8, 1, fp);
 	
 	// then there's a uint32_t denoting how many body parts there are

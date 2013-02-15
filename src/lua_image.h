@@ -22,7 +22,7 @@ int icelua_fn_client_img_blit(lua_State *L)
 	int dx, dy, bw, bh, sx, sy;
 	uint32_t color;
 	
-	img_t *img = lua_touserdata(L, 1);
+	img_t *img = (img_t*)lua_touserdata(L, 1);
 	if(img == NULL || img->udtype != UD_IMG)
 		return luaL_error(L, "not an image");
 	
@@ -37,7 +37,7 @@ int icelua_fn_client_img_blit(lua_State *L)
 #ifdef DEDI
 	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
 #else
-	render_blit_img(screen->pixels, screen->w, screen->h, screen->pitch/4,
+	render_blit_img((uint32_t*)screen->pixels, screen->w, screen->h, screen->pitch/4,
 		img, dx, dy, bw, bh, sx, sy, color);
 #endif
 	
@@ -50,10 +50,10 @@ int icelua_fn_client_img_blit_to(lua_State *L)
 	int dx, dy, bw, bh, sx, sy;
 	uint32_t color;
 	
-	img_t *dest = lua_touserdata(L, 1);
+	img_t *dest = (img_t*)lua_touserdata(L, 1);
 	if(dest == NULL || dest->udtype != UD_IMG)
 		return luaL_error(L, "not an image");
-	img_t *source = lua_touserdata(L, 2);
+	img_t *source = (img_t*)lua_touserdata(L, 2);
 	if(source == NULL || source->udtype != UD_IMG)
 		return luaL_error(L, "not an image");
 	
@@ -88,7 +88,7 @@ int icelua_fn_common_img_load(lua_State *L)
 	lua_pushvalue(L, 1);
 	lua_call(L, 2, 1);
 	
-	img_t *img = lua_touserdata(L, -1);
+	img_t *img = (img_t*)lua_touserdata(L, -1);
 	if(img == NULL)
 		return 0;
 	
@@ -110,7 +110,7 @@ int icelua_fn_common_img_new(lua_State *L)
 	if(w < 1 || h < 1)
 		return luaL_error(L, "image too small");
 	
-	img_t *img = malloc(sizeof(img_t)+(w*h*sizeof(uint32_t)));
+	img_t *img = (img_t*)malloc(sizeof(img_t)+(w*h*sizeof(uint32_t)));
 	if(img == NULL)
 		return luaL_error(L, "could not allocate memory");
 	
@@ -138,11 +138,9 @@ int icelua_fn_common_img_new(lua_State *L)
 
 int icelua_fn_common_img_pixel_set(lua_State *L)
 {
-	int i;
-	
 	int top = icelua_assert_stack(L, 4, 4);
 	
-	img_t *img = lua_touserdata(L, 1);
+	img_t *img = (img_t*)lua_touserdata(L, 1);
 	if(img == NULL || img->udtype != UD_IMG)
 		return luaL_error(L, "not an image");
 	int x = lua_tointeger(L, 2);
@@ -163,7 +161,7 @@ int icelua_fn_common_img_fill(lua_State *L)
 	
 	int top = icelua_assert_stack(L, 2, 2);
 	
-	img_t *img = lua_touserdata(L, 1);
+	img_t *img = (img_t*)lua_touserdata(L, 1);
 	if(img == NULL || img->udtype != UD_IMG)
 		return luaL_error(L, "not an image");
 	uint32_t color = lua_tointeger(L, 2);
@@ -178,7 +176,7 @@ int icelua_fn_common_img_free(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 1, 1);
 	
-	img_t *img = lua_touserdata(L, 1);
+	img_t *img = (img_t*)lua_touserdata(L, 1);
 	if(img == NULL || img->udtype != UD_IMG)
 		return luaL_error(L, "not an image");
 	
@@ -191,7 +189,7 @@ int icelua_fn_common_img_get_dims(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 1, 1);
 	
-	img_t *img = lua_touserdata(L, 1);
+	img_t *img = (img_t*)lua_touserdata(L, 1);
 	if(img == NULL || img->udtype != UD_IMG)
 		return luaL_error(L, "not an image");
 	
