@@ -104,7 +104,7 @@ int json_parse_string(lua_State *L, const char **p)
 	
 	int sbuf_pos = 0;
 	int sbuf_len = 64;
-	char *sbuf = malloc(sbuf_len);
+	char *sbuf = (char*)malloc(sbuf_len);
 	// TODO: throughout this code, check if sbuf is NULL
 	int uchr = 0;
 	int lastwasr = 0;
@@ -177,7 +177,7 @@ int json_parse_string(lua_State *L, const char **p)
 		if(sbuf_pos+4 >= sbuf_len)
 		{
 			sbuf_len <<= 1;
-			sbuf = realloc(sbuf, sbuf_len);
+			sbuf = (char*)realloc(sbuf, sbuf_len);
 			//printf("%i %016llX\n", sbuf_len, sbuf);
 		}
 		

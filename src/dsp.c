@@ -101,7 +101,7 @@ float wavelength2frequency(int rate, float wavelength)
 
 /* 12-tone scale MIDI notes are defined by this log function. 60 is "C-4", 69 is "A-4". */
 float frequency2midinote(float frequency) 
-{ return 69 + 12*(log(frequency/440.)/log(2)); }
+{ return 69 + 12*(log(frequency/440.)/log(2.)); }
 float midinote2frequency(float midinote) 
 { return pow(2,(midinote-69)/12)*440; }
 

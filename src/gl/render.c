@@ -105,7 +105,7 @@ void render_update_vbo(float **arr, int *len, int *max, int newlen)
 			xlen = newlen + 10;
 	}
 
-	*arr = realloc(*arr, xlen*sizeof(float)*6);
+	*arr = (float*)realloc(*arr, xlen*sizeof(float)*6);
 	*max = xlen;
 }
 

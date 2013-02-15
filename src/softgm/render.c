@@ -859,7 +859,7 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 		return;
 	}
 	
-	int i,x,y,z;
+	int i;
 	
 	// stash stuff in globals to prevent spamming the stack too much
 	// (and in turn thrashing the cache)
@@ -896,7 +896,7 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 		if(rayc_mark_size != markbase)
 		{
 			rayc_mark_size = markbase;
-			rayc_mark = realloc(rayc_mark, rayc_mark_size*sizeof(int));
+			rayc_mark = (int*)realloc(rayc_mark, rayc_mark_size*sizeof(int));
 #ifdef RENDER_CUBES_MULTITHREADED
 			rayc_stack_len = realloc(rayc_stack_len, rayc_mark_size*8*sizeof(int));
 			rayc_stack_ordlen = realloc(rayc_stack_ordlen, rayc_mark_size*8*sizeof(int));
@@ -906,7 +906,7 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 		if(rayc_block_size != blockbase)
 		{
 			rayc_block_size = blockbase;
-			rayc_block = realloc(rayc_block, rayc_block_size*sizeof(rayblock_t));
+			rayc_block = (rayblock_t*)realloc(rayc_block, rayc_block_size*sizeof(rayblock_t));
 		}
 	}
 	
@@ -1284,7 +1284,7 @@ void render_cubemap_edge(
 	int x1, int y1, float z1, float u1, float v1,
 	int x2, int y2, float z2, float u2, float v2)
 {
-	int x,y;
+	int y;
 	
 	// if out of Y range, drop out early.
 	if(y1 < 0 && y2 < 0)
@@ -1577,7 +1577,7 @@ void render_cubemap_new(uint32_t *pixels, int width, int height, int pitch, came
 			free(elist);
 		
 		elist_len = height;
-		elist = malloc(sizeof(edgebit_t)*elist_len);
+		elist = (edgebit_t*)malloc(sizeof(edgebit_t)*elist_len);
 	}
 	
 	// do each face
@@ -1593,7 +1593,7 @@ void render_cubemap_new(uint32_t *pixels, int width, int height, int pitch, came
 
 void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t *camera, map_t *map)
 {
-	int x,y,z;
+	int x,y;
 	
 	// stash stuff in globals to prevent spamming the stack too much
 	// (and in turn thrashing the cache)
@@ -1880,8 +1880,8 @@ int render_init(int width, int height)
 	// allocate cubemaps
 	for(i = 0; i < CM_MAX; i++)
 	{
-		cubemap_color[i] = malloc(size*size*4);
-		cubemap_depth[i] = malloc(size*size*4);
+		cubemap_color[i] = (uint32_t*)malloc(size*size*4);
+		cubemap_depth[i] = (float*)malloc(size*size*4);
 		if(cubemap_color[i] == NULL || cubemap_depth[i] == NULL)
 		{
 			// Can't allocate :. Can't continue
@@ -1913,7 +1913,7 @@ int render_init(int width, int height)
 	}
 	
 	// allocate space for depth buffer
-	dbuf = malloc(width*height*sizeof(float));
+	dbuf = (float*)malloc(width*height*sizeof(float));
 	// TODO: check if NULL
 	
 	return 0;

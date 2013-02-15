@@ -47,3 +47,27 @@ STUFF TO DO BEFORE 0.1 CAN BE RELEASED:
 - make net_pack more solid
 - JSON writer
 - make kicking not suck
+
+MSVC readme (wip):
+- create a folder 'winlibs' in the buldenthesnip dir
+  dump all dll's + lib's in this folder (opengl,lua,zlib, sdl, glew)
+  dump all includes in submaps (glew in glew submap, and so on)
+  /buldenthesnip/
+    /winlibs/
+	  /glew/
+	  /lua/
+	  /SDL/
+	  /zlib/
+	  glew32.lib
+	  glew32.dll
+	  lua5.1.lib
+	  lua5.1.dll
+	  and so on..
+
+- right mouse on project -> properties.
+  Working directory (without quotes): '$(SolutionDir)/../'
+  Command Arguments (without quotes):
+	'-c iceballga.me 20737'  (connect to srv)
+	'-s 0 pkg/base' (make local srv)
+- edit clsave/pub/user.json
+- now run it from vs.net debugger :)
