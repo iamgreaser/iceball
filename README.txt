@@ -71,3 +71,6 @@ MSVC readme (wip):
 	'-s 0 pkg/base' (make local srv)
 - edit clsave/pub/user.json
 - now run it from vs.net debugger :)
+
+for the git starters:
+> git update-index --assume-unchanged clsave\pub\user.json
