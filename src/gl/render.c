@@ -227,6 +227,16 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 	map->vbo_cx = cx;
 	map->vbo_cz = cz;
 	map->vbo_dirty = 0;
+
+	if(map->vbo == 0 && GL_ARB_vertex_buffer_object)
+		glGenBuffers(1, &(map->vbo));
+
+	if(map->vbo != 0)
+	{
+		glBindBuffer(GL_ARRAY_BUFFER, map->vbo);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(float)*6*map->vbo_arr_len, map->vbo_arr, GL_DYNAMIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+	}
 }
 
 void render_pillar(map_t *map, int x, int z)
@@ -305,13 +315,22 @@ void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t
 	if(map == NULL)
 		return;
 	
-	glVertexPointer(3, GL_FLOAT, sizeof(float)*6, map->vbo_arr);
-	glColorPointer(3, GL_FLOAT, sizeof(float)*6, map->vbo_arr+3);
+	if(map->vbo == 0)
+	{
+		glVertexPointer(3, GL_FLOAT, sizeof(float)*6, map->vbo_arr);
+		glColorPointer(3, GL_FLOAT, sizeof(float)*6, map->vbo_arr+3);
+	} else {
+		glBindBuffer(GL_ARRAY_BUFFER, map->vbo);
+		glVertexPointer(3, GL_FLOAT, sizeof(float)*6, (void *)(0));
+		glColorPointer(3, GL_FLOAT, sizeof(float)*6, (void *)(0 + sizeof(float)*3));
+	}
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glEnableClientState(GL_COLOR_ARRAY);
 	glDrawArrays(GL_QUADS, 0, map->vbo_arr_len);
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glDisableClientState(GL_COLOR_ARRAY);
+	if(map->vbo != 0)
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_t *cam_base,
@@ -338,16 +357,36 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 			model_point_t *pt = &(bone->pts[i]);
 			render_pmf_cube(bone, pt->x/256.0f, pt->y/256.0f, pt->z/256.0f, pt->r, pt->g, pt->b, pt->radius*2.0f/256.0f);
 		}
+		
 		bone->vbo_dirty = 0;
+		
+		if(bone->vbo == 0 && GL_ARB_vertex_buffer_object)
+			glGenBuffers(1, &(bone->vbo));
+
+		if(bone->vbo != 0)
+		{
+			glBindBuffer(GL_ARRAY_BUFFER, bone->vbo);
+			glBufferData(GL_ARRAY_BUFFER, sizeof(float)*6*bone->vbo_arr_len, bone->vbo_arr, GL_DYNAMIC_DRAW);
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+		}
 	}
 
-	glVertexPointer(3, GL_FLOAT, sizeof(float)*6, bone->vbo_arr);
-	glColorPointer(3, GL_FLOAT, sizeof(float)*6, bone->vbo_arr+3);
+	if(bone->vbo == 0)
+	{
+		glVertexPointer(3, GL_FLOAT, sizeof(float)*6, bone->vbo_arr);
+		glColorPointer(3, GL_FLOAT, sizeof(float)*6, bone->vbo_arr+3);
+	} else {
+		glBindBuffer(GL_ARRAY_BUFFER, bone->vbo);
+		glVertexPointer(3, GL_FLOAT, sizeof(float)*6, (void *)(0));
+		glColorPointer(3, GL_FLOAT, sizeof(float)*6, (void *)(0 + sizeof(float)*3));
+	}
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glEnableClientState(GL_COLOR_ARRAY);
 	glDrawArrays(GL_QUADS, 0, bone->vbo_arr_len);
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glDisableClientState(GL_COLOR_ARRAY);
+	if(bone->vbo != 0)
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	glPopMatrix();
 }

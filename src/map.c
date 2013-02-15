@@ -400,10 +400,8 @@ void map_free(map_t *map)
 	if(map->pillars != NULL)
 		free(map->pillars);
 #ifdef USE_OPENGL
-	/*
 	if(map->vbo != 0)
 		glDeleteBuffers(1, &(map->vbo));
-	*/
 	if(map->vbo_arr != NULL)
 		free(map->vbo_arr);
 #endif

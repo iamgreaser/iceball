@@ -88,6 +88,13 @@ void model_bone_free(model_bone_t *bone)
 	for(i = 0; i < bone->parent->bonelen; i++)
 		bone->parent->bones[i] = bone->parent->bones[i+1];
 	
+#ifdef USE_OPENGL
+	if(bone->vbo != 0)
+		glDeleteBuffers(1, &(bone->vbo));
+	if(bone->vbo_arr != NULL)
+		free(bone->vbo_arr);
+#endif
+	
 	free(bone);
 }
 
