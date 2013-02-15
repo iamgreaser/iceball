@@ -53,7 +53,7 @@ int icelua_fn_common_model_save_pmf(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 2, 2);
 	
-	model_t *pmf = lua_touserdata(L, 1);
+	model_t *pmf = (model_t*)lua_touserdata(L, 1);
 	if(pmf == NULL)
 		return luaL_error(L, "not a model");
 	const char *fname = lua_tostring(L, 2);
@@ -76,7 +76,7 @@ int icelua_fn_common_model_free(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 1, 1);
 	
-	model_t *pmf = lua_touserdata(L, 1);
+	model_t *pmf = (model_t*)lua_touserdata(L, 1);
 	if(pmf == NULL || pmf->udtype != UD_PMF)
 		return luaL_error(L, "not a model");
 	
@@ -89,7 +89,7 @@ int icelua_fn_common_model_len(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 1, 1);
 	
-	model_t *pmf = lua_touserdata(L, 1);
+	model_t *pmf = (model_t*)lua_touserdata(L, 1);
 	if(pmf == NULL || pmf->udtype != UD_PMF)
 		return luaL_error(L, "not a model");
 	
@@ -104,7 +104,7 @@ int icelua_fn_common_model_bone_new(lua_State *L)
 	int top = icelua_assert_stack(L, 1, 2);
 	int ptmax = 20;
 	
-	model_t *pmf = lua_touserdata(L, 1);
+	model_t *pmf = (model_t*)lua_touserdata(L, 1);
 	if(pmf == NULL || pmf->udtype != UD_PMF)
 		return luaL_error(L, "not a model");
 	
@@ -138,7 +138,7 @@ int icelua_fn_common_model_bone_free(lua_State *L)
 	int top = icelua_assert_stack(L, 1, 2);
 	int boneidx;
 	
-	model_t *pmf = lua_touserdata(L, 1);
+	model_t *pmf = (model_t*)lua_touserdata(L, 1);
 	if(pmf == NULL || pmf->udtype != UD_PMF)
 		return luaL_error(L, "not a model");
 	
@@ -156,7 +156,7 @@ int icelua_fn_common_model_bone_get(lua_State *L)
 	int i;
 	int top = icelua_assert_stack(L, 2, 2);
 	
-	model_t *pmf = lua_touserdata(L, 1);
+	model_t *pmf = (model_t*)lua_touserdata(L, 1);
 	if(pmf == NULL || pmf->udtype != UD_PMF)
 		return luaL_error(L, "not a model");
 	
@@ -205,7 +205,7 @@ int icelua_fn_common_model_bone_set(lua_State *L)
 	int i;
 	int top = icelua_assert_stack(L, 4, 4);
 	
-	model_t *pmf = lua_touserdata(L, 1);
+	model_t *pmf = (model_t*)lua_touserdata(L, 1);
 	if(pmf == NULL || pmf->udtype != UD_PMF)
 		return luaL_error(L, "not a model");
 	
@@ -303,7 +303,7 @@ int icelua_fn_common_model_bone_find(lua_State *L)
 	int i;
 	int top = icelua_assert_stack(L, 2, 2);
 	
-	model_t *pmf = lua_touserdata(L, 1);
+	model_t *pmf = (model_t*)lua_touserdata(L, 1);
 	if(pmf == NULL || pmf->udtype != UD_PMF)
 		return luaL_error(L, "not a model");
 	
@@ -334,7 +334,7 @@ int icelua_fn_client_model_render_bone_global(lua_State *L)
 	float ry, rx, ry2;
 	float scale;
 	
-	model_t *pmf = lua_touserdata(L, 1);
+	model_t *pmf = (model_t*)lua_touserdata(L, 1);
 	if(pmf == NULL || pmf->udtype != UD_PMF)
 		return luaL_error(L, "not a model");
 	
@@ -356,7 +356,7 @@ int icelua_fn_client_model_render_bone_global(lua_State *L)
 #ifdef DEDI
 	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
 #else
-	render_pmf_bone(screen->pixels, screen->w, screen->h, screen->pitch/4, &tcam,
+	render_pmf_bone((uint32_t*)screen->pixels, screen->w, screen->h, screen->pitch/4, &tcam,
 		bone, 0, px, py, pz, ry, rx, ry2, scale);
 #endif
 	
@@ -370,7 +370,7 @@ int icelua_fn_client_model_render_bone_local(lua_State *L)
 	float ry, rx, ry2;
 	float scale;
 	
-	model_t *pmf = lua_touserdata(L, 1);
+	model_t *pmf = (model_t*)lua_touserdata(L, 1);
 	if(pmf == NULL || pmf->udtype != UD_PMF)
 		return luaL_error(L, "not a model");
 	
@@ -392,7 +392,7 @@ int icelua_fn_client_model_render_bone_local(lua_State *L)
 #ifdef DEDI
 	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
 #else
-	render_pmf_bone(screen->pixels, screen->w, screen->h, screen->pitch/4, &tcam,
+	render_pmf_bone((uint32_t*)screen->pixels, screen->w, screen->h, screen->pitch/4, &tcam,
 		bone, 1, px, py, pz, ry, rx, ry2, scale);
 #endif
 	

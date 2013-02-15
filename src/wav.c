@@ -276,7 +276,7 @@ wav_t *wav_parse(char *buf, int len)
 	
 	int datalen_smps = datalen/fmt.blkalign;
 	
-	wav_t *wav = malloc(sizeof(wav_t)*datalen_smps);
+	wav_t *wav = (wav_t*)malloc(sizeof(wav_t)*datalen_smps);
 	wav->udtype = UD_WAV;
 	wav->refcount = 1;
 	wav->len = datalen_smps;

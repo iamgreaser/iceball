@@ -195,8 +195,9 @@ int update_client_cont1(void)
 	//printf("%.2f",);
 	// draw scene to cubemap
 	SDL_LockSurface(screen);
+
 	//memset(screen->pixels, 0x51, screen->h*screen->pitch);
-	render_cubemap(screen->pixels,
+	render_cubemap((uint32_t*)screen->pixels,
 		screen->w, screen->h, screen->pitch/4,
 		&tcam, clmap);
 	
@@ -455,8 +456,6 @@ void run_game(void)
 	tcam.mzy = 0.0f;
 	tcam.mzz = 1.0f;
 	
-	int i;
-	
 	//render_vxl_redraw(&tcam, clmap);
 	
 	int quitflag = 0;
@@ -521,6 +520,9 @@ int print_usage(char *rname)
 	return 99;
 }
 
+#ifdef __cplusplus
+extern "C"
+#endif
 int main(int argc, char *argv[])
 {
 	if(argc <= 1)
