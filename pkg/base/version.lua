@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,0,0,0,22},
-	num=22,
-	str="0.0-22",
+	cmp={0,0,0,0,23},
+	num=23,
+	str="0.0-23",
 }
 
 VERSION_BUGS = {
