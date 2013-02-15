@@ -1178,6 +1178,7 @@ function new_player(settings)
 		-- offset by eye pos
 		-- slightly cheating here.
 		client.camera_move_global(sya*0.4, 0, cya*0.4)
+		--client.camera_move_local(0, 0, 0.4)
 	end
 
 	function this.render()

@@ -86,7 +86,7 @@ function new_intel(settings)
 	
 	function this.render_backpack()
 		local rpx = this.player.x
-		local rpy = this.player.y+0.5
+		local rpy = this.player.y+0.5+this.player.jerkoffs
 		local rpz = this.player.z
 		
 		local sya = math.sin(this.player.angy)
