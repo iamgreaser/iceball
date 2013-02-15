@@ -69,6 +69,10 @@ int icelua_fn_client_img_blit_to(lua_State *L)
 		dest->head.width,
 		source, dx, dy, bw, bh, sx, sy, color);
 	
+#ifdef USE_OPENGL
+	dest->tex_dirty = 1;
+#endif
+	
 	return 0;
 }
 
@@ -131,6 +135,10 @@ int icelua_fn_common_img_new(lua_State *L)
 		img->pixels[i] = 0x00000000;
 	
 	img->udtype = UD_IMG;
+#ifdef USE_OPENGL
+	img->tex = 0;
+	img->tex_dirty = 1;
+#endif
 	
 	lua_pushlightuserdata(L, img);
 	return 1;
@@ -151,6 +159,9 @@ int icelua_fn_common_img_pixel_set(lua_State *L)
 		return 0;
 	
 	img->pixels[y*img->head.width+x] = color;
+#ifdef USE_OPENGL
+	img->tex_dirty = 1;
+#endif
 	
 	return 0;
 }
@@ -169,6 +180,10 @@ int icelua_fn_common_img_fill(lua_State *L)
 	for (i=0; i<(img->head.width*img->head.height); i++)
 		img->pixels[i] = color;    
 	
+#ifdef USE_OPENGL
+	img->tex_dirty = 1;
+#endif
+	
 	return 0;
 }
 
@@ -179,6 +194,11 @@ int icelua_fn_common_img_free(lua_State *L)
 	img_t *img = (img_t*)lua_touserdata(L, 1);
 	if(img == NULL || img->udtype != UD_IMG)
 		return luaL_error(L, "not an image");
+	
+#ifdef USE_OPENGL
+	if(img->tex != 0)
+		glDeleteTextures(1, &(img->tex));
+#endif
 	
 	img_free(img);
 	
@@ -198,3 +218,4 @@ int icelua_fn_common_img_get_dims(lua_State *L)
 	
 	return 2;
 }
+

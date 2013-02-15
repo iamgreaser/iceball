@@ -20,8 +20,6 @@
 void render_blit_img_toimg(uint32_t *pixels, int width, int height, int pitch,
 	img_t *src, int dx, int dy, int bw, int bh, int sx, int sy, uint32_t color);
 
-img_t *lastimg = NULL;
-
 void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 	img_t *src, int dx, int dy, int bw, int bh, int sx, int sy, uint32_t color)
 {
@@ -29,12 +27,19 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 		return render_blit_img_toimg(pixels,width,height,pitch,src,dx,dy,bw,bh,sx,sy,color);
 	// TODO: cache shit so we don't have to constantly upload the same image over and over again
 	glEnable(GL_TEXTURE_2D);
-	if(src != lastimg)
+	if(src->tex_dirty)
 	{
-		lastimg = src;
+		if(src->tex == 0)
+			glGenTextures(1, &(src->tex));
+		
+		glBindTexture(GL_TEXTURE_2D, src->tex);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, src->head.width, src->head.height, 0, GL_BGRA, GL_UNSIGNED_BYTE, src->pixels);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+		src->tex_dirty = 0;
+	} else {
+		glBindTexture(GL_TEXTURE_2D, src->tex);
 	}
 
 	glDisable(GL_DEPTH_TEST);
@@ -72,6 +77,7 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
 	glDisable(GL_BLEND);
+	glBindTexture(GL_TEXTURE_2D, 0);		
 	glDisable(GL_TEXTURE_2D);
 }
 

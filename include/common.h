@@ -19,7 +19,7 @@
 #define VERSION_X 0
 #define VERSION_Y 0
 #define VERSION_A 0
-#define VERSION_Z 22
+#define VERSION_Z 23
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!
@@ -220,6 +220,10 @@ PACK_END
 typedef struct img
 {
 	int udtype;
+#ifdef USE_OPENGL
+	GLuint tex;
+	int tex_dirty;
+#endif
 	img_tgahead_t head;
 	uint32_t pixels[];
 } img_t;

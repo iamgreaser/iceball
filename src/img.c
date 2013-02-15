@@ -80,6 +80,10 @@ img_t *img_parse_tga(int len, const char *data)
 	// TODO: check if NULL
 	img->head = head;
 	img->udtype = UD_IMG;
+#ifdef USE_OPENGL
+	img->tex = 0;
+	img->tex_dirty = 1;
+#endif
 	
 	// copy stuff
 	int bplen = ((head.bpp-1)>>3)+1;

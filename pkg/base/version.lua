@@ -43,5 +43,6 @@ VERSION_BUGS = {
 {intro=19, fix=22, msg="Preliminary OpenGL support (fog not supported yet)"},
 {intro=19, fix=21, msg="OpenGL renderer ignores islocal flag when rendering PMFs"},
 {intro=21, fix=22, msg="PMF renderer does not update bones when redefined"},
+{intro=19, fix=23, msg="[OpenGL] Texture rendering is slow"},
 }
 
