@@ -59,6 +59,7 @@ int platform_init(void)
 {
 	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_NOPARACHUTE))
 		return error_sdl("SDL_Init");
+	SDL_EnableUNICODE(1);
 	
 #ifndef WIN32
 	signal(SIGPIPE, SIG_IGN);
@@ -246,11 +247,16 @@ int update_client_cont1(void)
 				break;
 			}
 			
+			char ch = ev.key.keysym.sym;
+			if ((ev.key.keysym.unicode & 0xFF80) == 0)
+				ch = ev.key.keysym.unicode & 0x1FF;
+			
 			lua_pushinteger(lstate_client, ev.key.keysym.sym);
+			lua_pushinteger(lstate_client, ch);
 			lua_pushboolean(lstate_client, (ev.type == SDL_KEYDOWN));
 			lua_pushinteger(lstate_client, (int)(ev.key.keysym.mod));
 			
-			if(lua_pcall(lstate_client, 3, 0, 0) != 0)
+			if(lua_pcall(lstate_client, 4, 0, 0) != 0)
 			{
 				printf("Lua Client Error (key): %s\n", lua_tostring(lstate_client, -1));
 				lua_pop(lstate_client, 1);

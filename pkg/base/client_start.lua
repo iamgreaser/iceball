@@ -149,6 +149,9 @@ for k, v in pairs(button_map) do
 	key_map[v.key] = {name=k, desc=v.desc}
 end
 
+-- map keysyms to their unicode values to fix keyup being an idiot
+keys = {}
+
 -- a list of arbitrary data with a "camera" that can render sublists.
 function scroll_list(data, cam_start, cam_height)
 	
@@ -797,8 +800,27 @@ function discard_typing_state(widget)
 	end
 end
 
-function h_key(key, state, modif)
+function h_key(sym, uni, state, modif)
+    local key = sym
 	
+	if key <= 256 then
+		local tmp
+		if state then tmp = 1 else tmp = 0 end
+
+		print("key = " .. key .. " | state = " .. tmp)
+
+		if uni and state then
+			keys[sym] = uni
+			key = uni
+		elseif uni and not state then
+			if keys[sym] then
+				key = keys[sym]
+			end
+		end
+
+		print("key = " .. key .. " | state = " .. tmp)
+	end
+
 	push_keypress(key, state, modif)
 
 	-- disconnected ai

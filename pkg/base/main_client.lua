@@ -146,7 +146,7 @@ do
 		local old_mouse_button = client.hook_mouse_button
 		local old_mouse_motion = client.hook_mouse_motion
 		
-		function client.hook_key(key, state, modif)
+		function client.hook_key(sym, uni, state, modif)
 			-- TODO!
 		end
 		
