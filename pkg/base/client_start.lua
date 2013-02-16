@@ -292,6 +292,7 @@ mouse_skip = 3
 input_events = {}
 
 gui_focus = nil
+window_activated = true
 
 show_scores = false
 
@@ -821,6 +822,13 @@ function h_key(key, state, modif)
 		return
 	end
 	
+	if not window_activated then
+		mouse_released = true
+		client.mouse_lock_set(false)
+		client.mouse_visible_set(true)
+		return
+	end
+	
 	-- player entity ai
 	
 	local plr = players[players.current]
@@ -908,6 +916,19 @@ function h_mouse_motion(x, y, dx, dy)
 	local plr = players[players.current]
 	if plr and gui_focus == nil then
 		return plr.on_mouse_motion(x, y, dx, dy)
+	end
+end
+
+function h_window_activate(active)
+	window_activated = active
+	if active then
+		mouse_released = false
+		client.mouse_lock_set(true)
+		client.mouse_visible_set(false)
+	else
+		mouse_released = true
+		client.mouse_lock_set(false)
+		client.mouse_visible_set(true)
 	end
 end
 
@@ -1033,6 +1054,7 @@ client.hook_tick = h_tick_init
 client.hook_key = h_key
 client.hook_mouse_button = h_mouse_button
 client.hook_mouse_motion = h_mouse_motion
+client.hook_window_activate = h_window_activate
 
 print("pkg/base/client_start.lua loaded.")
 
