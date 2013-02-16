@@ -1178,6 +1178,7 @@ function new_player(settings)
 		-- offset by eye pos
 		-- slightly cheating here.
 		client.camera_move_global(sya*0.4, 0, cya*0.4)
+		--client.camera_move_local(0, 0, 0.4)
 	end
 
 	function this.render()
@@ -2114,7 +2115,7 @@ function new_player(settings)
 
 		-- TODO: wireframe cube
 		if this.mode ~= PLM_SPECTATE then
-		if this.tool == TOOL_BLOCK and this.blx1 and (this.alive or this.respawning) then
+		if this.tool == TOOL_BLOCK and this.blx1 and (this.alive or this.respawning) and this.blocks >= 1 then
 			if map_is_buildable(this.blx1, this.bly1, this.blz1) or MODE_BLOCK_PLACE_IN_AIR then
 				bname, mdl_data = client.model_bone_get(mdl_cube, mdl_cube_bone)
 				
