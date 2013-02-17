@@ -111,11 +111,32 @@ void platform_deinit(void)
 }
 #endif
 
+
+#if defined(DEDI) && defined(WIN32)
+int64_t ms_now()
+{
+	static LARGE_INTEGER baseFreq;
+	static BOOL qpc_Avail = QueryPerformanceFrequency( &baseFreq );
+	if( qpc_Avail ) {
+		LARGE_INTEGER now;
+		QueryPerformanceCounter( &now );
+		return (1000LL * now.QuadPart) / baseFreq.QuadPart;
+	} else {
+		return GetTickCount();
+	}
+}
+#endif
+
+
 int64_t platform_get_time_usec(void)
 {
 #ifdef WIN32
+#ifndef DEDI
 	int64_t msec = SDL_GetTicks();
 	return msec*1000;
+#else
+	return ms_now()*1000;
+#endif
 #else
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
@@ -246,22 +267,23 @@ int update_client_cont1(void)
 				lua_pop(lstate_client, 1);
 				break;
 			}
-			
-			char ch = ev.key.keysym.sym;
-			if ((ev.key.keysym.unicode & 0xFF80) == 0)
-				ch = ev.key.keysym.unicode & 0x1FF;
-			
-			lua_pushinteger(lstate_client, ev.key.keysym.sym);
-			lua_pushinteger(lstate_client, ch);
-			lua_pushboolean(lstate_client, (ev.type == SDL_KEYDOWN));
-			lua_pushinteger(lstate_client, (int)(ev.key.keysym.mod));
-			
-			if(lua_pcall(lstate_client, 4, 0, 0) != 0)
 			{
-				printf("Lua Client Error (key): %s\n", lua_tostring(lstate_client, -1));
-				lua_pop(lstate_client, 1);
-				quitflag = 1;
-				break;
+				char ch = ev.key.keysym.sym;
+				if ((ev.key.keysym.unicode & 0xFF80) == 0)
+					ch = ev.key.keysym.unicode & 0x1FF;
+				
+				lua_pushinteger(lstate_client, ev.key.keysym.sym);
+				lua_pushinteger(lstate_client, ch);
+				lua_pushboolean(lstate_client, (ev.type == SDL_KEYDOWN));
+				lua_pushinteger(lstate_client, (int)(ev.key.keysym.mod));
+				
+				if(lua_pcall(lstate_client, 4, 0, 0) != 0)
+				{
+					printf("Lua Client Error (key): %s\n", lua_tostring(lstate_client, -1));
+					lua_pop(lstate_client, 1);
+					quitflag = 1;
+					break;
+				}
 			}
 			break;
 		case SDL_MOUSEBUTTONUP:
@@ -309,7 +331,29 @@ int update_client_cont1(void)
 				break;
 			}
 			break;
-			
+		case SDL_ACTIVEEVENT:
+			if( ev.active.state & SDL_APPACTIVE ||
+				ev.active.state & SDL_APPINPUTFOCUS )
+			{
+				lua_getglobal(lstate_client, "client");
+				lua_getfield(lstate_client, -1, "hook_window_activate");
+				lua_remove(lstate_client, -2);
+				if(lua_isnil(lstate_client, -1))
+				{
+					// not hooked? ignore!
+					lua_pop(lstate_client, 1);
+					break;
+				}
+				lua_pushboolean(lstate_client, ev.active.gain == 1);
+				if(lua_pcall(lstate_client, 1, 0, 0) != 0)
+				{
+					printf("Lua Client Error (window_activate): %s\n", lua_tostring(lstate_client, -1));
+					lua_pop(lstate_client, 1);
+					quitflag = 1;
+					break;
+				}
+			}
+			break;
 		case SDL_QUIT:
 			quitflag = 1;
 			break;
@@ -526,10 +570,7 @@ int print_usage(char *rname)
 	return 99;
 }
 
-#ifdef __cplusplus
-extern "C"
-#endif
-int main(int argc, char *argv[])
+int main_dbghelper(int argc, char *argv[])
 {
 	if(argc <= 1)
 		return print_usage(argv[0]);
@@ -620,4 +661,19 @@ int main(int argc, char *argv[])
 #endif
 	
 	return 0;
+}
+
+
+#ifdef __cplusplus
+extern "C"
+#endif
+int main(int argc, char *argv[])
+{
+	int iRet = main_dbghelper( argc, argv );
+#if _DEBUG && _WIN32
+	if( iRet != 0 && IsDebuggerPresent() ) {	//we didnt exit successfully, and there is a debugger attached.
+		DebugBreak();		//break!
+	}
+#endif
+	return iRet;
 }

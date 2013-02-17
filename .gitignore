@@ -30,6 +30,17 @@ gmon.out
 *.ncb
 *.user
 
-msvc/Debug
-msvc/Release
-build/msvc
+build/*
+
+#cmake cache files
+CMakeFiles
+CmakeCache.txt
+cmake_install.cmake
+src/iceball.dir
+src/iceball-soft.dir
+src/iceded.dir
+ZERO_CHECK.dir
+
+#some cmake generated shit that will vs.net notify of cmake file changes.
+ALL_BUILD.vcproj
+ZERO_CHECK.vcproj

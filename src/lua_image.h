@@ -65,10 +65,14 @@ int icelua_fn_client_img_blit_to(lua_State *L)
 	sy = (top < 8 ? 0 : lua_tointeger(L, 8));
 	color = (top < 9 ? 0xFFFFFFFF : (uint32_t)lua_tointeger(L, 9));
 	
+#ifdef DEDI
+	return luaL_error(L, "lm: why the hell is this being called in the dedi version?");
+#else
 	render_blit_img(dest->pixels, dest->head.width, dest->head.height, 
 		dest->head.width,
 		source, dx, dy, bw, bh, sx, sy, color);
-	
+#endif
+
 #ifdef USE_OPENGL
 	dest->tex_dirty = 1;
 #endif

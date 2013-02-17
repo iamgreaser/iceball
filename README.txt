@@ -71,3 +71,11 @@ MSVC readme (wip):
 	'-s 0 pkg/base' (make local srv)
 - edit clsave/pub/user.json
 - now run it from vs.net debugger :)
+
+for the git starters:
+- git update-index --assume-unchanged clsave\pub\user.json
+
+and to get updates from the main repo:
+- git remote add upstream git://github.com/iamgreaser/buldthensnip.git
+- git pull --rebase upstream master
+- git push origin master
