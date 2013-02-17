@@ -49,7 +49,14 @@
 #define __attribute__(x)
 #define PACK_START __pragma( pack(push, 1) )
 #define PACK_END __pragma( pack(pop) )
-typedef unsigned int uint32_t;
+typedef signed __int8		int8_t;
+typedef unsigned __int8		uint8_t;
+typedef signed __int16		int16_t;
+typedef unsigned __int16	uint16_t;
+typedef signed __int32		int32_t;
+typedef unsigned __int32	uint32_t;
+typedef signed __int64		int64_t;
+typedef unsigned __int64	uint64_t;
 #define snprintf	sprintf_s
 #define _USE_MATH_DEFINES	//M_PI and whatnot from math.h
 #pragma warning( disable: 4200 4244 4996)

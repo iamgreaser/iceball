@@ -340,10 +340,14 @@ int icelua_fn_client_map_fog_get(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 0, 0);
 	
+#ifdef DEDI
+	return luaL_error(L, "lm: why the hell is this being called in the dedi version?");
+#else
 	lua_pushinteger(L, (fog_color>>16)&255);
 	lua_pushinteger(L, (fog_color>>8)&255);
 	lua_pushinteger(L, (fog_color)&255);
 	lua_pushnumber(L, fog_distance);
+#endif
 	
 	return 4;
 }
@@ -352,6 +356,9 @@ int icelua_fn_client_map_fog_set(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 4, 4);
 	
+#ifdef DEDI
+	return luaL_error(L, "lm: why the hell is this being called in the dedi version?");
+#else
 	int r = lua_tointeger(L, 1)&255;
 	int g = lua_tointeger(L, 2)&255;
 	int b = lua_tointeger(L, 3)&255;
@@ -363,6 +370,7 @@ int icelua_fn_client_map_fog_set(lua_State *L)
 	
 	fog_color = (r<<16)|(g<<8)|b;
 	force_redraw = 1;
-	
+#endif
+
 	return 4;
 }

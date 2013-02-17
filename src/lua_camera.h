@@ -146,7 +146,10 @@ int icelua_fn_client_camera_shading_set(lua_State *L)
 {
     /* sides are: east, bottom, south, west, top, north */
 	int top = icelua_assert_stack(L, 6, 6);
-	
+
+#ifdef DEDI
+	return luaL_error(L, "lm: why the hell is this being called in the dedi version?");
+#else
 	int i;
 	for(i = 0; i < 6; i++)
 	{
@@ -157,7 +160,8 @@ int icelua_fn_client_camera_shading_set(lua_State *L)
 		if(s >= 128) s++;
 		cam_shading[i] = s;
 	}
-		
+#endif
+
 	return 0;
 }
 
