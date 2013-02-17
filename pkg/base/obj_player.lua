@@ -1743,7 +1743,11 @@ function new_player(settings)
 			
 			if this.typing_text.text ~= "" then
 				if string.sub(this.typing_text.text,1,1) == "~" then
-					loadstring(string.sub(this.typing_text.text,2))() --nasty, but handy
+					local a,b
+					a,b = pcall(function () loadstring(string.sub(this.typing_text.text,2))() end) --nasty, but handy
+					if not a then
+						print("quickcall err:", b)
+					end
 				else
 					if this.typing_type.text == "Chat: " then
 						common.net_send(nil, common.net_pack("Bz", 0x0C, this.typing_text.text))
