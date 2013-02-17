@@ -808,7 +808,7 @@ function h_key(sym, uni, state, modif)
 		local tmp
 		if state then tmp = 1 else tmp = 0 end
 
-		print("key = " .. key .. " | state = " .. tmp)
+		--print("key = " .. key .. " | state = " .. tmp)
 
 		if uni and state then
 			keys[sym] = uni
@@ -819,7 +819,7 @@ function h_key(sym, uni, state, modif)
 			end
 		end
 
-		print("key = " .. key .. " | state = " .. tmp)
+		--print("key = " .. key .. " | state = " .. tmp)
 	end
 
 	push_keypress(key, state, modif)
