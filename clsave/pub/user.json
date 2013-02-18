@@ -19,8 +19,8 @@
 		For more info on the syntax itself, see http://json.org/
 	",
 	
-	"name": "HoboHob",
-	"kick_on_join": false,
+	"name": null,
+	"kick_on_join": true,
 	"sensitivity": 1.0,
 	"hold_to_zoom": false,
 	
