@@ -19,7 +19,7 @@
 #define VERSION_X 0
 #define VERSION_Y 0
 #define VERSION_A 0
-#define VERSION_Z 16
+#define VERSION_Z 26
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!
@@ -40,27 +40,57 @@
 
 //define RENDER_FACE_COUNT 2
 
+#ifndef _MSC_VER
+#define PACK_START
+#define PACK_END
 #include <immintrin.h>
+#include <stdint.h>
+#else
+#define __attribute__(x)
+#define PACK_START __pragma( pack(push, 1) )
+#define PACK_END __pragma( pack(pop) )
+typedef signed __int8		int8_t;
+typedef unsigned __int8		uint8_t;
+typedef signed __int16		int16_t;
+typedef unsigned __int16	uint16_t;
+typedef signed __int32		int32_t;
+typedef unsigned __int32	uint32_t;
+typedef signed __int64		int64_t;
+typedef unsigned __int64	uint64_t;
+#define snprintf	sprintf_s
+#define _USE_MATH_DEFINES	//M_PI and whatnot from math.h
+#pragma warning( disable: 4200 4244 4996)
+#endif
+#include <omp.h>
 
 #include <string.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <errno.h>
 
-#include <sys/time.h>
 #ifndef WIN32
+#include <sys/time.h>
 #include <signal.h>
 #endif
 
 #include <math.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
+#ifdef __cplusplus
+};
+#endif
+
 
 #ifndef DEDI
 #include <SDL.h>
+#ifdef USE_OPENGL
+#include <GL/glew.h>
+#endif
 #endif
 
 #include <zlib.h>
@@ -72,7 +102,6 @@
 #define _WIN32_WINNT 0x0501
 #include <winsock2.h>
 #include <ws2tcpip.h>
-extern WSADATA windows_sucks;
 
 #else
 
@@ -114,6 +143,7 @@ enum
 #ifdef __SSE__
 __attribute__((aligned(16)))
 #endif
+PACK_START
 typedef union vec4f
 {
 	struct { float x,y,z,w; } __attribute__((__packed__)) p;
@@ -131,6 +161,7 @@ typedef struct matrix
 	//column-major!
 	vec4f_t c[4];
 } __attribute__((__packed__)) matrix_t;
+PACK_END
 
 typedef struct camera
 {
@@ -141,12 +172,14 @@ typedef struct camera
 	float mpx,mpy,mpz,mppad;
 } camera_t;
 
+PACK_START
 typedef struct model_point
 {
 	uint16_t radius;
 	int16_t x,y,z;
 	uint8_t b,g,r,resv1;
 } __attribute__((__packed__)) model_point_t;
+PACK_END
 
 typedef struct model model_t;
 typedef struct model_bone
@@ -156,6 +189,12 @@ typedef struct model_bone
 	model_t *parent;
 	int parent_idx;
 	int ptlen, ptmax;
+#ifdef USE_OPENGL
+	GLuint vbo;
+	int vbo_dirty;
+	float *vbo_arr;
+	int vbo_arr_len, vbo_arr_max;
+#endif
 	model_point_t pts[];
 } model_bone_t;
 
@@ -166,6 +205,7 @@ struct model
 	model_bone_t *bones[];
 };
 
+PACK_START
 // source: http://paulbourke.net/dataformats/tga/
 typedef struct img_tgahead
 {
@@ -182,10 +222,15 @@ typedef struct img_tgahead
 	uint8_t bpp;
 	uint8_t flags;
 } __attribute__((__packed__)) img_tgahead_t;
+PACK_END
 
 typedef struct img
 {
 	int udtype;
+#ifdef USE_OPENGL
+	GLuint tex;
+	int tex_dirty;
+#endif
 	img_tgahead_t head;
 	uint32_t pixels[];
 } img_t;
@@ -253,6 +298,13 @@ typedef struct map
 {
 	int udtype;
 	int xlen, ylen, zlen;
+#ifdef USE_OPENGL
+	GLuint vbo;
+	int vbo_dirty;
+	float *vbo_arr;
+	int vbo_arr_len, vbo_arr_max;
+	int vbo_cx, vbo_cz;
+#endif
 	uint8_t **pillars;
 	// TODO ? heap allocator ?
 } map_t;
@@ -302,10 +354,6 @@ typedef struct client
 	int spkt_ppos,spkt_len;
 } client_t;
 
-struct netdata
-{
-	int sockfd;
-} netdata_t;
 
 #define SOCKFD_NONE -1
 #define SOCKFD_LOCAL -2

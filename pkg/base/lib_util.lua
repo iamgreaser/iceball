@@ -141,9 +141,10 @@ function alarm(options)
 	
 	this.time = options.time or 1
 	this.progress = options.progress or 0
-	this.active = options.active or true
+	if options.active ~= nil then this.active = options.active else this.active = true end
 	this.loop = options.loop or false
-	this.preserve_accumulator = options.preserve_accumulator or true
+	this.preserve_accumulator = options.preserve_accumulator
+	if this.preserve_accumulator == nil then this.preserve_accumulator = true end
 	this.on_frame = options.on_frame or nil
 	this.on_trigger = options.on_trigger or nil
 
@@ -184,6 +185,21 @@ function rescale_value(amin, amax, bmin, bmax, aval)
 	local bdist = bmax - bmin;
 	local ratio = bdist / adist;
 	return bmin + (aval - amin) * ratio;
+end
+
+-- Creates a shallow copy of a table
+function copy_table(orig)
+    local orig_type = type(orig)
+    local copy
+    if orig_type == 'table' then
+        copy = {}
+        for orig_key, orig_value in pairs(orig) do
+            copy[orig_key] = orig_value
+        end
+    else -- number, string, boolean, etc
+        copy = orig
+    end
+    return copy
 end
 
 -- GUI Events

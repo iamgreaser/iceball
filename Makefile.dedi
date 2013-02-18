@@ -3,12 +3,13 @@
 CFLAGS = -DDEDI -pg -O2 -fno-strict-aliasing -g -Wall -Wextra \
 	-Wno-unused-variable -Wno-unused-parameter \
 	-Wno-unused-but-set-variable $(CFLAGS_EXTRA) \
+	-fopenmp \
 	-I $(INCDIR) \
 	$(HEADERS_LUA)
 
 HEADERS_LUA =
 
-LDFLAGS = -pg -g $(LDFLAGS_EXTRA)
+LDFLAGS = -pg -g -fopenmp $(LDFLAGS_EXTRA)
 LIBS_Lua = -llua
 # Lua is not an acronym. Get used to typing it with lower case u/a.
 LIBS_zlib = -lz

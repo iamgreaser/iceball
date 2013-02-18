@@ -114,7 +114,7 @@ int icelua_fn_common_net_pack(lua_State *L)
 	int slen = icelua_fnaux_net_packlen(L, fmt, top);
 	if(slen < 0)
 		return luaL_error(L, "invalid pack format");
-	char *sbuf = malloc(slen+1);
+	char *sbuf = (char*)malloc(slen+1);
 	// TODO: check if NULL
 	char *sstop = sbuf+slen;
 	*sstop = '\0';
@@ -161,7 +161,7 @@ int icelua_fn_common_net_pack(lua_State *L)
 				*(s++) = (xint>>8) & 0xFF;
 				*(s++) = (xint>>16) & 0xFF;
 				*(s++) = (xint>>24) & 0xFF;
-				xint = ((int *)(float *)&xdouble)[4];
+				xint = ((int *)(float *)&xdouble)[1];
 				*(s++) = xint & 0xFF;
 				*(s++) = (xint>>8) & 0xFF;
 				*(s++) = (xint>>16) & 0xFF;

@@ -54,7 +54,7 @@ int icelua_fn_common_map_new(lua_State *L)
 		return luaL_error(L, "map size too small");
 	
 	// XXX: shouldn't this be in map.c?
-	map_t *map = malloc(sizeof(map_t));
+	map_t *map = (map_t*)malloc(sizeof(map_t));
 	if(map == NULL)
 	{
 		int err = errno;
@@ -64,7 +64,7 @@ int icelua_fn_common_map_new(lua_State *L)
 	map->xlen = xlen;
 	map->ylen = ylen;
 	map->zlen = zlen;
-	map->pillars = malloc(xlen*zlen*sizeof(uint8_t *));
+	map->pillars = (uint8_t**)malloc(xlen*zlen*sizeof(uint8_t *));
 	if(map->pillars == NULL)
 	{
 		int err = errno;
@@ -77,13 +77,18 @@ int icelua_fn_common_map_new(lua_State *L)
 	for(z = 0, pi = 0; z < map->zlen; z++)
 	for(x = 0; x < map->xlen; x++, pi++)
 	{
-		uint8_t *p = map->pillars[pi] = malloc(16);
+		uint8_t *p = map->pillars[pi] = (uint8_t*)malloc(16);
 		// TODO: check if NULL
 		uint8_t v = (uint8_t)(x^z);
 		*(p++) = 1; *(p++) = 0; *(p++) = 0; *(p++) = 0;
 		*(p++) = 0; *(p++) = b; *(p++) = b; *(p++) = 0;
 		*(p++) = v; *(p++) = v; *(p++) = v; *(p++) = 1;
 	}
+#ifdef USE_OPENGL
+	map->vbo = 0;
+	map->vbo_dirty = 1;
+	map->vbo_arr = NULL;
+#endif
 	
 	lua_pushlightuserdata(L, map);
 	return 1;
@@ -92,7 +97,7 @@ int icelua_fn_common_map_new(lua_State *L)
 int icelua_fn_common_map_free(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 1, 1);
-	map_t *map = lua_touserdata(L, 1);
+	map_t *map = (map_t*)lua_touserdata(L, 1);
 	if(map == NULL || map->udtype != UD_MAP)
 		return luaL_error(L, "not a map");
 	
@@ -104,7 +109,7 @@ int icelua_fn_common_map_free(lua_State *L)
 int icelua_fn_common_map_set(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 1, 1);
-	map_t *map = lua_touserdata(L, 1);
+	map_t *map = (map_t*)lua_touserdata(L, 1);
 	if((map == NULL || map->udtype != UD_MAP) && !lua_isnil(L, 1))
 		return luaL_error(L, "not a map");
 	
@@ -137,7 +142,7 @@ int icelua_fn_common_map_save(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 2, 3);
 	
-	map_t *map = lua_touserdata(L, 1);
+	map_t *map = (map_t*)lua_touserdata(L, 1);
 	if(map == NULL || map->udtype != UD_MAP)
 		return luaL_error(L, "not a map");
 	const char *fname = lua_tostring(L, 2);
@@ -307,7 +312,7 @@ int icelua_fn_common_map_pillar_set(lua_State *L)
 	uint8_t *p = map->pillars[idx];
 	if((p[0]+1)*4 < tlen)
 	{
-		p = map->pillars[idx] = realloc(p, tlen+4);
+		p = map->pillars[idx] = (uint8_t*)realloc(p, tlen+4);
 		p[0] = (tlen>>2)-1;
 	}
 	
@@ -320,6 +325,10 @@ int icelua_fn_common_map_pillar_set(lua_State *L)
 		*(p++) = (uint8_t)lua_tointeger(L, -1);
 		lua_pop(L, 1);
 	}
+
+#ifdef USE_OPENGL
+	map->vbo_dirty = 1;
+#endif
 	
 	force_redraw = 1;
 	
@@ -331,10 +340,14 @@ int icelua_fn_client_map_fog_get(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 0, 0);
 	
+#ifdef DEDI
+	return luaL_error(L, "lm: why the hell is this being called in the dedi version?");
+#else
 	lua_pushinteger(L, (fog_color>>16)&255);
 	lua_pushinteger(L, (fog_color>>8)&255);
 	lua_pushinteger(L, (fog_color)&255);
 	lua_pushnumber(L, fog_distance);
+#endif
 	
 	return 4;
 }
@@ -343,6 +356,9 @@ int icelua_fn_client_map_fog_set(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 4, 4);
 	
+#ifdef DEDI
+	return luaL_error(L, "lm: why the hell is this being called in the dedi version?");
+#else
 	int r = lua_tointeger(L, 1)&255;
 	int g = lua_tointeger(L, 2)&255;
 	int b = lua_tointeger(L, 3)&255;
@@ -354,6 +370,7 @@ int icelua_fn_client_map_fog_set(lua_State *L)
 	
 	fog_color = (r<<16)|(g<<8)|b;
 	force_redraw = 1;
-	
+#endif
+
 	return 4;
 }

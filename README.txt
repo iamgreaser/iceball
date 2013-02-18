@@ -28,7 +28,7 @@ Ice Lua Components contains some content from libSDL,
   which is licensed under the LGPL version 2.1.
 It is marked accordingly.
 
-The manual is in the public domain, except where
+The manual is in the public domain, except where otherwise specified.
 
 REQUIREMENTS:
 - a C compiler that isn't crap (read: not MSVC++)
@@ -47,4 +47,35 @@ STUFF TO DO BEFORE 0.1 CAN BE RELEASED:
 - make net_pack more solid
 - JSON writer
 - make kicking not suck
-- face-dependent shading
+
+MSVC readme (wip):
+- create a folder 'winlibs' in the buldenthesnip dir
+  dump all dll's + lib's in this folder (opengl,lua,zlib, sdl, glew)
+  dump all includes in submaps (glew in glew submap, and so on)
+  /buldenthesnip/
+    /winlibs/
+	  /glew/
+	  /lua/
+	  /SDL/
+	  /zlib/
+	  glew32.lib
+	  glew32.dll
+	  lua5.1.lib
+	  lua5.1.dll
+	  and so on..
+
+- right mouse on project -> properties.
+  Working directory (without quotes): '$(SolutionDir)/../'
+  Command Arguments (without quotes):
+	'-c iceballga.me 20737'  (connect to srv)
+	'-s 0 pkg/base' (make local srv)
+- edit clsave/pub/user.json
+- now run it from vs.net debugger :)
+
+for the git starters:
+- git update-index --assume-unchanged clsave\pub\user.json
+
+and to get updates from the main repo:
+- git remote add upstream git://github.com/iamgreaser/buldthensnip.git
+- git pull --rebase upstream master
+- git push origin master

@@ -60,6 +60,11 @@ void cam_point_dir_sky(camera_t *model, float dx, float dy, float dz, float sx, 
 	// down =  forward x left
 	//
 	// Much nicer than the aimbot shit.
+
+	// hack to make this play nice in the OpenGL renderer
+#ifdef USE_OPENGL
+	zoom = 1.0f/zoom;
+#endif
 	
 	// Get the distances.
 	float dist_d = dx*dx+dy*dy+dz*dz;

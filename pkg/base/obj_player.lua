@@ -15,6 +15,10 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
+PLM_NORMAL = 1
+PLM_SPECTATE = 2
+PLM_EDITOR = 3
+
 function new_player(settings)
 	local this = {} this.this = this this.this.this = this this = this.this
 
@@ -22,9 +26,11 @@ function new_player(settings)
 	this.squad = settings.squad or nil
 	this.weapon = settings.weapon or WPN_RIFLE
 	this.pid = settings.pid or error("pid must be set when creating player!")
+	this.sockfd = settings.sockfd
 	this.alive = false
 	this.spawned = false
 	this.zooming = false
+	this.mode = settings.mode or PLM_NORMAL
 
 	this.mdl_block = common.model_new(1)
 	this.mdl_block = common.model_bone_new(this.mdl_block)
@@ -38,6 +44,36 @@ function new_player(settings)
 	this.score = 0
 	this.kills = 0
 	this.deaths = 0
+	
+	this.permissions = {}
+	
+	function this.has_permission(perm)
+		return perm == nil or this.permissions[perm] ~= nil
+	end
+	
+	function this.add_permission(perm)
+		this.permissions[perm] = true
+	end
+	
+	function this.remove_permission(perm)
+		this.permissions[perm] = nil
+	end
+	
+	function this.add_permission_group(perms)
+		for k,v in pairs(perms) do
+			this.add_permission(k)
+		end
+	end
+	
+	function this.remove_permission_group(perms)
+		for k,v in pairs(perms) do
+			this.remove_permission(k)
+		end
+	end
+	
+	function this.clear_permissions(perms)
+		this.permissions = {}
+	end
 
 	local function prv_recolor_team(r,g,b)
 		if not client then return end
@@ -116,6 +152,13 @@ function new_player(settings)
 		this.arm_rest_right = 0.0
 		this.arm_rest_left = 1.0
 		
+		--[[Spade variables]]--
+		this.tools = {}
+		this.tools[#(this.tools)+1] = tools[TOOL_SPADE](this)
+		this.spade_angx = 0
+		this.spade_angy = 0
+		this.spade_angz = 0
+		
 		this.t_respawn = nil
 		this.t_switch = nil
 		this.t_nadeboom = nil
@@ -126,6 +169,7 @@ function new_player(settings)
 		this.t_step = nil
 		
 		this.dangx, this.dangy = 0, 0
+		this.angx, this.angy = 0, 0
 		this.vx, this.vy, this.vz = 0, 0, 0
 		
 		this.blx1, this.bly1, this.blz1 = nil, nil, nil
@@ -152,6 +196,7 @@ function new_player(settings)
 		this.wpn = weapons[this.weapon](this)
 		
 		this.tool = 2
+		this.tool_last = 0
 		
 		this.has_intel = nil
 	end
@@ -165,18 +210,20 @@ function new_player(settings)
 	end
 
 	function this.spawn_at(x,y,z,ya,xa)
+		prv_spawn_cont1()
+
 		this.x = x
 		this.y = y
 		this.z = z
 		this.angy = ya
 		this.angx = xa
-
-		return prv_spawn_cont1()
 	end
 
 	function this.spawn()
 		local xlen,ylen,zlen
 		xlen,ylen,zlen = common.map_get_dims()
+
+		prv_spawn_cont1()
 
 		while true do
 			this.x = math.floor(math.random()*xlen/4.0)+0.5
@@ -188,8 +235,6 @@ function new_player(settings)
 		this.y = this.y - 3.0
 		this.angy, this.angx = math.pi/2.0, 0.0
 		if this.team == 1 then this.angy = this.angy-math.pi end
-
-		return prv_spawn_cont1()
 	end
 
 	this.name = settings.name or "Noob"
@@ -201,6 +246,9 @@ function new_player(settings)
 
 	function this.tool_switch(tool)
 		if not this.alive then return end
+		if this.mode == PLM_SPECTATE then return end
+
+		this.tool_last = this.tool
 
 		if this.tool == TOOL_GUN then
 			if this.wpn then
@@ -299,12 +347,11 @@ function new_player(settings)
 	end
 	
 	function this.update_score()
-		net_broadcast(nil, common.net_pack("BBBBhhhzz",
+		net_broadcast(nil, common.net_pack("BBBBBhhhzz",
 			0x05, this.pid,
-			this.team, this.weapon,
+			this.team, this.weapon, this.mode,
 			this.score, this.kills, this.deaths,
 			this.name, this.squad))
-		sort_players()
 	end
 	
 	function this.tent_restock()
@@ -317,6 +364,27 @@ function new_player(settings)
 		end
 		if server then
 			net_broadcast(nil, common.net_pack("BB", 0x15, this.pid))
+		end
+	end
+
+	local function blood_particles()
+		local i
+		local blood_particlecount = math.random() * 10 + 20
+		local pvel = 0.5
+		for i=1,blood_particlecount do
+			particles_add(new_particle{
+				x = this.x,
+				y = this.y,
+				z = this.z,
+				vx = pvel*(2*math.random()-1),
+				vy = pvel*(2*math.random()-1.8),
+				vz = pvel*(2*math.random()-1),
+				r = 200 + math.random() * 55,
+				g = 60 + math.random() * 20,
+				b = 60 + math.random() * 20,
+				size = 8 + math.random() * 16,
+				lifetime = 1
+			})
 		end
 	end
 
@@ -351,9 +419,17 @@ function new_player(settings)
 		if server then
 			net_broadcast(nil, common.net_pack("BBB", 0x14, this.pid, this.health))
 		end
+		
+		if client then
+			blood_particles()	
+		end
 	end
 
 	function this.damage(amt, kcol, kmsg, enemy)
+		if this.mode ~= PLM_NORMAL then
+			return nil
+		end
+
 		return this.set_health_damage(
 			this.health - amt, kcol, kmsg, enemy)
 	end
@@ -418,6 +494,9 @@ function new_player(settings)
 	end
 
 	function this.grenade_damage(amt, enemy)
+		if enemy.mode ~= PLM_NORMAL then
+			return nil
+		end
 		--print("damage",this.name,part,amt)
 		local midmsg = " grenaded "
 		if this.team == enemy.team and this ~= enemy then
@@ -441,7 +520,7 @@ function new_player(settings)
 	end
 
 	function this.intel_pickup(intel)
-		if this.has_intel or intel.team == this.team then
+		if this.mode ~= PLM_NORMAL or this.has_intel or intel.team == this.team then
 			return false
 		end
 		
@@ -619,7 +698,7 @@ function new_player(settings)
 		end
 		
 		if client then
-			local moving = (this.ev_left or this.ev_right or this.ev_forward or this.ev_back)
+			local moving = ((this.ev_left == not this.ev_right) or (this.ev_forward == not this.ev_back))
 			local sneaking = (this.ev_crouch or this.ev_sneak or this.zooming)
 			
 			if moving and not sneaking then
@@ -660,7 +739,7 @@ function new_player(settings)
 		this.dangx = (nax - this.angx)
 		
 		-- apply delta angles
-		if MODE_DRUNKCAM_LOCALTURN and this.dangy ~= 0 then
+		if (this.mode ~= PLM_NORMAL or MODE_DRUNKCAM_LOCALTURN) and this.dangy ~= 0 then
 			this.angx = this.angx + this.dangx
 			
 			local fx,fy,fz -- forward
@@ -729,7 +808,7 @@ function new_player(settings)
 		fwx,fwy,fwz = sya*cxa, sxa, cya*cxa
 		
 		if client and this.alive and (not this.t_switch) then
-		if this.ev_lmb then
+		if this.ev_lmb and this.mode ~= PLM_SPECTATE then
 			if this.tool == TOOL_BLOCK and this.blx1 then
 				if (not this.t_newblock) and this.blocks > 0 then
 				if this.blx1 >= 0 and this.blx1 < xlen and this.blz1 >= 0 and this.blz1 < zlen then
@@ -741,17 +820,20 @@ function new_player(settings)
 						this.blk_color[2],
 						this.blk_color[1],
 						1))
-					this.blocks = this.blocks - 1
+					if this.mode == PLM_NORMAL then
+						this.blocks = this.blocks - 1
+					end
 					this.t_newblock = sec_current + MODE_DELAY_BLOCK_BUILD
 					this.t_switch = this.t_newblock
 				end
 				end
 				end
 			elseif this.tool == TOOL_SPADE then
+			    this.spade_angx = 45
 				if (not this.t_newspade1) then
 				
 				-- see if there's anyone we can kill
-				local d = this.bld2 or 5 -- NOTE: cannot spade through walls anymore. Sorry guys :/
+				local d = this.bld2 or 4 -- NOTE: cannot spade through walls anymore. Sorry guys :/
 				local hurt_idx = nil
 				local hurt_part = nil
 				local hurt_part_idx = 0
@@ -766,11 +848,8 @@ function new_player(settings)
 						local dz = p.z-this.z
 						
 						for j=1,3 do
-							local dd = dx*dx+dy*dy+dz*dz
-							
-							local dotk = dx*fwx+dy*fwy+dz*fwz
-							local dot = math.sqrt(dd-dotk*dotk)
-							if dot < 0.55 and dd < hurt_dist then
+							local dot, dd = isect_line_sphere_delta(dx,dy,dz,fwx,fwy,fwz)
+							if dot and dot < 0.55 and dd < hurt_dist then
 								hurt_idx = i
 								hurt_dist = dd
 								hurt_part_idx = j
@@ -794,7 +873,7 @@ function new_player(settings)
 				elseif this.blx2 then
 				if this.blx2 >= 0 and this.blx2 < xlen and this.blz2 >= 0 and this.blz2 < zlen then
 				if this.bly2 <= ylen-3 then
-					bhealth_damage(this.blx2, this.bly2, this.blz2, MODE_BLOCK_DAMAGE_SPADE)
+					common.net_send(nil, common.net_pack("BHHHH", 0x20, this.blx2, this.bly2, this.blz2, MODE_BLOCK_DAMAGE_SPADE))
 					this.t_newspade1 = sec_current + MODE_DELAY_SPADE_HIT
 				end
 				end
@@ -804,14 +883,16 @@ function new_player(settings)
 			elseif this.tool == TOOL_NADE then
 				if (not this.t_newnade) and this.grenades > 0 then
 					if (not this.t_nadeboom) then
-						this.grenades = this.grenades - 1
+						if this.mode == PLM_NORMAL then
+							this.grenades = this.grenades - 1
+						end
 						this.t_nadeboom = sec_current + MODE_NADE_FUSE
 					end
 				end
 			else
 				
 			end
-		elseif this.ev_rmb then
+		elseif this.mode ~= PLM_SPECTATE and this.ev_rmb then
 			if this.tool == TOOL_BLOCK and this.blx3 and this.alive then
 				local ct,cr,cg,cb
 				ct,cr,cg,cb = map_block_pick(this.blx3, this.bly3, this.blz3)
@@ -828,6 +909,9 @@ function new_player(settings)
 						+ MODE_DELAY_SPADE_DIG
 				end
 			end
+		end
+		if not this.ev_lmb and this.mode ~= PLM_SPECTATE then
+			this.spade_angx = 0
 		end
 		end
 		
@@ -849,49 +933,69 @@ function new_player(settings)
 			mvx = mvx - 1.0
 		end
 
-		if this.ev_crouch then
-			if this.grounded and not this.crouching then
-				if MODE_SOFTCROUCH then this.jerkoffs = this.jerkoffs - 1 end
-				this.y = this.y + 1
+		if this.mode == PLM_NORMAL then
+			if this.ev_crouch then
+				if this.grounded and not this.crouching then
+					if MODE_SOFTCROUCH then this.jerkoffs = this.jerkoffs - 1 end
+					this.y = this.y + 1
+				end
+				this.crouching = true
 			end
-			this.crouching = true
-		end
-		if this.ev_jump and this.alive and (MODE_CHEAT_FLY or this.grounded) then
-			this.vy = -7
-			this.ev_jump = false
-			if client then
-				client.wav_play_global(wav_jump_up, this.x, this.y, this.z)
+			if this.ev_jump and this.alive and (MODE_CHEAT_FLY or this.grounded) then
+				this.vy = -7
+				this.ev_jump = false
+				if client then
+					client.wav_play_global(wav_jump_up, this.x, this.y, this.z)
+				end
+			end
+		else
+			if this.ev_crouch then
+				mvy = mvy + 1.0
+			end
+			if this.ev_jump then
+				mvy = mvy - 1.0
 			end
 		end
 
-		-- normalise mvx,mvz
-		local mvd = math.max(0.00001,math.sqrt(mvx*mvx + mvz*mvz))
+		-- normalise mvx,mvy,mvz
+		local mvd = math.max(0.00001,math.sqrt(mvx*mvx + mvy*mvy + mvz*mvz))
 		mvx = mvx / mvd
+		mvy = mvy / mvd
 		mvz = mvz / mvd
+
+		-- apply tool speedup
+		if this.mode == PLM_NORMAL and (this.tool == TOOL_SPADE or this.tool == TOOL_BLOCK) then
+			mvx = mvx * 1.25
+			mvz = mvz * 1.25
+		end
 
 		-- apply base slowdown
 		local mvspd = 8.0
 		local mvchange = 10.0
+		if this.mode ~= PLM_NORMAL then mvspd = 20.0 end
 		mvx = mvx * mvspd
+		mvy = mvy * mvspd
 		mvz = mvz * mvspd
 
 		-- apply extra slowdowns
-		if not this.grounded then
-			mvx = mvx * 0.6
-			mvz = mvz * 0.6
-			mvchange = mvchange * 0.3
-		end
-		if inwater then
-			mvx = mvx * 0.6
-			mvz = mvz * 0.6
-		end
-		if this.crouching then
-			mvx = mvx * 0.5
-			mvz = mvz * 0.5
-		end
-		if this.zooming or this.ev_sneak then
-			mvx = mvx * 0.5
-			mvz = mvz * 0.5
+		if this.mode == PLM_NORMAL then
+			if not this.grounded then
+				mvx = mvx * 0.6
+				mvz = mvz * 0.6
+				mvchange = mvchange * 0.3
+			end
+			if inwater then
+				mvx = mvx * 0.6
+				mvz = mvz * 0.6
+			end
+			if this.crouching then
+				mvx = mvx * 0.5
+				mvz = mvz * 0.5
+			end
+			if this.zooming or this.ev_sneak then
+				mvx = mvx * 0.5
+				mvz = mvz * 0.5
+			end
 		end
 
 		-- apply rotation
@@ -899,7 +1003,11 @@ function new_player(settings)
 
 		this.vx = this.vx + (mvx - this.vx)*(1.0-math.exp(-sec_delta*mvchange))
 		this.vz = this.vz + (mvz - this.vz)*(1.0-math.exp(-sec_delta*mvchange))
-		this.vy = this.vy + 2*9.81*sec_delta
+		if this.mode == PLM_NORMAL then
+			this.vy = this.vy + 2*9.81*sec_delta
+		else
+			this.vy = this.vy + (mvy - this.vy)*(1.0-math.exp(-sec_delta*mvchange))
+		end
 
 		local ox, oy, oz
 		local nx, ny, nz
@@ -1078,9 +1186,12 @@ function new_player(settings)
 		-- offset by eye pos
 		-- slightly cheating here.
 		client.camera_move_global(sya*0.4, 0, cya*0.4)
+		--client.camera_move_local(0, 0, 0.4)
 	end
 
 	function this.render()
+		if this.mode == PLM_SPECTATE then return end
+
 		local ays,ayc,axs,axc
 		ays = math.sin(this.angy)
 		ayc = math.cos(this.angy)
@@ -1131,7 +1242,7 @@ function new_player(settings)
 			client.model_render_bone_global(mdl_spade, mdl_spade_bone,
 				this.x+mdl_x, this.y+this.jerkoffs+mdl_y, this.z+mdl_z,
 				--0.0, -this.angx-math.pi/2*0.90, this.angy, 1)
-				0.0, -this.angx, this.angy, 1)
+				0.0, -this.angx-this.spade_angx, this.angy, 1)
 		elseif this.tool == TOOL_BLOCK then
 			if this.blocks > 0 then
 				client.model_render_bone_global(this.mdl_block, mdl_block_bone,
@@ -1266,6 +1377,10 @@ function new_player(settings)
 		this.reload_msg = scene.textfield{wordwrap=false, color=0xFFFF3232, font=font_large, 
 			text="RELOAD", x = w/2, y = h/2+15, align_x = 0.5, align_y = 0,
 			visible=false}
+
+		this.enemy_name_msg = scene.textfield{wordwrap=false, color=0xFFFF3232, font=font_small, 
+			text="", x = w/2, y = 3*h/4, align_x = 0.5, align_y = 0.5,
+			visible=false}
 		
 		--TODO: update bluetext/greentext with the actual keys (if changed in controls.json)
 		this.team_change_msg_b = scene.textfield{wordwrap=false, color=0xFF0000FF, font=font_large, 
@@ -1338,7 +1453,7 @@ function new_player(settings)
 					else
 						c = 0xFFFF0000
 						drawit = drawit and (this.t_rcirc ~= nil and
-							(MODE_MINIMAP_RCIRC or large_map))
+							(MODE_MINIMAP_RCIRC or this.large_map.visible))
 					end
 
 					if drawit then
@@ -1519,8 +1634,49 @@ function new_player(settings)
 			this.chat_text.ctab = chat_text.render()
 			this.kill_text.ctab = chat_killfeed.render()
 		end
+		local function enemy_name_update(options)
+			local sya = math.sin(this.angy)
+			local cya = math.cos(this.angy)
+			local sxa = math.sin(this.angx)
+			local cxa = math.cos(this.angx)
+			local fwx,fwy,fwz
+			fwx,fwy,fwz = sya*cxa, sxa, cya*cxa
+			
+			-- perform a trace
+			local d,cx1,cy1,cz1,cx2,cy2,cz2
+			d,cx1,cy1,cz1,cx2,cy2,cz2
+			= trace_map_ray_dist(this.x+sya*0.4,this.y,this.z+cya*0.4, fwx,fwy,fwz, 127.5)
+			d = d or 75
+			
+			local target_idx = nil
+			local target_dist = d*d
+			local i,j
+			
+			for i=1,players.max do
+				local p = players[i]
+				if p and p ~= this and p.alive then
+					local dx = p.x-this.x
+					local dy = p.y-this.y+0.1
+					local dz = p.z-this.z
+					
+					for j=1,3 do
+						local dot, dd = isect_line_sphere_delta(dx,dy,dz,fwx,fwy,fwz)
+						if dot and dot < 0.55 and dd < target_dist then
+							target_idx = i
+							break
+						end
+						dy = dy + 1.0
+					end
+				end
+			end
+			this.enemy_name_msg.visible = target_idx ~= nil
+			if target_idx ~= nil then
+				this.enemy_name_msg.text = players[target_idx].name
+			end
+		end
 		
 		this.crosshair = scene.image{img=img_crosshair, x=w/2, y=h/2}
+		this.crosshairhit = scene.image{img=img_crosshairhit, x=w/2, y=h/2, visible=false}
 		this.cpal = scene.image{img=img_cpal, x=0, y=h, align_x=0, align_y=1}
 		this.cpal_rect = scene.image{img=img_cpal_rect, align_x=0, align_y=0}
 		
@@ -1531,7 +1687,8 @@ function new_player(settings)
 		
 		cpal_update()
 		
-		this.health_text = scene.textfield{font=font_digits,
+		this.health_text = scene.textfield{
+			font=font_digits,
 			text="100", 
 			color=0xFFA1FFA1,
 			align_x=0.5, 
@@ -1540,10 +1697,15 @@ function new_player(settings)
 			y = h-48}
 			
 		local function health_update(options)
-			this.health_text.text = ""..this.health
+			if this.mode == PLM_NORMAL then
+				this.health_text.text = ""..this.health
+			else
+				this.health_text.text = ""
+			end
 		end
 		
-		this.ammo_text = scene.textfield{font=font_digits,
+		this.ammo_text = scene.textfield{
+			font=font_digits,
 			text="",
 			color=0xFFC0C0C0,
 			align_x = 1,
@@ -1555,6 +1717,9 @@ function new_player(settings)
 			local tool = this.tool + 1
 			this.ammo_text.color = tool_textcolor[tool]()
 			this.ammo_text.text = tool_textgen[tool]()
+			if this.mode == PLM_SPECTATE then
+				this.ammo_text.text = ""
+			end
 		end
 		
 		this.typing_type = scene.textfield{
@@ -1579,14 +1744,18 @@ function new_player(settings)
 		
 		function this.typing_text.done_typing(options)
 			this.typing_layout.visible = false
-			discard_typing_state()
+			discard_typing_state(this.typing_text)
 		end
 		
 		function this.typing_text.on_return(options)
 			
 			if this.typing_text.text ~= "" then
 				if string.sub(this.typing_text.text,1,1) == "~" then
-					loadstring(string.sub(this.typing_text.text,2))() --nasty, but handy
+					local a,b
+					a,b = pcall(function () loadstring(string.sub(this.typing_text.text,2))() end) --nasty, but handy
+					if not a then
+						print("quickcall err:", b)
+					end
 				else
 					if this.typing_type.text == "Chat: " then
 						common.net_send(nil, common.net_pack("Bz", 0x0C, this.typing_text.text))
@@ -1600,6 +1769,130 @@ function new_player(settings)
 			
 			this.typing_text.done_typing()
 		end
+		
+		local box_spacer = scene.hspacer{x=w/2,y=h/2,spread=8}
+		scene.root.add_child(box_spacer)
+		local scoreboard_frames = {}
+		local scoreboard_headers = {}
+		local scoreboard_team_points = {}
+		local scoreboard_individuals = {}
+		local scoreboard_vspacers = {}
+		local i
+		for i=0, teams.max do
+			local team_color = argb_split_to_merged(
+				teams[i].color_chat[1],
+				teams[i].color_chat[2],
+				teams[i].color_chat[3]
+				)
+			local box = scene.tile9{
+				width=20, 
+				height=20, 
+				tiles=img_tiles_roundrect
+			}
+			local header_text = scene.textfield{
+				text=teams[i].name,
+				color=team_color
+			}
+			local team_point_text = scene.textfield{
+				text="0-10",
+				font=font_digits,
+				color=team_color
+			}
+			local individual_text = scene.textfield{
+				text="moo",
+				color=team_color
+			}
+			scoreboard_frames[i] = box
+			scoreboard_headers[i] = header_text
+			scoreboard_individuals[i] = individual_text
+			scoreboard_team_points[i] = team_point_text
+			box_spacer.add_child(box)
+			local vspacer = scene.vspacer{x=0, y=0, spread = 8}
+			box.add_child(vspacer)
+			vspacer.add_child(team_point_text)
+			vspacer.add_child(header_text)
+			vspacer.add_child(individual_text)
+			scoreboard_vspacers[i] = vspacer
+			box_spacer.visible = false;
+		end
+
+		box_spacer.reflow()
+		scoreboard_frames[1].add_listener(GE_DELTA_TIME, function(dT)
+			box_spacer.visible = show_scores
+			if box_spacer.visible then
+				local tables = {}
+				for i=0, teams.max do
+					tables[i] = team_players(i)
+					table.sort(tables[i], player_ranking)
+				end
+				-- we format each column by exploiting the fixed-width text.
+				for k,v in pairs(tables) do
+					
+					local table_concat = {}
+					if #v == 0 then
+						table_concat = {{msg="NO PLAYERS",color=0xFFFFFFFF}}
+					else
+						-- find the max width of each column
+						local strtable = {}
+						table.insert(strtable, {
+							"Name",
+							"Squad",
+							"#",
+							"Score",
+							"K",
+							"D"})
+						for row=1, #v do
+							local squad = ""
+							local plr = v[row]
+							if plr.squad ~= nil then 
+								squad = "["..tostring(plr.squad).."]"
+							end
+							table.insert(strtable, {
+								tostring(plr.name),
+								squad,
+								tostring(plr.pid),
+								tostring(plr.score),
+								tostring(plr.kills),
+								tostring(plr.deaths)})
+						end
+						local widths = {}
+						for row=1, #strtable do
+							for col=1, #strtable[row] do
+								widths[col] = math.max(#strtable[row][col], widths[col] or 0)
+							end
+						end
+						-- pad the strings to the target width.
+						for row_idx,row in pairs(strtable) do
+							local concat = {msg="", color=0xAAAAAAFF}
+							if row[1] == this.name then -- highlight the client's name
+								concat.color = 0xFFFFFFFF
+							end
+							for col_idx, val in pairs(row) do
+								local msg = val
+								while #msg < widths[col_idx] do
+									msg = msg .. " "
+								end
+								concat.msg = concat.msg .. msg .. "  "
+							end
+							table.insert(table_concat, concat)
+						end
+					end
+					
+					scoreboard_individuals[k].ctab = table_concat
+					scoreboard_team_points[k].text = teams[k].score .. "-" .. TEAM_INTEL_LIMIT
+					local box = scoreboard_frames[k]
+					local vspacer = scoreboard_vspacers[k]
+					local dim = vspacer.full_dimensions
+					box.width = dim.r - dim.l + 32
+					box.height = dim.b - dim.t + 64
+					
+				end
+				box_spacer.reflow()
+			end
+		end)
+		-- Almost there.
+		-- Table is not generated properly.
+		-- Empty team case is not handled properly.		
 		
 		-- spacer test
 		--[[local spacer = scene.hspacer{x=w/2,y=h/2,spread=8}
@@ -1633,8 +1926,10 @@ function new_player(settings)
 		this.health_text.add_listener(GE_DELTA_TIME, health_update)
 		this.ammo_text.add_listener(GE_DELTA_TIME, ammo_update)
 		this.net_graph.add_listener(GE_DELTA_TIME, net_graph_update)
+		this.enemy_name_msg.add_listener(GE_DELTA_TIME, enemy_name_update)
 		
 		scene.root.add_child(this.crosshair)
+		scene.root.add_child(this.crosshairhit)
 		scene.root.add_child(this.cpal)
 		scene.root.add_child(this.cpal_rect)
 		scene.root.add_child(this.mini_map)
@@ -1649,12 +1944,26 @@ function new_player(settings)
 		this.team_change.add_child(this.team_change_msg_g)
 		scene.root.add_child(this.team_change)
 		scene.root.add_child(this.quit_msg)
-		scene.root.add_child(this.reload_msg);
+		scene.root.add_child(this.reload_msg)
+		scene.root.add_child(this.enemy_name_msg)
 		
 		this.scene = scene
 	end
 	
+	function this.show_hit()
+		this.crosshair.visible = false
+		this.crosshairhit.visible = true
+		this.crosshairhit.static_alarm{name='hitviz', time=0.25, on_trigger=function()
+			this.crosshair.visible = true
+			this.crosshairhit.visible = false
+		end}
+
+	end
+	
 	function this.on_mouse_button(button, state)
+		if this.mode == PLM_SPECTATE then
+			return
+		end
 		if this.tool == TOOL_GUN and this.alive then
 			this.wpn.click(button, state)
 		end
@@ -1700,6 +2009,7 @@ function new_player(settings)
 		this.typing_type.text = typing_type
 		gui_focus = this.typing_text
 		this.typing_text.text = default_text
+		this.typing_text.cursor_to_text_end()
 		enter_typing_state()
 		this.typing_layout.reflow()
 		this.typing_layout.visible = true		
@@ -1733,7 +2043,7 @@ function new_player(settings)
 				chat_add(chat_text, sec_last, "Map saved to "..s, 0xFFC00000)
 			elseif not this.menus_visible() then
 				if key == BTSK_RELOAD then
-					if this.alive and this.wpn and this.tool == TOOL_GUN then
+					if this.mode ~= PLM_SPECTATE and this.alive and this.wpn and this.tool == TOOL_GUN then
 						this.wpn.reload()
 					end
 				elseif key == BTSK_TOOL1 then
@@ -1746,6 +2056,8 @@ function new_player(settings)
 					this.tool_switch(TOOL_NADE)
 				elseif key == BTSK_TOOL5 then
 					-- TODO
+				elseif key == BTSK_TOOLLAST then
+					this.tool_switch(this.tool_last)
 				elseif key == BTSK_CHAT then
 					this.focus_typing("Chat: ", "")
 				elseif key == BTSK_COMMAND then
@@ -1814,7 +2126,8 @@ function new_player(settings)
 		prv_recolor_block(this.blk_color[1],this.blk_color[2],this.blk_color[3])
 
 		-- TODO: wireframe cube
-		if this.tool == TOOL_BLOCK and this.blx1 and (this.alive or this.respawning) then
+		if this.mode ~= PLM_SPECTATE then
+		if this.tool == TOOL_BLOCK and this.blx1 and (this.alive or this.respawning) and this.blocks >= 1 then
 			if map_is_buildable(this.blx1, this.bly1, this.blz1) or MODE_BLOCK_PLACE_IN_AIR then
 				bname, mdl_data = client.model_bone_get(mdl_cube, mdl_cube_bone)
 				
@@ -1838,7 +2151,7 @@ function new_player(settings)
 				client.model_render_bone_global(mdl_Xcube, mdl_Xcube_bone,
 					this.blx1+0.5, this.bly1+0.5, this.blz1+0.5,
 					0.0, 0.0, 0.0, 24.0)
-				print(this.blx1.." "..this.bly1.." "..this.blz1)
+				--print(this.blx1.." "..this.bly1.." "..this.blz1)
 			end
 		elseif this.tool == TOOL_SPADE and this.blx1 and (this.alive or this.respawning) and map_block_get(this.blx2, this.bly2, this.blz2) then
 			client.model_render_bone_global(mdl_test, mdl_test_bone,
@@ -1850,6 +2163,7 @@ function new_player(settings)
 				(this.blz1*2+this.blz2)/3+0.5,
 				-rotpos*0.01, -rotpos*0.004, 0.0, 0.1+0.01*math.sin(-rotpos*0.071))
 		end
+		end
 		--[[
 		client.model_render_bone_local(mdl_test, mdl_test_bone,
 			1-0.2, 600/800-0.2, 1.0,
@@ -1860,7 +2174,9 @@ function new_player(settings)
 			this.create_hud()
 		end
 		
-		this.render()
+		if this.mode ~= PLM_SPECTATE then
+			this.render()
+		end
 
 		if MODE_DEBUG_SHOWBOXES then
 			client.model_render_bone_global(mdl_bbox,
@@ -1874,7 +2190,7 @@ function new_player(settings)
 				plr.render()
 				if plr.alive and plr.team == this.team then
 					local px,py
-					local dx,dy,dzNULL
+					local dx,dy,dz
 					dx,dy,dz = plr.x-this.x,
 						plr.y+plr.jerkoffs-this.y-this.jerkoffs-0.5,
 						plr.z-this.z
@@ -1926,6 +2242,14 @@ function new_player(settings)
 			end
 		end
 		
+		if this.mode == PLM_SPECTATE then
+			this.cpal.visible = false
+			this.cpal_rect.visible = false
+		else
+			this.cpal.visible = true
+			this.cpal_rect.visible = true
+		end
+
 		this.scene.draw()
 
 		if debug_enabled then
@@ -1936,34 +2260,6 @@ function new_player(settings)
 
 			font_mini.print(4, 4, 0x80FFFFFF, cam_pos_str)
 		end
-
-		if show_scores then
-			local bi, gi
-			bi = 1
-			gi = 1
-			for i=1,players.max do
-				local plr = players_sorted[i]
-				if plr ~= nil then
-					local sn = plr.name
-					if plr.squad then
-						sn = sn.." ["..plr.squad.."]"
-					end
-					local s = sn.." #"..i..": "
-						..plr.score.." ("..plr.kills.."/"..plr.deaths..")"
-					if plr.team == 1 then
-						font_mini.print(w / 2 + 50, gi * 15 + 150
-							, argb_split_to_merged(150, 255, 150, 255)
-							, s)
-						gi = gi + 1
-					else
-						font_mini.print(w / 2 - 50 - (6 * #s), bi * 15 + 150
-							, argb_split_to_merged(150, 150, 255, 255)
-							, s)
-						bi = bi + 1
-					end
-				end
- 			end
- 		end
 
 	end
 

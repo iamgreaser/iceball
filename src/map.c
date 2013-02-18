@@ -25,7 +25,7 @@ map_t *map_parse_root(const char *dend, const char *data, int xlen, int ylen, in
 	
 	int taglen = (int)(dend-data);
 	
-	map_t *map = malloc(sizeof(map_t));
+	map_t *map = (map_t*)malloc(sizeof(map_t));
 	if(map == NULL)
 	{
 		error_perror("map_parse_root: malloc");
@@ -38,7 +38,7 @@ map_t *map_parse_root(const char *dend, const char *data, int xlen, int ylen, in
 	map->ylen = ylen;
 	map->zlen = zlen;
 	
-	map->pillars = malloc(map->xlen*map->zlen*sizeof(uint8_t *));
+	map->pillars = (uint8_t**)malloc(map->xlen*map->zlen*sizeof(uint8_t *));
 	if(map->pillars == NULL)
 	{
 		error_perror("map_parse_root: malloc(map->pillars)");
@@ -91,18 +91,22 @@ map_t *map_parse_root(const char *dend, const char *data, int xlen, int ylen, in
 		}
 		
 		pillar_temp[0] = (ti>>2)-2;
-		map->pillars[pi] = malloc(ti);
+		map->pillars[pi] = (uint8_t*)malloc(ti);
 		// TODO: check if NULL
 		memcpy(map->pillars[pi], pillar_temp, ti);
 	}
+
+#ifdef USE_OPENGL
+	map->vbo = 0;
+	map->vbo_dirty = 1;
+	map->vbo_arr = NULL;
+#endif
 	
 	return map;
 }
 
 map_t *map_parse_aos(int len, const char *data)
 {
-	int i;
-	
 	if(data == NULL)
 		return NULL;
 	
@@ -114,8 +118,6 @@ map_t *map_parse_aos(int len, const char *data)
 
 map_t *map_parse_icemap(int len, const char *data)
 {
-	int i;
-	
 	if(data == NULL)
 		return NULL;
 	
@@ -191,8 +193,14 @@ map_t *map_parse_icemap(int len, const char *data)
 		map_free(map);
 		return NULL;
 	}
+
+#ifdef USE_OPENGL
+	map->vbo = 0;
+	map->vbo_dirty = 1;
+	map->vbo_arr = NULL;
+#endif
 	
-	printf("all good.\n");
+	//printf("all good.\n");
 	return map;
 }
 
@@ -224,8 +232,7 @@ char *map_serialise_icemap(map_t *map, int *len)
 {
 	// TODO: make map_save_icemap rely on this
 	int x,z,pi;
-	int i;
-	
+
 	if(map == NULL)
 	{
 		fprintf(stderr, "map_serialise_icemap: map is NULL!\n");
@@ -261,7 +268,7 @@ char *map_serialise_icemap(map_t *map, int *len)
 		+8+4+6+maplen
 		+8;
 	
-	char *buf = malloc(buflen);
+	char *buf = (char*)malloc(buflen);
 	// TODO check if NULL
 	
 	memcpy(buf, "IceMap\x1A\x01MapData\xFF", 16);
@@ -306,7 +313,6 @@ char *map_serialise_icemap(map_t *map, int *len)
 int map_save_icemap(map_t *map, const char *fname)
 {
 	int x,z,pi;
-	int i;
 	
 	FILE *fp = fopen(fname, "wb");
 	if(fp == NULL)
@@ -393,6 +399,13 @@ void map_free(map_t *map)
 	
 	if(map->pillars != NULL)
 		free(map->pillars);
+#ifdef USE_OPENGL
+	if(map->vbo != 0)
+		glDeleteBuffers(1, &(map->vbo));
+	if(map->vbo_arr != NULL)
+		free(map->vbo_arr);
+#endif
 	
 	free(map);
 }
+

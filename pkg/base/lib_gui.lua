@@ -23,8 +23,8 @@ dofile("pkg/base/lib_util.lua")
 local img_font_numbers = common.img_load("pkg/base/gfx/font-numbers.tga")
 local img_font_mini = common.img_load("pkg/base/gfx/font-mini.tga")
 local img_font_large = common.img_load("pkg/base/gfx/font-large.tga")
-img_loading = common.img_load("pkg/base/gfx/loading_default.tga")
---img_tiles_roundrect = client.img_load("pkg/base/gfx/roundrect.tga")
+img_loading = img_loading or client.img_load("pkg/base/gfx/loading_default-64c.tga")
+img_tiles_roundrect = client.img_load("pkg/base/gfx/roundrect.tga")
 
 --[[
 client.img_free(img_font_numbers)
@@ -302,14 +302,28 @@ function gui_get_char(key, modif)
 	return nil
 end
 
-function gui_string_edit(str, maxlen, key, modif)
+function gui_string_edit(str, insert_position, maxlen, key, modif)
 	if key == SDLK_BACKSPACE then
-		str = string.sub(str, 1, #str-1)
+		if insert_position <= 1 then 
+			str = string.sub(str, 2, #str)
+		else
+			str = string.sub(str, 1, insert_position - 2) .. 
+				  string.sub(str, insert_position, #str)
+		end
+	elseif key == SDLK_DELETE then
+		if insert_position <= 1 then 
+			str = string.sub(str, 2, #str)
+		else
+			str = string.sub(str, 1, insert_position - 1) .. 
+				  string.sub(str, insert_position + 1, #str)
+		end
 	else
 		local k = gui_get_char(key, modif)
 
 		if #str < maxlen and k then
-			str = str .. k
+			str = string.sub(str, 1, insert_position - 1) .. 
+				  k .. 
+				  string.sub(str, insert_position, #str)
 		end
 	end
 
@@ -442,6 +456,7 @@ function gui_create_scene(width, height, shared_rate)
 	
 	function scene.hspacer(options)
 		local this = widgets.hspacer(options)
+		if options.visible~=nil then this.visible = options.visible else this.visible = true end
 		this.draw = function()
 			if this.visible then
 				for k,v in pairs(this.children) do v.draw() end
@@ -452,6 +467,7 @@ function gui_create_scene(width, height, shared_rate)
 	
 	function scene.vspacer(options)
 		local this = widgets.vspacer(options)
+		if options.visible~=nil then this.visible = options.visible else this.visible = true end
 		this.draw = function()
 			if this.visible then
 				for k,v in pairs(this.children) do v.draw() end
@@ -714,6 +730,7 @@ function gui_create_scene(width, height, shared_rate)
 		local _text
 		local _ctab
 		local _color = options.color or 0xFF880088
+		if type(_color) ~= "number" then error("color "..tostring(_color).." is not a number") end
 		
 		local function recalc_glyphs()
 			if _ctab ~= nil then
@@ -789,6 +806,7 @@ function gui_create_scene(width, height, shared_rate)
 		end
 		
 		function this.setter_keys.color(v)
+			if type(v) ~= "number" then error("color "..tostring(v).." is not a number") end
 			_color = v
 			recalc_glyphs()
 		end
@@ -800,37 +818,129 @@ function gui_create_scene(width, height, shared_rate)
 			this.done_typing()
 		end
 		
+		function this.clear_keyrepeat()
+			this.static_alarms['key_waitbuf'] = nil
+			this.static_alarms['key_repeat'] = nil
+			this.repeating_key = nil
+			this.repeating_modif = nil
+		end
+		
 		function this.done_typing()
-			discard_typing_state()
+			discard_typing_state(this)
+		end
+		
+		this.repeating_key = nil
+		this.repeating_modif = nil
+		
+		function this.key_repeated()
+			local state = true
+			local key = this.repeating_key
+			local modif = this.repeating_modif
+			if key == SDLK_ESCAPE then
+				this.done_typing()
+			elseif key == SDLK_RETURN then
+				if #this.text>0 then this.buffer_register_new() end
+				this.on_return(key, state, modif)
+			elseif key == SDLK_LEFT then
+				this.cursor_backwards()
+			elseif key == SDLK_RIGHT then
+				this.cursor_forwards()
+			elseif key == SDLK_UP then
+				this.buffer_backwards()
+			elseif key == SDLK_DOWN then
+				this.buffer_forwards()
+			elseif key == SDLK_HOME then
+				this.cursor_to_text_start()
+			elseif key == SDLK_END then
+				this.cursor_to_text_end()
+			else
+				local text_len = #this.text
+				this.text = gui_string_edit(
+					this.text, 
+					this.cursor_position, 
+					MODE_CHAT_STRMAX, 
+					key, 
+					modif)
+				if key ~= SDLK_DELETE then
+					this.cursor_position = math.max(
+						1, 
+						this.cursor_position + (#this.text - text_len))
+				else
+					this.cursor_position = math.max(1,
+						this.cursor_position)
+				end
+				this.input_buffer.edit(this.text)
+			end
 		end
 		
 		function this.on_key(key, state, modif)
 			if this.take_input then
 				if state then
-					if key == SDLK_ESCAPE then
-						this.done_typing()
-					elseif key == SDLK_RETURN then
-						this.on_return(key, state, modif)
-					else
-						this.text = gui_string_edit(this.text, MODE_CHAT_STRMAX, key, modif)
-					end
-				end				
+					this.repeating_key = key
+					this.repeating_modif = modif
+					this.static_alarm{name='key_waitbuf', time=0.45,on_trigger=function()
+						if this.repeating_key ~= nil then
+							this.key_repeated()
+							this.static_alarms['key_repeat'] = 
+							alarm{time=0.035, loop=true, preserve_accumulator=false, on_trigger=function()
+								if this.repeating_key ~= nil then
+									this.key_repeated()
+								end
+							end}
+						end
+					end}
+					this.key_repeated()
+				elseif state == false then -- this is specifically the key up. there are other key events...
+					this.clear_keyrepeat()
+				end
 			end
 		end
 		
 		this.add_listener(GE_KEY, this.on_key)
 		
-		this.cursor_position = 0
+		this.cursor_position = 1
+		this.input_buffer = collect_new_history_buf()
+		
+		function this.cursor_backwards()
+			this.cursor_position = math.max(1, this.cursor_position - 1)
+		end
+		function this.cursor_forwards()
+			this.cursor_position = math.min(#this.text + 1, this.cursor_position + 1)
+		end
+		function this.cursor_to_text_start()
+			this.cursor_position = 1
+		end
+		function this.cursor_to_text_end()
+			this.cursor_position = #this.text + 1
+		end
+		
+		function this.buffer_backwards()
+			this.text = this.input_buffer.prev()
+			this.cursor_to_text_end()
+		end
+		function this.buffer_forwards()
+			this.text = this.input_buffer.next()
+			this.cursor_to_text_end()
+		end
+		function this.buffer_register_new(text)
+			this.input_buffer.append()
+			if this.input_buffer.length() > 100 then this.input_buffer.shift() end
+		end
+		
 		function this.get_cursor_xy()
 			if this.text_cache == nil or #this.text == 0 then 
 				return {x=0, y=0} 
 			else
+				this.cursor_position = math.min(this.cursor_position, #this.text + 1)
 				local lastrow = this.text_cache[#this.text_cache]
 				local lastchar = lastrow[#lastrow]
-				-- 3=x 4=y
-				return {x=lastchar[3] + this.font.width, y=lastchar[4]}
+				-- of lastchar: 3=x 4=y
+				return {x=(this.cursor_position - 1) * this.font.width, 
+						y=lastchar[4]}
 			end
 		end
+		
+		recalc_size()
 
 		return this
 

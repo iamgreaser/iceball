@@ -86,10 +86,11 @@ function P.widget(options)
 	function getter_keys.rely()
 		local pos = this.y - (this.height * this.align_y)
 		if this.parent == nil then return pos
-		else return this.parent.rely + this.parent.height * this.parent.align_y + pos end
+		else return this.parent.rely + this.parent.height * this.parent.align_y + pos
+end
 	end
 	function setter_keys.rely(v) 
-		local pos = v + (this.width * this.align_y)
+		local pos = v + (this.height * this.align_y)
 		if this.parent == nil then this.y = pos
 		else this.y = pos - (this.parent.rely + this.parent.height * this.parent.align_y) end
 	end
@@ -121,16 +122,14 @@ function P.widget(options)
 	end
 	
 	function this.child_boundaries()
-		local child_boundaries = {}
-		local ct = 1
+		local b = {}
 		for c_k, child in pairs(this.children) do
-			for b_k, boundary in pairs(child.child_boundaries) do
-				child_boundaries[ct] = boundary
-				ct = ct + 1
+			for b_k, boundary in pairs(child.child_boundaries()) do
+				table.insert(b, boundary)
 			end
 		end
-		child_boundaries[ct] = {l=this.l, t=this.t, r=this.r, b=this.b}
-		return child_boundaries
+		table.insert(b, {l=this.l, t=this.t, r=this.r, b=this.b})
+		return b
 	end
 	
 	function getter_keys.full_dimensions()

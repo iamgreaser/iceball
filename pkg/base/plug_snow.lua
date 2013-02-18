@@ -27,6 +27,7 @@ function snow_drop_part(x,z,t,bcast)
 			common.img_pixel_set(img_overview,x,z,0xFFFFFFFF)
 		end
 		if bcast then
+			bhealth_clear(x,ty-1,z,false)
 			net_broadcast(nil, common.net_pack("BHHHBBBB",
 				0x08,x,ty-1,z,255,255,255,2))
 		end
@@ -237,6 +238,9 @@ if client then
 	
 	local snow_oldtick = client.hook_tick
 	function snow_tick(sec_current, sec_delta)
+		local xlen,ylen,zlen
+		xlen,ylen,zlen = common.map_get_dims()
+
 		-- update snow wind
 		local sdx,sdz
 		local st = (1-math.cos(snowflakes.st*math.pi))/2
@@ -257,7 +261,7 @@ if client then
 		for i=1,snow_flakecount do
 			local sf = snowflakes[i]
 			sf.y = sf.y + sec_delta*snow_fallspeed
-			if sf.y >= 64 then
+			if sf.y >= ylen then
 				sf.x = math.random()*snow_flakedist*2
 				sf.y = 0
 				sf.z = math.random()*snow_flakedist*2
@@ -274,3 +278,4 @@ if client then
 	client.hook_render = snow_render
 	client.hook_tick = snow_tick
 end
+

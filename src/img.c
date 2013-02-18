@@ -61,7 +61,7 @@ img_t *img_parse_tga(int len, const char *data)
 	// jump to palette
 	
 	// load palette if necessary
-	uint32_t *palette = (head.cmtype == 1 ? malloc(head.cmlen*4) : NULL);
+	uint32_t *palette = (head.cmtype == 1 ? (uint32_t*)malloc(head.cmlen*4) : NULL);
 	
 	if(palette != NULL)
 	for(i = 0; i < head.cmlen; i++)
@@ -76,10 +76,14 @@ img_t *img_parse_tga(int len, const char *data)
 	}
 	
 	// allocate + stash
-	img_t *img = malloc(sizeof(img_t)+4*head.width*head.height);
+	img_t *img = (img_t*)malloc(sizeof(img_t)+4*head.width*head.height);
 	// TODO: check if NULL
 	img->head = head;
 	img->udtype = UD_IMG;
+#ifdef USE_OPENGL
+	img->tex = 0;
+	img->tex_dirty = 1;
+#endif
 	
 	// copy stuff
 	int bplen = ((head.bpp-1)>>3)+1;

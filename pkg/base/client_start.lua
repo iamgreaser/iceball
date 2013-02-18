@@ -31,36 +31,36 @@ local controls_config_filename = user_settings['controls'] or "clsave/pub/contro
 -- FIXME: we don't expose documentation for valid user settings anywhere
 
 user_config = common.json_load(user_config_filename)
+if user_config.kick_on_join then
+	error([[
+		Once you've set your nickname in clsave/pub/user.json,
+		set your nickname in clsave/pub/user.json,
+		remember to set your nickname in clsave/pub/user.json,
+		look for any connect-*.bat files,
+		and set your nickname in clsave/pub/user.json.
+		
+		Oh, and then after you set your nickname in clsave/pub/user.json,
+		you can run said connect-*.bat file,
+		having set your nickname in clsave/pub/user.json.]])
+end
 print("json done!")
 print("name:", user_config.name)
-print("kick on join:", user_config.kick_on_join)
 print("bio desc:", user_config.bio and user_config.bio.description)
 
 -- OK, *NOW* we can load stuff.
 dofile("pkg/base/common.lua")
 
 tracers = {head = 1, tail = 0, time = 0}
-bhealth = {head = 1, tail = 0, time = 0, map = {}}
 
 client_tick_accum = 0.
-
---[[
-while true do
-	local pkt, sockfd, cid
-	pkt, sockfd = common.net_recv()
-	cid, pkt = common.net_unpack("B", pkt)
-	if cid == 0xE0 then
-		map_fname, pkt = common.net_unpack("z", pkt)
-		break
-	else
-		error("should not receive non-map-filename packets until map filename arrives!")
-	end
-end]]
 
 map_fname = "*MAP"
 
 if common.version.num < 5 then
 	error("Your version is too old! Please upgrade to 0.0-5 at least!")
+end
+if common.version.num >= 19 and common.version.num <= 21 then
+	error("0.0-19 through 0.0-21 have an incomplete OpenGL renderer. Due to the potential abuse, these versions are not allowed. Please upgrade to 0.0-22 at the least!")
 end
 
 -- define keys
@@ -79,6 +79,7 @@ BTSK_TOOL2 = controls_config.tool2 or SDLK_2
 BTSK_TOOL3 = controls_config.tool3 or SDLK_3
 BTSK_TOOL4 = controls_config.tool4 or SDLK_4
 BTSK_TOOL5 = controls_config.tool5 or SDLK_5
+BTSK_TOOLLAST = controls_config.toollast or SDLK_q
 
 BTSK_COLORLEFT  = controls_config.colorleft or SDLK_LEFT
 BTSK_COLORRIGHT = controls_config.colorright or SDLK_RIGHT
@@ -148,6 +149,9 @@ for k, v in pairs(button_map) do
 	key_map[v.key] = {name=k, desc=v.desc}
 end
 
+-- map keysyms to their unicode values to fix keyup being an idiot
+keys = {}
+
 -- a list of arbitrary data with a "camera" that can render sublists.
 function scroll_list(data, cam_start, cam_height)
 	
@@ -176,96 +180,6 @@ NET_MOVE_DELAY = 0.5
 NET_ORIENT_DELAY = 0.1
 t_net_move = nil
 t_net_orient = nil
-players_sorted = {}
-
-function bhealth_clear(x,y,z,repaint)
-	local map = bhealth.map
-	
-	local bh = map[x] and map[x][y] and map[x][y][z]
-	
-	if bh then
-		if repaint then
-			map_block_paint(bh.x,bh.y,bh.z,
-				bh.c[1],bh.c[2],bh.c[3],bh.c[4])
-		end
-		
-		map[x][y][z] = nil
-	end
-end
-
-function bhealth_damage(x,y,z,amt)
-	local c = map_block_get(x,y,z)
-	if c == false then
-		map_pillar_aerate(x,z)
-		c = map_block_get(x,y,z)
-	end
-	if not c then return end
-	
-	local map = bhealth.map
-	
-	map[x] = map[x] or {}
-	map[x][y] = map[x][y] or {}
-	map[x][y][z] = map[x][y][z] or {
-		c = c,
-		damage = 0,
-		time = nil,
-		qidx = nil,
-		x = x, y = y, z = z,
-	}
-	local blk = map[x][y][z]
-	
-	blk.time = bhealth.time + MODE_BLOCK_REGEN_TIME
-	blk.damage = blk.damage + amt
-	
-	if blk.damage >= MODE_BLOCK_HEALTH then
-		common.net_send(nil, common.net_pack("BHHH",
-			0x09, x, y, z))
-	end
-	
-	local c = blk.c
-	local darkfac = 0.8*MODE_BLOCK_HEALTH
-	local light = darkfac/(darkfac + blk.damage)
-	
-	map_block_paint(x,y,z,c[1],
-		math.floor(c[2]*light+0.5),
-		math.floor(c[3]*light+0.5),
-		math.floor(c[4]*light+0.5))
-	
-	bhealth.tail = bhealth.tail + 1
-	bhealth[bhealth.tail] = {x=x,y=y,z=z,time=blk.time}
-	
-	blk.qidx = bhealth.tail
-end
-
-function bhealth_prune(time)
-	--print("prune", bhealth.head, bhealth.tail)
-	while bhealth.head <= bhealth.tail do
-		local bhi = bhealth[bhealth.head]
-		if time < bhi.time then break end
-		bhealth[bhealth.head] = nil
-		
-		--print("bhi", bhi.x,bhi.y,bhi.z,bhi.time,time)
-		
-		local map = bhealth.map
-		local bh = map[bhi.x] and map[bhi.x][bhi.y] and map[bhi.x][bhi.y][bhi.z]
-		
-		if bh and bh.qidx == bhealth.head then
-			map_block_paint(bh.x,bh.y,bh.z,
-				bh.c[1],bh.c[2],bh.c[3],bh.c[4])
-			bhealth.map[bh.x][bh.y][bh.z] = nil
-		end
-		
-		bhealth.head = bhealth.head + 1
-	end
-	
-	if bhealth.head > bhealth.tail then
-		bhealth.head = 1
-		bhealth.tail = 0
-	end
-	
-	bhealth.time = time
-	
-end
 
 function tracer_add(x,y,z,ya,xa,time)
 	local tc = {
@@ -318,52 +232,52 @@ end
 log_mspr = {}
 
 mspr_player = {
-					-1,-3,	0,-3,	1,-3,
+	                -1,-3,   0,-3,   1,-3,
 
-	        -2,-2,	-1,-2,	0,-2,	1,-2,	2,-2,
+	        -2,-2,                           2,-2,
 
-	-3,-1, 	-2,-1,	-1,-1,	0,-1,	1,-1,	2,-1,	3,-1,
+	-3,-1,                                           3,-1,
 
-	-3, 0,	-2, 0,	-1, 0,	0, 0,	1, 0,	2, 0,	3, 0,
+	-3, 0,                                           3, 0,
 
-	-3, 1,	-2, 1,	-1, 1,	0, 1,	1, 1,	2, 1,	3, 1,
+	-3, 1,                                           3, 1,
 
-	        -2, 2,	-1, 2,	0, 2,	1, 2,	2, 2,
+	        -2, 2,                           2, 2,
 
-					-1, 3,	0, 3,	1, 3,
+	                -1, 3,   0, 3,   1, 3,
 }
 
 -- TODO: confirm the correct size of the intel + tent icons
 mspr_intel = {
-	
+	-3,-3,  -2,-3,  -1,-3,   0,-3,   1,-3,   2,-3,   3,-3,
 
-			-2,-2,	-1,-2,	0,-2,	1,-2,	2,-2,
+	-3,-2,                                           3,-2,
 
-			-2,-1,							2,-1,
+	-3,-1,                                           3,-1,
 
-	-3, 0,	-2, 0,	-1, 0,	0, 0,	1, 0,	2, 0,	3, 0,
+	-3, 0,                                           3, 0,
 
-	-3, 1,	-2, 1,	-1, 1,	0, 1,	1, 1,	2, 1,	3, 1,
+	-3, 1,                                           3, 1,
 
-	-3, 2,	-2, 2,	-1, 2,	0, 2,	1, 2,	2, 2,	3, 2,
+	-3, 2,                                           3, 2,
 
-	-3, 3,	-2, 3,	-1, 3,	0, 3,	1, 3,	2, 3,	3, 3,
+	-3, 3,  -2, 3,  -1, 3,   0, 3,   1, 3,   2, 3,   3, 3,
 }
 
 mspr_tent = {
-	-3,-3,	-2,-3,	-1,-3,	0,-3,	1,-3,	2,-3,	3,-3,
+	                         0,-3,
 
-	-3,-2,					0,-2,					3,-2,
+	                         0,-2,
 
-	-3,-1,					0,-1,					3,-1,
+	                         0,-1,
 
-	-3, 0,  -2, 0,  -1, 0,  0, 0,   1, 0,   2, 0,   3, 0,
+	-3, 0,  -2, 0,  -1, 0,   0, 0,   1, 0,   2, 0,   3, 0,
 
-	-3, 1,					0, 1,					3, 1,
+	                         0, 1,
 
-	-3, 2,					0, 2,					3, 2,
+	                         0, 2,
 
-	-3, 3,	-2, 3,	-1, 3,	0, 3,	1, 3,	2, 3,	3, 3,
+	                         0, 3,
 }
 
 -- TODO: up/down arrows
@@ -381,11 +295,13 @@ mouse_skip = 3
 input_events = {}
 
 gui_focus = nil
+window_activated = true
 
 show_scores = false
 
 -- load images
 img_crosshair = client.img_load("pkg/base/gfx/crosshair.tga")
+img_crosshairhit = client.img_load("pkg/base/gfx/crosshairhit.tga")
 
 -- load/make models
 mdl_test = client.model_load_pmf("pkg/base/pmf/test.pmf")
@@ -397,6 +313,7 @@ mdl_Xcube_bone = client.model_bone_find(mdl_cube, "bnXcube")
 mdl_spade, mdl_spade_bone = client.model_load_pmf("pkg/base/pmf/spade.pmf"), 0
 mdl_block, mdl_block_bone = client.model_load_pmf("pkg/base/pmf/block.pmf"), 0
 weapon_models[WPN_RIFLE] = client.model_load_pmf("pkg/base/pmf/rifle.pmf")
+weapon_models[WPN_LEERIFLE] = client.model_load_pmf("pkg/base/pmf/leerifle.pmf")
 mdl_nade, mdl_nade_bone = client.model_load_pmf("pkg/base/pmf/nade.pmf"), 0
 
 mdl_tent, mdl_tent_bone = client.model_load_pmf("pkg/base/pmf/tent.pmf"), 0
@@ -508,16 +425,17 @@ function h_tick_main(sec_current, sec_delta)
 				plr.set_orient_recv(ya, xa, keys)
 			end
 		elseif cid == 0x05 then
-			-- 0x05 pid team weapon score.s16 kills.s16 deaths.s16 name.z squad.z: (S->C)
-			local pid, tidx, wpn, score, kills, deaths, name, squad
-			pid, tidx, wpn, score, kills, deaths, name, squad, pkt
-				= common.net_unpack("Bbbhhhzz", pkt)
+			-- 0x05 pid team weapon mode score.s16 kills.s16 deaths.s16 name.z squad.z: (S->C)
+			local pid, tidx, wpn, mode, score, kills, deaths, name, squad
+			pid, tidx, wpn, mode, score, kills, deaths, name, squad, pkt
+				= common.net_unpack("Bbbbhhhzz", pkt)
 			
 			if players[pid] then
 				-- TODO: update wpn/name
 				players[pid].squad = (squad ~= "" and squad) or nil
 				players[pid].name = name
 				players[pid].team = tidx
+				players[pid].mode = mode
 				players[pid].recolor_team()
 			else
 				players[pid] = new_player({
@@ -527,14 +445,15 @@ function h_tick_main(sec_current, sec_delta)
 					squad = (squad ~= "" and squad) or nil,
 					team = tidx,
 					weapon = wpn,
+					mode = mode,
 					pid = pid,
+					sockfd = sockfd
 				})
 			end
 			
 			players[pid].score = score
 			players[pid].kills = kills
 			players[pid].deaths = deaths
-			sort_players()
 		elseif cid == 0x06 then
 			local pid, pkt = common.net_unpack("B", pkt)
 			players.current = pid
@@ -543,7 +462,6 @@ function h_tick_main(sec_current, sec_delta)
 			-- TODO fix crash bug
 			--players[pid].free()
 			players[pid] = nil
-			sort_players()
 		elseif cid == 0x08 then
 			local x,y,z,cb,cg,cr,ct
 			x,y,z,cb,cg,cr,ct,pkt = common.net_unpack("HHHBBBB", pkt)
@@ -664,6 +582,19 @@ function h_tick_main(sec_current, sec_delta)
 					plr.angy,plr.angx,
 					sec_current)
 				client.wav_play_global(wav_rifle_shot, plr.x, plr.y, plr.z)
+				particles_add(new_particle{
+					x = plr.x,
+					y = plr.y,
+					z = plr.z,
+					vx = math.sin(plr.angy - math.pi / 4) / 2,
+					vy = 0.1,
+					vz = math.cos(plr.angy - math.pi / 4) / 2,
+					r = 250,
+					g = 215,
+					b = 0,
+					size = 8,
+					lifetime = 5
+				})
 			end
 		elseif cid == 0x1B then
 			local x,y,z,vx,vy,vz,fuse
@@ -694,6 +625,14 @@ function h_tick_main(sec_current, sec_delta)
 			if plr then
 				client.wav_play_global(wav_rifle_reload, plr.x, plr.y, plr.z)
 			end
+		elseif cid == 0x1F then
+			local tidx, score
+			tidx, score = common.net_unpack("bh", pkt)
+			teams[tidx].score = score
+		elseif cid == 0x20 then
+			local x, y, z, amt
+			x, y, z, amt = common.net_unpack("HHHH", pkt)
+			bhealth_damage(x, y, z, amt)
 		end
 	end
 	tracer_prune(sec_current)
@@ -727,7 +666,11 @@ function h_tick_main(sec_current, sec_delta)
 		for i=nades.head,nades.tail do
 			if nades[i] then nades[i].tick(moment, tickrate) end
 		end
+		for i=particles.head,particles.tail do
+			if particles[i] then particles[i].tick(moment, tickrate) end
+		end
 		nade_prune(sec_current)
+		particles_prune(sec_current)
 		
 		for i=1,#intent do
 			intent[i].tick(moment, tickrate)
@@ -843,8 +786,9 @@ function enter_typing_state()
 	end
 end
 
-function discard_typing_state()
+function discard_typing_state(widget)
 	gui_focus = nil
+	if widget.clear_keyrepeat then widget.clear_keyrepeat() end
 	mouse_released = false
 	client.mouse_lock_set(true)
 	client.mouse_visible_set(false)
@@ -857,8 +801,27 @@ function discard_typing_state()
 	end
 end
 
-function h_key(key, state, modif)
+function h_key(sym, uni, state, modif)
+    local key = sym
 	
+	if key <= 256 then
+		local tmp
+		if state then tmp = 1 else tmp = 0 end
+
+		--print("key = " .. key .. " | state = " .. tmp)
+
+		if uni and state then
+			keys[sym] = uni
+			key = uni
+		elseif uni and not state then
+			if keys[sym] then
+				key = keys[sym]
+			end
+		end
+
+		--print("key = " .. key .. " | state = " .. tmp)
+	end
+
 	push_keypress(key, state, modif)
 
 	-- disconnected ai
@@ -878,6 +841,13 @@ function h_key(key, state, modif)
 		client.mouse_lock_set(false)
 		client.mouse_visible_set(true)
 		gui_focus.on_key(key, state, modif)
+		return
+	end
+	
+	if not window_activated then
+		mouse_released = true
+		client.mouse_lock_set(false)
+		client.mouse_visible_set(true)
 		return
 	end
 	
@@ -968,6 +938,19 @@ function h_mouse_motion(x, y, dx, dy)
 	local plr = players[players.current]
 	if plr and gui_focus == nil then
 		return plr.on_mouse_motion(x, y, dx, dy)
+	end
+end
+
+function h_window_activate(active)
+	window_activated = active
+	if active then
+		mouse_released = false
+		client.mouse_lock_set(true)
+		client.mouse_visible_set(false)
+	else
+		mouse_released = true
+		client.mouse_lock_set(false)
+		client.mouse_visible_set(true)
 	end
 end
 
@@ -1083,12 +1066,17 @@ function client.hook_render()
 		if nades[i] then nades[i].render() end
 	end
 	
+	for i=particles.head,particles.tail do
+		if particles[i] then particles[i].render() end
+	end
+	
 end
 
 client.hook_tick = h_tick_init
 client.hook_key = h_key
 client.hook_mouse_button = h_mouse_button
 client.hook_mouse_motion = h_mouse_motion
+client.hook_window_activate = h_window_activate
 
 print("pkg/base/client_start.lua loaded.")
 

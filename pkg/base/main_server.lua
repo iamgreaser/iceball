@@ -25,6 +25,7 @@ if common.version == nil then
 end
 
 dofile("pkg/base/common.lua")
+dofile("pkg/base/commands.lua")
 
 client_list = {fdlist={}}
 server_tick_accum = 0.
@@ -37,54 +38,32 @@ function slot_add(sockfd, tidx, wpn, name)
 				-- TODO: actually balance this properly!
 				tidx = (i-1) % 2
 			end
+			if MODE_TEAM_GUNS then
+				_wpn = tidx + 1
+			else
+				_wpn = WPN_RIFLE
+			end
 			players[i] = new_player({
 				name = name,
 				--[[squad = squads[(i-1) % 2][
 					(math.floor((i-1)/2) % 4)+1],]]
 				squad = nil,
 				team = tidx, -- 0 == blue, 1 == green
-				weapon = WPN_RIFLE,
+				weapon = _wpn,
 				pid = i,
+				sockfd = sockfd
 			})
+			if permissions["default"] ~= nil then
+				players[i].add_permission_group(permissions["default"].perms)
+				print("Adding default permissions for user")
+			else
+				print("Default permissions do not exist")
+			end
 			return i
 		end
 	end
 	
 	return nil
-end
-
-function net_broadcast(sockfd, msg)
-	local i
-	for i=1,#(client_list.fdlist) do
-		if client_list.fdlist[i] ~= sockfd then
-			--print("to", client_list.fdlist[i], type(msg))
-			common.net_send(client_list.fdlist[i], msg)
-		end
-	end
-end
-
-function net_broadcast_team(tidx, msg)
-	local i
-	for i=1,#(client_list.fdlist) do
-		local cli = client_list[client_list.fdlist[i]]
-		local plr = cli and players[cli.plrid]
-		if plr and plr.team == tidx then
-			--print("to", client_list.fdlist[i], type(msg))
-			common.net_send(client_list.fdlist[i], msg)
-		end
-	end
-end
-
-function net_broadcast_squad(tidx, squad, msg)
-	local i
-	for i=1,#(client_list.fdlist) do
-		local cli = client_list[client_list.fdlist[i]]
-		local plr = cli and players[cli.plrid]
-		if plr and plr.team == tidx and plr.squad == squad then
-			--print("to", client_list.fdlist[i], type(msg))
-			common.net_send(client_list.fdlist[i], msg)
-		end
-	end
 end
 
 
@@ -117,8 +96,6 @@ function server.hook_connect(sockfd, addrinfo)
 	--[[net_broadcast(nil, common.net_pack("BIz", 0x0E, 0xFF800000,
 		"Connected: player on sockfd "..ss))]]
 	print("Connected: player on sockfd "..ss)
-	
-	common.net_send(sockfd, common.net_pack("Bz", 0xE0, map_fname))
 end
 
 function server.hook_disconnect(sockfd, server_force, reason)
@@ -201,11 +178,13 @@ function server.hook_tick(sec_current, sec_delta)
 			if x >= 0 and x < xlen and z >= 0 and z < zlen then
 			if y >= 0 and y <= ylen-3 then
 				if plr.blocks > 0 and map_is_buildable(x,y,z) then
-					plr.blocks = plr.blocks - 1
+					if plr.mode == PLM_NORMAL then
+						plr.blocks = plr.blocks - 1
+					end
 					map_block_set(x,y,z,ct,cr,cg,cb)
 					net_broadcast(nil, common.net_pack("BHHHBBBB",
 						0x08,x,y,z,cb,cg,cr,ct))
-				else
+				elseif plr.blocks < 0 then
 					plr.blocks = 0
 				end
 				if plr.blocks == 0 then
@@ -268,58 +247,7 @@ function server.hook_tick(sec_current, sec_delta)
 			if string.sub(msg,1,1) == "/" then
 				--TODO: Better parameter parsing (param1 "param two" "param \"three\"")
 				local params = string.split(string.sub(msg,2), " ")
-				if params[1] == "me" then
-					s = "* "..plr.name.." "..string.sub(msg,5)
-				elseif params[1] == "squad" then
-					--TODO: 
-					local s = string.sub(msg,8)
-					if s ~= "" then
-						if s == "none" then
-							plr.squad = nil
-						else
-							plr.squad = s
-						end
-						plr.update_score()
-					end
-				elseif params[1] == "kill" then
-					plr.set_health_damage(0, 0xFF800000, plr.name.." shuffled off this mortal coil", plr)
-				elseif params[1] == "goto" then
-					if table.getn(params) == 2 then
-						--TODO: actually do the goto
-					else
-						net_broadcast(nil, common.net_pack("BIz", 0x0E, usage_colour, "Usage: /goto #X ; where # is letter, X is number in the map's grid system"))
-					end
-				elseif params[1] == "teleport" or params[1] == "tp" then
-					if table.getn(params) == 2 then
-						params[2] = tostring(params[2])
-						if params[2]:sub(0, 1) == "#" then
-							target = players[tonumber(params[2]:sub(2))]
-						end
-						for i=1,players.max do
-							if players[i] ~= nil and players[i].name == params[2] then
-								target = players[i]
-								break
-							end
-						end
-						if target then
-							x, y, z = target.x, target.y, target.z
-							plr.set_pos_recv(x, y, z)
-							net_broadcast(nil, common.net_pack("BBhhh",
-								0x03, cli.plrid, x * 32.0, y * 32.0, z * 32.0))
-						else
-							net_broadcast(nil, common.net_pack("BIz", 0x0E, usage_colour, "Player not found"))
-						end
-					elseif table.getn(params) == 4 then
-						--NOTE: I protest that y is down/same way AoS was
-						x, y, z = tonumber(params[2]), tonumber(params[3]), tonumber(params[4])
-						plr.set_pos_recv(x, y, z)
-						net_broadcast(nil, common.net_pack("BBhhh",
-							0x03, cli.plrid, x * 32.0, y * 32.0, z * 32.0))
-					else
-						net_broadcast(nil, common.net_pack("BIz", 0x0E, usage_colour, "Usage: /teleport x y z ; where y is down"))
-						net_broadcast(nil, common.net_pack("BIz", 0x0E, usage_colour, "Usage: /teleport player"))
-					end
-				end
+				command_handle(plr, cli.plrid, sockfd, params, msg)
 			else
 				s = plr.name.." ("..teams[plr.team].name.."): "..msg
 			end
@@ -365,9 +293,9 @@ function server.hook_tick(sec_current, sec_delta)
 			name = (name ~= "" and name) or name_generate()
 			plr.set_health_damage(0, 0xFF800000, plr.name.." changed teams", nil)
 			plr.team = tidx
-			net_broadcast(nil, common.net_pack("BBBBhhhzz",
+			net_broadcast(nil, common.net_pack("BBBBBhhhzz",
 					0x05, plr.pid,
-					plr.team, plr.weapon,
+					plr.team, plr.weapon, plr.mode,
 					plr.score, plr.kills, plr.deaths,
 					plr.name, plr.squad))
 			net_broadcast(nil, common.net_pack("BIz", 0x0E, 0xFF800000,
@@ -389,9 +317,9 @@ function server.hook_tick(sec_current, sec_delta)
 				for i=1,players.max do
 					local plr = players[i]
 					if plr then
-						common.net_send(sockfd, common.net_pack("BBBBhhhzz",
+						common.net_send(sockfd, common.net_pack("BBBBBhhhzz",
 							0x05, i,
-							plr.team, plr.weapon,
+							plr.team, plr.weapon, plr.mode,
 							plr.score, plr.kills, plr.deaths,
 							plr.name, plr.squad))
 						common.net_send(sockfd, common.net_pack("BBfffBB",
@@ -419,11 +347,16 @@ function server.hook_tick(sec_current, sec_delta)
 							0x16, i, plr.pid))
 					end
 				end
+
+				-- relay score to this player
+				for i=0,teams.max do
+					common.net_send(sockfd, common.net_pack("Bbh", 0x1F, i, teams[i].score))
+				end
 				
 				-- relay this player to everyone
-				net_broadcast(nil, common.net_pack("BBBBhhhzz",
+				net_broadcast(nil, common.net_pack("BBBBBhhhzz",
 					0x05, cli.plrid,
-					plr.team, plr.weapon,
+					plr.team, plr.weapon, plr.mode,
 					plr.score, plr.kills, plr.deaths,
 					plr.name, plr.squad))
 				net_broadcast(nil, common.net_pack("BBfffBB",
@@ -477,7 +410,9 @@ function server.hook_tick(sec_current, sec_delta)
 					, 0x18, cli.plrid, cr, cg, cb))
 			end
 		elseif cid == 0x1B and plr and plr.grenades > 0 then
-			plr.grenades = plr.grenades - 1
+			if plr.mode == PLM_NORMAL then
+				plr.grenades = plr.grenades - 1
+			end
 			local x,y,z,vx,vy,vz,fuse
 			x,y,z,vx,vy,vz,fuse, pkt = common.net_unpack("hhhhhhH", pkt)
 			local n = new_nade({
@@ -496,15 +431,22 @@ function server.hook_tick(sec_current, sec_delta)
 		elseif cid == 0x1D and plr then
 			-- TODO: actually reload with serverside counts
 			net_broadcast(sockfd, common.net_pack("BB", 0x1D, cli.plrid))
+		elseif cid == 0x20 and plr then
+			local x, y, z, amt
+			x, y, z, amt = common.net_unpack("HHHH", pkt)
+			net_broadcast(nil, common.net_pack("BHHHH", 0x20, x, y, z, amt))
+			bhealth_damage(x, y, z, amt, plr)
 		end
 		-- TODO!
 	end
+	bhealth_prune(sec_current)
 	
 	local tickrate = 1/60.
 	local lowest_fps = 15
 	local max_ticksize = 1/lowest_fps
 	
 	if sec_delta > max_ticksize then sec_delta = max_ticksize end
+	if sec_delta < -max_ticksize then sec_delta = -max_ticksize end
 	
 	local moment = sec_current - sec_delta
 	server_tick_accum = server_tick_accum + sec_delta
@@ -534,7 +476,97 @@ end
 
 -- parse arguments
 
-local loose, user_toggles, user_settings = parse_commandline_options({...})
+local loose, server_toggles, server_settings = parse_commandline_options({...})
+local server_config_filename = server_settings['server'] or "svsave/pub/server.json"
+server_config = common.json_load(server_config_filename)
+-- TODO: Check that server_config ~= nil
+if server_settings.svseed then
+	math.randomseed(0+server_settings.svseed)
+end
+
+permissions = {}
+
+if server_config.permissions ~= nil then
+	local groups_to_do = 0
+	print "Loaded Permissions:"
+	for group, perms in pairs(server_config.permissions) do
+		print("  Group: "..group)
+		permissions[group] = {}
+		permissions[group]["perms"] = {}
+		if perms.password ~= nil then
+			permissions[group]["password"] = perms.password
+		else
+			permissions[group]["password"] = ""
+		end
+		if perms.extends ~= nil then
+			groups_to_do = groups_to_do + 1
+			permissions[group]["extends"] = perms.extends
+		else
+			permissions[group]["extends"] = ""
+		end
+		print("    Password: "..permissions[group]["password"])
+		print("    Extends: "..permissions[group]["extends"])
+		if perms.permissions ~= nil then
+			print("    Permissions:")
+			for k, v in pairs(perms.permissions) do
+				print("      * "..v)
+				permissions[group]["perms"][v] = true
+			end
+		end
+	end
+	
+	-- Hopefully this should allow full inheritance without an infinite loop
+	-- I know it's messy - if you don't like it, feel free to redo it ;)
+	local groups_done = {}
+	local do_extends = true
+	local changed = true
+	while do_extends and changed do
+		changed = false
+		for group, perms in pairs(permissions) do
+			if groups_done[group] == nil then
+				if perms["extends"] ~= "" then
+					if permissions[perms["extends"]]["extends"] == "" then
+						groups_done[perms["extends"]] = true
+						--extend away!
+						for k,v in pairs(permissions[perms["extends"]]["perms"]) do
+							if perms["perms"]["-"..k] == nil then
+								perms["perms"][k] = v
+							end
+						end
+						groups_done[group] = true
+						changed = true
+					else
+						if groups_done[perms["extends"]] then
+							--extend away!
+							for k,v in pairs(permissions[perms["extends"]]["perms"]) do
+								if perms["perms"]["-"..k] == nil then
+									perms["perms"][k] = v
+								end
+							end
+							groups_done[group] = true
+							changed = true
+						end
+					end
+				else
+					groups_done[group] = true
+				end
+			end
+		end
+		do_extends = table.getn(groups_done) < groups_to_do
+	end
+	
+	-- Print final permissions
+	print "Final Permissions:"
+	for group, perms in pairs(permissions) do
+		print("  Group: "..group)
+		print("    Password: "..perms.password)
+		print("    Extends: "..perms.extends)
+		print("    Permissions:")
+		for k, v in pairs(perms.perms) do
+			print("      * "..k)
+		end
+	end
+end
 
 -- load map
 map_fname = loose[1]
@@ -544,7 +576,7 @@ map_loaded = common.map_load(map_fname, "auto")
 if map_fname then
 	map_loaded = common.map_load(map_fname, "auto")
 else
-	map_loaded = loadfile("pkg/base/gen_classic.lua")()
+	map_loaded = loadfile("pkg/base/gen_classic.lua")(loose, server_toggles, server_settings)
 end
 common.map_set(map_loaded)
 

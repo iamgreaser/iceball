@@ -32,8 +32,8 @@ do
 	elseif #args == 0 then
 		menu_main = {title="Main Menu", sel=2, "New Map", "Load Map"}
 		menu_select = {title="Select Save Slot", sel=1, 0,1,2,3,4,5,6,7,8,9}
-		menu_size_xlen = {title="Select Horiz Length", sel=7, 128, 192, 256, 320, 384, 448, 512}
-		menu_size_zlen = {title="Select Vert Length", sel=7, 128, 192, 256, 320, 384, 448, 512}
+		menu_size_xlen = {title="Select Horiz Length", sel=3, 128, 256, 512}
+		menu_size_zlen = {title="Select Vert Length", sel=3, 128, 256, 512}
 		menu_size_ylen = {title="Select Height", sel=8, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128}
 		
 		menu_current = nil

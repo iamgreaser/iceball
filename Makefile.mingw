@@ -13,10 +13,11 @@ CFLAGS = -O2 -fno-strict-aliasing -g -Wall -Wextra \
 	-Wno-unused-but-set-variable \
 	-Iwinlibs -Iwinlibs/SDL \
 	-msse2 -mfpmath=sse \
+	-fopenmp \
 	$(CFLAGS_EXTRA) \
 	-I $(INCDIR)
 
-LDFLAGS = -g $(LDFLAGS_EXTRA)
+LDFLAGS = -g -fopenmp $(LDFLAGS_EXTRA)
 LIBS_SDL = -lSDLmain -lSDL
 LIBS_Lua = -llua
 LIBS_Winsuck = -lws2_32
@@ -25,7 +26,7 @@ LIBS_zlib = -lz
 LIBS = -Lwinlibs -lm -lmingw32 $(LIBS_Lua) $(LIBS_SDL) $(LIBS_zlib) $(LIBS_Winsuck)
 BINNAME = iceball.exe
 
-OBJDIR = build/mingw32
+OBJDIR = build/mingw32_gl
 
 MINGPREFIX = i686-pc-mingw32
 CC = $(MINGPREFIX)-gcc

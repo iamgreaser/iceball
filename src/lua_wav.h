@@ -46,7 +46,7 @@ int icelua_fn_client_wav_play_global(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 4, 7);
 	
-	wav_t *wav = lua_touserdata(L, 1);
+	wav_t *wav = (wav_t*)lua_touserdata(L, 1);
 	if(wav == NULL || wav->udtype != UD_WAV)
 		return luaL_error(L, "not a wav");
 	float x = lua_tonumber(L, 2);
@@ -77,7 +77,7 @@ int icelua_fn_client_wav_play_local(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 1, 7);
 	
-	wav_t *wav = lua_touserdata(L, 1);
+	wav_t *wav = (wav_t*)lua_touserdata(L, 1);
 	if(wav == NULL || wav->udtype != UD_WAV)
 		return luaL_error(L, "not a wav");
 	float x = (top < 2 ? 0.0f : lua_tonumber(L, 2));
@@ -216,7 +216,7 @@ int icelua_fn_common_wav_free(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 1, 1);
 	
-	wav_t *wav = lua_touserdata(L, 1);
+	wav_t *wav = (wav_t*)lua_touserdata(L, 1);
 	if(wav == NULL || wav->udtype != UD_WAV)
 		return luaL_error(L, "not a wav");
 	

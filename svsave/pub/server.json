@@ -1,0 +1,48 @@
+{
+	"name": "Iceball Server",
+	"motd": "Welcome to Iceball",
+	"permissions": {
+		"default" : {
+			"permissions" : [
+				"me",
+				"kill",
+				"squad",
+                "logout"
+			]
+		},
+		"griefer" : {
+			"extends" : "default",
+			"permissions" : [
+				"-logout",
+				"-build",
+				"-teamkill"
+			]
+		},
+		"rakiru" : {
+			"password" : "123456",
+			"extends" : "default",
+			"permissions" : [
+				"god"
+			]
+		},
+		"moderator" : {
+			"password" : "iceball",
+			"extends" : "default",
+			"permissions" : [
+				"god",
+				"kick",
+				"tempban",
+				"teleport",
+				"gmode",
+				"goto"
+			]
+		},
+		"admin" : {
+			"password" : "Password1",
+			"extends" : "moderator",
+			"permissions" : [
+				"ban"
+			]
+		}
+	}
+}

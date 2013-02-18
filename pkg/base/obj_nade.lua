@@ -23,7 +23,7 @@ end
 function nade_prune(sec_current)
 	local i
 	for i=nades.head,nades.tail do
-		if nades[i].dead then
+		if nades[i] and nades[i].dead then
 			nades[i] = nil
 			if i == nades.head then
 				nades.head = nades.head + 1
@@ -124,9 +124,7 @@ function new_nade(settings)
 					local nd
 					nd = trace_map_ray_dist(this.x,this.y,this.z, dx,dy,dz, dd)
 					if not nd then
-						local dmg = ((MODE_NADE_RANGE-dd)/MODE_NADE_RANGE)
-						dmg = dmg * dmg
-						dmg = dmg * MODE_NADE_DAMAGE
+						local dmg = (-(math.pow(dd / MODE_NADE_RANGE, 4)) + 1) * MODE_NADE_DAMAGE
 						
 						plr.grenade_damage(dmg, hplr)
 					end
@@ -175,7 +173,25 @@ function new_nade(settings)
 		
 		this.fuse = this.fuse - sec_delta
 		if this.fuse <= 0 then
-			-- TODO: explosion gfx
+			if client then
+				local i
+				local nade_particlecount = math.random() * 10 + 20
+				local pvel = 2
+				for i=1,nade_particlecount do
+					particles_add(new_particle{
+						x = this.x,
+						y = this.y-0.1,
+						z = this.z,
+						vx = pvel*(2*math.random()-1),
+						vy = pvel*(2*math.random()-1.8),
+						vz = pvel*(2*math.random()-1),
+						r = 60 + math.random() * 20,
+						g = 60 + math.random() * 20,
+						b = 60 + math.random() * 20,
+						size = 16 + math.random() * 32
+					})
+				end
+			end
 			if server then
 				this.explode_dmg()
 			end
@@ -185,7 +201,7 @@ function new_nade(settings)
 	
 	function this.render()
 		if this.dead then return end
-		
+
 		client.model_render_bone_global(mdl_nade, mdl_nade_bone,
 			this.x, this.y, this.z,
 			0.0, 0.0, 0.0, 1.0)

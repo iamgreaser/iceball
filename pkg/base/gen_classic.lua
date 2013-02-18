@@ -16,6 +16,15 @@
 ]]
 
 do
+	local loose, user_toggles, user_settings
+	loose, user_toggles, user_settings = ...
+	local mw,mh
+	mw = user_settings["mw"] or 512
+	mh = user_settings["mh"] or 512
+	local xs,zs
+	xs = math.floor(512/mw)
+	zs = math.floor(512/mh)
+
 	local lmap = common.map_get()
 	local function rnd()
 		return (math.random()*2-1)
@@ -32,7 +41,7 @@ do
 		return rl
 	end
 
-	local ret = common.map_new(512, 96, 512)
+	local ret = common.map_new(mw, 96, mh)
 	common.map_set(ret)
 	local hmap = {}
 	local x,y,z
@@ -66,6 +75,10 @@ do
 		s = s / 2
 	end
 	
+	local function hbias(x,y)
+		return -math.sin(math.pi*0.125+math.pi*2*x/512)
+	end
+	
 	local m1,m2
 	m1=hmap[1][1]
 	m2=m1
@@ -76,26 +89,36 @@ do
 	end end
 	
 	for y=1,512 do for x=1,512 do
-		hmap[y][x] = (hmap[y][x] - m1)/(m2-m1)*32+(95-40)-24*math.sin(math.pi*2*x/512)
+		hmap[y][x] = (hmap[y][x] - m1)/(m2-m1)*2.2 + hbias(x,y)
+		hmap[y][x] = math.sin(hmap[y][x]*math.pi*1.1/4)*32+64
 	end end
 	
-	local function cpal(y)
-		if y > 110 then
-			return {128,0,0,1}
-		elseif y > 97 then
-			return {(110-y)/(110-97)*127+128,(110-y)/(110-97)*32,0,1} 
+	local water_lo = 97
+	local water_hi = water_lo - 2
+	local water_dist = water_lo - water_hi
+	local land_lo = water_hi - 4
+	local function cpal(y, highest)
+		if water_hi < y or highest >= water_hi then
+			local water_depth = math.min(1, math.max(0,(water_lo-y)/water_dist))
+			return {water_depth*63+192,
+					water_depth*32,
+					0,
+					1} 
 		else
-			local r = math.min(1,(97-y)/70)
-			return {255*r,128+127*r,32+223*r,1}
+			local land_height = math.min(1,(water_hi-y)/land_lo)
+			return {255*land_height,
+					128+127*land_height,
+					32+223*land_height,
+					1}
 		end
 	end
 
-	for z=0,511 do for x=0,511 do
+	for z=0,511,zs do for x=0,511,xs do
 		local cb=hmap[z+1][x+1]
-		local cx1 = hmap[z+1][(x-1)%512+1]
-		local cx2 = hmap[z+1][(x+1)%512+1]
-		local cz1 = hmap[(z-1)%512+1][x+1]
-		local cz2 = hmap[(z+1)%512+1][x+1]
+		local cx1 = hmap[z+1][(x-xs)%512+1]
+		local cx2 = hmap[z+1][(x+xs)%512+1]
+		local cz1 = hmap[(z-zs)%512+1][x+1]
+		local cz2 = hmap[(z+zs)%512+1][x+1]
 
 		local y1 = math.floor(0.5+math.min(math.min(cx1,cx2),math.min(cz1,cz2)))
 		local y2 = math.floor(0.5+math.max(math.max(cx1,cx2),math.max(cz1,cz2)))
@@ -104,10 +127,10 @@ do
 
 		local l = {{0, ps, pe, 0}}
 		for y=ps,pe do
-			l[#l+1] = cpal(cb)
+			l[#l+1] = cpal(cb, ps)
 			cb = cb + 1
 		end
-		common.map_pillar_set(x, z, lfilt(l))
+		common.map_pillar_set(x/xs, z/zs, lfilt(l))
 	end end
 
 	common.map_set(lmap)

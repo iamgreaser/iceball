@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,0,0,0,16},
-	num=16,
-	str="0.0-16",
+	cmp={0,0,0,0,25},
+	num=25,
+	str="0.0-25",
 }
 
 VERSION_BUGS = {
@@ -38,4 +38,13 @@ VERSION_BUGS = {
 {intro=nil, fix=13, msg="No per-face shading"},
 {intro=nil, fix=14, msg="Color conversion functions are using hacky Lua code"},
 {intro=nil, fix=16, msg="Per-face shading is only preliminary"},
+{intro=nil, fix=17, msg="OpenMP not supported"},
+{intro=nil, fix=19, msg="OpenGL not supported"},
+{intro=19, fix=22, msg="Preliminary OpenGL support (fog not supported yet)"},
+{intro=19, fix=21, msg="OpenGL renderer ignores islocal flag when rendering PMFs"},
+{intro=21, fix=22, msg="PMF renderer does not update bones when redefined"},
+{intro=19, fix=23, msg="[OpenGL] texture rendering is slow"},
+{intro=19, fix=24, msg="[OpenGL] VBOs not supported"},
+{intro=nil, fix=25, msg="TODO: give changelog for -25"},
 }
+
