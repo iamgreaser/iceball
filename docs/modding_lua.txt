@@ -95,10 +95,11 @@ client.hook_render = fn() @
 	this is the only place where it is safe to render stuff
 	such as models and HUDs and whatnot
 
-client.hook_key = fn(key, state, modif) @
+client.hook_key = fn(key, state, modif, uni) @
 	sets a hook called every time a key changes
 	
 	state is either true or false
+	uni is an index of a unicode character, which is 0 if there is no unicode decoding
 
 client.hook_mouse_button = fn(button, state) @
 	sets a hook called every time a mouse button changes
