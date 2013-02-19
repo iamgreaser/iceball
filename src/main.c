@@ -273,9 +273,9 @@ int update_client_cont1(void)
 					ch = ev.key.keysym.unicode & 0x1FF;
 				
 				lua_pushinteger(lstate_client, ev.key.keysym.sym);
-				lua_pushinteger(lstate_client, ch);
 				lua_pushboolean(lstate_client, (ev.type == SDL_KEYDOWN));
 				lua_pushinteger(lstate_client, (int)(ev.key.keysym.mod));
+				lua_pushinteger(lstate_client, ch);
 				
 				if(lua_pcall(lstate_client, 4, 0, 0) != 0)
 				{

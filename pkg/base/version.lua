@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,0,0,0,25},
-	num=25,
-	str="0.0-25",
+	cmp={0,0,0,0,27},
+	num=27,
+	str="0.0-27",
 }
 
 VERSION_BUGS = {
@@ -45,6 +45,8 @@ VERSION_BUGS = {
 {intro=21, fix=22, msg="PMF renderer does not update bones when redefined"},
 {intro=19, fix=23, msg="[OpenGL] texture rendering is slow"},
 {intro=19, fix=24, msg="[OpenGL] VBOs not supported"},
-{intro=nil, fix=25, msg="TODO: give changelog for -25"},
+{intro=nil, fix=26, msg="TODO: give changelog for -25/-26 (which I think are the same version more or less)"},
+{intro=nil, fix=27, msg="altered the international keyboard thing to be more backwards compatible"},
+{intro=25, fix=27, msg="THIS VERSION IS INCOMPATIBLE. PLEASE UPGRADE TO 0.0-27 AT LEAST."},
 }
 

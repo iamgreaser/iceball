@@ -767,10 +767,10 @@ function h_tick_init(sec_current, sec_delta)
 	return client.hook_tick(sec_current, sec_delta)
 end
 	
-local function push_keypress(key, state, modif)
+local function push_keypress(key, state, modif, sym)
 	table.insert(input_events, {GE_KEY, {key=key,state=state,modif=modif}})
-	if key_map[key] ~= nil then
-		table.insert(input_events, {GE_BUTTON, {key=key,button=key_map[key],state=state,modif=modif}})		
+	if key_map[sym] ~= nil then
+		table.insert(input_events, {GE_BUTTON, {key=sym,button=key_map[sym],state=state,modif=modif}})		
 	end
 end
 
@@ -801,8 +801,11 @@ function discard_typing_state(widget)
 	end
 end
 
-function h_key(sym, uni, state, modif)
-    local key = sym
+function h_key(sym, state, modif, uni)
+	local key = sym
+
+	-- unicode disabled for now until stuff gets moved to GE_BUTTON, sorry guys --GM
+	uni = nil
 	
 	if key <= 256 then
 		local tmp
@@ -822,7 +825,7 @@ function h_key(sym, uni, state, modif)
 		--print("key = " .. key .. " | state = " .. tmp)
 	end
 
-	push_keypress(key, state, modif)
+	push_keypress(key, state, modif, sym)
 
 	-- disconnected ai
 	
