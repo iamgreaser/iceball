@@ -15,19 +15,21 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
+dofile("pkg/"..common.base_dir.."/preconf.lua")
+
 -- if you don't want music, set FILE_MUSIC to "true".
-FILE_MUSIC = FILE_MUSIC or "pkg/base/wav/music.wav"
+FILE_MUSIC = FILE_MUSIC or "music.wav"
 
 print("pkg/base/main_client.lua starting")
 
 dofile("pkg/base/version.lua")
 
-local wav_buld = common.wav_load("pkg/base/wav/buld.wav")
+local wav_buld = skin_load("wav", "buld.wav", DIR_PKG_WAV)
 local wav_buld_frq = math.pow(0.5,3.0)
 local wav_buld_inc = math.pow(2.0,1.0/12.0)
 
 local wav_mus = nil
---local wav_mus = common.wav_load("pkg/base/wav/hammer.wav")
+--local wav_mus = skin_load("wav", "hammer.wav", DIR_PKG_WAV)
 local chn_mus = nil
 
 local vernotes = ""
@@ -116,6 +118,7 @@ do
 	
 	local fnlist = {}
 	function load_screen_fetch(ftype, fname)
+		if string.sub(fname, 1,6) == "clsave" then return client.fetch_block(ftype, fname) end
 		if widgets ~= nil then
 			w, h = client.screen_get_dims()
 			scene = gui_create_scene(w, h)
@@ -254,7 +257,7 @@ common.fetch_block = load_screen_fetch
 function client.hook_tick()
 	client.hook_tick = nil
 	if FILE_MUSIC ~= true then
-		wav_mus = common.wav_load(FILE_MUSIC)
+		wav_mus = skin_load("wav", FILE_MUSIC, DIR_PKG_WAV)
 		chn_mus = client.wav_play_local(wav_mus)
 	end
 	loadfile("pkg/"..common.base_dir.."/client_start.lua")(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)

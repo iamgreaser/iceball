@@ -17,16 +17,9 @@
 
 print("base dir:",common.base_dir)
 
+dofile("pkg/base/preconf.lua")
 dofile("pkg/base/version.lua")
 dofile("pkg/base/network.lua")
-
--- base dir stuff
-DIR_PKG_ROOT = DIR_PKG_ROOT or "pkg/base"
-DIR_PKG_LIB = DIR_PKG_LIB or DIR_PKG_ROOT
-DIR_PKG_PMF = DIR_PKG_PMF or DIR_PKG_ROOT.."/pmf"
-DIR_PKG_GFX = DIR_PKG_GFX or DIR_PKG_ROOT.."/gfx"
-DIR_PKG_WAV = DIR_PKG_WAV or DIR_PKG_ROOT.."/wav"
-DIR_PKG_MAP = DIR_PKG_MAP or "pkg/maps"
 
 MAP_DEFAULT = MAP_DEFAULT or DIR_PKG_MAP.."/mesa.vxl"
 
@@ -124,19 +117,19 @@ TOOL_NADE = 3
 -- sounds
 if client then
 	client.wav_cube_size(0.5)
-	wav_rifle_shot = common.wav_load(DIR_PKG_WAV.."/rifle-shot.wav")
-	wav_rifle_reload = common.wav_load(DIR_PKG_WAV.."/rifle-reload.wav")
-	wav_whoosh = common.wav_load(DIR_PKG_WAV.."/whoosh.wav")
-	wav_buld = common.wav_load(DIR_PKG_WAV.."/buld.wav")
-	wav_grif = common.wav_load(DIR_PKG_WAV.."/grif.wav")
-	wav_hammer = common.wav_load(DIR_PKG_WAV.."/hammer.wav")
-	wav_jump_up = common.wav_load(DIR_PKG_WAV.."/jump-up.wav")
-	wav_jump_down = common.wav_load(DIR_PKG_WAV.."/jump-down.wav")
-	wav_pin = common.wav_load(DIR_PKG_WAV.."/pin.wav")
+	wav_rifle_shot = skin_load("wav", "rifle-shot.wav", DIR_PKG_WAV)
+	wav_rifle_reload = skin_load("wav", "rifle-reload.wav", DIR_PKG_WAV)
+	wav_whoosh = skin_load("wav", "whoosh.wav", DIR_PKG_WAV)
+	wav_buld = skin_load("wav", "buld.wav", DIR_PKG_WAV)
+	wav_grif = skin_load("wav", "grif.wav", DIR_PKG_WAV)
+	wav_hammer = skin_load("wav", "hammer.wav", DIR_PKG_WAV)
+	wav_jump_up = skin_load("wav", "jump-up.wav", DIR_PKG_WAV)
+	wav_jump_down = skin_load("wav", "jump-down.wav", DIR_PKG_WAV)
+	wav_pin = skin_load("wav", "pin.wav", DIR_PKG_WAV)
 	wav_steps = {}
 	local i
 	for i=1,8 do
-		wav_steps[i] = common.wav_load(DIR_PKG_WAV.."/step"..i..".wav")
+		wav_steps[i] = skin_load("wav", "step"..i..".wav", DIR_PKG_WAV)
 	end
 end
 

@@ -20,11 +20,11 @@ if client then
 dofile("pkg/base/lib_util.lua")
 
 -- load images
-local img_font_numbers = common.img_load("pkg/base/gfx/font-numbers.tga")
-local img_font_mini = common.img_load("pkg/base/gfx/font-mini.tga")
-local img_font_large = common.img_load("pkg/base/gfx/font-large.tga")
-img_loading = img_loading or client.img_load("pkg/base/gfx/loading_default-64c.tga")
-img_tiles_roundrect = client.img_load("pkg/base/gfx/roundrect.tga")
+img_font_numbers = skin_load("tga", "font-numbers.tga", DIR_PKG_GFX)
+img_font_mini = skin_load("tga", "font-mini.tga", DIR_PKG_GFX)
+img_font_large = skin_load("tga", "font-large.tga", DIR_PKG_GFX)
+img_loading = img_loading or skin_load("tga", "loading_default-64c.tga", DIR_PKG_GFX)
+img_tiles_roundrect = skin_load("tga", "roundrect.tga", DIR_PKG_GFX)
 
 --[[
 client.img_free(img_font_numbers)
