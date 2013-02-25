@@ -401,7 +401,7 @@ function h_tick_main(sec_current, sec_delta)
 		cid, pkt = common.net_unpack("B", pkt)
 		--print("pkt", cid)
 
-		if cid == 0x03 then
+		if cid == PKT_PLR_POS then
 			local pid, x, y, z
 			pid, x, y, z, pkt = common.net_unpack("Bhhh", pkt)
 			x = x/32.0
@@ -413,7 +413,7 @@ function h_tick_main(sec_current, sec_delta)
 			if plr then
 				plr.set_pos_recv(x, y, z)
 			end
-		elseif cid == 0x04 then
+		elseif cid == PKT_PLR_ORIENT then
 			local pid, ya, xa, keys
 			pid, ya, xa, keys = common.net_unpack("BbbB", pkt)
 			ya = ya*math.pi/128
@@ -424,7 +424,7 @@ function h_tick_main(sec_current, sec_delta)
 			if plr then
 				plr.set_orient_recv(ya, xa, keys)
 			end
-		elseif cid == 0x05 then
+		elseif cid == PKT_PLR_ADD then
 			-- 0x05 pid team weapon mode score.s16 kills.s16 deaths.s16 name.z squad.z: (S->C)
 			local pid, tidx, wpn, mode, score, kills, deaths, name, squad
 			pid, tidx, wpn, mode, score, kills, deaths, name, squad, pkt
@@ -454,36 +454,36 @@ function h_tick_main(sec_current, sec_delta)
 			players[pid].score = score
 			players[pid].kills = kills
 			players[pid].deaths = deaths
-		elseif cid == 0x06 then
+		elseif cid == PKT_PLR_ID then
 			local pid, pkt = common.net_unpack("B", pkt)
 			players.current = pid
-		elseif cid == 0x07 then
+		elseif cid == PKT_PLR_RM then
 			local pid, pkt = common.net_unpack("B", pkt)
 			-- TODO fix crash bug
 			--players[pid].free()
 			players[pid] = nil
-		elseif cid == 0x08 then
+		elseif cid == PKT_BLK_ADD then
 			local x,y,z,cb,cg,cr,ct
 			x,y,z,cb,cg,cr,ct,pkt = common.net_unpack("HHHBBBB", pkt)
 			bhealth_clear(x,y,z,false)
 			client.wav_play_global(wav_buld,x+0.5,y+0.5,z+0.5)
 			map_block_set(x,y,z,ct,cr,cg,cb)
-		elseif cid == 0x09 then
+		elseif cid == PKT_BLK_RM1 then
 			local x,y,z
 			x,y,z = common.net_unpack("HHH", pkt)
 			bhealth_clear(x,y,z,false)
 			map_block_break(x,y,z)
-		elseif cid == 0x0E then
+		elseif cid == PKT_CHAT_ADD then
 			-- add to chat
 			local color, msg
 			color, msg, pkt = common.net_unpack("Iz", pkt)
 			chat_add(chat_text, sec_current, msg, color)
-		elseif cid == 0x0F then
+		elseif cid == PKT_CHAT_ADD_KILLFEED then
 			-- add to killfeed
 			local color, msg
 			color, msg, pkt = common.net_unpack("Iz", pkt)
 			chat_add(chat_killfeed, sec_current, msg, color)
-		elseif cid == 0x10 then
+		elseif cid == PKT_PLR_SPAWN then
 			local pid, x,y,z, ya,xa
 			pid, x,y,z, ya,xa, pkt = common.net_unpack("Bfffbb", pkt)
 			local plr = players[pid]
@@ -491,7 +491,7 @@ function h_tick_main(sec_current, sec_delta)
 			if plr then
 				plr.spawn_at(x,y,z,ya*math.pi/128,xa*math.pi/256)
 			end
-		elseif cid == 0x12 then
+		elseif cid == PKT_ITEM_POS then
 			local iid, x,y,z, f
 			iid, x,y,z, f, pkt = common.net_unpack("HhhhB", pkt)
 			if intent[iid] then
@@ -505,7 +505,7 @@ function h_tick_main(sec_current, sec_delta)
 				intent[iid].set_flags_recv(f)
 				--print(intent[iid].spawned, intent[iid].alive, intent[iid].visible)
 			end
-		elseif cid == 0x14 then
+		elseif cid == PKT_PLR_DAMAGE then
 			local pid, amt
 			pid, amt, pkt = common.net_unpack("BB", pkt)
 
@@ -514,7 +514,7 @@ function h_tick_main(sec_current, sec_delta)
 			if plr then
 				plr.set_health_damage(amt, nil, nil, nil)
 			end
-		elseif cid == 0x15 then
+		elseif cid == PKT_PLR_RESTOCK then
 			local pid
 			pid, pkt = common.net_unpack("B", pkt)
 
@@ -522,7 +522,7 @@ function h_tick_main(sec_current, sec_delta)
 			if plr then
 				plr.tent_restock()
 			end
-		elseif cid == 0x16 then
+		elseif cid == PKT_ITEM_CARRIER then
 			local iid, pid
 			iid, pid = common.net_unpack("HB", pkt)
 			local plr = (pid ~= 0 and players[pid]) or nil
@@ -539,7 +539,7 @@ function h_tick_main(sec_current, sec_delta)
 					plr.has_intel = item
 				end
 			end
-		elseif cid == 0x17 then
+		elseif cid == PKT_PLR_TOOL then
 			local pid, tool
 			pid, tool, pkt = common.net_unpack("BB", pkt)
 			
@@ -548,7 +548,7 @@ function h_tick_main(sec_current, sec_delta)
 			if plr then
 				plr.tool_switch(tool)
 			end
-		elseif cid == 0x18 then
+		elseif cid == PKT_PLR_BLK_COLOR then
 			local pid, cr,cg,cb
 			pid, cr,cg,cb, pkt = common.net_unpack("BBBB", pkt)
 
@@ -560,7 +560,7 @@ function h_tick_main(sec_current, sec_delta)
 				plr.blk_color = {cr,cg,cb}
 				plr.block_recolor()
 			end
-		elseif cid == 0x19 then
+		elseif cid == PKT_PLR_BLK_COUNT then
 			local pid, blocks
 			pid, blocks, pkg = common.net_unpack("BB", pkt)
 
@@ -571,7 +571,7 @@ function h_tick_main(sec_current, sec_delta)
 			if plr then
 				plr.blocks = blocks
 			end
-		elseif cid == 0x1A then
+		elseif cid == PKT_PLR_GUN_TRACER then
 			local pid
 			pid, pkg = common.net_unpack("B", pkt)
 			
@@ -596,7 +596,7 @@ function h_tick_main(sec_current, sec_delta)
 					lifetime = 5
 				})
 			end
-		elseif cid == 0x1B then
+		elseif cid == PKT_NADE_THROW then
 			local x,y,z,vx,vy,vz,fuse
 			x,y,z,vx,vy,vz,fuse, pkt = common.net_unpack("hhhhhhH", pkt)
 			
@@ -611,12 +611,12 @@ function h_tick_main(sec_current, sec_delta)
 			})
 			client.wav_play_global(wav_whoosh, x, y, z)
 			nade_add(n)
-		elseif cid == 0x1C then
+		elseif cid == PKT_MAP_RCIRC then
 			local plr = players[players.current]
 			if plr then
 				plr.t_rcirc = sec_current + MODE_RCIRC_LINGER
 			end
-		elseif cid == 0x1D then
+		elseif cid == PKT_PLR_GUN_RELOAD then
 			local pid
 			pid, pkg = common.net_unpack("B", pkt)
 			
@@ -625,11 +625,11 @@ function h_tick_main(sec_current, sec_delta)
 			if plr then
 				client.wav_play_global(wav_rifle_reload, plr.x, plr.y, plr.z)
 			end
-		elseif cid == 0x1F then
+		elseif cid == PKT_TEAM_SCORE then
 			local tidx, score
 			tidx, score = common.net_unpack("bh", pkt)
 			teams[tidx].score = score
-		elseif cid == 0x20 then
+		elseif cid == PKT_BLK_DAMAGE then
 			local x, y, z, amt
 			x, y, z, amt = common.net_unpack("HHHH", pkt)
 			bhealth_damage(x, y, z, amt)

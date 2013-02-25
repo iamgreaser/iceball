@@ -16,7 +16,8 @@
 ]]
 
 network = {}
-network.parsetab = {}
+network.sys_tab_handlers = {}
+network.sys_tab_cli = {}
 
 if server then
 	function net_broadcast(sockfd, msg)
@@ -54,47 +55,53 @@ if server then
 	end
 end
 
-function net_add_pkt_read(clread, svread)
-	local fn_read
-	
-	if server then
-		fn_read = svread
-	else
-		fn_read = clread
-	end
-	
-	local idx = #(network.parsetab)+1
-	network.parsetab[idx] = fn_read or function (pkt, cli, plr)
-		print("unhandled packet", idx)
-	end
+network.sys_val_nextpkt = 1
+function network.sys_alloc_packet()
+	local ret = network.sys_val_nextpkt
+	network.sys_val_nextpkt = ret+1
+	return ret
+end
 
-	return idx
+function network.sys_handle_common(pktid, pstr, fn)
+	network.sys_tab_handlers[pktid] = {
+		s = pstr,
+		f = fn
+	}
+end
+
+function network.sys_handle_c2s(...)
+	if server then return network.sys_handle_common(...) end
+end
+
+function network.sys_handle_s2c(...)
+	if client then return network.sys_handle_common(...) end
 end
 
 -- base mod packets
-net_add_pkt_read(function (pkt)
-	local pid, x, y, z
-	pid, x, y, z, pkt = common.net_unpack("Bhhh", pkt)
-	x = x/32.0
-	y = y/32.0
-	z = z/32.0
-
-	local plr = players[pid]
-
-	if plr then
-		plr.set_pos_recv(x, y, z)
+do
+	local pktlist = {
+		"PING", "PONG",
+		"PLR_POS", "PLR_ORIENT",
+		"PLR_ADD", "PLR_ID", "PLR_RM",
+		"BLK_ADD", "BLK_RM1", "BLK_RM3",
+		"BLK_COLLAPSE",
+		"CHAT_SEND", "CHAT_SEND_TEAM",
+		"CHAT_ADD_TEXT", "CHAT_ADD_KILLFEED",
+		"PLR_SPAWN", "PLR_OFFER",
+		"ITEM_POS",
+		"PLR_GUN_HIT", "PLR_DAMAGE", "PLR_RESTOCK",
+		"ITEM_CARRIER",
+		"PLR_TOOL", "PLR_BLK_COLOR", "PLR_BLK_COUNT",
+		"PLR_GUN_TRACER",
+		"NADE_THROW",
+		"MAP_RCIRC",
+		"PLR_GUN_RELOAD", "CHAT_SEND_SQUAD",
+		"TEAM_SCORE",
+		"BLK_DAMAGE",
+	}
+	local i,p
+	for i,p in pairs(pktlist) do
+		_G["PKT_"..p] = network.sys_alloc_packet()
 	end
-end, function(pkt, cli, plr)
-	if not plr then return end
-	-- TODO: throttle this
-	local pid, x2, y2, z2
-	pid, x2, y2, z2, pkt = common.net_unpack("Bhhh", pkt)
-	local x = x2/32.0
-	local y = y2/32.0
-	local z = z2/32.0
-	
-	plr.set_pos_recv(x, y, z)
-	net_broadcast(sockfd, common.net_pack("BBhhh",
-		0x03, cli.plrid, x2, y2, z2))
-end)
+end
 

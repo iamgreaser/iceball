@@ -72,9 +72,7 @@ end
 function server.hook_file(sockfd, ftype, fname)
 	print("hook_file:", sockfd, ftype, fname)
 	
-	if (ftype == "icemap" or ftype == "map") and (fname == "pkg/MAP" or fname == "*MAP") then
-		-- pkg/MAP is a hackish workaround so iceballfornoobs-004 still works
-		-- once -004 support is dropped, please remove that approach!
+	if (ftype == "icemap" or ftype == "map") and (fname == "*MAP") then
 		return map_loaded
 	end
 	
@@ -95,7 +93,7 @@ function server.hook_connect(sockfd, addrinfo)
 		addrinfo.addr and addrinfo.addr.cport)
 	
 	local ss = (sockfd == true and "(local)") or sockfd
-	--[[net_broadcast(nil, common.net_pack("BIz", 0x0E, 0xFF800000,
+	--[[net_broadcast(nil, common.net_pack("BIz", PKT_PLR_CHAT_ADD_TEXT, 0xFF800000,
 		"Connected: player on sockfd "..ss))]]
 	print("Connected: player on sockfd "..ss)
 end
@@ -116,13 +114,13 @@ function server.hook_disconnect(sockfd, server_force, reason)
 	print("disconnect:", sockfd, server_force, reason)
 	
 	local ss = (sockfd == true and "(local)") or sockfd
-	--[[net_broadcast(nil, common.net_pack("BIz", 0x0E, 0xFF800000,
+	--[[net_broadcast(nil, common.net_pack("BIz", PKT_PLR_CHAT_ADD_TEXT, 0xFF800000,
 		"Disconnected: player on sockfd "..ss))]]
 	print("Disconnected: player on sockfd "..ss)
 	
 	if plr then
 		plr.intel_drop()
-		net_broadcast(nil, common.net_pack("BIz", 0x0E, 0xFF800000,
+		net_broadcast(nil, common.net_pack("BIz", PKT_PLR_CHAT_ADD_TEXT, 0xFF800000,
 			"* Player "..plr.name.." disconnected"))
 		net_broadcast(sockfd, common.net_pack("BB",
 			0x07, plrid))
@@ -151,7 +149,7 @@ function server.hook_tick(sec_current, sec_delta)
 		
 		--print("in",sockfd,cid)
 		
-		if cid == 0x03 and plr then
+		if cid == PKT_PLR_POS and plr then
 			-- TODO: throttle this
 			local pid, x2, y2, z2
 			pid, x2, y2, z2, pkt = common.net_unpack("Bhhh", pkt)
@@ -161,9 +159,8 @@ function server.hook_tick(sec_current, sec_delta)
 			
 			plr.set_pos_recv(x, y, z)
 			net_broadcast(sockfd, common.net_pack("BBhhh",
-				0x03, cli.plrid, x2, y2, z2))
-			--print("03.")
-		elseif cid == 0x04 and plr then
+				PKT_PLR_POS, cli.plrid, x2, y2, z2))
+		elseif cid == PKT_PLR_ORIENT and plr then
 			-- TODO: throttle this
 			local pid, ya2, xa2, keys
 			pid, ya2, xa2, keys = common.net_unpack("BbbB", pkt)
@@ -172,9 +169,8 @@ function server.hook_tick(sec_current, sec_delta)
 			
 			plr.set_orient_recv(ya, xa, keys)
 			net_broadcast(sockfd, common.net_pack("BBbbB",
-				0x04, cli.plrid, ya2, xa2, keys))
-			--print("04.")
-		elseif cid == 0x08 and plr then
+				PKT_PLR_ORIENT, cli.plrid, ya2, xa2, keys))
+		elseif cid == PKT_BLK_ADD and plr then
 			local x,y,z,cb,cg,cr,ct
 			x,y,z,cb,cg,cr,ct,pkt = common.net_unpack("HHHBBBB", pkt)
 			if x >= 0 and x < xlen and z >= 0 and z < zlen then
@@ -185,28 +181,28 @@ function server.hook_tick(sec_current, sec_delta)
 					end
 					map_block_set(x,y,z,ct,cr,cg,cb)
 					net_broadcast(nil, common.net_pack("BHHHBBBB",
-						0x08,x,y,z,cb,cg,cr,ct))
+						PKT_BLK_ADD,x,y,z,cb,cg,cr,ct))
 				elseif plr.blocks < 0 then
 					plr.blocks = 0
 				end
 				if plr.blocks == 0 then
 					net_broadcast(nil, common.net_pack("BBB",
-						0x19, cli.plrid, 0))
+						PKT_PLR_BLK_COUNT, cli.plrid, 0))
 				else
 					-- to prevent desyncing issues.
 					common.net_send(sockfd, common.net_pack("BBB",
-						0x19, cli.plrid, plr.blocks))
+						PKT_PLR_BLK_COUNT, cli.plrid, plr.blocks))
 				end
 			end
 			end
-		elseif cid == 0x09 and plr then
+		elseif cid == PKT_BLK_RM1 and plr then
 			local x,y,z
 			x,y,z = common.net_unpack("HHH", pkt)
 			if x >= 0 and x < xlen and z >= 0 and z < zlen then
 			if y >= 0 and y <= ylen-3 then
 				if map_block_break(x,y,z) then
 					net_broadcast(nil, common.net_pack("BHHH",
-							0x09,x,y,z))
+							PKT_BLK_RM1,x,y,z))
 					
 					if plr.tool == TOOL_SPADE then
 						local oblocks = plr.blocks
@@ -217,16 +213,16 @@ function server.hook_tick(sec_current, sec_delta)
 						
 						if oblocks == 0 then
 							net_broadcast(nil, common.net_pack("BBB",
-								0x19, cli.plrid, plr.blocks))
+								PKT_PLR_BLK_COUNT, cli.plrid, plr.blocks))
 						else
 							common.net_send(sockfd, common.net_pack("BBB",
-								0x19, cli.plrid, plr.blocks))
+								PKT_PLR_BLK_COUNT, cli.plrid, plr.blocks))
 						end
 					end
 				end
 			end
 			end
-		elseif cid == 0x0A and plr then
+		elseif cid == PKT_BLK_RM3 and plr then
 			local x,y,z
 			x,y,z = common.net_unpack("HHH", pkt)
 			if x >= 0 and x < xlen and z >= 0 and z < zlen then
@@ -235,11 +231,11 @@ function server.hook_tick(sec_current, sec_delta)
 					if y+i >= 0 and y+i <= ylen-3 then
 						map_block_break(x,y+i,z)
 						net_broadcast(nil, common.net_pack("BHHH",
-								0x09,x,y+i,z))
+								PKT_BLK_RM1,x,y+i,z))
 					end
 				end
 			end
-		elseif cid == 0x0C and plr then
+		elseif cid == PKT_CHAT_SEND and plr then
 			-- chat
 			local msg
 			msg, pkt = common.net_unpack("z", pkt)
@@ -255,9 +251,9 @@ function server.hook_tick(sec_current, sec_delta)
 			end
 			
 			if s then
-				net_broadcast(nil, common.net_pack("BIz", 0x0E, 0xFFFFFFFF, s))
+				net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFFFFFFFF, s))
 			end
-		elseif cid == 0x0D and plr then
+		elseif cid == PKT_CHAT_SEND_TEAM and plr then
 			-- teamchat
 			local msg
 			msg, pkt = common.net_unpack("z", pkt)
@@ -272,9 +268,9 @@ function server.hook_tick(sec_current, sec_delta)
 			if s then
 				local cb = teams[plr.team].color_chat
 				local c = argb_split_to_merged(cb[1],cb[2],cb[3])
-				net_broadcast_team(plr.team, common.net_pack("BIz", 0x0E, c, s))
+				net_broadcast_team(plr.team, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, c, s))
 			end
-		elseif cid == 0x1E and plr and plr.squad then
+		elseif cid == PKT_CHAT_SEND_SQUAD and plr and plr.squad then
 			-- squadchat
 			local msg
 			msg, pkt = common.net_unpack("z", pkt)
@@ -287,22 +283,22 @@ function server.hook_tick(sec_current, sec_delta)
 			end
 			
 			if s then
-				net_broadcast_squad(plr.team, plr.squad, common.net_pack("BIz", 0x0E, 0xFFFFFF55, s))
+				net_broadcast_squad(plr.team, plr.squad, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFFFFFF55, s))
 			end
-		elseif cid == 0x11 and plr then
+		elseif cid == PKT_PLR_OFFER and plr then
 			local tidx, wpn, name
 			tidx, wpn, name, pkt = common.net_unpack("bbz", pkt)
 			name = (name ~= "" and name) or name_generate()
 			plr.set_health_damage(0, 0xFF800000, plr.name.." changed teams", nil)
 			plr.team = tidx
 			net_broadcast(nil, common.net_pack("BBBBBhhhzz",
-					0x05, plr.pid,
+					PKT_PLR_ADD, plr.pid,
 					plr.team, plr.weapon, plr.mode,
 					plr.score, plr.kills, plr.deaths,
 					plr.name, plr.squad))
-			net_broadcast(nil, common.net_pack("BIz", 0x0E, 0xFF800000,
+			net_broadcast(nil, common.net_pack("BIz", PKT_PLR_CHAT_ADD_TEXT, 0xFF800000,
 				"* Player "..plr.name.." has joined the "..teams[plr.team].name.." team"))
-		elseif cid == 0x11 and not plr then
+		elseif cid == PKT_PLR_OFFER and not plr then
 			local tidx, wpn, name
 			tidx, wpn, name, pkt = common.net_unpack("bbz", pkt)
 			name = (name ~= "" and name) or name_generate()
@@ -320,18 +316,18 @@ function server.hook_tick(sec_current, sec_delta)
 					local plr = players[i]
 					if plr then
 						common.net_send(sockfd, common.net_pack("BBBBBhhhzz",
-							0x05, i,
+							PKT_PLR_ADD, i,
 							plr.team, plr.weapon, plr.mode,
 							plr.score, plr.kills, plr.deaths,
 							plr.name, plr.squad))
 						common.net_send(sockfd, common.net_pack("BBfffBB",
-							0x10, i,
+							PKT_PLR_SPAWN, i,
 							plr.x, plr.y, plr.z,
 							plr.angy*128/math.pi, plr.angx*256/math.pi))
 						common.net_send(sockfd, common.net_pack("BBB",
-							0x17, i, plr.tool))
+							PKT_PLR_TOOL, i, plr.tool))
 						common.net_send(sockfd, common.net_pack("BBBBB",
-							0x18, i,
+							PKT_PLR_BLK_COLOR, i,
 							plr.blk_color[1],plr.blk_color[2],plr.blk_color[3]))
 					end
 				end
@@ -342,38 +338,38 @@ function server.hook_tick(sec_current, sec_delta)
 					x,y,z = intent[i].get_pos()
 					f = intent[i].get_flags()
 					common.net_send(sockfd, common.net_pack("BHhhhB",
-						0x12, i, x, y, z, f))
+						PKT_ITEM_POS, i, x, y, z, f))
 					local plr = intent[i].player
 					if plr then
 						common.net_send(sockfd, common.net_pack("BHB",
-							0x16, i, plr.pid))
+							PKT_ITEM_CARRIER, i, plr.pid))
 					end
 				end
 
 				-- relay score to this player
 				for i=0,teams.max do
-					common.net_send(sockfd, common.net_pack("Bbh", 0x1F, i, teams[i].score))
+					common.net_send(sockfd, common.net_pack("Bbh", PKT_TEAM_SCORE, i, teams[i].score))
 				end
 				
 				-- relay this player to everyone
 				net_broadcast(nil, common.net_pack("BBBBBhhhzz",
-					0x05, cli.plrid,
+					PKT_PLR_ADD, cli.plrid,
 					plr.team, plr.weapon, plr.mode,
 					plr.score, plr.kills, plr.deaths,
 					plr.name, plr.squad))
 				net_broadcast(nil, common.net_pack("BBfffBB",
-					0x10, cli.plrid,
+					PKT_PLR_SPAWN, cli.plrid,
 					plr.x, plr.y, plr.z,
 					plr.angy*128/math.pi, plr.angx*256/math.pi))
 				
 				-- set player ID
 				common.net_send(sockfd, common.net_pack("BB",
-					0x06, cli.plrid))
+					PKT_PLR_ID, cli.plrid))
 				
-				net_broadcast(nil, common.net_pack("BIz", 0x0E, 0xFF800000,
+				net_broadcast(nil, common.net_pack("BIz", PKT_PLR_CHAT_ADD_TEXT, 0xFF800000,
 					"* Player "..name.." has joined the "..teams[plr.team].name.." team"))
 			end
-		elseif cid == 0x13 and plr then
+		elseif cid == PKT_PLR_GUN_HIT and plr then
 			local tpid, styp
 			tpid, styp, pkt = common.net_unpack("BB", pkt)
 			--print("hit", tpid, styp)
@@ -383,7 +379,9 @@ function server.hook_tick(sec_current, sec_delta)
 				if plr.tool == TOOL_GUN and plr.wpn and styp >= 1 and styp <= 3 then
 					local dmg = plr.wpn.cfg.dmg[({"head","body","legs"})[styp]]
 					--print("dmg",dmg,tplr.wpn.cfg.dmg)
-					tplr.gun_damage(styp, dmg, plr)
+					if dmg then
+						tplr.gun_damage(styp, dmg, plr)
+					end
 				elseif plr.tool == TOOL_SPADE then
 					tplr.spade_damage(0, 1000, plr)
 				end
@@ -391,9 +389,9 @@ function server.hook_tick(sec_current, sec_delta)
 			
 			if plr.tool == TOOL_GUN then
 				-- we don't want the spade spewing tracers!
-				net_broadcast(sockfd, common.net_pack("BB", 0x1A, cli.plrid))
+				net_broadcast(sockfd, common.net_pack("BB", PLR_GUN_TRACER, cli.plrid))
 			end
-		elseif cid == 0x17 and plr then
+		elseif cid == PKT_PLR_TOOL and plr then
 			local tpid, tool
 			tpid, tool, pkt = common.net_unpack("BB", pkt)
 			
@@ -402,16 +400,16 @@ function server.hook_tick(sec_current, sec_delta)
 				net_broadcast(sockfd, common.net_pack("BBB"
 					, 0x17, cli.plrid, tool))
 			end
-		elseif cid == 0x18 and plr then
+		elseif cid == PKT_PLR_BLK_COLOR and plr then
 			local tpid, cr,cg,cb
 			tpid, cr,cg,cb, pkt = common.net_unpack("BBBB", pkt)
 			
 			if plr then
 				plr.blk_color = {cr,cg,cb}
 				net_broadcast(sockfd, common.net_pack("BBBBB"
-					, 0x18, cli.plrid, cr, cg, cb))
+					, PKT_PLR_BLK_COLOR, cli.plrid, cr, cg, cb))
 			end
-		elseif cid == 0x1B and plr and plr.grenades > 0 then
+		elseif cid == PKT_NADE_THROW and plr and plr.grenades > 0 then
 			if plr.mode == PLM_NORMAL then
 				plr.grenades = plr.grenades - 1
 			end
@@ -429,14 +427,14 @@ function server.hook_tick(sec_current, sec_delta)
 			})
 			nade_add(n)
 			net_broadcast(sockfd, common.net_pack("BhhhhhhH",
-				0x1B,x,y,z,vx,vy,vz,fuse))
-		elseif cid == 0x1D and plr then
+				PKT_NADE_THROW,x,y,z,vx,vy,vz,fuse))
+		elseif cid == PKT_PLR_GUN_RELOAD and plr then
 			-- TODO: actually reload with serverside counts
-			net_broadcast(sockfd, common.net_pack("BB", 0x1D, cli.plrid))
-		elseif cid == 0x20 and plr then
+			net_broadcast(sockfd, common.net_pack("BB", PKT_PLR_GUN_RELOAD, cli.plrid))
+		elseif cid == PKT_BLK_DAMAGE and plr then
 			local x, y, z, amt
 			x, y, z, amt = common.net_unpack("HHHH", pkt)
-			net_broadcast(nil, common.net_pack("BHHHH", 0x20, x, y, z, amt))
+			net_broadcast(nil, common.net_pack("BHHHH", PKT_BLK_DAMAGE, x, y, z, amt))
 			bhealth_damage(x, y, z, amt, plr)
 		end
 		-- TODO!
