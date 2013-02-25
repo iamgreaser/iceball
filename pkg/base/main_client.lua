@@ -15,7 +15,7 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
-dofile("pkg/"..common.base_dir.."/preconf.lua")
+dofile("pkg/base/preconf.lua")
 
 -- if you don't want music, set FILE_MUSIC to "true".
 FILE_MUSIC = FILE_MUSIC or "music.wav"

@@ -15,7 +15,7 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
-dofile("pkg/"..common.base_dir.."/preconf.lua")
+dofile("pkg/base/preconf.lua")
 
 print("pkg/base/main_server.lua starting")
 print(...)

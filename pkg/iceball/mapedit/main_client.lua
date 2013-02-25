@@ -127,6 +127,7 @@ do
 	end
 end
 
+dofile("pkg/base/preconf.lua")
 dofile("pkg/base/lib_bits.lua")
 dofile("pkg/base/lib_gui.lua")
 dofile("pkg/base/lib_sdlkey.lua")

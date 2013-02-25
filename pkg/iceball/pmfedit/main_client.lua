@@ -15,6 +15,7 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
+dofile("pkg/base/preconf.lua")
 dofile("pkg/base/lib_gui.lua")
 dofile("pkg/base/lib_pmf.lua")
 dofile("pkg/base/lib_sdlkey.lua")
