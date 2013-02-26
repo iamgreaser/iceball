@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,0,0,0,27},
-	num=27,
-	str="0.0-27",
+	cmp={0,0,0,0,28},
+	num=28,
+	str="0.0-28",
 }
 
 VERSION_BUGS = {
@@ -48,5 +48,6 @@ VERSION_BUGS = {
 {intro=nil, fix=26, msg="TODO: give changelog for -25/-26 (which I think are the same version more or less)"},
 {intro=nil, fix=27, msg="altered the international keyboard thing to be more backwards compatible"},
 {intro=25, fix=27, msg="THIS VERSION IS INCOMPATIBLE. PLEASE UPGRADE TO 0.0-27 AT LEAST."},
+{intro=nil, fix=28, msg="Sound loader only loads first half of 16-bit samples correctly"},
 }
 

@@ -290,7 +290,7 @@ wav_t *wav_parse(char *buf, int len)
 		for(i = 0; i < datalen_smps; i++)
 			*(d++) = (((int16_t)(*s++))-0x80)<<8;
 	} else if(fmt.bps == 16) {
-		memcpy(wav->data, data_void, datalen_smps);
+		memcpy(wav->data, data_void, datalen_smps*2);
 	} else {
 		fprintf(stderr, "EDOOFUS: should never reach this point!\n");
 		abort();
