@@ -553,7 +553,7 @@ network.sys_handle_c2s(PKT_PLR_GUN_HIT, "BB", nwdec_plrset(function (sockfd, cli
 	
 	if plr.tool == TOOL_GUN then
 		-- we don't want the spade spewing tracers!
-		net_broadcast(sockfd, common.net_pack("BB", PLR_GUN_TRACER, cli.plrid))
+		net_broadcast(sockfd, common.net_pack("BB", PKT_PLR_GUN_TRACER, cli.plrid))
 	end
 end))
 network.sys_handle_c2s(PKT_PLR_TOOL, "BB", nwdec_plrset(function (sockfd, cli, plr, sec_current, tpid, tool, pkt)
