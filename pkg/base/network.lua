@@ -105,7 +105,26 @@ do
 	end
 end
 
--- packets
+function nwdec_plrset(f, fx)
+	return (function (sockfd, cli, plr, sec_current, ...)
+		if plr then return f(sockfd, cli, plr, sec_current, ...)
+		elseif fx then return fx(sockfd, cli, plr, sec_current, ...) end
+	end)
+end
+
+function nwdec_plrclear(f)
+	return (function (sockfd, cli, plr, sec_current, ...)
+		if not plr then return f(sockfd, cli, plr, sec_current, ...) end
+	end)
+end
+
+function nwdec_plrsquadset(f)
+	return (function (sockfd, cli, plr, sec_current, ...)
+		if plr and plr.squad then return f(sockfd, cli, plr, sec_current, ...) end
+	end)
+end
+
+-- S2C packets
 network.sys_handle_s2c(PKT_PLR_POS, "Bhhh", function (sockfd, cli, plr, sec_current, pid, x, y, z, pkt)
 	x = x/32.0
 	y = y/32.0
@@ -305,10 +324,279 @@ network.sys_handle_s2c(PKT_BLK_DAMAGE, "HHHH", function (sockfd, cli, plr, sec_c
 	bhealth_damage(x, y, z, amt)
 end)
 
---[[
-network.sys_handle_s2c(PKT_, "", function (sockfd, cli, plr, sec_current)
-end)
-network.sys_handle_(PKT_, "", function (sockfd, cli, plr, sec_current)
-end)
-]]
+-- C2S packets
+network.sys_handle_c2s(PKT_PLR_POS, "Bhhh", nwdec_plrset(function (sockfd, cli, plr, sec_current, pid, x2, y2, z2, pkt)
+	local x = x2/32.0
+	local y = y2/32.0
+	local z = z2/32.0
+	
+	plr.set_pos_recv(x, y, z)
+	net_broadcast(sockfd, common.net_pack("BBhhh",
+		PKT_PLR_POS, cli.plrid, x2, y2, z2))
+end))
+network.sys_handle_c2s(PKT_PLR_ORIENT, "BbbB", nwdec_plrset(function (sockfd, cli, plr, sec_current, pid, ya2, xa2, keys, pkt)
+	local ya = ya2*math.pi/128
+	local xa = xa2*math.pi/256
+	
+	plr.set_orient_recv(ya, xa, keys)
+	net_broadcast(sockfd, common.net_pack("BBbbB",
+		PKT_PLR_ORIENT, cli.plrid, ya2, xa2, keys))
+end))
+network.sys_handle_c2s(PKT_BLK_ADD, "HHHBBBB", nwdec_plrset(function (sockfd, cli, plr, sec_current, x,y,z,cb,cg,cr,ct,pkt)
+	local xlen,ylen,zlen
+	xlen,ylen,zlen = common.map_get_dims()
+	
+	if x >= 0 and x < xlen and z >= 0 and z < zlen then
+	if y >= 0 and y <= ylen-3 then
+		if plr.blocks > 0 and map_is_buildable(x,y,z) then
+			if plr.mode == PLM_NORMAL then
+				plr.blocks = plr.blocks - 1
+			end
+			map_block_set(x,y,z,ct,cr,cg,cb)
+			net_broadcast(nil, common.net_pack("BHHHBBBB",
+				PKT_BLK_ADD,x,y,z,cb,cg,cr,ct))
+		elseif plr.blocks < 0 then
+			plr.blocks = 0
+		end
+		if plr.blocks == 0 then
+			net_broadcast(nil, common.net_pack("BBB",
+				PKT_PLR_BLK_COUNT, cli.plrid, 0))
+		else
+			-- to prevent desyncing issues.
+			common.net_send(sockfd, common.net_pack("BBB",
+				PKT_PLR_BLK_COUNT, cli.plrid, plr.blocks))
+		end
+	end
+	end
+end))
+network.sys_handle_c2s(PKT_BLK_RM1, "HHH", nwdec_plrset(function (sockfd, cli, plr, sec_current, x,y,z, pkt)
+	local xlen,ylen,zlen
+	xlen,ylen,zlen = common.map_get_dims()
+	
+	if x >= 0 and x < xlen and z >= 0 and z < zlen then
+	if y >= 0 and y <= ylen-3 then
+		if map_block_break(x,y,z) then
+			net_broadcast(nil, common.net_pack("BHHH",
+					PKT_BLK_RM1,x,y,z))
+			
+			if plr.tool == TOOL_SPADE then
+				local oblocks = plr.blocks
+				plr.blocks = plr.blocks + 1
+				if plr.blocks > 100 then
+					plr.blocks = 100
+				end
+				
+				if oblocks == 0 then
+					net_broadcast(nil, common.net_pack("BBB",
+						PKT_PLR_BLK_COUNT, cli.plrid, plr.blocks))
+				else
+					common.net_send(sockfd, common.net_pack("BBB",
+						PKT_PLR_BLK_COUNT, cli.plrid, plr.blocks))
+				end
+			end
+		end
+	end
+	end
+end))
+network.sys_handle_c2s(PKT_BLK_RM3, "HHH", nwdec_plrset(function (sockfd, cli, plr, sec_current, x,y,z, pkt)
+	local xlen,ylen,zlen
+	xlen,ylen,zlen = common.map_get_dims()
+	
+	if x >= 0 and x < xlen and z >= 0 and z < zlen then
+		local i
+		for i=-1,1 do
+			if y+i >= 0 and y+i <= ylen-3 then
+				map_block_break(x,y+i,z)
+				net_broadcast(nil, common.net_pack("BHHH",
+						PKT_BLK_RM1,x,y+i,z))
+			end
+		end
+	end
+end))
+network.sys_handle_c2s(PKT_CHAT_SEND, "z", nwdec_plrset(function (sockfd, cli, plr, sec_current, msg, pkt)
+	local s = nil
+	local usage_colour = 0xFFDDDDFF
+	if string.sub(msg,1,1) == "/" then
+		--TODO: Better parameter parsing (param1 "param two" "param \"three\"")
+		local params = string.split(string.sub(msg,2), " ")
+		command_handle(plr, cli.plrid, sockfd, params, msg)
+	else
+		s = plr.name.." ("..teams[plr.team].name.."): "..msg
+	end
+	
+	if s then
+		net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFFFFFFFF, s))
+	end
+end))
+network.sys_handle_c2s(PKT_CHAT_SEND_TEAM, "z", nwdec_plrset(function (sockfd, cli, plr, sec_current, msg, pkt)
+	local s = nil
+	if string.sub(msg,1,4) == "/me " then
+		s = "* "..plr.name.." "..string.sub(msg,5)
+	else
+		s = plr.name..": "..msg
+	end
+	
+	if s then
+		local cb = teams[plr.team].color_chat
+		local c = argb_split_to_merged(cb[1],cb[2],cb[3])
+		net_broadcast_team(plr.team, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, c, s))
+	end
+end))
+network.sys_handle_c2s(PKT_CHAT_SEND_SQUAD, "z", nwdec_plrset(function (sockfd, cli, plr, sec_current, msg, pkt)
+	if plr.squad then
+		local s = nil
+		if string.sub(msg,1,4) == "/me " then
+			s = "* "..plr.name.." "..string.sub(msg,5)
+		else
+			s = plr.name..": "..msg
+		end
+		
+		if s then
+			net_broadcast_squad(plr.team, plr.squad, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFFFFFF55, s))
+		end
+	end
+end))
+network.sys_handle_c2s(PKT_PLR_OFFER, "bbz", nwdec_plrset(function (sockfd, cli, plr, sec_current, tidx, wpn, name, pkt)
+	name = (name ~= "" and name) or name_generate()
+	plr.set_health_damage(0, 0xFF800000, plr.name.." changed teams", nil)
+	plr.team = tidx
+	net_broadcast(nil, common.net_pack("BBBBBhhhzz",
+			PKT_PLR_ADD, plr.pid,
+			plr.team, plr.weapon, plr.mode,
+			plr.score, plr.kills, plr.deaths,
+			plr.name, plr.squad))
+	net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFF800000,
+		"* Player "..plr.name.." has joined the "..teams[plr.team].name.." team"))
+end, function (sockfd, cli, plr, sec_current, tidx, wpn, name, pkt)
+	name = (name ~= "" and name) or name_generate()
+	cli.plrid = slot_add(sockfd, tidx, wpn, name)
+	if not cli.plrid then
+		print("* server full")
+		-- TODO: kick somehow!
+	else
+		plr = players[cli.plrid]
+		print("* "..name.." joined team "..tidx..".")
+		
+		-- relay other players to this player
+		local i
+		for i=1,players.max do
+			local plr = players[i]
+			if plr then
+				common.net_send(sockfd, common.net_pack("BBBBBhhhzz",
+					PKT_PLR_ADD, i,
+					plr.team, plr.weapon, plr.mode,
+					plr.score, plr.kills, plr.deaths,
+					plr.name, plr.squad))
+				common.net_send(sockfd, common.net_pack("BBfffBB",
+					PKT_PLR_SPAWN, i,
+					plr.x, plr.y, plr.z,
+					plr.angy*128/math.pi, plr.angx*256/math.pi))
+				common.net_send(sockfd, common.net_pack("BBB",
+					PKT_PLR_TOOL, i, plr.tool))
+				common.net_send(sockfd, common.net_pack("BBBBB",
+					PKT_PLR_BLK_COLOR, i,
+					plr.blk_color[1],plr.blk_color[2],plr.blk_color[3]))
+			end
+		end
+		
+		-- relay intels/tents to this player
+		for i=1,4 do
+			local f,x,y,z
+			x,y,z = intent[i].get_pos()
+			f = intent[i].get_flags()
+			common.net_send(sockfd, common.net_pack("BHhhhB",
+				PKT_ITEM_POS, i, x, y, z, f))
+			local plr = intent[i].player
+			if plr then
+				common.net_send(sockfd, common.net_pack("BHB",
+					PKT_ITEM_CARRIER, i, plr.pid))
+			end
+		end
+
+		-- relay score to this player
+		for i=0,teams.max do
+			common.net_send(sockfd, common.net_pack("Bbh", PKT_TEAM_SCORE, i, teams[i].score))
+		end
+		
+		-- relay this player to everyone
+		net_broadcast(nil, common.net_pack("BBBBBhhhzz",
+			PKT_PLR_ADD, cli.plrid,
+			plr.team, plr.weapon, plr.mode,
+			plr.score, plr.kills, plr.deaths,
+			plr.name, plr.squad))
+		net_broadcast(nil, common.net_pack("BBfffBB",
+			PKT_PLR_SPAWN, cli.plrid,
+			plr.x, plr.y, plr.z,
+			plr.angy*128/math.pi, plr.angx*256/math.pi))
+		
+		-- set player ID
+		common.net_send(sockfd, common.net_pack("BB",
+			PKT_PLR_ID, cli.plrid))
+		
+		net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFF800000,
+			"* Player "..name.." has joined the "..teams[plr.team].name.." team"))
+	end
+end))
+network.sys_handle_c2s(PKT_PLR_GUN_HIT, "BB", nwdec_plrset(function (sockfd, cli, plr, sec_current, tpid, styp)
+	local tplr = players[tpid]
+	if tplr then
+		if plr.tool == TOOL_GUN and plr.wpn and styp >= 1 and styp <= 3 then
+			local dmg = plr.wpn.cfg.dmg[({"head","body","legs"})[styp]]
+			--print("dmg",dmg,tplr.wpn.cfg.dmg)
+			if dmg then
+				tplr.gun_damage(styp, dmg, plr)
+			end
+		elseif plr.tool == TOOL_SPADE then
+			tplr.spade_damage(0, 1000, plr)
+		end
+	end
+	
+	if plr.tool == TOOL_GUN then
+		-- we don't want the spade spewing tracers!
+		net_broadcast(sockfd, common.net_pack("BB", PLR_GUN_TRACER, cli.plrid))
+	end
+end))
+network.sys_handle_c2s(PKT_PLR_TOOL, "BB", nwdec_plrset(function (sockfd, cli, plr, sec_current, tpid, tool, pkt)
+	if plr and tool >= 0 and tool <= 3 then
+		plr.tool = tool
+		net_broadcast(sockfd, common.net_pack("BBB"
+			, PKT_PLR_TOOL, cli.plrid, tool))
+	end
+end))
+network.sys_handle_c2s(PKT_PLR_BLK_COLOR, "BBBB", nwdec_plrset(function (sockfd, cli, plr, sec_current, tpid, cr, cg, cb, pkt)
+	if plr then
+		plr.blk_color = {cr,cg,cb}
+		net_broadcast(sockfd, common.net_pack("BBBBB"
+			, PKT_PLR_BLK_COLOR, cli.plrid, cr, cg, cb))
+	end
+end))
+network.sys_handle_c2s(PKT_NADE_THROW, "hhhhhhH", nwdec_plrset(function (sockfd, cli, plr, sec_current, x, y, z, vx, vy, vz, fuse, pkt)
+	if plr.grenades > 0 then
+		if plr.mode == PLM_NORMAL then
+			plr.grenades = plr.grenades - 1
+		end
+		local n = new_nade({
+			x = x/32,
+			y = y/32,
+			z = z/32,
+			vx = vx/256,
+			vy = vy/256,
+			vz = vz/256,
+			fuse = fuse/100,
+			pid = cli.plrid
+		})
+		nade_add(n)
+		net_broadcast(sockfd, common.net_pack("BhhhhhhH",
+			PKT_NADE_THROW,x,y,z,vx,vy,vz,fuse))
+	end
+end))
+network.sys_handle_c2s(PKT_PLR_GUN_RELOAD, "", nwdec_plrset(function (sockfd, cli, plr, sec_current, pkt)
+	-- TODO: actually reload with serverside counts
+	net_broadcast(sockfd, common.net_pack("BB", PKT_PLR_GUN_RELOAD, cli.plrid))
+end))
+network.sys_handle_c2s(PKT_BLK_DAMAGE, "HHHH", nwdec_plrset(function (sockfd, cli, plr, sec_current, x, y, z, amt, pkt)
+	net_broadcast(nil, common.net_pack("BHHHH", PKT_BLK_DAMAGE, x, y, z, amt))
+	bhealth_damage(x, y, z, amt, plr)
+	
+end))
 
