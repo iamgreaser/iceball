@@ -39,7 +39,7 @@ function command_register(settings)
 		if this.permission == nil or player.has_permission(this.permission) then
 			this.func(player, plrid, sockfd, params, msg)
 		else
-			common.net_send(sockfd, common.net_pack("BIz", 0x0E, command_colour_error, "Error: You do not have permission for this command"))
+			common.net_send(sockfd, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_error, "Error: You do not have permission for this command"))
 		end
 	end
 	
@@ -57,7 +57,7 @@ function command_handle(player, plrid, sockfd, params, msg)
 		table.remove(params, 1)
 		commands[cmd].exec(player, plrid, sockfd, params, msg)
 	else
-		common.net_send(sockfd, common.net_pack("BIz", 0x0E, command_colour_error, "Error: No such command"))
+		common.net_send(sockfd, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_error, "Error: No such command"))
 	end
 end
 
@@ -70,11 +70,11 @@ command_register({
 			--TODO: List available commands
 		elseif table.getn(prms) == 1 then
 			if commands[prms[1]] == nil then
-				common.net_send(sockfd, common.net_pack("BIz", 0x0E, command_colour_error, "Error: No such command"))
+				common.net_send(sockfd, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_error, "Error: No such command"))
 			elseif plr.has_permission(commands[prms[1]].permission) then
-				common.net_send(sockfd, common.net_pack("BIz", 0x0E, command_colour_usage, "Usage: "..commands[prms[1]].usage))
+				common.net_send(sockfd, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_usage, "Usage: "..commands[prms[1]].usage))
 			else
-				common.net_send(sockfd, common.net_pack("BIz", 0x0E, command_colour_error, "Error: You do not have permission for this command"))
+				common.net_send(sockfd, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_error, "Error: You do not have permission for this command"))
 			end
 		else
 			this.func(plr, plrid, sockfd, "help")
@@ -88,7 +88,7 @@ command_register({
 	usage = "/me <action>",
 	func = function(plr, plrid, sockfd, prms, msg)
 		if table.getn(prms) > 0 then
-			net_broadcast(nil, common.net_pack("BIz", 0x0E, 0xFFFFFFFF, "* "..plr.name.." "..string.sub(msg,5)))
+			net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFFFFFFFF, "* "..plr.name.." "..string.sub(msg,5)))
 		else
 			commands["help"].func(plr, plrid, sockfd, {"me"})
 		end
@@ -163,16 +163,16 @@ command_register({
 				x, y, z = target.x, target.y, target.z
 				plr.set_pos_recv(x, y, z)
 				net_broadcast(nil, common.net_pack("BBhhh",
-					0x03, plrid, x * 32.0, y * 32.0, z * 32.0))
+					PLR_PKT_POS, plrid, x * 32.0, y * 32.0, z * 32.0))
 			else
-				common.net_send(sockfd, common.net_pack("BIz", 0x0E, command_colour_error, "Error: Player not found"))
+				common.net_send(sockfd, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_error, "Error: Player not found"))
 			end
 		elseif table.getn(prms) == 3 then
 			--NOTE: I protest that y is down/same way AoS was
 			x, y, z = tonumber(prms[1]), tonumber(prms[2]), tonumber(prms[3])
 			plr.set_pos_recv(x, y, z)
 			net_broadcast(nil, common.net_pack("BBhhh",
-				0x03, plrid, x * 32.0, y * 32.0, z * 32.0))
+				PLR_PKT_POS, plrid, x * 32.0, y * 32.0, z * 32.0))
 		else
 			commands["help"].func(plr, plrid, sockfd, {"teleport"})
 		end
@@ -197,9 +197,9 @@ command_register({
 				local y = common.map_pillar_get(x, z)[1+1] - 3
 				plr.set_pos_recv(x, y, z)
 				net_broadcast(nil, common.net_pack("BBhhh",
-					0x03, plrid, x * 32.0 + 16, y * 32.0, z * 32.0 + 16))
+					PLR_PKT_POS, plrid, x * 32.0 + 16, y * 32.0, z * 32.0 + 16))
 			else
-				common.net_send(sockfd, common.net_pack("BIz", 0x0E, command_colour_error, "Error: Invalid coordinates"))
+				common.net_send(sockfd, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_error, "Error: Invalid coordinates"))
 			end
 		else
 			commands["help"].func(plr, plrid, sockfd, {"goto"})
@@ -216,7 +216,7 @@ command_register({
 			local i
 			for i=1,#intent do
 				if intent[i] ~= nil then
-					common.net_send(sockfd, common.net_pack("BIz", 0x0E, command_colour_text, teams[intent[i].team].name..": "..intent[i].x..", "..intent[i].y..", "..intent[i].z))
+					common.net_send(sockfd, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_text, teams[intent[i].team].name..": "..intent[i].x..", "..intent[i].y..", "..intent[i].z))
 				end
 			end
 		else
@@ -237,9 +237,9 @@ command_register({
 				success = true
 			end
 			if success then
-				common.net_send(sockfd, common.net_pack("BIz", 0x0E, command_colour_success, "You have successfully logged in as "..prms[1]))
+				common.net_send(sockfd, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_success, "You have successfully logged in as "..prms[1]))
 			else
-				common.net_send(sockfd, common.net_pack("BIz", 0x0E, command_colour_error, "Could not log in to group "..prms[1].." with that password"))
+				common.net_send(sockfd, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_error, "Could not log in to group "..prms[1].." with that password"))
 			end
 		else
 			commands["help"].func(plr, plrid, sockfd, {"login"})
@@ -255,7 +255,7 @@ command_register({
 		if table.getn(prms) == 0 then
 			plr.clear_permissions()
 			plr.add_permission_group(permissions["default"].perms)
-			common.net_send(sockfd, common.net_pack("BIz", 0x0E, command_colour_success, "You have successfully logged out"))
+			common.net_send(sockfd, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_success, "You have successfully logged out"))
 		else
 			commands["help"].func(plr, plrid, sockfd, {"logout"})
 		end

@@ -257,7 +257,7 @@ function new_player(settings)
 		this.t_switch = true
 		if client and this == players[players.current] and this.tool ~= tool then
 			common.net_send(nil, common.net_pack("BBB"
-				, 0x17, 0x00, tool))
+				, PKT_PLR_TOOL, 0x00, tool))
 		end
 		this.tool = tool
 		this.ev_lmb = false
@@ -344,7 +344,7 @@ function new_player(settings)
 	
 	function this.update_score()
 		net_broadcast(nil, common.net_pack("BBBBBhhhzz",
-			0x05, this.pid,
+			PKT_PLR_ADD, this.pid,
 			this.team, this.weapon, this.mode,
 			this.score, this.kills, this.deaths,
 			this.name, this.squad))
@@ -359,7 +359,7 @@ function new_player(settings)
 			this.wpn.ammo_reserve = this.wpn.cfg.ammo_reserve
 		end
 		if server then
-			net_broadcast(nil, common.net_pack("BB", 0x15, this.pid))
+			net_broadcast(nil, common.net_pack("BB", PKT_PLR_RESTOCK, this.pid))
 		end
 	end
 
@@ -405,7 +405,7 @@ function new_player(settings)
 					enemy.update_score()
 				end
 				this.update_score()
-				net_broadcast(nil, common.net_pack("BIz", 0x0F, kcol, kmsg))
+				net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_KILLFEED, kcol, kmsg))
 			end
 			--chat_add(chat_killfeed, nil, kmsg, kcol)
 			this.health = 0
@@ -413,7 +413,7 @@ function new_player(settings)
 		end
 		
 		if server then
-			net_broadcast(nil, common.net_pack("BBB", 0x14, this.pid, this.health))
+			net_broadcast(nil, common.net_pack("BBB", PKT_PLR_DAMAGE, this.pid, this.health))
 		end
 		
 		if client then
@@ -525,10 +525,10 @@ function new_player(settings)
 			x,y,z = intel.get_pos()
 			intel.visible = false
 			f = intel.get_flags()
-			net_broadcast(nil, common.net_pack("BHhhhB", 0x12, intel.iid, x,y,z,f))
-			net_broadcast(nil, common.net_pack("BHB", 0x16, intel.iid, this.pid))
+			net_broadcast(nil, common.net_pack("BHhhhB", PKT_ITEM_POS, intel.iid, x,y,z,f))
+			net_broadcast(nil, common.net_pack("BHB", PKT_ITEM_CARRIER, intel.iid, this.pid))
 			local s = "* "..this.name.." has picked up the "..teams[intel.team].name.." intel."
-			net_broadcast(nil, common.net_pack("BIz", 0x0E, 0xFF800000, s))
+			net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFF800000, s))
 			this.has_intel = intel
 		end
 
@@ -547,7 +547,7 @@ function new_player(settings)
 			this.has_intel = nil
 			
 			local s = "* "..this.name.." has dropped the "..teams[intel.team].name.." intel."
-			net_broadcast(nil, common.net_pack("BIz", 0x0E, 0xFF800000, s))
+			net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFF800000, s))
 		end
 	end
 
@@ -562,8 +562,8 @@ function new_player(settings)
 			this.has_intel = nil
 			
 			local s = "* "..this.name.." has captured the "..teams[intel.team].name.." intel."
-			net_broadcast(nil, common.net_pack("BIz", 0x0E, 0xFF800000, s))
-			net_broadcast_team(this.team, common.net_pack("B", 0x1C))
+			net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFF800000, s))
+			net_broadcast_team(this.team, common.net_pack("B", PKT_MAP_RCIRC))
 		end
 	end
 	
@@ -586,7 +586,7 @@ function new_player(settings)
 		})
 		nade_add(n)
 		common.net_send(nil, common.net_pack("BhhhhhhH",
-			0x1B,
+			PKT_NADE_THROW,
 			math.floor(n.x*32+0.5),
 			math.floor(n.y*32+0.5),
 			math.floor(n.z*32+0.5),
@@ -624,7 +624,7 @@ function new_player(settings)
 				this.t_respawn = nil
 				this.spawn()
 				net_broadcast(nil, common.net_pack("BBfffBB",
-					0x10, this.pid,
+					PKT_PLR_SPAWN, this.pid,
 					this.x, this.y, this.z,
 					this.angy*128/math.pi, this.angx*256/math.pi))
 			else
@@ -685,7 +685,7 @@ function new_player(settings)
 			if this.blx2 >= 0 and this.blx2 < xlen and this.blz2 >= 0 and this.blz2 < zlen then
 			if this.bly2-1 <= ylen-3 then
 				common.net_send(nil, common.net_pack("BHHH",
-					0x0A,
+					PKT_BLK_RM3,
 					this.blx2, this.bly2, this.blz2))
 			end
 			end
@@ -810,7 +810,7 @@ function new_player(settings)
 				if this.blx1 >= 0 and this.blx1 < xlen and this.blz1 >= 0 and this.blz1 < zlen then
 				if this.bly1 <= ylen-3 and map_is_buildable(this.blx1, this.bly1, this.blz1) then
 					common.net_send(nil, common.net_pack("BHHHBBBB",
-						0x08,
+						PKT_BLK_ADD,
 						this.blx1, this.bly1, this.blz1,
 						this.blk_color[3],
 						this.blk_color[2],
@@ -863,12 +863,12 @@ function new_player(settings)
 							hurt_part, 1000, this)
 					else
 						common.net_send(nil, common.net_pack("BBB"
-							, 0x13, hurt_idx, hurt_part_idx))
+							, PKT_PLR_GUN_HIT, hurt_idx, hurt_part_idx))
 					end
 				elseif this.blx2 then
 				if this.blx2 >= 0 and this.blx2 < xlen and this.blz2 >= 0 and this.blz2 < zlen then
 				if this.bly2 <= ylen-3 then
-					common.net_send(nil, common.net_pack("BHHHH", 0x20, this.blx2, this.bly2, this.blz2, MODE_BLOCK_DAMAGE_SPADE))
+					common.net_send(nil, common.net_pack("BHHHH", PKT_BLK_DAMAGE, this.blx2, this.bly2, this.blz2, MODE_BLOCK_DAMAGE_SPADE))
 					this.t_newspade1 = sec_current + MODE_DELAY_SPADE_HIT
 				end
 				end
@@ -894,7 +894,7 @@ function new_player(settings)
 				if ct ~= nil then
 					this.blk_color = {cr,cg,cb}
 					common.net_send(nil, common.net_pack("BBBBB",
-						0x18, 0x00,
+						PKT_PLR_BLK_COLOR, 0x00,
 						this.blk_color[1],this.blk_color[2],this.blk_color[3]))
 				end
 				this.ev_rmb = false
@@ -1607,7 +1607,7 @@ function new_player(settings)
 					local plr
 					plr = players[players.current]
 					if plr ~= nil and team ~= nil and team ~= plr.team then
-						common.net_send(nil, common.net_pack("Bbbz", 0x11, team, WPN_RIFLE, plr.name or ""))
+						common.net_send(nil, common.net_pack("Bbbz", PKT_PLR_OFFER, team, WPN_RIFLE, plr.name or ""))
 					end					
 					
 				elseif options.key == BTSK_TEAM and not this.menus_visible() then
@@ -1750,11 +1750,11 @@ function new_player(settings)
 					end
 				else
 					if this.typing_type.text == "Chat: " then
-						common.net_send(nil, common.net_pack("Bz", 0x0C, this.typing_text.text))
+						common.net_send(nil, common.net_pack("Bz", PKT_CHAT_SEND, this.typing_text.text))
 					elseif this.typing_type.text == "Team: " then
-						common.net_send(nil, common.net_pack("Bz", 0x0D, this.typing_text.text))
+						common.net_send(nil, common.net_pack("Bz", PKT_CHAT_SEND_TEAM, this.typing_text.text))
 					elseif this.typing_type.text == "Squad: " then
-						common.net_send(nil, common.net_pack("Bz", 0x1E, this.typing_text.text))
+						common.net_send(nil, common.net_pack("Bz", PKT_CHAT_SEND_SQUAD, this.typing_text.text))
 					end
 				end
 			end
@@ -2065,7 +2065,7 @@ function new_player(settings)
 					end
 					this.blk_color = cpalette[this.blk_color_x+this.blk_color_y*8+1]
 					common.net_send(nil, common.net_pack("BBBBB",
-						0x18, 0x00,
+						PKT_PLR_BLK_COLOR, 0x00,
 						this.blk_color[1],this.blk_color[2],this.blk_color[3]))
 				elseif this.alive and key == BTSK_COLORRIGHT then
 					this.blk_color_x = this.blk_color_x + 1
@@ -2074,7 +2074,7 @@ function new_player(settings)
 					end
 					this.blk_color = cpalette[this.blk_color_x+this.blk_color_y*8+1]
 					common.net_send(nil, common.net_pack("BBBBB",
-						0x18, 0x00,
+						PKT_PLR_BLK_COLOR, 0x00,
 						this.blk_color[1],this.blk_color[2],this.blk_color[3]))
 				elseif this.alive and key == BTSK_COLORUP then
 					this.blk_color_y = this.blk_color_y - 1
@@ -2083,7 +2083,7 @@ function new_player(settings)
 					end
 					this.blk_color = cpalette[this.blk_color_x+this.blk_color_y*8+1]
 					common.net_send(nil, common.net_pack("BBBBB",
-						0x18, 0x00,
+						PKT_PLR_BLK_COLOR, 0x00,
 						this.blk_color[1],this.blk_color[2],this.blk_color[3]))
 				elseif this.alive and key == BTSK_COLORDOWN then
 					this.blk_color_y = this.blk_color_y + 1
@@ -2092,7 +2092,7 @@ function new_player(settings)
 					end
 					this.blk_color = cpalette[this.blk_color_x+this.blk_color_y*8+1]
 					common.net_send(nil, common.net_pack("BBBBB",
-						0x18, 0x00,
+						PKT_PLR_BLK_COLOR, 0x00,
 						this.blk_color[1],this.blk_color[2],this.blk_color[3]))
 				end
 			end

@@ -280,7 +280,7 @@ function bhealth_damage(x,y,z,amt,plr)
 	if server and blk.damage >= MODE_BLOCK_HEALTH then
 		if map_block_break(x,y,z) then
 			net_broadcast(nil, common.net_pack("BHHH",
-				0x09, x, y, z))
+				PKT_BLK_RM1, x, y, z))
 			if plr.tool == TOOL_SPADE then
 				local oblocks = plr.blocks
 				plr.blocks = plr.blocks + 1
@@ -290,10 +290,10 @@ function bhealth_damage(x,y,z,amt,plr)
 				
 				if oblocks == 0 then
 					net_broadcast(nil, common.net_pack("BBB",
-						0x19, plr.pid, plr.blocks))
+						PKT_PLR_BLK_COUNT, plr.pid, plr.blocks))
 				else
 					common.net_send(plr.sockfd, common.net_pack("BBB",
-						0x19, plr.pid, plr.blocks))
+						PKT_PLR_BLK_COUNT, plr.pid, plr.blocks))
 				end
 			end
 		end

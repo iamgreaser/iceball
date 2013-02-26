@@ -47,7 +47,7 @@ function new_intel(settings)
 			if this.y ~= ty and this.visible then
 				--print("grav", this.y, ty)
 				this.y = ty
-				net_broadcast(nil, common.net_pack("BHhhhB", 0x12, this.iid,
+				net_broadcast(nil, common.net_pack("BHhhhB", PKT_ITEM_POS, this.iid,
 					this.x, this.y, this.z,
 					this.get_flags()))
 			end
@@ -112,21 +112,21 @@ function new_intel(settings)
 			f = this.get_flags()
 			--print("bc pos")
 			net_broadcast(nil, common.net_pack("BHhhhB",
-				0x12, this.iid, x,y,z, f))
-			net_broadcast(nil, common.net_pack("BHB", 0x16, this.iid, 0))
+				PKT_ITEM_POS, this.iid, x,y,z, f))
+			net_broadcast(nil, common.net_pack("BHB", PKT_ITEM_CARRIER, this.iid, 0))
 		end
 	end
 	
 	function this.intel_capture(sec_current)
 		teams[this.player.team].score = teams[this.player.team].score + 1
-		net_broadcast(nil, common.net_pack("Bbh", 0x1F, this.player.team, teams[this.player.team].score))
+		net_broadcast(nil, common.net_pack("Bbh", PKT_TEAM_SCORE, this.player.team, teams[this.player.team].score))
 		if teams[this.player.team].score >= TEAM_INTEL_LIMIT then
 			local i
 			for i=1,players.max do
 				if players[i] ~= nil then
 					players[i].spawn()
 					net_broadcast(nil, common.net_pack("BBfffBB",
-						0x10, i,
+						PKT_PLR_SPAWN, i,
 						players[i].x, players[i].y, players[i].z,
 						players[i].angy*128/math.pi, players[i].angx*256/math.pi))
 				end
@@ -134,7 +134,7 @@ function new_intel(settings)
 			for i=0,teams.max do
 				if teams[i] ~= nil then
 					teams[i].score = 0
-					net_broadcast(nil, common.net_pack("Bbh", 0x1F, i, teams[i].score))
+					net_broadcast(nil, common.net_pack("Bbh", PKT_TEAM_SCORE, i, teams[i].score))
 				end
 			end
 		else
@@ -154,8 +154,8 @@ function new_intel(settings)
 			x,y,z = this.get_pos()
 			f = this.get_flags()
 			net_broadcast(nil, common.net_pack("BHhhhB",
-				0x12, this.iid, x,y,z, f))
-			net_broadcast(nil, common.net_pack("BHB", 0x16, this.iid, 0))
+				PKT_ITEM_POS, this.iid, x,y,z, f))
+			net_broadcast(nil, common.net_pack("BHB", PKT_ITEM_CARRIER, this.iid, 0))
 			plr.score = plr.score + SCORE_INTEL
 			plr.update_score()
 		end
@@ -255,7 +255,7 @@ function new_tent(settings)
 		local ty = l[1+(1)]
 		if this.y ~= ty and this.visible then
 			this.y = ty
-			net_broadcast(nil, common.net_pack("BHhhhB", 0x12, this.iid,
+			net_broadcast(nil, common.net_pack("BHhhhB", PKT_ITEM_POS, this.iid,
 				this.x, this.y, this.z,
 				this.get_flags()))
 		end

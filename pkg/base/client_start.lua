@@ -473,7 +473,7 @@ function h_tick_main(sec_current, sec_delta)
 			x,y,z = common.net_unpack("HHH", pkt)
 			bhealth_clear(x,y,z,false)
 			map_block_break(x,y,z)
-		elseif cid == PKT_CHAT_ADD then
+		elseif cid == PKT_CHAT_ADD_TEXT then
 			-- add to chat
 			local color, msg
 			color, msg, pkt = common.net_unpack("Iz", pkt)
@@ -691,7 +691,7 @@ function h_tick_main(sec_current, sec_delta)
 			y = y * 32.0
 			z = z * 32.0
 			common.net_send(nil, common.net_pack("BBhhh"
-				, 0x03, 0x00, x, y, z))
+				, PKT_PLR_POS, 0x00, x, y, z))
 		end
 		if not t_net_orient then
 			t_net_orient = sec_current + NET_ORIENT_DELAY
@@ -701,7 +701,7 @@ function h_tick_main(sec_current, sec_delta)
 			xa = xa*256/math.pi
 
 			common.net_send(nil, common.net_pack("BBbbB"
-				, 0x04, 0x00, ya, xa, keys))
+				, PKT_PLR_ORIENT, 0x00, ya, xa, keys))
 		end
 
 		plr.camera_firstperson(sec_current, sec_delta)
@@ -761,7 +761,7 @@ function h_tick_init(sec_current, sec_delta)
 	client.mouse_lock_set(true)
 	client.mouse_visible_set(false)
 
-	common.net_send(nil, common.net_pack("Bbbz", 0x11, -1, WPN_RIFLE, user_config.name or ""))
+	common.net_send(nil, common.net_pack("Bbbz", PKT_PLR_OFFER, -1, WPN_RIFLE, user_config.name or ""))
 
 	client.hook_tick = h_tick_main
 	return client.hook_tick(sec_current, sec_delta)

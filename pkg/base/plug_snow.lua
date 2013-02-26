@@ -29,7 +29,7 @@ function snow_drop_part(x,z,t,bcast)
 		if bcast then
 			bhealth_clear(x,ty-1,z,false)
 			net_broadcast(nil, common.net_pack("BHHHBBBB",
-				0x08,x,ty-1,z,255,255,255,2))
+				PKT_BLK_ADD,x,ty-1,z,255,255,255,2))
 		end
 	end
 end

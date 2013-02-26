@@ -123,7 +123,7 @@ function server.hook_disconnect(sockfd, server_force, reason)
 		net_broadcast(nil, common.net_pack("BIz", PKT_PLR_CHAT_ADD_TEXT, 0xFF800000,
 			"* Player "..plr.name.." disconnected"))
 		net_broadcast(sockfd, common.net_pack("BB",
-			0x07, plrid))
+			PKT_PLR_RM, plrid))
 			
 		-- TODO fix crash bug
 		--plr.free()
@@ -398,7 +398,7 @@ function server.hook_tick(sec_current, sec_delta)
 			if plr and tool >= 0 and tool <= 3 then
 				plr.tool = tool
 				net_broadcast(sockfd, common.net_pack("BBB"
-					, 0x17, cli.plrid, tool))
+					, PKT_PLR_TOOL, cli.plrid, tool))
 			end
 		elseif cid == PKT_PLR_BLK_COLOR and plr then
 			local tpid, cr,cg,cb

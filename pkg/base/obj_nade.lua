@@ -136,7 +136,7 @@ function new_nade(settings)
 			if y0 < ylen-2 then
 				map_block_break(x0,y0,z0)
 				net_broadcast(nil, common.net_pack("BHHH"
-					, 0x09, x0,y0,z0))
+					, PKT_BLK_RM1, x0,y0,z0))
 			end
 		else
 			for z=z0-1,z0+1 do
@@ -144,7 +144,7 @@ function new_nade(settings)
 			for y=y0-1,y0+1 do
 				if y < ylen-2 and map_block_break(x,y,z) then
 					net_broadcast(nil, common.net_pack("BHHH"
-						, 0x09, x,y,z))
+						, PKT_BLK_RM1, x,y,z))
 				end
 			end
 			end
