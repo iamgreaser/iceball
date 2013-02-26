@@ -163,7 +163,7 @@ command_register({
 				x, y, z = target.x, target.y, target.z
 				plr.set_pos_recv(x, y, z)
 				net_broadcast(nil, common.net_pack("BBhhh",
-					PLR_PKT_POS, plrid, x * 32.0, y * 32.0, z * 32.0))
+					PKT_PLR_POS, plrid, x * 32.0, y * 32.0, z * 32.0))
 			else
 				common.net_send(sockfd, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_error, "Error: Player not found"))
 			end
@@ -172,7 +172,7 @@ command_register({
 			x, y, z = tonumber(prms[1]), tonumber(prms[2]), tonumber(prms[3])
 			plr.set_pos_recv(x, y, z)
 			net_broadcast(nil, common.net_pack("BBhhh",
-				PLR_PKT_POS, plrid, x * 32.0, y * 32.0, z * 32.0))
+				PKT_PLR_POS, plrid, x * 32.0, y * 32.0, z * 32.0))
 		else
 			commands["help"].func(plr, plrid, sockfd, {"teleport"})
 		end
@@ -197,7 +197,7 @@ command_register({
 				local y = common.map_pillar_get(x, z)[1+1] - 3
 				plr.set_pos_recv(x, y, z)
 				net_broadcast(nil, common.net_pack("BBhhh",
-					PLR_PKT_POS, plrid, x * 32.0 + 16, y * 32.0, z * 32.0 + 16))
+					PKT_PLR_POS, plrid, x * 32.0 + 16, y * 32.0, z * 32.0 + 16))
 			else
 				common.net_send(sockfd, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_error, "Error: Invalid coordinates"))
 			end

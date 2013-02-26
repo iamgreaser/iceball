@@ -105,3 +105,210 @@ do
 	end
 end
 
+-- packets
+network.sys_handle_s2c(PKT_PLR_POS, "Bhhh", function (sockfd, cli, plr, sec_current, pid, x, y, z, pkt)
+	x = x/32.0
+	y = y/32.0
+	z = z/32.0
+
+	local plr = players[pid]
+
+	if plr then
+		plr.set_pos_recv(x, y, z)
+	end
+end)
+network.sys_handle_s2c(PKT_PLR_ORIENT, "BbbB", function (sockfd, cli, plr, sec_current, pid, ya, xa, keys, pkt)
+	ya = ya*math.pi/128
+	xa = xa*math.pi/256
+
+	local plr = players[pid]
+
+	if plr then
+		plr.set_orient_recv(ya, xa, keys)
+	end
+end)
+network.sys_handle_s2c(PKT_PLR_ADD, "Bbbbhhhzz", function (sockfd, cli, plr, sec_current, pid, tidx, wpn, mode, score, kills, deaths, name, squad, pkt)
+	if players[pid] then
+		-- TODO: update wpn/name
+		players[pid].squad = (squad ~= "" and squad) or nil
+		players[pid].name = name
+		players[pid].team = tidx
+		players[pid].mode = mode
+		players[pid].recolor_team()
+	else
+		players[pid] = new_player({
+			name = name,
+			--[=[squad = squads[(i-1) % 2][
+				(math.floor((i-1)/2) % 4)+1],]=]
+			squad = (squad ~= "" and squad) or nil,
+			team = tidx,
+			weapon = wpn,
+			mode = mode,
+			pid = pid,
+			sockfd = sockfd
+		})
+	end
+	
+	players[pid].score = score
+	players[pid].kills = kills
+	players[pid].deaths = deaths
+end)
+network.sys_handle_s2c(PKT_PLR_ID, "B", function (sockfd, cli, plr, sec_current, pid, pkt)
+	players.current = pid
+end)
+network.sys_handle_s2c(PKT_PLR_RM, "B", function (sockfd, cli, plr, sec_current, pid, pkt)
+	players[pid] = nil
+end)
+network.sys_handle_s2c(PKT_BLK_ADD, "HHHBBBB", function (sockfd, cli, plr, sec_current, x,y,z,cb,cg,cr,ct, pkt)
+	bhealth_clear(x,y,z,false)
+	client.wav_play_global(wav_buld,x+0.5,y+0.5,z+0.5)
+	map_block_set(x,y,z,ct,cr,cg,cb)
+end)
+network.sys_handle_s2c(PKT_BLK_RM1, "HHH", function (sockfd, cli, plr, sec_current, x, y, z, pkt)
+	bhealth_clear(x,y,z,false)
+	map_block_break(x,y,z)
+end)
+network.sys_handle_s2c(PKT_CHAT_ADD_TEXT, "Iz", function (sockfd, cli, plr, sec_current, color, msg, pkt)
+	chat_add(chat_text, sec_current, msg, color)
+end)
+network.sys_handle_s2c(PKT_CHAT_ADD_KILLFEED, "Iz", function (sockfd, cli, plr, sec_current, color, msg, pkt)
+	chat_add(chat_killfeed, sec_current, msg, color)
+end)
+network.sys_handle_s2c(PKT_PLR_SPAWN, "Bfffbb", function (sockfd, cli, plr, sec_current, pid, x, y, z, xa, ya, pkt)
+	local plr = players[pid]
+	--print("client respawn!", players.current, pid, plr)
+	if plr then
+		plr.spawn_at(x,y,z,ya*math.pi/128,xa*math.pi/256)
+	end
+end)
+network.sys_handle_s2c(PKT_ITEM_POS, "HhhhB", function (sockfd, cli, plr, sec_current, iid, x,y,z, f, pkt)
+	if intent[iid] then
+		--print("intent",iid,x,y,z,f)
+		if not intent[iid].spawned then
+			intent[iid].spawn_at(x,y,z)
+			--print(intent[iid].spawned, intent[iid].alive, intent[iid].visible)
+		else
+			intent[iid].set_pos_recv(x,y,z)
+		end
+		intent[iid].set_flags_recv(f)
+		--print(intent[iid].spawned, intent[iid].alive, intent[iid].visible)
+	end
+end)
+network.sys_handle_s2c(PKT_PLR_DAMAGE, "BB", function (sockfd, cli, plr, sec_current, pid, amt, pkt)
+	local plr = players[pid]
+	--print("hit pkt", pid, amt)
+	if plr then
+		plr.set_health_damage(amt, nil, nil, nil)
+	end
+end)
+network.sys_handle_s2c(PKT_PLR_RESTOCK, "B", function (sockfd, cli, plr, sec_current, pid, pkt)
+	local plr = players[pid]
+	if plr then
+		plr.tent_restock()
+	end
+end)
+network.sys_handle_s2c(PKT_ITEM_CARRIER, "HB", function (sockfd, cli, plr, sec_current, iid, pid, pkt)
+	local plr = (pid ~= 0 and players[pid]) or nil
+	local item = intent[iid]
+	--print(">",iid,pid,plr,item)
+	if (pid == 0 or plr) and item then
+		local hplr = item.player
+		if hplr then
+			hplr.has_intel = nil
+		end
+		
+		item.player = plr
+		if plr then
+			plr.has_intel = item
+		end
+	end
+end)
+network.sys_handle_s2c(PKT_PLR_TOOL, "BB", function (sockfd, cli, plr, sec_current, pid, tool, pkt)
+	local plr = players[pid]
+	
+	if plr then
+		plr.tool_switch(tool)
+	end
+end)
+network.sys_handle_s2c(PKT_PLR_BLK_COLOR, "BBBB", function (sockfd, cli, plr, sec_current, pid, cr, cg, cb, pkt)
+	local plr = players[pid]
+
+	--print("recol",cr,cg,cb)
+
+	if plr then
+		plr.blk_color = {cr,cg,cb}
+		plr.block_recolor()
+	end
+end)
+network.sys_handle_s2c(PKT_PLR_BLK_COUNT, "BB", function (sockfd, cli, plr, sec_current, pid, blocks, pkt)
+	local plr = players[pid]
+	
+	--print("19",pid,blocks)
+	
+	if plr then
+		plr.blocks = blocks
+	end
+end)
+network.sys_handle_s2c(PKT_PLR_GUN_TRACER, "B", function (sockfd, cli, plr, sec_current, pid, pkt)
+	local plr = players[pid]
+	
+	if plr then
+		tracer_add(plr.x,plr.y,plr.z,
+			plr.angy,plr.angx,
+			sec_current)
+		client.wav_play_global(wav_rifle_shot, plr.x, plr.y, plr.z)
+		particles_add(new_particle{
+			x = plr.x,
+			y = plr.y,
+			z = plr.z,
+			vx = math.sin(plr.angy - math.pi / 4) / 2,
+			vy = 0.1,
+			vz = math.cos(plr.angy - math.pi / 4) / 2,
+			r = 250,
+			g = 215,
+			b = 0,
+			size = 8,
+			lifetime = 5
+		})
+	end
+end)
+network.sys_handle_s2c(PKT_NADE_THROW, "hhhhhhH", function (sockfd, cli, plr, sec_current, x,y,z,vx,vy,vz,fuse, pkt)
+	local n = new_nade({
+		x = x/32,
+		y = y/32,
+		z = z/32,
+		vx = vx/256,
+		vy = vy/256,
+		vz = vz/256,
+		fuse = fuse/100
+	})
+	client.wav_play_global(wav_whoosh, x, y, z)
+	nade_add(n)
+end)
+network.sys_handle_s2c(PKT_MAP_RCIRC, "", function (sockfd, cli, plr, sec_current, pkt)
+	local plr = players[players.current]
+	if plr then
+		plr.t_rcirc = sec_current + MODE_RCIRC_LINGER
+	end
+end)
+network.sys_handle_s2c(PKT_PLR_GUN_RELOAD, "B", function (sockfd, cli, plr, sec_current, pid, pkt)
+	local plr = players[pid]
+	
+	if plr then
+		client.wav_play_global(wav_rifle_reload, plr.x, plr.y, plr.z)
+	end
+end)
+network.sys_handle_s2c(PKT_TEAM_SCORE, "bh", function (sockfd, cli, plr, sec_current, tidx, score, pkt)
+	teams[tidx].score = score
+end)
+network.sys_handle_s2c(PKT_BLK_DAMAGE, "HHHH", function (sockfd, cli, plr, sec_current, x, y, z, amt, pkt)
+	bhealth_damage(x, y, z, amt)
+end)
+
+--[[
+network.sys_handle_s2c(PKT_, "", function (sockfd, cli, plr, sec_current)
+end)
+network.sys_handle_(PKT_, "", function (sockfd, cli, plr, sec_current)
+end)
+]]
+

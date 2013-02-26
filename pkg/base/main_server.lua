@@ -296,7 +296,7 @@ function server.hook_tick(sec_current, sec_delta)
 					plr.team, plr.weapon, plr.mode,
 					plr.score, plr.kills, plr.deaths,
 					plr.name, plr.squad))
-			net_broadcast(nil, common.net_pack("BIz", PKT_PLR_CHAT_ADD_TEXT, 0xFF800000,
+			net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFF800000,
 				"* Player "..plr.name.." has joined the "..teams[plr.team].name.." team"))
 		elseif cid == PKT_PLR_OFFER and not plr then
 			local tidx, wpn, name
@@ -366,7 +366,7 @@ function server.hook_tick(sec_current, sec_delta)
 				common.net_send(sockfd, common.net_pack("BB",
 					PKT_PLR_ID, cli.plrid))
 				
-				net_broadcast(nil, common.net_pack("BIz", PKT_PLR_CHAT_ADD_TEXT, 0xFF800000,
+				net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFF800000,
 					"* Player "..name.." has joined the "..teams[plr.team].name.." team"))
 			end
 		elseif cid == PKT_PLR_GUN_HIT and plr then
