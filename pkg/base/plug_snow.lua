@@ -15,6 +15,11 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
+PKT_SNOW_DROP = network.sys_alloc_packet()
+
+network.sys_handle_s2c(PKT_SNOW_DROP, "HHH", function (sockfd, cli, plr, sec_current, x, y, z, pkt)
+	map_block_set(x,y,z,2,255,255,255)
+end)
 
 function snow_drop_part(x,z,t,bcast)
 	local xlen,ylen,zlen
@@ -28,8 +33,8 @@ function snow_drop_part(x,z,t,bcast)
 		end
 		if bcast then
 			bhealth_clear(x,ty-1,z,false)
-			net_broadcast(nil, common.net_pack("BHHHBBBB",
-				PKT_BLK_ADD,x,ty-1,z,255,255,255,2))
+			net_broadcast(nil, common.net_pack("BHHH",
+				PKT_SNOW_DROP,x,ty-1,z))
 		end
 	end
 end
@@ -194,12 +199,16 @@ if client then
 	local snow_flakedist = 60
 	local snow_fallspeed = 13
 	local snow_changetime = 1
+	
+	local xlen,ylen,zlen
+	xlen,ylen,zlen = common.map_get_dims()
+	
 	do
 		local i
 		for i=1,snow_flakecount do
 			local x,y,z
 			x = math.random()*snow_flakedist*2
-			y = math.random()*64
+			y = math.random()*ylen
 			z = math.random()*snow_flakedist*2
 			snowflakes[#snowflakes+1] = {
 				x=x,y=y,z=z,
@@ -271,7 +280,7 @@ if client then
 		client.hook_tick = snow_oldtick
 		local ret = client.hook_tick(sec_current, sec_delta)
 		snow_oldtick = client.hook_tick
-		client.hook_tick = snow_tick
+		client.hook_tick = snow_oldtick and snow_tick
 		return ret
 	end
 	
