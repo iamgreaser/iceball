@@ -109,7 +109,12 @@ common.camera_point_sky = common.camera_point_sky or function(dx,dy,dz,zoom,sx,s
 end
 
 -- please excuse this hack.
-a1,a2,a3,a4,a5,a6,a7,a8,a9,a10 = ...
+argarr = {...}
+function argspew_gen(arr, idx)
+	local v = arr[idx]
+	if v == nil then return end
+	return v, argspew_gen(arr, idx+1)
+end
 
 dofile("pkg/base/lib_gui.lua")
 
@@ -260,7 +265,7 @@ function client.hook_tick()
 		wav_mus = skin_load("wav", FILE_MUSIC, DIR_PKG_WAV)
 		chn_mus = client.wav_play_local(wav_mus)
 	end
-	loadfile("pkg/"..common.base_dir.."/client_start.lua")(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+	loadfile("pkg/"..common.base_dir.."/client_start.lua")(argspew_gen(argarr, 1))
 	if wav_mus then
 		if chn_mus and client.wav_chn_exists(chn_mus) then
 			client.wav_kill(chn_mus)
