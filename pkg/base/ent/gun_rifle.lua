@@ -15,6 +15,10 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
+if client then
+	weapon_models[WPN_RIFLE] = skin_load("pmf", "rifle.pmf", DIR_PKG_PMF)
+end
+
 return function (plr)
 	local this = {} this.this = this
 	

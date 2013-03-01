@@ -304,12 +304,7 @@ mdl_Xcube = skin_load("pmf", "Xcube.pmf", DIR_PKG_PMF)
 mdl_Xcube_bone = client.model_bone_find(mdl_cube, "bnXcube")
 mdl_spade, mdl_spade_bone = skin_load("pmf", "spade.pmf", DIR_PKG_PMF), 0
 mdl_block, mdl_block_bone = skin_load("pmf", "block.pmf", DIR_PKG_PMF), 0
-weapon_models[WPN_RIFLE] = skin_load("pmf", "rifle.pmf", DIR_PKG_PMF)
-weapon_models[WPN_LEERIFLE] = skin_load("pmf", "leerifle.pmf", DIR_PKG_PMF)
-mdl_nade, mdl_nade_bone = skin_load("pmf", "nade.pmf", DIR_PKG_PMF), 0
 
-mdl_tent, mdl_tent_bone = skin_load("pmf", "tent.pmf", DIR_PKG_PMF), 0
-mdl_intel, mdl_intel_bone = skin_load("pmf", "intel.pmf", DIR_PKG_PMF), 0
 mdl_tracer, mdl_tracer_bone = skin_load("pmf", "tracer.pmf", DIR_PKG_PMF), 0
 
 -- quick hack to stitch a player model together
@@ -335,14 +330,8 @@ if false then
 	mbase, mbone = client.model_bone_new(mbase)
 	client.model_bone_set(mbase, mbone, "leg", mdata)
 
-	client.model_save_pmf(mbase, "clsave/player.pmf")
+	client.model_save_pmf(mbase, "clsave/vol/player.pmf")
 end
-
-mdl_player = skin_load("pmf", "player.pmf", DIR_PKG_PMF)
-mdl_player_head = client.model_bone_find(mdl_player, "head")
-mdl_player_body = client.model_bone_find(mdl_player, "body")
-mdl_player_arm = client.model_bone_find(mdl_player, "arm")
-mdl_player_leg = client.model_bone_find(mdl_player, "leg")
 
 local _
 _, mdl_block_data = client.model_bone_get(mdl_block, mdl_block_bone)

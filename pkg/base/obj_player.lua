@@ -19,6 +19,14 @@ PLM_NORMAL = 1
 PLM_SPECTATE = 2
 PLM_EDITOR = 3
 
+if client then
+	mdl_player = skin_load("pmf", "player.pmf", DIR_PKG_PMF)
+	mdl_player_head = client.model_bone_find(mdl_player, "head")
+	mdl_player_body = client.model_bone_find(mdl_player, "body")
+	mdl_player_arm = client.model_bone_find(mdl_player, "arm")
+	mdl_player_leg = client.model_bone_find(mdl_player, "leg")
+end
+
 function new_player(settings)
 	local this = {} this.this = this this.this.this = this this = this.this
 

@@ -15,6 +15,10 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
+if client then
+	mdl_nade, mdl_nade_bone = skin_load("pmf", "nade.pmf", DIR_PKG_PMF), 0
+end
+
 function nade_add(nade)
 	nades.tail = nades.tail + 1
 	nades[nades.tail] = nade
