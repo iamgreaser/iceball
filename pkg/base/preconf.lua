@@ -15,6 +15,9 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
+-- flags we need to add in early
+MODE_NUB_KICKONJOIN = false
+
 -- skins allowed 
 SKIN_ENABLE_SRC = {"pmf", "tga", "wav"}
 SKIN_ENABLE = {}

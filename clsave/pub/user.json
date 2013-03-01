@@ -16,7 +16,7 @@
 		
 		(replace '' with the double-quotes used to contain this comment)
 
-		You will need to also set "kick_on_join" to false,
+		You will need to also set ''kick_on_join'' to false,
 		or else you will not be able to join any servers!
 		
 		For more info on the syntax itself, see http://json.org/

@@ -31,17 +31,9 @@ local controls_config_filename = user_settings['controls'] or "clsave/pub/contro
 -- FIXME: we don't expose documentation for valid user settings anywhere
 
 user_config = common.json_load(user_config_filename)
-if user_config.kick_on_join then
+if MODE_NUB_KICKONJOIN and user_config.kick_on_join then
 	error([[
-		Once you've set your nickname in clsave/pub/user.json,
-		set your nickname in clsave/pub/user.json,
-		remember to set your nickname in clsave/pub/user.json,
-		look for any connect-*.bat files,
-		and set your nickname in clsave/pub/user.json.
-		
-		Oh, and then after you set your nickname in clsave/pub/user.json,
-		you can run said connect-*.bat file,
-		having set your nickname in clsave/pub/user.json.]])
+Edit your clsave/pub/user.json file, and set kick_on_join to false.]])
 end
 print("json done!")
 print("name:", user_config.name)
