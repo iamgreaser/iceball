@@ -62,19 +62,22 @@ function new_particle(settings)
 		step = settings.step or 0.1,
 		adamp = settings.adamp or 0.5,
 		bdamp = settings.bdamp or 1,
+		model = settings.model or nil,
 		noclip = settings.noclip
 	}
 	this.this = this
 	
-	local mdl_particle = common.model_new(1)
-	local mdl_particle_bone, mdl_particle_tab
-	mdl_particle, mdl_particle_bone = common.model_bone_new(mdl_particle, 1)
-	mdl_particle_tab = {{
-		x = 0, y = 0, z = 0,
-		radius = this.size,
-		r = this.r, g = this.g, b = this.b
-	}}
-	common.model_bone_set(mdl_particle, mdl_particle_bone, "particle", mdl_particle_tab)
+	local mdl_particle = this.model or common.model_new(1)
+	local mdl_particle_bone , mdl_particle_tab = 0, nil
+	if not this.model then
+		mdl_particle, mdl_particle_bone = common.model_bone_new(mdl_particle, 1), 0
+		mdl_particle_tab = {{
+			x = 0, y = 0, z = 0,
+			radius = this.size,
+			r = this.r, g = this.g, b = this.b
+		}}
+		common.model_bone_set(mdl_particle, mdl_particle_bone, "particle", mdl_particle_tab)
+	end
 	
 	local function prv_advance()
 		local d,x1,y1,z1,x2,y2,z2
@@ -136,7 +139,9 @@ function new_particle(settings)
 		
 		this.lifetime = this.lifetime - sec_delta
 		if this.lifetime <= 0 then
-			common.model_free(mdl_particle)
+			if not this.model then
+				common.model_free(mdl_particle)
+			end
 			this.dead = true
 		end
 	end
@@ -146,11 +151,16 @@ function new_particle(settings)
 			return
 		end
 
+		local msize = 1
+		if this.model then
+			msize = this.size
+		end
+
 		client.model_render_bone_global(
 			mdl_particle, mdl_particle_bone,
 			this.x, this.y, this.z,
 			0.0, 0.0, 0.0,
-			1.0
+			msize
 		)
 	end
 	
