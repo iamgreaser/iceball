@@ -312,7 +312,7 @@ void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t
 	glLoadMatrixf(mtx_mv);
 	glTranslatef(-cx,-cy,-cz);
 	
-	if(map == NULL)
+	if(map == NULL || map->vbo_arr == NULL)
 		return;
 	
 	if(map->vbo == 0)

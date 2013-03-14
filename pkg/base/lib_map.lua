@@ -391,7 +391,9 @@ function map_block_set(x,y,z,typ,r,g,b)
 	map_pillar_aerate(x,z-1)
 	map_pillar_aerate(x,z+1)
 	
-	bhealth_clear(x,y,z,false)
+	if bhealth_clear then
+		bhealth_clear(x,y,z,false)
+	end
 end
 
 function map_block_paint(x,y,z,typ,r,g,b)
