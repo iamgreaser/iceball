@@ -1855,7 +1855,8 @@ function new_player(settings)
 								tostring(plr.pid),
 								tostring(plr.score),
 								tostring(plr.kills),
-								tostring(plr.deaths)})
+								tostring(plr.deaths),
+								plr})
 						end
 						local widths = {}
 						for row=1, #strtable do
@@ -1863,20 +1864,32 @@ function new_player(settings)
 								widths[col] = math.max(#strtable[row][col], widths[col] or 0)
 							end
 						end
-						-- pad the strings to the target width.
+						-- pad the strings to the target width.asdf
 						for row_idx,row in pairs(strtable) do
-							local concat = {msg="", color=0xAAAAAAFF}
-							if row[1] == this.name then -- highlight the client's name
-								concat.color = 0xFFFFFFFF
-							end
-							for col_idx, val in pairs(row) do
-								local msg = val
-								while #msg < widths[col_idx] do
-									msg = msg .. " "
+							if row[7] ~= nil then
+								local concat = {msg="", color=0xAAAAAAFF}
+								if row[7] == this then -- highlight the client's name
+									concat.color = 0xFFFFFFFF
+								elseif this.squad == row[7].squad and this.team == row[7].team and this.squad ~= "" and this.squad ~= nil then
+									if row[7].alive then
+										concat.color = 0xFF00FFFF
+									else
+										concat.color = 0xDD00DDDD
+									end
+								elseif not row[7].alive then
+									concat.color = 0x88888888
 								end
-								concat.msg = concat.msg .. msg .. "  "
+								for col_idx, val in pairs(row) do
+									if col_idx ~= 7 then
+										local msg = val
+										while #msg < widths[col_idx] do
+											msg = msg .. " "
+										end
+										concat.msg = concat.msg .. msg .. "  "
+									end
+								end
+								table.insert(table_concat, concat)
 							end
-							table.insert(table_concat, concat)
 						end
 					end
 					
