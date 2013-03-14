@@ -1253,9 +1253,11 @@ function new_player(settings)
 			this.wpn.draw(this.x+mdl_x, this.y+this.jerkoffs+mdl_y, this.z+mdl_z,
 				math.pi/2, -this.angx, this.angy)
 		elseif this.tool == TOOL_NADE then
-			client.model_render_bone_global(mdl_nade, mdl_nade_bone,
-				this.x+mdl_x, this.y+this.jerkoffs+mdl_y, this.z+mdl_z,
-				0.0, -this.angx, this.angy, 1.0)
+			if this.grenades > 0 then
+				client.model_render_bone_global(mdl_nade, mdl_nade_bone,
+					this.x+mdl_x, this.y+this.jerkoffs+mdl_y, this.z+mdl_z,
+					0.0, -this.angx, this.angy, 1.0)
+			end
 		end
 
 		client.model_render_bone_global(this.mdl_player, mdl_player_arm,
