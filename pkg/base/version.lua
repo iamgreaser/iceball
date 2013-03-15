@@ -51,5 +51,7 @@ VERSION_BUGS = {
 {intro=nil, fix=28, msg="Sound loader only loads first half of 16-bit samples correctly"},
 {intro=19, fix=29, msg="[OpenGL] Crashes on map creation (as opposed to map loading)"},
 {intro=nil, fix=30, msg="clsave/config.json not supported"},
+{intro=30, fix=31, msg="broke dedicated server build... again"},
+
 }
 

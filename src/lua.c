@@ -304,6 +304,7 @@ int icelua_init(void)
 		float f;
 
 		// load config
+#ifndef DEDI
 		if(!json_load(Lc, "clsave/config.json"))
 		{
 			// set video stuff 
@@ -353,6 +354,7 @@ int icelua_init(void)
 			// drop table
 			lua_pop(Lc, 1);
 		}
+#endif
 	}
 	
 	// create tables
