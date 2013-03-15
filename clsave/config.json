@@ -24,7 +24,7 @@
 	"net" : {
 		"raw_whitelist" : [
 			["voxelauth.com", [80]]
-		],
+		]
 	}
 }
 
