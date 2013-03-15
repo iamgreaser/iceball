@@ -26,7 +26,9 @@ typedef struct wavfmt {
 
 #ifndef DEDI
 float wav_cube_size = 1.0f;
-int wav_mfreq = 0;
+int wav_mfreq = 44100;
+int wav_bufsize = 4096;
+float wav_gvol = 1.0f;
 void (*wav_fn_mixer)(void *buf, int len) = NULL;
 wavchn_t wchn[WAV_CHN_COUNT];
 int wav_wctr = 0;
@@ -93,6 +95,7 @@ void wav_fn_mixer_s16he_stereo(void *buf, int len)
 			att = 1.0f;
 		
 		att *= wc->vol;
+		att *= wav_gvol;
 		// TODO: work out how to apply vol_spread? or do we just scrap it?
 		
 		// determine speaker volumes
@@ -382,13 +385,12 @@ int wav_init(void)
 		wchn[i].src = NULL;
 		wchn[i].flags = 0;
 	}
-	wav_mfreq = 44100;
 	
 	SDL_AudioSpec aspec;
 	aspec.freq = wav_mfreq;
 	aspec.format = AUDIO_S16SYS;
 	aspec.channels = 2;
-	aspec.samples = 4096; // TODO: make this editable
+	aspec.samples = wav_bufsize;
 	aspec.userdata = NULL;
 	aspec.callback = wav_callback_sdl;
 	if(SDL_OpenAudio(&aspec, NULL))

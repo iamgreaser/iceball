@@ -1,6 +1,8 @@
-This section is obsolete (mostly, some stuff is still updated here).
-The documentation here is most likely out of date.
+Ignore what this said about being obsolete.
+We need to move to a better system. The weird python shit is not it.
+READ_THIS_FIRST.txt is a bit old. Check the forums at
+	http://iceballga.me
+for some more useful info.
 
-Read the HTML manual in MANUAL/.
-If you don't have the manual, try running genmanual.py in Python 2.x.
-If you don't have that or the msrc/ directory, you got ripped off. Sorry.
+modding_lua.txt is almost always up to date.
+

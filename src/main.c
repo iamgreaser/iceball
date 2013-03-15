@@ -26,6 +26,8 @@ SDL_Surface *screen = NULL;
 #endif
 int screen_width = 800;
 int screen_height = 600;
+int screen_cubeshift = 0;
+int screen_fullscreen = 0;
 
 int force_redraw = 1;
 
@@ -78,7 +80,8 @@ int video_init(void)
 	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-	screen = SDL_SetVideoMode(screen_width, screen_height, 32, SDL_OPENGL);
+	screen = SDL_SetVideoMode(screen_width, screen_height, 32, SDL_OPENGL
+		| (screen_fullscreen ? SDL_FULLSCREEN : 0));
 	GLenum err_glew = glewInit();
 	if(err_glew != GLEW_OK)
 	{
@@ -91,7 +94,8 @@ int video_init(void)
 		return 1;
 	}
 #else
-	screen = SDL_SetVideoMode(screen_width, screen_height, 32, 0);
+	screen = SDL_SetVideoMode(screen_width, screen_height, 32, 0
+		| (screen_fullscreen ? SDL_FULLSCREEN : 0));
 #endif
 	
 	if(screen == NULL)

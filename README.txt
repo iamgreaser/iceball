@@ -1,8 +1,9 @@
 GUYS GUYS GUYS
 FIRST THING YOU NEED TO READ:
 
-Read the manual in MANUAL/, otherwise you will not be able to play this!
-If the MANUAL/ folder is missing, run genmanual.py with Python 2.7.
+docs/READ_THIS_FIRST.txt might work.
+If not, there's a tutorial on the forums:
+	http://iceballga.me
 
  ------------------------------------------------------------------------------
 
@@ -21,8 +22,8 @@ All assets are released under Creative Commons 3.0 BY-SA:
 
 These are, unless otherwise marked:
   Copyright (C) 2012-2013, Iceball contributors.
-See MANUAL/main/credits.html (source: msrc/main/credits.py) for the list,
-and my apologies if I've forgotten to update it.
+The credits list is almost always out of date,
+so check the git log for a list of contributors.
 
 Ice Lua Components contains some content from libSDL,
   which is licensed under the LGPL version 2.1.
@@ -35,6 +36,7 @@ REQUIREMENTS:
   - specifically, GCC
   - MinGW is a port of GCC for Windows: http://mingw.org/
   - if you use something else we might consider compatibility with it
+  - learn_more has managed to get this to build with MSVC++ so uh, that could work too.
 - SDL 1.2 (not 1.3) - http://libsdl.org/
 - Lua 5.1 (not 5.2) - http://lua.org/
 - zlib - http://zlib.net/
@@ -43,7 +45,6 @@ REQUIREMENTS:
 
 STUFF TO DO BEFORE 0.1 CAN BE RELEASED:
 - DOCS!!! (ones which aren't crap)
-- clsave/config.json
 - make net_pack more solid
 - JSON writer
 - make kicking not suck
@@ -79,3 +80,4 @@ and to get updates from the main repo:
 - git remote add upstream git://github.com/iamgreaser/buldthensnip.git
 - git pull --rebase upstream master
 - git push origin master
+

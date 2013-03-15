@@ -8,27 +8,23 @@
 	
 	"video" : {
 		"width": 800,
-		"height": 600
+		"height": 600,
+		"fullscreen": false,
+
+		"cubeshift": 0
 	},
 	
 	"audio" : {
 		"freq": 44100,
-		"channels": 2,
-		"bits": 16,
 		"bufsize": 2048,
 		
-		"volume": 1.0,
-		
-		"setup_default": "headphones",
-		"setups" : {
-			"headphones": {
-				"head_width": 0.19,
-				"head_screen_distance": 0.80,
-				"channels": [
-					{"name": "left",  "distance": -0.095, "angle": -90, "tilt": 0},
-					{"name": "right", "distance":  0.095, "angle":  90, "tilt": 0}
-				]
-			}
-		}
+		"volume": 1.0
+	}
+
+	"net" : {
+		"raw_whitelist" : [
+			["voxelauth.com", [80]]
+		],
 	}
 }
+

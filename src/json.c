@@ -526,3 +526,4 @@ int json_load(lua_State *L, const char *fname)
 	free(buf);
 	return ret;
 }
+

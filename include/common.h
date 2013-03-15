@@ -19,7 +19,7 @@
 #define VERSION_X 0
 #define VERSION_Y 0
 #define VERSION_A 0
-#define VERSION_Z 29
+#define VERSION_Z 30
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!
@@ -414,6 +414,9 @@ extern camera_t tcam;
 extern map_t *clmap, *svmap;
 #ifndef DEDI
 extern SDL_Surface *screen;
+extern int screen_width, screen_height;
+extern int screen_cubeshift;
+extern int screen_fullscreen;
 #endif
 extern int force_redraw;
 
@@ -508,6 +511,9 @@ wav_t *wav_parse(char *buf, int len);
 wav_t *wav_load(const char *fname);
 void wav_kill(wav_t *wav);
 #ifndef DEDI
+extern int wav_mfreq;
+extern int wav_bufsize;
+extern float wav_gvol;
 extern float wav_cube_size;
 extern wavchn_t wchn[WAV_CHN_COUNT];
 wavchn_t *wav_chn_alloc(int flags, wav_t *wav, float x, float y, float z, float vol, float freq_mod, float vol_spread);

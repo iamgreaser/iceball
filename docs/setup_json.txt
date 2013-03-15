@@ -14,6 +14,7 @@ clsave/config.json:
 	"video" section:
 		"width" and "height" define the width and height of the
 		screen/window.
+		"fullscreen" can be either true or false (not in "quotes"!)
 		
 		You must either use a 24bpp or 32bpp screen mode.
 		No 15/16bpp, sorry! And DEFINITELY NO 8BPP.
@@ -22,8 +23,8 @@ clsave/config.json:
 		Increase it one at a time if it's slow.
 		Decrease it one at a time if it looks awful.
 		"1" is recommended, although it looks pixelated when you zoom in.
-		
-		Currently, fullscreen is not supported.
+
+		Note, "cubeshift" does not affect the OpenGL renderer.
 	
 	"audio" section:
 		"freq" is the master audio sampling frequency in Hz, as usual.
@@ -33,10 +34,6 @@ clsave/config.json:
 		
 		"volume" is a volume multiplier.
 		Best to leave this at 1.0.
-		
-		"setups" is explained later on in this document.
-		If you want a custom setup, get a tape measure ready.
-		(You may also want a protractor.)
 
 clsave/pub/user.json:
 	"name" should be set to something other than null;
@@ -84,15 +81,6 @@ These fields are defined:
 Skins:
 
 This is not defined yet.
-
--------------------------------------------------------------------------------
-
-Audio setup:
-
-All lengths are in metres!
-All angles are in degrees!
-
-
 
 -------------------------------------------------------------------------------
 

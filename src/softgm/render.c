@@ -1875,6 +1875,10 @@ int render_init(int width, int height)
 	// reduce quality a little bit
 	// 800x600 -> 1024^2 -> 512^2 ends up as 1MB x 6 textures = 6MB
 	
+	if(screen_cubeshift > 0)
+		size <<= screen_cubeshift;
+	else
+		size >>= -screen_cubeshift;
 	size >>= 1;
 	
 	// allocate cubemaps

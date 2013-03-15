@@ -17,7 +17,7 @@ LIBS_Lua = -llua
 LIBS_zlib = -lz
 LIBS = -lm $(LIBS_Lua) $(LIBS_SDL) $(LIBS_zlib) -lGL -lGLEW
 
-BINNAME = iceball
+BINNAME = iceball-gl
 RENDERER = gl
 
 OBJDIR = build/unix_gl

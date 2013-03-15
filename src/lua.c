@@ -296,6 +296,65 @@ int icelua_init(void)
 	lstate_client = (boot_mode & 1 ? luaL_newstate() : NULL);
 	lstate_server = (boot_mode & 2 ? luaL_newstate() : NULL);
 	
+	if(lstate_client != NULL)
+	{
+		// create temp state for loading config
+		lua_State *Lc = luaL_newstate();
+		int v;
+		float f;
+
+		// load config
+		if(!json_load(Lc, "clsave/config.json"))
+		{
+			// set video stuff 
+			lua_getfield(Lc, -1, "video");
+
+			lua_getfield(Lc, -1, "width");
+			v = lua_tointeger(Lc, -1);
+			if(v >= 0) screen_width = v;
+			lua_pop(Lc, 1);
+
+			lua_getfield(Lc, -1, "height");
+			v = lua_tointeger(Lc, -1);
+			if(v >= 0) screen_height = v;
+			lua_pop(Lc, 1);
+			
+			lua_getfield(Lc, -1, "cubeshift");
+			v = lua_tointeger(Lc, -1);
+			if(v != 0) screen_cubeshift = -v;
+			lua_pop(Lc, 1);
+			
+			lua_getfield(Lc, -1, "fullscreen");
+			v = lua_toboolean(Lc, -1);
+			if(!lua_isnil(Lc, -1)) screen_fullscreen = v;
+			lua_pop(Lc, 1);
+			
+			// drop table
+			lua_pop(Lc, 1);
+
+			// set video stuff 
+			lua_getfield(Lc, -1, "audio");
+
+			lua_getfield(Lc, -1, "freq");
+			v = lua_tointeger(Lc, -1);
+			if(v >= 0) wav_mfreq = v;
+			lua_pop(Lc, 1);
+			
+			lua_getfield(Lc, -1, "bufsize");
+			v = lua_tointeger(Lc, -1);
+			if(v >= 0) wav_bufsize = v;
+			lua_pop(Lc, 1);
+			
+			lua_getfield(Lc, -1, "volume");
+			f = lua_tonumber(Lc, -1);
+			if(!lua_isnil(Lc, -1)) wav_gvol = f;
+			lua_pop(Lc, 1);
+			
+			// drop table
+			lua_pop(Lc, 1);
+		}
+	}
+	
 	// create tables
 	if(lstate_client != NULL)
 	{
