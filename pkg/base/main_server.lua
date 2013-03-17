@@ -93,7 +93,7 @@ function server.hook_connect(sockfd, addrinfo)
 		addrinfo.addr and addrinfo.addr.cport)
 	
 	local ss = (sockfd == true and "(local)") or sockfd
-	--[[net_broadcast(nil, common.net_pack("BIz", PKT_PLR_CHAT_ADD_TEXT, 0xFF800000,
+	--[[net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFF800000,
 		"Connected: player on sockfd "..ss))]]
 	print("Connected: player on sockfd "..ss)
 end
@@ -114,13 +114,13 @@ function server.hook_disconnect(sockfd, server_force, reason)
 	print("disconnect:", sockfd, server_force, reason)
 	
 	local ss = (sockfd == true and "(local)") or sockfd
-	--[[net_broadcast(nil, common.net_pack("BIz", PKT_PLR_CHAT_ADD_TEXT, 0xFF800000,
+	--[[net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFF800000,
 		"Disconnected: player on sockfd "..ss))]]
 	print("Disconnected: player on sockfd "..ss)
 	
 	if plr then
 		plr.intel_drop()
-		net_broadcast(nil, common.net_pack("BIz", PKT_PLR_CHAT_ADD_TEXT, 0xFF800000,
+		net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFF800000,
 			"* Player "..plr.name.." disconnected"))
 		net_broadcast(sockfd, common.net_pack("BB",
 			PKT_PLR_RM, plrid))
