@@ -429,6 +429,19 @@ network.sys_handle_c2s(PKT_CHAT_SEND, "z", nwdec_plrset(function (sockfd, cli, p
 		command_handle(plr, cli.plrid, sockfd, params, msg)
 	else
 		s = plr.name.." ("..teams[plr.team].name.."): "..msg
+		-- TODO: use a user-configurable table for these
+		-- if you've read the "Pubbie Tears" section of the goonstation wiki,
+		-- you'll understand why SOME of these are in there.
+		if msg == "LOL" or msg:lower():find("nooo") or msg:lower():find("yolo")
+			or ((msg:lower():find("suck") or msg:lower():find("suk")) and
+				(msg:lower():find("dick") or msg:lower():find("pussy")
+				or msg:lower():find("cock") or msg:lower():find("dik")))
+			or msg:lower():find("your not") or msg:lower():find("your real") 
+			or msg:lower():find("your da") or msg:lower():find("your a ") 
+			or msg:lower():find("your the") or msg:lower():find("your an ")
+			or msg:lower():find("ur mom") or msg:lower():find("ur mum") then
+			plr.drop_piano()
+		end
 	end
 	
 	if s then
