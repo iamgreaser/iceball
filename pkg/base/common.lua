@@ -126,6 +126,7 @@ if client then
 	wav_jump_up = skin_load("wav", "jump-up.wav", DIR_PKG_WAV)
 	wav_jump_down = skin_load("wav", "jump-down.wav", DIR_PKG_WAV)
 	wav_pin = skin_load("wav", "pin.wav", DIR_PKG_WAV)
+	wav_kapiano = skin_load("wav", "kapiano.wav", DIR_PKG_WAV)
 	wav_steps = {}
 	local i
 	for i=1,8 do

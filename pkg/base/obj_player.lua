@@ -52,6 +52,10 @@ function new_player(settings)
 	this.score = 0
 	this.kills = 0
 	this.deaths = 0
+
+	this.dead_x = nil
+	this.dead_y = nil
+	this.dead_z = nil
 	
 	this.permissions = {}
 	
@@ -171,6 +175,8 @@ function new_player(settings)
 		this.t_newspade1 = nil
 		this.t_newspade2 = nil
 		this.t_step = nil
+		this.t_piano = nil
+		this.t_piano2 = nil
 		
 		this.dangx, this.dangy = 0, 0
 		this.angx, this.angy = 0, 0
@@ -418,6 +424,9 @@ function new_player(settings)
 			--chat_add(chat_killfeed, nil, kmsg, kcol)
 			this.health = 0
 			this.alive = false
+			this.dead_x = this.x
+			this.dead_y = this.y
+			this.dead_z = this.z
 		end
 		
 		if server then
@@ -933,6 +942,35 @@ function new_player(settings)
 			mvx = mvx - 1.0
 		end
 
+		if this.t_piano then
+			if this.t_piano == true then
+				this.t_piano = sec_current + 0.5
+			end
+
+			this.t_piano_delta = this.t_piano - sec_current
+			if this.t_piano and this.t_piano < sec_current then
+				this.t_piano = nil
+				if server then
+					local l = teams[this.team].color_chat
+					local r,g,b
+					r,g,b = l[1], l[2], l[3]
+					local c = argb_split_to_merged(r,g,b)
+					this.set_health_damage(0, c, this.name.." displeased the gods", this)
+				end
+				if client then
+					client.wav_play_global(wav_kapiano, this.x, this.y, this.z, 3.0)
+					this.t_piano2 = sec_current + 5
+				end
+			end
+		end
+
+		if this.t_piano2 then
+			this.t_piano2_delta = this.t_piano2 - sec_current
+			if this.t_piano2 < sec_current then
+				this.t_piano2 = nil
+			end
+		end
+
 		if this.mode == PLM_NORMAL then
 			if this.ev_crouch then
 				if this.grounded and not this.crouching then
@@ -1161,6 +1199,13 @@ function new_player(settings)
 		if this.wpn then this.wpn.tick(sec_current, sec_delta) end
 	end
 
+	function this.drop_piano()
+		this.t_piano = true
+		if server then
+			net_broadcast(nil, common.net_pack("BB", PKT_PIANO, this.pid))
+		end
+	end
+
 	function this.camera_firstperson(sec_current, sec_delta)
 		-- set camera position
 		client.camera_move_to(this.x, this.y + this.jerkoffs, this.z)
@@ -1189,9 +1234,29 @@ function new_player(settings)
 		--client.camera_move_local(0, 0, 0.4)
 	end
 
-	function this.render()
+	function this.render(sec_current, sec_delta)
 		if this.mode == PLM_SPECTATE then return end
 
+		if this.t_piano and this.t_piano ~= true then
+			local dt = this.t_piano_delta
+			if dt < 0 then dt = 0 end
+			if dt > 0.5 then dt = 0.5 end
+			local size = (0.5-dt)/(0.5-0.4)
+			if size > 1.0 then size = 1.0 end
+			local dist = (dt/0.5) * -20
+			client.model_render_bone_global(mdl_piano, mdl_piano_bone, this.x, this.y + dist + 2.5, this.z, 0, 0, 0, size*4)
+		end
+		if this.t_piano2 and this.t_piano2 ~= true then
+			local dt = this.t_piano2_delta
+			if dt < 0 then dt = 0 end
+			if dt > 0.5 then dt = 0.5 end
+			dt = dt/0.5
+			local py = this.dead_y or this.y
+			local h1,h2
+			h1,h2 = trace_gap(this.dead_x or this.x, this.dead_y or this.y, this.dead_z or this.z)
+			if h2 then py = h2 end
+			client.model_render_bone_global(mdl_piano, mdl_piano_bone, this.dead_x or this.x, py, this.dead_z or this.z, 0, 0, 0, dt*4)
+		end
 		local ays,ayc,axs,axc
 		ays = math.sin(this.angy)
 		ayc = math.cos(this.angy)

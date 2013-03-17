@@ -304,6 +304,7 @@ mdl_Xcube = skin_load("pmf", "Xcube.pmf", DIR_PKG_PMF)
 mdl_Xcube_bone = client.model_bone_find(mdl_cube, "bnXcube")
 mdl_spade, mdl_spade_bone = skin_load("pmf", "spade.pmf", DIR_PKG_PMF), 0
 mdl_block, mdl_block_bone = skin_load("pmf", "block.pmf", DIR_PKG_PMF), 0
+mdl_piano, mdl_piano_bone = skin_load("pmf", "piano.pmf", DIR_PKG_PMF), 0
 
 mdl_tracer, mdl_tracer_bone = skin_load("pmf", "tracer.pmf", DIR_PKG_PMF), 0
 

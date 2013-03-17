@@ -98,6 +98,7 @@ do
 		"PLR_GUN_RELOAD", "CHAT_SEND_SQUAD",
 		"TEAM_SCORE",
 		"BLK_DAMAGE",
+		"PIANO",
 	}
 	local i,p
 	for i,p in pairs(pktlist) do
@@ -322,6 +323,12 @@ network.sys_handle_s2c(PKT_TEAM_SCORE, "bh", function (sockfd, cli, plr, sec_cur
 end)
 network.sys_handle_s2c(PKT_BLK_DAMAGE, "HHHH", function (sockfd, cli, plr, sec_current, x, y, z, amt, pkt)
 	bhealth_damage(x, y, z, amt)
+end)
+network.sys_handle_s2c(PKT_PIANO, "B", function (sockfd, cli, plr, sec_current, pid, pkt)
+	local plr = players[pid]
+	if plr then
+		plr.drop_piano()
+	end
 end)
 
 -- C2S packets

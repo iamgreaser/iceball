@@ -144,6 +144,32 @@ command_register({
 })
 
 command_register({
+	command = "piano",
+	permission = "piano",
+	usage = "/piano <player>",
+	func = function(plr, plrid, sockfd, prms, msg)
+		if table.getn(prms) == 1 then
+			prms[1] = tostring(prms[1])
+			if prms[1]:sub(0, 1) == "#" then
+				target = players[tonumber(prms[1]:sub(2))]
+			end
+			for i=1,players.max do
+				if players[i] ~= nil and players[i].name == prms[1] then
+					target = players[i]
+					break
+				end
+			end
+			if target then
+				target.drop_piano()
+			else
+				common.net_send(sockfd, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_error, "Error: Player not found"))
+			end
+		else
+			commands["help"].func(plr, plrid, sockfd, {"piano"})
+		end
+	end
+})
+command_register({
 	command = "teleport",
 	permission = "teleport",
 	usage = "/teleport <player>|<x y z>",
