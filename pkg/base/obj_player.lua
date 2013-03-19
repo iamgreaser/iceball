@@ -270,7 +270,7 @@ function new_player(settings)
 		end
 		this.t_switch = true
 		if client and this == players[players.current] and this.tool ~= tool then
-			common.net_send(nil, common.net_pack("BBB"
+			net_send(nil, common.net_pack("BBB"
 				, PKT_PLR_TOOL, 0x00, tool))
 		end
 		this.tool = tool
@@ -602,7 +602,7 @@ function new_player(settings)
 			fuse = math.max(0, this.t_nadeboom - sec_current)
 		})
 		nade_add(n)
-		common.net_send(nil, common.net_pack("BhhhhhhH",
+		net_send(nil, common.net_pack("BhhhhhhH",
 			PKT_NADE_THROW,
 			math.floor(n.x*32+0.5),
 			math.floor(n.y*32+0.5),
@@ -701,7 +701,7 @@ function new_player(settings)
 		if this.t_newspade2 and sec_current >= this.t_newspade2 and this.blx2 then
 			if this.blx2 >= 0 and this.blx2 < xlen and this.blz2 >= 0 and this.blz2 < zlen then
 			if this.bly2-1 <= ylen-3 then
-				common.net_send(nil, common.net_pack("BHHH",
+				net_send(nil, common.net_pack("BHHH",
 					PKT_BLK_RM3,
 					this.blx2, this.bly2, this.blz2))
 			end
@@ -826,7 +826,7 @@ function new_player(settings)
 				if (not this.t_newblock) and this.blocks > 0 then
 				if this.blx1 >= 0 and this.blx1 < xlen and this.blz1 >= 0 and this.blz1 < zlen then
 				if this.bly1 <= ylen-3 and map_is_buildable(this.blx1, this.bly1, this.blz1) then
-					common.net_send(nil, common.net_pack("BHHHBBBB",
+					net_send(nil, common.net_pack("BHHHBBBB",
 						PKT_BLK_ADD,
 						this.blx1, this.bly1, this.blz1,
 						this.blk_color[3],
@@ -879,13 +879,13 @@ function new_player(settings)
 						players[hurt_idx].spade_damage(
 							hurt_part, 1000, this)
 					else
-						common.net_send(nil, common.net_pack("BBB"
+						net_send(nil, common.net_pack("BBB"
 							, PKT_PLR_GUN_HIT, hurt_idx, hurt_part_idx))
 					end
 				elseif this.blx2 then
 				if this.blx2 >= 0 and this.blx2 < xlen and this.blz2 >= 0 and this.blz2 < zlen then
 				if this.bly2 <= ylen-3 then
-					common.net_send(nil, common.net_pack("BHHHH", PKT_BLK_DAMAGE, this.blx2, this.bly2, this.blz2, MODE_BLOCK_DAMAGE_SPADE))
+					net_send(nil, common.net_pack("BHHHH", PKT_BLK_DAMAGE, this.blx2, this.bly2, this.blz2, MODE_BLOCK_DAMAGE_SPADE))
 					this.t_newspade1 = sec_current + MODE_DELAY_SPADE_HIT
 				end
 				end
@@ -910,7 +910,7 @@ function new_player(settings)
 				ct,cr,cg,cb = map_block_pick(this.blx3, this.bly3, this.blz3)
 				if ct ~= nil then
 					this.blk_color = {cr,cg,cb}
-					common.net_send(nil, common.net_pack("BBBBB",
+					net_send(nil, common.net_pack("BBBBB",
 						PKT_PLR_BLK_COLOR, 0x00,
 						this.blk_color[1],this.blk_color[2],this.blk_color[3]))
 				end
@@ -1682,7 +1682,7 @@ function new_player(settings)
 					local plr
 					plr = players[players.current]
 					if plr ~= nil and team ~= nil and team ~= plr.team then
-						common.net_send(nil, common.net_pack("Bbbz", PKT_PLR_OFFER, team, WPN_RIFLE, plr.name or ""))
+						net_send(nil, common.net_pack("Bbbz", PKT_PLR_OFFER, team, WPN_RIFLE, plr.name or ""))
 					end					
 					
 				elseif options.key == BTSK_TEAM and not this.menus_visible() then
@@ -1825,11 +1825,11 @@ function new_player(settings)
 					end
 				else
 					if this.typing_type.text == "Chat: " then
-						common.net_send(nil, common.net_pack("Bz", PKT_CHAT_SEND, this.typing_text.text))
+						net_send(nil, common.net_pack("Bz", PKT_CHAT_SEND, this.typing_text.text))
 					elseif this.typing_type.text == "Team: " then
-						common.net_send(nil, common.net_pack("Bz", PKT_CHAT_SEND_TEAM, this.typing_text.text))
+						net_send(nil, common.net_pack("Bz", PKT_CHAT_SEND_TEAM, this.typing_text.text))
 					elseif this.typing_type.text == "Squad: " then
-						common.net_send(nil, common.net_pack("Bz", PKT_CHAT_SEND_SQUAD, this.typing_text.text))
+						net_send(nil, common.net_pack("Bz", PKT_CHAT_SEND_SQUAD, this.typing_text.text))
 					end
 				end
 			end
@@ -2152,7 +2152,7 @@ function new_player(settings)
 						this.blk_color_x = 7
 					end
 					this.blk_color = cpalette[this.blk_color_x+this.blk_color_y*8+1]
-					common.net_send(nil, common.net_pack("BBBBB",
+					net_send(nil, common.net_pack("BBBBB",
 						PKT_PLR_BLK_COLOR, 0x00,
 						this.blk_color[1],this.blk_color[2],this.blk_color[3]))
 				elseif this.alive and key == BTSK_COLORRIGHT then
@@ -2161,7 +2161,7 @@ function new_player(settings)
 						this.blk_color_x = 0
 					end
 					this.blk_color = cpalette[this.blk_color_x+this.blk_color_y*8+1]
-					common.net_send(nil, common.net_pack("BBBBB",
+					net_send(nil, common.net_pack("BBBBB",
 						PKT_PLR_BLK_COLOR, 0x00,
 						this.blk_color[1],this.blk_color[2],this.blk_color[3]))
 				elseif this.alive and key == BTSK_COLORUP then
@@ -2170,7 +2170,7 @@ function new_player(settings)
 						this.blk_color_y = 7
 					end
 					this.blk_color = cpalette[this.blk_color_x+this.blk_color_y*8+1]
-					common.net_send(nil, common.net_pack("BBBBB",
+					net_send(nil, common.net_pack("BBBBB",
 						PKT_PLR_BLK_COLOR, 0x00,
 						this.blk_color[1],this.blk_color[2],this.blk_color[3]))
 				elseif this.alive and key == BTSK_COLORDOWN then
@@ -2179,7 +2179,7 @@ function new_player(settings)
 						this.blk_color_y = 0
 					end
 					this.blk_color = cpalette[this.blk_color_x+this.blk_color_y*8+1]
-					common.net_send(nil, common.net_pack("BBBBB",
+					net_send(nil, common.net_pack("BBBBB",
 						PKT_PLR_BLK_COLOR, 0x00,
 						this.blk_color[1],this.blk_color[2],this.blk_color[3]))
 				end

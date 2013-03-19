@@ -52,7 +52,6 @@ for i=1,#LIB_LIST do
 end
 i = nil
 
-
 -- mode stuff
 MODE_DEBUG_SHOWBOXES = false
 MODE_CHEAT_FLY = false
@@ -293,7 +292,7 @@ function bhealth_damage(x,y,z,amt,plr)
 					net_broadcast(nil, common.net_pack("BBB",
 						PKT_PLR_BLK_COUNT, plr.pid, plr.blocks))
 				else
-					common.net_send(plr.sockfd, common.net_pack("BBB",
+					net_send(plr.sockfd, common.net_pack("BBB",
 						PKT_PLR_BLK_COUNT, plr.pid, plr.blocks))
 				end
 			end

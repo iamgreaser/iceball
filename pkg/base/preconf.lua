@@ -28,6 +28,10 @@ do
 	end
 end
 
+-- network throttling
+NET_FLUSH_C2S = 0.05
+NET_FLUSH_S2C = 0.1
+
 -- base dir stuff
 DIR_PKG_ROOT = DIR_PKG_ROOT or "pkg/base"
 DIR_PKG_LIB = DIR_PKG_LIB or DIR_PKG_ROOT

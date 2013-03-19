@@ -131,6 +131,7 @@ function server.hook_disconnect(sockfd, server_force, reason)
 	end
 end
 
+lflush = nil
 function server.hook_tick(sec_current, sec_delta)
 	--print("tick",sec_current,sec_delta)
 	--[[
@@ -138,6 +139,16 @@ function server.hook_tick(sec_current, sec_delta)
 	xlen,ylen,zlen = common.map_get_dims()
 	]]
 	
+	if (not lflush) or sec_current < lflush - 0.8 then
+		lflush = sec_current
+	end
+	if sec_current >= lflush then
+		net_send_flush()
+		lflush = lflush + NET_FLUSH_S2C
+		if sec_current <= lflush then
+			lflush = sec_current
+		end
+	end
 	local pkt, sockfd
 	while true do
 		pkt, sockfd = common.net_recv()

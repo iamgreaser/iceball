@@ -19,13 +19,33 @@ network = {}
 network.sys_tab_handlers = {}
 network.sys_tab_cli = {}
 
+network.sys_tab_throttle = {}
+
+function net_send(sockfd, msg)
+	network.sys_tab_throttle[#(network.sys_tab_throttle)+1] = {sockfd, msg}	
+end
+
+function net_send_flush()
+	local i
+	local failures = nil
+	local n=#(network.sys_tab_throttle)
+	for i=1,n do
+		local v = network.sys_tab_throttle[i]
+		network.sys_tab_throttle[i] = nil
+		if not common.net_send(v[1], v[2]) then
+			failures = failures or {}
+			failures[v[1]] = true
+		end
+	end
+end
+
 if server then
 	function net_broadcast(sockfd, msg)
 		local i
 		for i=1,#(client_list.fdlist) do
 			if client_list.fdlist[i] ~= sockfd then
 				--print("to", client_list.fdlist[i], type(msg))
-				common.net_send(client_list.fdlist[i], msg)
+				net_send(client_list.fdlist[i], msg)
 			end
 		end
 	end
@@ -37,7 +57,7 @@ if server then
 			local plr = cli and players[cli.plrid]
 			if plr and plr.team == tidx then
 				--print("to", client_list.fdlist[i], type(msg))
-				common.net_send(client_list.fdlist[i], msg)
+				net_send(client_list.fdlist[i], msg)
 			end
 		end
 	end
@@ -49,7 +69,7 @@ if server then
 			local plr = cli and players[cli.plrid]
 			if plr and plr.team == tidx and plr.squad == squad then
 				--print("to", client_list.fdlist[i], type(msg))
-				common.net_send(client_list.fdlist[i], msg)
+				net_send(client_list.fdlist[i], msg)
 			end
 		end
 	end
@@ -370,7 +390,7 @@ network.sys_handle_c2s(PKT_BLK_ADD, "HHHBBBB", nwdec_plrset(function (sockfd, cl
 				PKT_PLR_BLK_COUNT, cli.plrid, 0))
 		else
 			-- to prevent desyncing issues.
-			common.net_send(sockfd, common.net_pack("BBB",
+			net_send(sockfd, common.net_pack("BBB",
 				PKT_PLR_BLK_COUNT, cli.plrid, plr.blocks))
 		end
 	end
@@ -397,7 +417,7 @@ network.sys_handle_c2s(PKT_BLK_RM1, "HHH", nwdec_plrset(function (sockfd, cli, p
 					net_broadcast(nil, common.net_pack("BBB",
 						PKT_PLR_BLK_COUNT, cli.plrid, plr.blocks))
 				else
-					common.net_send(sockfd, common.net_pack("BBB",
+					net_send(sockfd, common.net_pack("BBB",
 						PKT_PLR_BLK_COUNT, cli.plrid, plr.blocks))
 				end
 			end
@@ -502,18 +522,18 @@ end, function (sockfd, cli, plr, sec_current, tidx, wpn, name, pkt)
 		for i=1,players.max do
 			local plr = players[i]
 			if plr then
-				common.net_send(sockfd, common.net_pack("BBBBBhhhzz",
+				net_send(sockfd, common.net_pack("BBBBBhhhzz",
 					PKT_PLR_ADD, i,
 					plr.team, plr.weapon, plr.mode,
 					plr.score, plr.kills, plr.deaths,
 					plr.name, plr.squad))
-				common.net_send(sockfd, common.net_pack("BBfffBB",
+				net_send(sockfd, common.net_pack("BBfffBB",
 					PKT_PLR_SPAWN, i,
 					plr.x, plr.y, plr.z,
 					plr.angy*128/math.pi, plr.angx*256/math.pi))
-				common.net_send(sockfd, common.net_pack("BBB",
+				net_send(sockfd, common.net_pack("BBB",
 					PKT_PLR_TOOL, i, plr.tool))
-				common.net_send(sockfd, common.net_pack("BBBBB",
+				net_send(sockfd, common.net_pack("BBBBB",
 					PKT_PLR_BLK_COLOR, i,
 					plr.blk_color[1],plr.blk_color[2],plr.blk_color[3]))
 			end
@@ -524,18 +544,18 @@ end, function (sockfd, cli, plr, sec_current, tidx, wpn, name, pkt)
 			local f,x,y,z
 			x,y,z = intent[i].get_pos()
 			f = intent[i].get_flags()
-			common.net_send(sockfd, common.net_pack("BHhhhB",
+			net_send(sockfd, common.net_pack("BHhhhB",
 				PKT_ITEM_POS, i, x, y, z, f))
 			local plr = intent[i].player
 			if plr then
-				common.net_send(sockfd, common.net_pack("BHB",
+				net_send(sockfd, common.net_pack("BHB",
 					PKT_ITEM_CARRIER, i, plr.pid))
 			end
 		end
 
 		-- relay score to this player
 		for i=0,teams.max do
-			common.net_send(sockfd, common.net_pack("Bbh", PKT_TEAM_SCORE, i, teams[i].score))
+			net_send(sockfd, common.net_pack("Bbh", PKT_TEAM_SCORE, i, teams[i].score))
 		end
 		
 		-- relay this player to everyone
@@ -550,7 +570,7 @@ end, function (sockfd, cli, plr, sec_current, tidx, wpn, name, pkt)
 			plr.angy*128/math.pi, plr.angx*256/math.pi))
 		
 		-- set player ID
-		common.net_send(sockfd, common.net_pack("BB",
+		net_send(sockfd, common.net_pack("BB",
 			PKT_PLR_ID, cli.plrid))
 		
 		net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFF800000,

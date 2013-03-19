@@ -366,8 +366,18 @@ client.model_bone_set(mdl_bbox, mdl_bbox_bone2, "bbox_crouch", mdl_bbox_bone_dat
 
 
 -- set hooks
+lflush = nil
 function h_tick_main(sec_current, sec_delta)
-
+	if (not lflush) or sec_current < lflush - 0.8 then
+		lflush = sec_current
+	end
+	if sec_current >= lflush then
+		net_send_flush()
+		lflush = lflush + NET_FLUSH_C2S
+		if sec_current <= lflush then
+			lflush = sec_current
+		end
+	end
 	--FIXME: why is this POS prototyping variable still here, it is being used to control the player model's leg swing >:(
 	rotpos = rotpos + sec_delta*120.0
 
@@ -445,7 +455,7 @@ function h_tick_main(sec_current, sec_delta)
 			x = x * 32.0
 			y = y * 32.0
 			z = z * 32.0
-			common.net_send(nil, common.net_pack("BBhhh"
+			net_send(nil, common.net_pack("BBhhh"
 				, PKT_PLR_POS, 0x00, x, y, z))
 		end
 		if not t_net_orient then
@@ -455,7 +465,7 @@ function h_tick_main(sec_current, sec_delta)
 			ya = ya*128/math.pi
 			xa = xa*256/math.pi
 
-			common.net_send(nil, common.net_pack("BBbbB"
+			net_send(nil, common.net_pack("BBbbB"
 				, PKT_PLR_ORIENT, 0x00, ya, xa, keys))
 		end
 
@@ -515,9 +525,10 @@ function h_tick_init(sec_current, sec_delta)
 	client.mouse_lock_set(true)
 	client.mouse_visible_set(false)
 
-	common.net_send(nil, common.net_pack("Bbbz", PKT_PLR_OFFER, -1, WPN_RIFLE, user_config.name or ""))
+	net_send(nil, common.net_pack("Bbbz", PKT_PLR_OFFER, -1, WPN_RIFLE, user_config.name or ""))
 
 	client.hook_tick = h_tick_main
+	net_send_flush()
 	return client.hook_tick(sec_current, sec_delta)
 end
 	

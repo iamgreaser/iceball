@@ -126,18 +126,18 @@ return function (plr)
 				players[hurt_idx].gun_damage(
 					hurt_part, this.cfg.dmg[hurt_part], plr)
 			else
-				common.net_send(nil, common.net_pack("BBB"
+				net_send(nil, common.net_pack("BBB"
 					, 0x13, hurt_idx, hurt_part_idx))
 				plr.show_hit()
 			end
 		else
 			if client then
-				common.net_send(nil, common.net_pack("BBB"
+				net_send(nil, common.net_pack("BBB"
 					, 0x13, 0, 0))
 			end
 			
 			if cx2 and cy2 <= ylen-3 then
-				common.net_send(nil, common.net_pack("BHHHH", 0x20, cx2, cy2, cz2, MODE_BLOCK_DAMAGE_RIFLE))
+				net_send(nil, common.net_pack("BHHHH", 0x20, cx2, cy2, cz2, MODE_BLOCK_DAMAGE_RIFLE))
 			end
 		end
 		
@@ -152,7 +152,7 @@ return function (plr)
 		if not this.reloading then
 			this.reloading = true
 			client.wav_play_global(wav_rifle_reload, plr.x, plr.y, plr.z)
-			common.net_send(nil, common.net_pack("BB", 0x1D, 0))
+			net_send(nil, common.net_pack("BB", 0x1D, 0))
 			plr.zooming = false
 			this.t_reload = nil
 		end end end
