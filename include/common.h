@@ -19,7 +19,7 @@
 #define VERSION_X 0
 #define VERSION_Y 0
 #define VERSION_A 0
-#define VERSION_Z 31
+#define VERSION_Z 32
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!
@@ -93,6 +93,7 @@ extern "C" {
 #endif
 #endif
 
+#include <sackit.h>
 #include <zlib.h>
 
 #ifdef WIN32
@@ -129,6 +130,7 @@ enum
 	UD_PMF,
 	UD_IMG_TGA,
 	UD_WAV,
+	UD_MUS_IT,
 	
 	UD_MAX_SUPPORTED,
 	
@@ -507,6 +509,9 @@ void cam_point_dir(camera_t *model, float dx, float dy, float dz, float zoom, fl
 void cam_point_dir_sky(camera_t *model, float dx, float dy, float dz, float sx, float sy, float sz, float zoom);
 
 // wav.c
+extern sackit_playback_t *icesackit_pb;
+extern int icesackit_bufoffs;
+extern float icesackit_vol;
 wav_t *wav_parse(char *buf, int len);
 wav_t *wav_load(const char *fname);
 void wav_kill(wav_t *wav);

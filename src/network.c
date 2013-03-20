@@ -325,6 +325,8 @@ const char *net_aux_gettype_str(int ftype)
 			return "tga";
 		case UD_WAV:
 			return "wav";
+		case UD_MUS_IT:
+			return "it";
 		case UD_JSON:
 			return "json";
 	}

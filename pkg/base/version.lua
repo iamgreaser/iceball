@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,0,0,0,30},
-	num=30,
-	str="0.0-30",
+	cmp={0,0,0,0,32},
+	num=32,
+	str="0.0-32",
 }
 
 VERSION_BUGS = {
@@ -52,6 +52,7 @@ VERSION_BUGS = {
 {intro=19, fix=29, msg="[OpenGL] Crashes on map creation (as opposed to map loading)"},
 {intro=nil, fix=30, msg="clsave/config.json not supported"},
 {intro=30, fix=31, msg="broke dedicated server build... again"},
-
+{intro=nil, fix=32, msg=".it module music not supported"},
+{intro=32, fix=nil, msg=".it module music might have stability issues. If it crashes, please tell us :)"},
 }
 

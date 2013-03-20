@@ -17,6 +17,11 @@
 
 #include "common.h"
 
+int icesackit_bufoffs = 4096;
+int icesackit_freq = 0;
+sackit_playback_t *icesackit_pb = NULL;
+float icesackit_vol = 1.0f;
+
 typedef struct wavfmt {
 	uint16_t codec, chns;
 	uint32_t freq;
@@ -49,6 +54,39 @@ void wav_fn_mixer_s16he_stereo(void *buf, int len)
 		}
 	}
 	
+	// do the sackity thing
+	if(icesackit_pb != NULL)
+	{
+		int16_t *v = (int16_t *)buf;
+		int16_t *u = (int16_t *)icesackit_pb->buf;
+		j = 0;
+		while(j < len)
+		{
+			if(icesackit_bufoffs == 4096)
+			{
+				icesackit_bufoffs = 0;
+				sackit_playback_update(icesackit_pb);
+			}
+			int sirem = 4096 - icesackit_bufoffs;
+			if(sirem > len)
+				sirem = len;
+
+			for(i = 0; i < sirem*2; i++)
+			{
+				int q = u[i+icesackit_bufoffs*2];
+				q = (icesackit_vol*q);
+				if(q > 0x7FFF) q = 0x7FFF;
+				if(q < -0x8000) q = -0x8000;
+				*(v++) = (int16_t)q;
+			}
+			v += sirem*2;
+
+			j += sirem;
+			icesackit_bufoffs += sirem;
+		}
+	}
+
+	// now for the wav mixing
 	for(i = 0; i < WAV_CHN_COUNT; i++)
 	{
 		wavchn_t *wc = &wchn[i];
@@ -398,6 +436,8 @@ int wav_init(void)
 		error_sdl("wav_init(nonfatal)");
 		return 0;
 	}
+
+	icesackit_freq = wav_bufsize;
 	
 	wav_fn_mixer = wav_fn_mixer_s16he_stereo;
 	SDL_PauseAudio(0);
@@ -411,6 +451,12 @@ void wav_deinit(void)
 	
 	for(i = 0; i < WAV_CHN_COUNT; i++)
 		wav_chn_kill(&wchn[i]);
+	
+	if(icesackit_pb != NULL)
+		sackit_playback_free(icesackit_pb);
+	
+	icesackit_pb = NULL;
+	icesackit_freq = 0;
 	
 	// TODO: disable sound
 }

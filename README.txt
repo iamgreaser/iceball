@@ -40,6 +40,8 @@ REQUIREMENTS:
 - SDL 1.2 (not 1.3) - http://libsdl.org/
 - Lua 5.1 (not 5.2) - http://lua.org/
 - zlib - http://zlib.net/
+- sackit - https://github.com/iamgreaser/sackit/
+  - you should copy libsackit.a and sackit.h to xlibinc.
 - GNU make
   - if someone has BSD make, please tell us :)
 

@@ -530,20 +530,20 @@ server.net_kick(sockfd, reason)
 	
 	throws a lua error for other weird errors.
 
-wav = common.wav_load(fname)
+wav = common.wav_load(fname) @
 	loads a sound with filename "fname"
 	remember to free it when you're done
 	as this is only a light userdata
 
-common.wav_free(wav)
+common.wav_free(wav) @
 	free the given sound
 	if you don't do this then it's memoryleaktopia
 	(plus i'm allowed to kill you)
 
-client.wav_cube_size(size)
+client.wav_cube_size(size) @
 	sets the size of a block in metres for sound calculations
 
-chn = client.wav_play_global(wav, x, y, z, vol = 1.0, freq_mod = 1.0, vol_spread = ?)
+chn = client.wav_play_global(wav, x, y, z, vol = 1.0, freq_mod = 1.0, vol_spread = ?) @
 	play the given sound at the given world position
 	
 	TODO: define vol_spread properly
@@ -551,28 +551,50 @@ chn = client.wav_play_global(wav, x, y, z, vol = 1.0, freq_mod = 1.0, vol_spread
 	returns an index of a channel
 	returns nil on error
 
-chn = client.wav_play_local(wav, x = 0.0, y = 0.0, z = 0.0, vol = 1.0, freq_mod = 1.0, vol_spread = ?)
+chn = client.wav_play_local(wav, x = 0.0, y = 0.0, z = 0.0, vol = 1.0, freq_mod = 1.0, vol_spread = ?) @
 	play the given sound at the given camera-local position
 	
 	returns an index of a channel
 	returns nil on error
 
-exists = client.wav_chn_exists(chn)
+exists = client.wav_chn_exists(chn) @
 	checks if an allocated channel still exists
 	
 	if a channel stops, it is garbage collected
 
-success = client.wav_chn_update(chn, x = nil, y = nil, z = nil, vol = nil, freq_mod = nil, vol_spread = nil)
+success = client.wav_chn_update(chn, x = nil, y = nil, z = nil, vol = nil, freq_mod = nil, vol_spread = nil) @
 	updates information pertaining to a channel
 	
 	any field which is nil is not affected
 	
 	returns false if the channel no longer exists
 
-client.wav_kill(chn)
+client.wav_kill(chn) @
 	stops and removes a channel
 	
 	if chn == "true", kills all channels
+
+mus = common.mus_load_it(fname) @
+	loads an ImpulseTracker module with filename "fname"
+	remember to free it when you're done
+	as this is only a light userdata
+
+common.mus_free(wav) @
+	free the given sound
+	if you don't do this then it's memoryleaktopia
+	(plus i'm allowed to kill you)
+
+	MAKE SURE YOU HAVE CALLED client.mus_stop IF YOU WERE PLAYING THIS FILE
+	otherwise expect a crash.
+
+success = client.mus_play(mus, order=0, row=0) @
+	starts playing module "mus" at given order/row
+
+client.mus_stop() @
+	stops playing music
+
+client.mus_vol_set(vol) @
+	sets the mixing volume for the music
 
 font_mini
     Small ASCII font, for most body text.

@@ -59,6 +59,7 @@ int icelua_force_get_integer(lua_State *L, int table, char *name)
 #include "lua_input.h"
 #include "lua_json.h"
 #include "lua_map.h"
+#include "lua_mus.h"
 #include "lua_model.h"
 #include "lua_net.h"
 #include "lua_wav.h"
@@ -97,6 +98,9 @@ struct icelua_entry icelua_client[] = {
 	{icelua_fn_client_wav_chn_exists, "wav_chn_exists"},
 	{icelua_fn_client_wav_chn_update, "wav_chn_update"},
 	{icelua_fn_client_wav_kill, "wav_kill"},
+	{icelua_fn_client_mus_play, "mus_play"},
+	{icelua_fn_client_mus_stop, "mus_stop"},
+	{icelua_fn_client_mus_vol_set, "mus_vol_set"},
 	{NULL, NULL}
 };
 #endif
@@ -141,6 +145,8 @@ struct icelua_entry icelua_common[] = {
 	{icelua_fn_common_net_recv, "net_recv"},
 	{icelua_fn_common_wav_load, "wav_load"},
 	{icelua_fn_common_wav_free, "wav_free"},
+	{icelua_fn_common_mus_load_it, "mus_load_it"},
+	{icelua_fn_common_mus_free, "mus_free"},
 	{icelua_fn_common_argb_split_to_merged, "argb_split_to_merged"},
 	{icelua_fn_common_argb_merged_to_split, "argb_merged_to_split"},
 	

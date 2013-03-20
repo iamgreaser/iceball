@@ -19,7 +19,7 @@
 MODE_NUB_KICKONJOIN = false
 
 -- skins allowed 
-SKIN_ENABLE_SRC = {"pmf", "tga", "wav"}
+SKIN_ENABLE_SRC = {"pmf", "tga", "wav", "it"}
 SKIN_ENABLE = {}
 do
 	local i
@@ -38,6 +38,7 @@ DIR_PKG_LIB = DIR_PKG_LIB or DIR_PKG_ROOT
 DIR_PKG_PMF = DIR_PKG_PMF or DIR_PKG_ROOT.."/pmf"
 DIR_PKG_GFX = DIR_PKG_GFX or DIR_PKG_ROOT.."/gfx"
 DIR_PKG_WAV = DIR_PKG_WAV or DIR_PKG_ROOT.."/wav"
+DIR_PKG_IT = DIR_PKG_IT or DIR_PKG_ROOT.."/it"
 DIR_PKG_MAP = DIR_PKG_MAP or "pkg/maps"
 DIR_SKIN = DIR_SKIN or "clsave/pub/skin"
 

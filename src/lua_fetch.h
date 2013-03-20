@@ -37,6 +37,8 @@ int icelua_fnaux_fetch_gettype(lua_State *L, const char *ftype)
 		return UD_JSON;
 	else if(!strcmp(ftype, "wav"))
 		return UD_WAV;
+	else if(!strcmp(ftype, "it"))
+		return UD_MUS_IT;
 	else if(!strcmp(ftype, "log")) {
 		// TODO!
 		return luaL_error(L, "format not supported yet!");
@@ -93,6 +95,13 @@ int icelua_fnaux_fetch_immediate(lua_State *L, const char *ftype, const char *fn
 			return 0;
 		
 		lua_pushlightuserdata(L, wav);
+		return 1;
+	} else if(!strcmp(ftype, "it")) {
+		it_module_t *mus = sackit_module_load(fname);
+		if(mus == NULL)
+			return 0;
+		
+		lua_pushlightuserdata(L, mus);
 		return 1;
 	} else if(!strcmp(ftype, "json")) {
 		return (json_load(L, fname) ? 0 : 1);
@@ -263,6 +272,37 @@ int icelua_fn_common_fetch_poll(lua_State *L)
 				
 				lua_pushlightuserdata(L, wav);
 				ret = 1;
+			} break;
+
+			case UD_MUS_IT: {
+				// create temp file (sackit doesn't support loading from memory, at least right now)
+				// "Never use this function." i have no other choice
+				char *tfname = tempnam(NULL, "ibsit");
+				if(tfname == NULL)
+				{
+					ret = 0;
+					break;
+				}
+				FILE *fp = fopen(tfname, "wb");
+				if(fp == NULL)
+				{
+					ret = 0;
+					free(tfname);
+					break;
+				}
+				fwrite(to_client_local.cfetch_ubuf, to_client_local.cfetch_ulen, 1, fp);
+				fclose(fp);
+				
+				it_module_t *mus = sackit_module_load(tfname);
+				if(mus == NULL)
+				{
+					ret = 0;
+				} else {
+					ret = 1;
+					lua_pushlightuserdata(L, mus);
+				}
+
+				free(tfname);
 			} break;
 			
 			default:

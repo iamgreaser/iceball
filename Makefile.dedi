@@ -4,16 +4,17 @@ CFLAGS = -DDEDI -pg -O2 -fno-strict-aliasing -g -Wall -Wextra \
 	-Wno-unused-variable -Wno-unused-parameter \
 	-Wno-unused-but-set-variable $(CFLAGS_EXTRA) \
 	-fopenmp \
-	-I $(INCDIR) \
-	$(HEADERS_LUA)
+	-I $(INCDIR) -Ixlibinc \
+	$(HEADERS_Lua)
 
-HEADERS_LUA =
+HEADERS_Lua =
 
 LDFLAGS = -pg -g -fopenmp $(LDFLAGS_EXTRA)
 LIBS_Lua = -llua
 # Lua is not an acronym. Get used to typing it with lower case u/a.
 LIBS_zlib = -lz
-LIBS = -lm $(LIBS_Lua) $(LIBS_zlib)
+LIBS_sackit = -lsackit
+LIBS = -Lxlibinc/ -lm $(LIBS_Lua) $(LIBS_zlib) $(LIBS_sackit)
 BINNAME = dedi_iceball
 
 OBJDIR = build/dedi

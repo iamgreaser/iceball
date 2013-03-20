@@ -18,7 +18,7 @@
 dofile("pkg/base/preconf.lua")
 
 -- if you don't want music, set FILE_MUSIC to "true".
-FILE_MUSIC = FILE_MUSIC or "music.wav"
+FILE_MUSIC = FILE_MUSIC or "music.it"
 
 print("pkg/base/main_client.lua starting")
 
@@ -29,6 +29,7 @@ local wav_buld_frq = math.pow(0.5,3.0)
 local wav_buld_inc = math.pow(2.0,1.0/12.0)
 
 local wav_mus = nil
+local mus_main = nil
 --local wav_mus = skin_load("wav", "hammer.wav", DIR_PKG_WAV)
 local chn_mus = nil
 
@@ -262,8 +263,14 @@ common.fetch_block = load_screen_fetch
 function client.hook_tick()
 	client.hook_tick = nil
 	if FILE_MUSIC ~= true then
-		wav_mus = skin_load("wav", FILE_MUSIC, DIR_PKG_WAV)
-		chn_mus = client.wav_play_local(wav_mus)
+		if common.mus_load_it then
+			mus_main = skin_load("it", FILE_MUSIC, DIR_PKG_IT)
+			client.mus_play(mus_main)
+		else
+			-- TODO: drop this code eventually
+			wav_mus = skin_load("wav", "music.wav", DIR_PKG_WAV)
+			chn_mus = client.wav_play_local(wav_mus)
+		end
 	end
 	loadfile("pkg/"..common.base_dir.."/client_start.lua")(argspew_gen(argarr, 1))
 	if wav_mus then
@@ -271,6 +278,10 @@ function client.hook_tick()
 			client.wav_kill(chn_mus)
 		end
 		client.wav_free(wav_mus)
+	end
+	if mus_main then
+		client.mus_stop()
+		client.mus_free(mus_main)
 	end
 	return 0.005
 end
