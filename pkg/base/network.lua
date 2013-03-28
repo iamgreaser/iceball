@@ -174,7 +174,12 @@ network.sys_handle_s2c(PKT_PLR_ADD, "Bbbbhhhzz", function (sockfd, cli, plr, sec
 		players[pid].name = name
 		players[pid].team = tidx
 		players[pid].mode = mode
+		players[pid].weapon = wpn
+		players[pid].wpn = weapons[wpn](players[pid])
 		players[pid].recolor_team()
+		if pid == players.current then
+			players[pid].create_hud()
+		end
 	else
 		players[pid] = new_player({
 			name = name,
@@ -498,15 +503,23 @@ network.sys_handle_c2s(PKT_CHAT_SEND_SQUAD, "z", nwdec_plrset(function (sockfd, 
 end))
 network.sys_handle_c2s(PKT_PLR_OFFER, "bbz", nwdec_plrset(function (sockfd, cli, plr, sec_current, tidx, wpn, name, pkt)
 	name = (name ~= "" and name) or name_generate()
-	plr.set_health_damage(0, 0xFF800000, plr.name.." changed teams", nil)
+	plr.wpn = weapons[wpn](plr)
+	if plr.team ~= tidx then
+		plr.set_health_damage(0, 0xFF800000, plr.name.." changed teams", nil)
+		net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFF800000,
+			"* Player "..plr.name.." has joined the "..teams[tidx].name.." team"))
+	elseif plr.weapon ~= wpn then
+		plr.set_health_damage(0, 0xFF800000, plr.name.." changed weapons", nil)
+		net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFF800000,
+			"* Player "..plr.name.." is now using the "..plr.wpn.cfg.name))
+	end
 	plr.team = tidx
+	plr.weapon = wpn
 	net_broadcast(nil, common.net_pack("BBBBBhhhzz",
 			PKT_PLR_ADD, plr.pid,
 			plr.team, plr.weapon, plr.mode,
 			plr.score, plr.kills, plr.deaths,
 			plr.name, plr.squad))
-	net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFF800000,
-		"* Player "..plr.name.." has joined the "..teams[plr.team].name.." team"))
 end, function (sockfd, cli, plr, sec_current, tidx, wpn, name, pkt)
 	name = (name ~= "" and name) or name_generate()
 	cli.plrid = slot_add(sockfd, tidx, wpn, name)

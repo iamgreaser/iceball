@@ -92,6 +92,7 @@ BTSK_DEBUG = SDLK_F1
 BTSK_MAP = controls_config.map or SDLK_m
 
 BTSK_TEAM = controls_config.team or SDLK_COMMA
+BTSK_WPN = controls_config.wpn or SDLK_PERIOD
 
 --[[ For user messages and hooking up GUI elements, we have a need for mapping 
 the key variables to names and back. We also need to seperate the internal 
@@ -132,7 +133,7 @@ button_map = {
 	debug={key=BTSK_DEBUG,desc="Debug"},
 	map={key=BTSK_MAP,desc="Map"},
 	team={key=BTSK_TEAM,desc="Change Team"},
-	
+	wpn={key=BTSK_WPN,desc="Change Weapon"},
 }
 
 -- equivalent - find a button from a keybinding

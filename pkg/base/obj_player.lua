@@ -1456,6 +1456,12 @@ function new_player(settings)
 			text="Press 2 to join Green", x = w/2, y = h/4 + 40, align_x = 0.5, align_y = 0.5}
 		this.team_change = scene.display_object{visible=false}
 		
+		this.wpn_change_msg_rifle = scene.textfield{wordwrap=false, color=0xFFFF0000, font=font_large,
+			text="Press 1 to use Rifle", x = w/2, y = h/4, align_x = 0.5, align_y = 0.5}
+		this.wpn_change_msg_leerifle = scene.textfield{wordwrap=false, color=0xFFFF0000, font=font_large,
+			text="Press 2 to use Lee-Enfield", x = w/2, y = h/4 + 40, align_x = 0.5, align_y = 0.5}
+		this.wpn_change = scene.display_object{visible=false}
+		
 		-- chat and killfeed
 		
 		this.chat_text = scene.textfield{font=font_mini, ctab={}, 
@@ -1682,7 +1688,7 @@ function new_player(settings)
 					local plr
 					plr = players[players.current]
 					if plr ~= nil and team ~= nil and team ~= plr.team then
-						net_send(nil, common.net_pack("Bbbz", PKT_PLR_OFFER, team, WPN_RIFLE, plr.name or ""))
+						net_send(nil, common.net_pack("Bbbz", PKT_PLR_OFFER, team, plr.weapon, plr.name or ""))
 					end					
 					
 				elseif options.key == BTSK_TEAM and not this.menus_visible() then
@@ -1690,6 +1696,30 @@ function new_player(settings)
 				end
 			end		
 			this.team_change.visible = viz
+		end
+		local function wpnchange_events(options)
+			local viz = this.wpn_change.visible
+			if options.state and not is_view_released() then
+				if viz then
+					local wpn
+				
+					if options.key == BTSK_TOOL1 then viz = false; wpn = WPN_RIFLE
+					elseif options.key == BTSK_TOOL2 then viz = false; wpn = WPN_LEERIFLE
+					elseif (options.key == BTSK_QUIT or options.key == BTSK_WPN)
+						then viz = false 
+					end
+					
+					local plr
+					plr = players[players.current]
+					if plr ~= nil and wpn ~= nil and wpn ~= plr.weapon then
+						net_send(nil, common.net_pack("Bbbz", PKT_PLR_OFFER, plr.team, wpn, plr.name or ""))
+					end
+					
+				elseif options.key == BTSK_WPN and not this.menus_visible() then
+					viz = true
+				end
+			end		
+			this.wpn_change.visible = viz
 		end
 		local function toggle_map_state(options)
 			if options.state and options.key == BTSK_MAP and not is_view_released() then
@@ -1999,6 +2029,7 @@ function new_player(settings)
 		
 		this.quit_msg.add_listener(GE_BUTTON, quit_events)
 		this.team_change.add_listener(GE_BUTTON, teamchange_events)
+		this.wpn_change.add_listener(GE_BUTTON, wpnchange_events)
 		this.large_map.add_listener(GE_DELTA_TIME, this.update_overview_icons)
 		this.mini_map.add_listener(GE_BUTTON, toggle_map_state)
 		this.cpal_rect.add_listener(GE_DELTA_TIME, cpal_update)
@@ -2022,7 +2053,10 @@ function new_player(settings)
 		scene.root.add_child(this.net_graph)
 		this.team_change.add_child(this.team_change_msg_b)
 		this.team_change.add_child(this.team_change_msg_g)
+		this.wpn_change.add_child(this.wpn_change_msg_rifle)
+		this.wpn_change.add_child(this.wpn_change_msg_leerifle)
 		scene.root.add_child(this.team_change)
+		scene.root.add_child(this.wpn_change)
 		scene.root.add_child(this.quit_msg)
 		scene.root.add_child(this.reload_msg)
 		scene.root.add_child(this.enemy_name_msg)

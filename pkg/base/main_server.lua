@@ -43,7 +43,7 @@ function slot_add(sockfd, tidx, wpn, name)
 			if MODE_TEAM_GUNS then
 				_wpn = tidx + 1
 			else
-				_wpn = WPN_RIFLE
+				_wpn = wpn
 			end
 			players[i] = new_player({
 				name = name,
