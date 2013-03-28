@@ -143,6 +143,7 @@ Iceball Base Mod:
 		
 		"weapon" can be one of these:
 			1: rifle
+			2: lee-enfield
 
 		"mode" can be one of these:
 			1: normal player
