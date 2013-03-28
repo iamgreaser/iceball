@@ -25,8 +25,8 @@ return function (plr)
 	this.cfg = {
 		dmg = {
 			head = 100,
-			body = 67,
-			legs = 49,
+			body = 100,
+			legs = 100,
 		},
 		
 		ammo_clip = 1,
