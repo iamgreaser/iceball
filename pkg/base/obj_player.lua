@@ -740,6 +740,11 @@ function new_player(settings)
 			if this.wpn.reloading then
 				this.reload_msg.visible = false
 			end
+			-- TODO: find better sway algorithm
+			--if this.zooming and this.weapon == WPN_LEERIFLE then
+			--	this.angx = this.angx + math.cos(sec_current) * 0.0001
+			--	this.angy = this.angy + math.sin(sec_current) * 0.0001
+			--end
 		end
 		
 		-- calc X delta angle
