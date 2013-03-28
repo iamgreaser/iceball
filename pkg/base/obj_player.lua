@@ -1644,14 +1644,14 @@ function new_player(settings)
 		end
 		
 		function this.menus_visible()
-			return this.quit_msg.visible or this.team_change.visible
+			return this.quit_msg.visible or this.team_change.visible or this.wpn_change.visible
 		end
 		local function is_view_released()
 			return gui_focus ~= nil
 		end
 		
 		local function quit_events(options)
-			if options.state then
+			if options.state and not is_view_released() then
 				if this.quit_msg.visible then
 					if options.key == BTSK_YES then
 						-- TODO: clean up
