@@ -174,11 +174,13 @@ network.sys_handle_s2c(PKT_PLR_ADD, "Bbbbhhhzz", function (sockfd, cli, plr, sec
 		players[pid].name = name
 		players[pid].team = tidx
 		players[pid].mode = mode
-		players[pid].weapon = wpn
-		players[pid].wpn = weapons[wpn](players[pid])
 		players[pid].recolor_team()
-		if pid == players.current then
-			players[pid].create_hud()
+		if players[pid].weapon ~= wpn then
+			players[pid].weapon = wpn
+			players[pid].wpn = weapons[wpn](players[pid])
+			if pid == players.current then
+				players[pid].create_hud()
+			end
 		end
 	else
 		players[pid] = new_player({
