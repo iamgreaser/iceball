@@ -304,7 +304,9 @@ map_fname = loose[1]
 --[[map_fname = map_fname or MAP_DEFAULT
 map_loaded = common.map_load(map_fname, "auto")
 ]]
-if map_fname then
+if map_fname == "flat" then
+	map_loaded = loadfile("pkg/base/gen_flat.lua")(loose, server_toggles, server_settings)
+elseif map_fname then
 	map_loaded = common.map_load(map_fname, "auto")
 else
 	map_loaded = loadfile("pkg/base/gen_classic.lua")(loose, server_toggles, server_settings)
