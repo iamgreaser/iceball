@@ -36,5 +36,6 @@
 	"scores": 9,
 	"quit": 27,
 	"map": 109,
-	"team": 44
+	"team": 44,
+	"wpn": 46
 }
