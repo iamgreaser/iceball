@@ -829,22 +829,24 @@ function new_player(settings)
 		if this.ev_lmb and this.mode ~= PLM_SPECTATE then
 			if this.tool == TOOL_BLOCK and this.blx1 then
 				if (not this.t_newblock) and this.blocks > 0 then
-				if this.blx1 >= 0 and this.blx1 < xlen and this.blz1 >= 0 and this.blz1 < zlen then
-				if this.bly1 <= ylen-3 and map_is_buildable(this.blx1, this.bly1, this.blz1) then
-					net_send(nil, common.net_pack("BHHHBBBB",
-						PKT_BLK_ADD,
-						this.blx1, this.bly1, this.blz1,
-						this.blk_color[3],
-						this.blk_color[2],
-						this.blk_color[1],
-						1))
-					if this.mode == PLM_NORMAL then
-						this.blocks = this.blocks - 1
+					for dist=5,1,-1 do
+						_, blx1, bly1, blz1 = trace_map_ray_dist(this.x+0.4*sxa,this.y,this.z+0.4*cya, sya*cxa,sxa,cya*cxa, dist, false)
+						if blx1 >= 0 and blx1 < xlen and bly1 >= 0 and bly1 <= ylen - 3 and blz1 >= 0 and blz1 < zlen and map_is_buildable(blx1, bly1, blz1) then
+							net_send(nil, common.net_pack("BHHHBBBB",
+								PKT_BLK_ADD,
+								blx1, bly1, blz1,
+								this.blk_color[3],
+								this.blk_color[2],
+								this.blk_color[1],
+								1))
+							if this.mode == PLM_NORMAL then
+								this.blocks = this.blocks - 1
+							end
+							this.t_newblock = sec_current + MODE_DELAY_BLOCK_BUILD
+							this.t_switch = this.t_newblock
+							break
+						end
 					end
-					this.t_newblock = sec_current + MODE_DELAY_BLOCK_BUILD
-					this.t_switch = this.t_newblock
-				end
-				end
 				end
 			elseif this.tool == TOOL_SPADE then
 				if (not this.t_newspade1) then
@@ -2247,29 +2249,42 @@ function new_player(settings)
 		-- TODO: wireframe cube
 		if this.mode ~= PLM_SPECTATE then
 		if this.tool == TOOL_BLOCK and this.blx1 and (this.alive or this.respawning) and this.blocks >= 1 then
-			if map_is_buildable(this.blx1, this.bly1, this.blz1) or MODE_BLOCK_PLACE_IN_AIR then
-				bname, mdl_data = client.model_bone_get(mdl_cube, mdl_cube_bone)
-				
-				mdl_data_backup = mdl_data
-				
-				for i=1,#mdl_data do
-					if mdl_data[i].r > 4 then
-						mdl_data[i].r = math.max(this.blk_color[1], 5) --going all the way down to
-						mdl_data[i].g = math.max(this.blk_color[2], 5) --to 4 breaks it and you'd
-						mdl_data[i].b = math.max(this.blk_color[3], 5) --have to reload the model
+			local xlen,ylen,zlen = common.map_get_dims()
+			local err = true
+			for dist=5,1,-1 do
+				_, blx1, bly1, blz1 = trace_map_ray_dist(this.x+0.4*axs,this.y,this.z+0.4*ayc, ays*axc,axs,ayc*axc, dist, false)
+				if blx1 >= 0 and blx1 < xlen and bly1 >= 0 and bly1 <= ylen - 3 and blz1 >= 0 and blz1 < zlen and (map_is_buildable(blx1, bly1, blz1) or MODE_BLOCK_PLACE_IN_AIR) then
+					bname, mdl_data = client.model_bone_get(mdl_cube, mdl_cube_bone)
+					
+					mdl_data_backup = mdl_data
+					
+					for i=1,#mdl_data do
+						if mdl_data[i].r > 4 then
+							mdl_data[i].r = math.max(this.blk_color[1], 5) --going all the way down to
+							mdl_data[i].g = math.max(this.blk_color[2], 5) --to 4 breaks it and you'd
+							mdl_data[i].b = math.max(this.blk_color[3], 5) --have to reload the model
+						end
+					end
+					
+					client.model_bone_set(mdl_cube, mdl_cube_bone, bname, mdl_data)
+					
+					client.model_render_bone_global(mdl_cube, mdl_cube_bone,
+						blx1+0.5, bly1+0.5, blz1+0.5,
+						0.0, 0.0, 0.0, 24.0) --no rotation, 24 roughly equals the cube size
+					err = false
+					break
+				end
+			end
+			if err and not MODE_BLOCK_NO_RED_MARKER then
+				for dist=5,0,-1 do
+					_, blx1, bly1, blz1 = trace_map_ray_dist(this.x+0.4*axs,this.y,this.z+0.4*ayc, ays*axc,axs,ayc*axc, dist, false)
+					if blx1 >= 0 and blx1 < xlen and bly1 >= 0 and bly1 <= ylen - 3 and blz1 >= 0 and blz1 < zlen then
+						client.model_render_bone_global(mdl_Xcube, mdl_Xcube_bone,
+							blx1+0.5, bly1+0.5, blz1+0.5,
+							0.0, 0.0, 0.0, 24.0)
+						break
 					end
 				end
-				
-				client.model_bone_set(mdl_cube, mdl_cube_bone, bname, mdl_data)
-				
-				client.model_render_bone_global(mdl_cube, mdl_cube_bone,
-					this.blx1+0.5, this.bly1+0.5, this.blz1+0.5,
-					0.0, 0.0, 0.0, 24.0) --no rotation, 24 roughly equals the cube size
-			
-			elseif not MODE_BLOCK_NO_RED_MARKER then
-				client.model_render_bone_global(mdl_Xcube, mdl_Xcube_bone,
-					this.blx1+0.5, this.bly1+0.5, this.blz1+0.5,
-					0.0, 0.0, 0.0, 24.0)
 				--print(this.blx1.." "..this.bly1.." "..this.blz1)
 			end
 		elseif this.tool == TOOL_SPADE and this.blx1 and (this.alive or this.respawning) and map_block_get(this.blx2, this.bly2, this.blz2) then
