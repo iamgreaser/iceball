@@ -15,6 +15,8 @@
     along with Iceball.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#import "common.h"
+
 int icelua_fn_common_argb_split_to_merged(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 3, 4);
@@ -40,4 +42,10 @@ int icelua_fn_common_argb_merged_to_split(lua_State *L)
     lua_pushinteger(L, (c) & 0xFF);
 	
 	return 4;
+}
+
+int icelua_fn_common_time(lua_State *L)
+{
+	lua_pushinteger(L, time(NULL));
+	return 1;
 }

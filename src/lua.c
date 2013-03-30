@@ -149,6 +149,7 @@ struct icelua_entry icelua_common[] = {
 	{icelua_fn_common_mus_free, "mus_free"},
 	{icelua_fn_common_argb_split_to_merged, "argb_split_to_merged"},
 	{icelua_fn_common_argb_merged_to_split, "argb_merged_to_split"},
+	{icelua_fn_common_time, "time"},
 	
 	{NULL, NULL}
 };

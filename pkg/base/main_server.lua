@@ -213,6 +213,8 @@ server_config = common.json_load(server_config_filename)
 -- TODO: Check that server_config ~= nil
 if server_settings.svseed then
 	math.randomseed(0+server_settings.svseed)
+elseif common.time ~= nil then
+	math.randomseed(common.time())
 end
 
 permissions = {}
