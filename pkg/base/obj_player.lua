@@ -2354,7 +2354,7 @@ function new_player(settings)
 						py = h/2+w/2*dy*this.zoom/dz
 						local c
 						if plr.squad and plr.squad == this.squad then
-							c = {255,255,255}
+							client.img_blit(img_chevron, px - 4, py - 20)							c = {255,255,255}
 						else
 							c = teams[this.team].color_chat
 						end

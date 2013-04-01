@@ -295,6 +295,7 @@ show_scores = false
 -- load images
 img_crosshair = client.img_load("pkg/base/gfx/crosshair.tga")
 img_crosshairhit = client.img_load("pkg/base/gfx/crosshairhit.tga")
+img_chevron = client.img_load("pkg/base/gfx/chevron.tga")
 
 -- load/make models
 mdl_test = skin_load("pmf", "test.pmf", DIR_PKG_PMF)
