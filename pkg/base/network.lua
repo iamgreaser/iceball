@@ -119,6 +119,7 @@ do
 		"TEAM_SCORE",
 		"BLK_DAMAGE",
 		"PIANO",
+		"NADE_PIN",
 	}
 	local i,p
 	for i,p in pairs(pktlist) do
@@ -355,6 +356,12 @@ network.sys_handle_s2c(PKT_PIANO, "B", function (sockfd, cli, plr, sec_current, 
 	local plr = players[pid]
 	if plr then
 		plr.drop_piano()
+	end
+end)
+network.sys_handle_s2c(PKT_NADE_PIN, "B", function (sockfd, cli, plr, sec_current, pid, pkt)
+	local plr = players[pid]
+	if plr then
+		client.wav_play_global(wav_pin, plr.x, plr.y, plr.z)
 	end
 end)
 
@@ -654,4 +661,6 @@ network.sys_handle_c2s(PKT_BLK_DAMAGE, "HHHH", nwdec_plrset(function (sockfd, cl
 	bhealth_damage(x, y, z, amt, plr)
 	
 end))
-
+network.sys_handle_c2s(PKT_NADE_PIN, "", nwdec_plrset(function (sockfd, cli, plr, sec_current, pkt)
+	net_broadcast(sockfd, common.net_pack("BB", PKT_NADE_PIN, cli.plrid))
+end))

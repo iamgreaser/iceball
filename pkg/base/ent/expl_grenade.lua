@@ -75,7 +75,7 @@ return function (plr)
 			end
 		end
 
-		if client and plr.alive and (not this.t_switch) then
+		if client and plr.alive and (not plr.t_switch) then
 		if this.ev_lmb and plr.mode ~= PLM_SPECTATE then
 		if plr.tool == TOOL_EXPL then
 			if (not this.t_newnade) and this.ammo > 0 then
@@ -84,6 +84,8 @@ return function (plr)
 						this.ammo = this.ammo - 1
 					end
 					this.t_nadeboom = sec_current + MODE_NADE_FUSE
+					client.wav_play_global(wav_pin, plr.x, plr.y, plr.z)
+					net_send(nil, common.net_pack("BhhhhhhH", PKT_NADE_PIN))
 				end
 			end
 		end end end
