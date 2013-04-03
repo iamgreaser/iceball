@@ -369,8 +369,7 @@ function new_player(settings)
 		this.blocks = 100
 		this.grenades = 4
 		if this.wpn then
-			this.wpn.ammo_clip = this.wpn.cfg.ammo_clip
-			this.wpn.ammo_reserve = this.wpn.cfg.ammo_reserve
+			this.wpn.restock()
 		end
 		if server then
 			net_broadcast(nil, common.net_pack("BB", PKT_PLR_RESTOCK, this.pid))
