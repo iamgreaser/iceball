@@ -178,6 +178,7 @@ function new_nade(settings)
 		this.fuse = this.fuse - sec_delta
 		if this.fuse <= 0 then
 			if client then
+				client.wav_play_global(wav_nade_boom, this.x, this.y, this.z)
 				local i
 				local nade_particlecount = math.random() * 10 + 20
 				local pvel = 2
