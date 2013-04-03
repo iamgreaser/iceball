@@ -626,9 +626,9 @@ network.sys_handle_c2s(PKT_PLR_BLK_COLOR, "BBBB", nwdec_plrset(function (sockfd,
 	end
 end))
 network.sys_handle_c2s(PKT_NADE_THROW, "hhhhhhH", nwdec_plrset(function (sockfd, cli, plr, sec_current, x, y, z, vx, vy, vz, fuse, pkt)
-	if plr.grenades > 0 then
+	if plr.expl.ammo > 0 then
 		if plr.mode == PLM_NORMAL then
-			plr.grenades = plr.grenades - 1
+			plr.expl.ammo = plr.expl.ammo - 1
 		end
 		local n = new_nade({
 			x = x/32,

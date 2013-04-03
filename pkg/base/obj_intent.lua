@@ -285,7 +285,7 @@ function new_tent(settings)
 					restock = restock or
 						plr.wpn.ammo_reserve ~= plr.wpn.cfg.ammo_reserve
 				end
-				restock = restock or plr.grenades ~= 4
+				restock = restock or plr.expl.ammo ~= 4
 				restock = restock or plr.health ~= 100
 				restock = restock or plr.blocks ~= 100
 				

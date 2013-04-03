@@ -111,7 +111,7 @@ SCORE_SUICIDE = -1
 TOOL_SPADE = 0
 TOOL_BLOCK = 1
 TOOL_GUN = 2
-TOOL_NADE = 3
+TOOL_EXPL = 3
 
 -- sounds
 if client then
@@ -151,6 +151,18 @@ tools = {
 weapons_enabled = {}
 weapons_enabled[WPN_RIFLE] = true
 weapons_enabled[WPN_LEERIFLE] = true
+
+-- explosives
+EXPL_GRENADE = 1
+
+explosive_models = {}
+
+explosives = {
+	[EXPL_GRENADE] = loadfile(DIR_PKG_ROOT.."/ent/expl_grenade.lua")(),
+}
+
+explosives_enabled = {}
+explosives_enabled[EXPL_GRENADE] = true
 
 -- teams
 TEAM_INTEL_LIMIT = 10

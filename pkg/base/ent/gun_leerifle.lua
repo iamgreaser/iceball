@@ -165,7 +165,10 @@ return function (plr)
 				this.firing = state
 			else
 				this.firing = false
-				-- TODO: play sound
+				client.wav_play_global(wav_pin, plr.x, plr.y, plr.z)
+				plr.reload_msg.visible = true
+				plr.reload_msg.static_alarm{name='reloadviz',
+					time=0.5, on_trigger=function() this.reload_msg.visible = false end}
 			end
 		elseif button == 3 then
 			-- RMB

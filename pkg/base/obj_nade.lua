@@ -130,7 +130,7 @@ function new_nade(settings)
 					if not nd then
 						local dmg = (-(math.pow(dd / MODE_NADE_RANGE, 4)) + 1) * MODE_NADE_DAMAGE
 						
-						plr.grenade_damage(dmg, hplr)
+						plr.explosive_damage(dmg, hplr)
 					end
 				end
 			end

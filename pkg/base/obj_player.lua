@@ -33,6 +33,8 @@ function new_player(settings)
 	this.team = settings.team or math.floor(math.random()*2)
 	this.squad = settings.squad or nil
 	this.weapon = settings.weapon or WPN_RIFLE
+	this.explosive = settings.explosive or EXPL_GRENADE
+	
 	this.pid = settings.pid or error("pid must be set when creating player!")
 	this.sockfd = settings.sockfd
 	this.alive = false
@@ -169,8 +171,6 @@ function new_player(settings)
 		
 		this.t_respawn = nil
 		this.t_switch = nil
-		this.t_nadeboom = nil
-		this.t_newnade = nil
 		this.t_newblock = nil
 		this.t_newspade1 = nil
 		this.t_newspade2 = nil
@@ -201,8 +201,8 @@ function new_player(settings)
 		
 		this.health = 100
 		this.blocks = 25
-		this.grenades = 2
 		
+		this.expl = explosives[this.explosive](this)
 		this.wpn = weapons[this.weapon](this)
 		
 		this.tool = 2
@@ -287,12 +287,12 @@ function new_player(settings)
 	end
 
 	function this.tool_switch_next()
-		new_tool = (this.tool + 1) % (TOOL_NADE + 1) -- Nade is last weapon
+		new_tool = (this.tool + 1) % (TOOL_EXPL + 1) -- Explosives is last weapon
 		this.tool_switch(new_tool)
 	end
 
 	function this.tool_switch_prev()
-		new_tool = (this.tool - 1) % (TOOL_NADE + 1) -- Nade is last weapon
+		new_tool = (this.tool - 1) % (TOOL_EXPL + 1) -- Explosives is last weapon
 		this.tool_switch(new_tool)
 	end
 
@@ -367,7 +367,9 @@ function new_player(settings)
 	function this.tent_restock()
 		this.health = 100
 		this.blocks = 100
-		this.grenades = 4
+		if this.expl then
+			this.expl.restock()
+		end
 		if this.wpn then
 			this.wpn.restock()
 		end
@@ -505,12 +507,12 @@ function new_player(settings)
 		this.damage(amt, c, kmsg, enemy)
 	end
 
-	function this.grenade_damage(amt, enemy)
+	function this.explosive_damage(amt, enemy)
 		if enemy.mode ~= PLM_NORMAL then
 			return nil
 		end
 		--print("damage",this.name,part,amt)
-		local midmsg = " grenaded "
+		local midmsg = " exploded "
 		if this.team == enemy.team and this ~= enemy then
 			error("THIS SHOULD NEVER HAPPEN")
 		end
@@ -583,35 +585,6 @@ function new_player(settings)
 		end
 	end
 	
-	function this.throw_nade(sec_current)
-		local sya = math.sin(this.angy)
-		local cya = math.cos(this.angy)
-		local sxa = math.sin(this.angx)
-		local cxa = math.cos(this.angx)
-		local fwx,fwy,fwz
-		fwx,fwy,fwz = sya*cxa, sxa, cya*cxa
-		
-		local n = new_nade({
-			x = this.x,
-			y = this.y,
-			z = this.z,
-			vx = fwx*MODE_NADE_SPEED*MODE_NADE_STEP+this.vx*MODE_NADE_STEP,
-			vy = fwy*MODE_NADE_SPEED*MODE_NADE_STEP+this.vy*MODE_NADE_STEP,
-			vz = fwz*MODE_NADE_SPEED*MODE_NADE_STEP+this.vz*MODE_NADE_STEP,
-			fuse = math.max(0, this.t_nadeboom - sec_current)
-		})
-		nade_add(n)
-		net_send(nil, common.net_pack("BhhhhhhH",
-			PKT_NADE_THROW,
-			math.floor(n.x*32+0.5),
-			math.floor(n.y*32+0.5),
-			math.floor(n.z*32+0.5),
-			math.floor(n.vx*256+0.5),
-			math.floor(n.vy*256+0.5),
-			math.floor(n.vz*256+0.5),
-			math.floor(n.fuse*100+0.5)))
-	end
-	
 	function this.tick_listeners(sec_current, sec_delta)
 		if this.scene then
 			this.scene.pump_listeners(sec_delta, input_events)
@@ -678,19 +651,6 @@ function new_player(settings)
 		
 		if this.t_newspade1 and sec_current >= this.t_newspade1 then
 			this.t_newspade1 = nil
-		end
-		
-		if this.t_newnade and sec_current >= this.t_newnade then
-			this.t_newnade = nil
-		end
-		
-		if this.t_nadeboom then
-			if (not this.ev_lmb) or sec_current >= this.t_nadeboom then
-				this.throw_nade(sec_current)
-				this.t_newnade = sec_current + MODE_DELAY_NADE_THROW
-				this.t_nadeboom = nil
-				this.ev_lmb = false
-			end
 		end
 		
 		if not this.ev_rmb then
@@ -902,17 +862,6 @@ function new_player(settings)
 				end
 				
 				end
-			elseif this.tool == TOOL_NADE then
-				if (not this.t_newnade) and this.grenades > 0 then
-					if (not this.t_nadeboom) then
-						if this.mode == PLM_NORMAL then
-							this.grenades = this.grenades - 1
-						end
-						this.t_nadeboom = sec_current + MODE_NADE_FUSE
-					end
-				end
-			else
-				
 			end
 		elseif this.mode ~= PLM_SPECTATE and this.ev_rmb then
 			if this.tool == TOOL_BLOCK and this.blx3 and this.alive then
@@ -1205,8 +1154,9 @@ function new_player(settings)
 			= trace_map_ray_dist(camx,camy,camz, fwx,fwy,fwz, 127.5)
 		end
 		
-		-- update gun
+		-- update items
 		if this.wpn then this.wpn.tick(sec_current, sec_delta) end
+		if this.expl then this.expl.tick(sec_current, sec_delta) end
 	end
 
 	function this.drop_piano()
@@ -1327,12 +1277,9 @@ function new_player(settings)
 		elseif this.tool == TOOL_GUN then
 			this.wpn.draw(this.x+mdl_x, this.y+this.jerkoffs+mdl_y, this.z+mdl_z,
 				math.pi/2, -this.angx, this.angy)
-		elseif this.tool == TOOL_NADE then
-			if this.grenades > 0 then
-				client.model_render_bone_global(mdl_nade, mdl_nade_bone,
-					this.x+mdl_x, this.y+this.jerkoffs+mdl_y, this.z+mdl_z,
-					0.0, -this.angx, this.angy, 1.0)
-			end
+		elseif this.tool == TOOL_EXPL then
+			this.expl.draw(this.x+mdl_x, this.y+this.jerkoffs+mdl_y, this.z+mdl_z,
+				math.pi/2, -this.angx, this.angy)
 		end
 
 		client.model_render_bone_global(this.mdl_player, mdl_player_arm,
@@ -1382,7 +1329,7 @@ function new_player(settings)
 			x=0.25*w*5/8}
 		local bone_wslot3 = scene.bone{model=this.wpn.get_model(), bone=0,
 			x=0.4*w*5/8}
-		local bone_wslot4 = scene.bone{model=mdl_nade, bone=mdl_nade_bone,
+		local bone_wslot4 = scene.bone{model=this.expl.get_model(), bone=0,
 			x=0.55*w*5/8}
 		scene.root.add_child(this.tools_align)
 		this.tools_align.add_child(bone_wslot1)
@@ -1390,7 +1337,7 @@ function new_player(settings)
 		this.tools_align.add_child(bone_wslot3)
 		this.tools_align.add_child(bone_wslot4)
 		
-		local tool_mappings = {TOOL_SPADE,TOOL_BLOCK,TOOL_GUN,TOOL_NADE}
+		local tool_mappings = {TOOL_SPADE,TOOL_BLOCK,TOOL_GUN,TOOL_EXPL}
 		local tool_y = {0.3,0.25,0.25,0.25}
 		local tool_scale = {0.2,0.1,0.2,0.1}
 		local tool_pick_scale = {1.3,2.0,2.0,2.0}
@@ -1408,13 +1355,19 @@ function new_player(settings)
 					return 0xFFC0C0C0
 				end
 			end,
-			function() return 0xFFC0C0C0 end
+			function()
+				if this.expl.ammo == 0 then
+					return 0xFFFF3232
+				else
+					return 0xFFC0C0C0
+				end
+			end,
 		}
 		local tool_textgen = {
 			function() return ""..this.blocks end,
 			function() return ""..this.blocks end,
 			function() return ""..this.wpn.ammo_clip.."-"..this.wpn.ammo_reserve end,
-			function() return ""..this.grenades end
+			function() return ""..this.expl.ammo end
 		}
 		local bounce = 0. -- picked tool bounce
 		
@@ -2090,15 +2043,11 @@ function new_player(settings)
 		end
 		if this.tool == TOOL_GUN and this.alive then
 			this.wpn.click(button, state)
+		elseif this.tool == TOOL_EXPL and this.alive then
+			this.expl.click(button, state)
 		end
 		if button == 1 then
 			-- LMB
-			if state and not this.ev_lmb and this.tool == TOOL_GUN and this.alive and this.wpn.ammo_clip == 0 then
-				client.wav_play_global(wav_pin, this.x, this.y, this.z)
-				this.reload_msg.visible = true
-				this.reload_msg.static_alarm{name='reloadviz',
-					time=0.5, on_trigger=function() this.reload_msg.visible = false end}
-			end
 			this.ev_lmb = state
 			if this.ev_lmb then
 				this.ev_rmb = false
@@ -2113,12 +2062,12 @@ function new_player(settings)
 			-- mousewheelup
 			if state then
 				this.tool_switch_prev()
-		end
+			end
 		elseif button == 5 then
 			-- mousewheeldown
 			if state then
 				this.tool_switch_next()
-		end
+			end
 		elseif button == 2 then
 			-- middleclick
 		end
@@ -2177,7 +2126,7 @@ function new_player(settings)
 				elseif key == BTSK_TOOL3 then
 					this.tool_switch(TOOL_GUN)
 				elseif key == BTSK_TOOL4 then
-					this.tool_switch(TOOL_NADE)
+					this.tool_switch(TOOL_EXPL)
 				elseif key == BTSK_TOOL5 then
 					-- TODO
 				elseif key == BTSK_TOOLLAST then
