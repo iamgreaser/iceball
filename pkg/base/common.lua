@@ -39,6 +39,7 @@ LIB_LIST = LIB_LIST or {
 	DIR_PKG_LIB.."/obj_player.lua",
 	DIR_PKG_LIB.."/obj_intent.lua",
 	DIR_PKG_LIB.."/obj_nade.lua",
+	DIR_PKG_LIB.."/obj_bomb.lua",
 	DIR_PKG_LIB.."/obj_particle.lua",
 }
 
@@ -155,15 +156,18 @@ weapons_enabled[WPN_LEERIFLE] = true
 
 -- explosives
 EXPL_GRENADE = 1
+EXPL_BOMB = 2
 
 explosive_models = {}
 
 explosives = {
 	[EXPL_GRENADE] = loadfile(DIR_PKG_ROOT.."/ent/expl_grenade.lua")(),
+	[EXPL_BOMB] = loadfile(DIR_PKG_ROOT.."/ent/expl_bomb.lua")(),
 }
 
 explosives_enabled = {}
 explosives_enabled[EXPL_GRENADE] = true
+explosives_enabled[EXPL_BOMB] = true
 
 -- teams
 TEAM_INTEL_LIMIT = 10
@@ -235,6 +239,7 @@ damage_blk = {}
 players = {max = 32, current = 1}
 intent = {}
 nades = {head = 1, tail = 0}
+bombs = {head = 1, tail = 0}
 
 function player_ranking(x, y)
 	if x.score == y.score then

@@ -33,7 +33,7 @@ function new_player(settings)
 	this.team = settings.team or math.floor(math.random()*2)
 	this.squad = settings.squad or nil
 	this.weapon = settings.weapon or WPN_RIFLE
-	this.explosive = settings.explosive or EXPL_GRENADE
+	this.explosive = settings.explosive or EXPL_BOMB
 	
 	this.pid = settings.pid or error("pid must be set when creating player!")
 	this.sockfd = settings.sockfd

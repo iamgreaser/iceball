@@ -120,6 +120,7 @@ do
 		"BLK_DAMAGE",
 		"PIANO",
 		"NADE_PIN",
+		"BOMB_THROW",
 	}
 	local i,p
 	for i,p in pairs(pktlist) do
@@ -363,6 +364,13 @@ network.sys_handle_s2c(PKT_NADE_PIN, "B", function (sockfd, cli, plr, sec_curren
 	if plr then
 		client.wav_play_global(wav_pin, plr.x, plr.y, plr.z)
 	end
+end)
+network.sys_handle_s2c(PKT_BOMB_THROW, "B", function (sockfd, cli, plr, sec_current, plrid, pkt)
+	local n = new_bomb({
+		pid = plrid
+	})
+	client.wav_play_global(wav_whoosh, players[plrid].x, players[plrid].y, players[plrid].z)
+	bomb_add(n)
 end)
 
 -- C2S packets
@@ -633,7 +641,7 @@ network.sys_handle_c2s(PKT_PLR_BLK_COLOR, "BBBB", nwdec_plrset(function (sockfd,
 	end
 end))
 network.sys_handle_c2s(PKT_NADE_THROW, "hhhhhhH", nwdec_plrset(function (sockfd, cli, plr, sec_current, x, y, z, vx, vy, vz, fuse, pkt)
-	if plr.expl.ammo > 0 then
+	if plr.explosive == EXPL_NADE and plr.expl.ammo > 0 then
 		if plr.mode == PLM_NORMAL then
 			plr.expl.ammo = plr.expl.ammo - 1
 		end
@@ -663,4 +671,17 @@ network.sys_handle_c2s(PKT_BLK_DAMAGE, "HHHH", nwdec_plrset(function (sockfd, cl
 end))
 network.sys_handle_c2s(PKT_NADE_PIN, "", nwdec_plrset(function (sockfd, cli, plr, sec_current, pkt)
 	net_broadcast(sockfd, common.net_pack("BB", PKT_NADE_PIN, cli.plrid))
+end))
+network.sys_handle_c2s(PKT_BOMB_THROW, "", nwdec_plrset(function (sockfd, cli, plr, sec_current, pkt)
+	if plr.explosive == EXPL_BOMB and plr.expl.ammo > 0 then
+		if plr.mode == PLM_NORMAL then
+			plr.expl.ammo = plr.expl.ammo - 1
+		end
+		local n = new_bomb({
+			pid = cli.plrid
+		})
+		bomb_add(n)
+		net_broadcast(sockfd, common.net_pack("BB",
+			PKT_BOMB_THROW,cli.plrid))
+	end
 end))
