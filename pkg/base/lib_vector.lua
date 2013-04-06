@@ -146,7 +146,7 @@ function trace_map_ray_dist(x1,y1,z1, vx,vy,vz, maxdist, nil_on_maxdist)
 	
 	-- cell
 	local cx,cy,cz
-	if not x1 then return nil
+	if not x1 then return nil end
 	cx = math.floor(x1)
 	cy = math.floor(y1)
 	cz = math.floor(z1)
