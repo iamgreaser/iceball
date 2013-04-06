@@ -175,6 +175,9 @@ t_net_move = nil
 t_net_orient = nil
 
 function tracer_add(x,y,z,ya,xa,time)
+	x = x or 0
+	y = y or 0
+	z = z or 0
 	local tc = {
 		x=x,y=y,z=z,
 		ya=ya,xa=xa,
