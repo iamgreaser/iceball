@@ -195,10 +195,6 @@ function server.hook_tick(sec_current, sec_delta)
 			if nades[i] then nades[i].tick(moment, tickrate) end
 		end
 		nade_prune(sec_current)
-		for i=bombs.head,bombs.tail do
-			if bombs[i] then bombs[i].tick(moment, tickrate) end
-		end
-		bomb_prune(sec_current)
 		
 		for i=1,#intent do
 			intent[i].tick(moment, tickrate)
