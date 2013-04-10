@@ -400,7 +400,7 @@ function new_player(settings)
 	end
 
 	function this.set_health_damage(amt, kcol, kmsg, enemy)
-		this.health = amt
+		this.health = math.max(amt, 0)
 		
 		if this.health <= 0 and this.alive then
 			if server then
@@ -1456,70 +1456,72 @@ function new_player(settings)
 		end
 		
 		function this.update_overview_icons(dT)
-			for i=1,#log_mspr,2 do
-				local u,v
-				u = log_mspr[i  ]
-				v = log_mspr[i+1]
-				common.img_pixel_set(img_overview_icons, u, v, 0x00000000)
-			end
-			log_mspr = {}
-			
-			for j=1,players.max do
-				local plr = players[j]
-				if plr then
-					local x,y
-					x,y = plr.x, plr.z
-					local c
-					local drawit = true
-					if not plr.alive then
-						drawit = false
-					elseif plr == this then
-						c = 0xFF00FFFF
-						for i=0,10-1 do
-							local d=i/math.sqrt(2)
-							local u,v
-							u = math.floor(x)+math.floor(d*math.sin(plr.angy))
-							v = math.floor(y)+math.floor(d*math.cos(plr.angy))
-							log_mspr[#log_mspr+1] = u
-							log_mspr[#log_mspr+1] = v
-							common.img_pixel_set(img_overview_icons, u, v, c)
+			if this.alive then
+				for i=1,#log_mspr,2 do
+					local u,v
+					u = log_mspr[i  ]
+					v = log_mspr[i+1]
+					common.img_pixel_set(img_overview_icons, u, v, 0x00000000)
+				end
+				log_mspr = {}
+				
+				for j=1,players.max do
+					local plr = players[j]
+					if plr then
+						local x,y
+						x,y = plr.x, plr.z
+						local c
+						local drawit = true
+						if not plr.alive then
+							drawit = false
+						elseif plr == this then
+							c = 0xFF00FFFF
+							for i=0,10-1 do
+								local d=i/math.sqrt(2)
+								local u,v
+								u = math.floor(x)+math.floor(d*math.sin(plr.angy))
+								v = math.floor(y)+math.floor(d*math.cos(plr.angy))
+								log_mspr[#log_mspr+1] = u
+								log_mspr[#log_mspr+1] = v
+								common.img_pixel_set(img_overview_icons, u, v, c)
+							end
+						elseif plr.team == this.team then
+							c = 0xFFFFFFFF
+						else
+							c = 0xFFFF0000
+							drawit = drawit and (this.t_rcirc ~= nil and
+								(MODE_MINIMAP_RCIRC or this.large_map.visible))
 						end
-					elseif plr.team == this.team then
-						c = 0xFFFFFFFF
-					else
-						c = 0xFFFF0000
-						drawit = drawit and (this.t_rcirc ~= nil and
-							(MODE_MINIMAP_RCIRC or this.large_map.visible))
-					end
-
-					if drawit then
-						for i=1,#mspr_player,2 do
-							local u,v
-							u = math.floor(x)+mspr_player[i  ]
-							v = math.floor(y)+mspr_player[i+1]
-							log_mspr[#log_mspr+1] = u
-							log_mspr[#log_mspr+1] = v
-							common.img_pixel_set(img_overview_icons, u, v, c)
+						
+						if drawit then
+							for i=1,#mspr_player,2 do
+								local u,v
+								u = math.floor(x)+mspr_player[i  ]
+								v = math.floor(y)+mspr_player[i+1]
+								log_mspr[#log_mspr+1] = u
+								log_mspr[#log_mspr+1] = v
+								common.img_pixel_set(img_overview_icons, u, v, c)
+							end
 						end
 					end
 				end
-			end
-			
-			for j=1,#intent do
-				local obj = intent[j]
-
-				if obj.visible then
-					local x,y
-					x,y = obj.x, obj.z
-					local l = teams[obj.team].color_chat
-					local c = argb_split_to_merged(l[1],l[2],l[3])
-					for i=1,#(obj.mspr),2 do
-						local u,v
-						u = math.floor(x)+obj.mspr[i  ]
-						v = math.floor(y)+obj.mspr[i+1]
-						log_mspr[#log_mspr+1] = u
-						log_mspr[#log_mspr+1] = v
-						common.img_pixel_set(img_overview_icons, u, v, c)
+				
+				for j=1,#intent do
+					local obj = intent[j]
+	
+					if obj.visible then
+						local x,y
+						x,y = obj.x, obj.z
+						local l = teams[obj.team].color_chat
+						local c = argb_split_to_merged(l[1],l[2],l[3])
+						for i=1,#(obj.mspr),2 do
+							local u,v
+							u = math.floor(x)+obj.mspr[i  ]
+							v = math.floor(y)+obj.mspr[i+1]
+							log_mspr[#log_mspr+1] = u
+							log_mspr[#log_mspr+1] = v
+							common.img_pixel_set(img_overview_icons, u, v, c)
+						end
 					end
 				end
 			end
@@ -1578,7 +1580,7 @@ function new_player(settings)
 		end
 		
 		function this.mini_map.draw_update()
-			if MODE_ENABLE_MINIMAP then
+			if MODE_ENABLE_MINIMAP and this.alive then
 				local mw, mh
 				mw, mh = this.mini_map.width, this.mini_map.height
 				
@@ -1757,7 +1759,7 @@ function new_player(settings)
 			y = h-48}
 			
 		local function health_update(options)
-			if this.mode == PLM_NORMAL then
+			if this.mode == PLM_NORMAL and this.alive then
 				this.health_text.text = ""..this.health
 			else
 				this.health_text.text = ""
@@ -1777,7 +1779,7 @@ function new_player(settings)
 			local tool = this.tool + 1
 			this.ammo_text.color = tool_textcolor[tool]()
 			this.ammo_text.text = tool_textgen[tool]()
-			if this.mode == PLM_SPECTATE then
+			if this.mode == PLM_SPECTATE or not this.alive then
 				this.ammo_text.text = ""
 			end
 		end
@@ -2328,7 +2330,7 @@ function new_player(settings)
 			end
 		end
 		
-		if this.mode == PLM_SPECTATE then
+		if this.mode == PLM_SPECTATE or not this.alive then
 			this.cpal.visible = false
 			this.cpal_rect.visible = false
 		else
