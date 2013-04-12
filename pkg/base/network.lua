@@ -320,7 +320,7 @@ network.sys_handle_s2c(PKT_PLR_GUN_TRACER, "B", function (sockfd, cli, plr, sec_
 		})
 	end
 end)
-network.sys_handle_s2c(PKT_NADE_THROW, "hhhhhhH", function (sockfd, cli, plr, sec_current, x,y,z,vx,vy,vz,fuse, pkt)
+network.sys_handle_s2c(PKT_NADE_THROW, "BhhhhhhH", function (sockfd, cli, plr, sec_current, pid,x,y,z,vx,vy,vz,fuse, pkt)
 	local n = new_nade({
 		x = x/32,
 		y = y/32,
@@ -328,7 +328,8 @@ network.sys_handle_s2c(PKT_NADE_THROW, "hhhhhhH", function (sockfd, cli, plr, se
 		vx = vx/256,
 		vy = vy/256,
 		vz = vz/256,
-		fuse = fuse/100
+		fuse = fuse/100,
+		pid = pid
 	})
 	client.wav_play_global(wav_whoosh, x, y, z)
 	nade_add(n)
@@ -648,8 +649,8 @@ network.sys_handle_c2s(PKT_NADE_THROW, "hhhhhhH", nwdec_plrset(function (sockfd,
 			pid = cli.plrid
 		})
 		nade_add(n)
-		net_broadcast(sockfd, common.net_pack("BhhhhhhH",
-			PKT_NADE_THROW,x,y,z,vx,vy,vz,fuse))
+		net_broadcast(sockfd, common.net_pack("BBhhhhhhH",
+			PKT_NADE_THROW,cli.plrid,x,y,z,vx,vy,vz,fuse))
 	end
 end))
 network.sys_handle_c2s(PKT_PLR_GUN_RELOAD, "", nwdec_plrset(function (sockfd, cli, plr, sec_current, pkt)

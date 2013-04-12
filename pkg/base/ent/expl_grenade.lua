@@ -47,11 +47,13 @@ return function (plr)
 			vx = fwx*MODE_NADE_SPEED*MODE_NADE_STEP+plr.vx*MODE_NADE_STEP,
 			vy = fwy*MODE_NADE_SPEED*MODE_NADE_STEP+plr.vy*MODE_NADE_STEP,
 			vz = fwz*MODE_NADE_SPEED*MODE_NADE_STEP+plr.vz*MODE_NADE_STEP,
-			fuse = math.max(0, this.t_nadeboom - sec_current)
+			fuse = math.max(0, this.t_nadeboom - sec_current),
+			pid = this.plr.pid
 		})
 		nade_add(n)
-		net_send(nil, common.net_pack("BhhhhhhH",
+		net_send(nil, common.net_pack("BBhhhhhhH",
 			PKT_NADE_THROW,
+			this.plr.pid,
 			math.floor(n.x*32+0.5),
 			math.floor(n.y*32+0.5),
 			math.floor(n.z*32+0.5),
