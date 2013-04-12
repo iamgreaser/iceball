@@ -51,9 +51,8 @@ return function (plr)
 			pid = this.plr.pid
 		})
 		nade_add(n)
-		net_send(nil, common.net_pack("BBhhhhhhH",
+		net_send(nil, common.net_pack("BhhhhhhH",
 			PKT_NADE_THROW,
-			this.plr.pid,
 			math.floor(n.x*32+0.5),
 			math.floor(n.y*32+0.5),
 			math.floor(n.z*32+0.5),
