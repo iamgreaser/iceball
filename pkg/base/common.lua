@@ -296,18 +296,12 @@ function bhealth_damage(x,y,z,amt,plr)
 				PKT_BLK_RM1, x, y, z))
 			if plr.tool == TOOL_SPADE then
 				local oblocks = plr.blocks
-				plr.blocks = plr.blocks + 1
-				if plr.blocks > 100 then
-					plr.blocks = 100
+				oblocks = oblocks + 1
+				if oblocks > 100 then
+					oblocks = 100
 				end
 				
-				if oblocks == 0 then
-					net_broadcast(nil, common.net_pack("BBB",
-						PKT_PLR_BLK_COUNT, plr.pid, plr.blocks))
-				else
-					net_send(plr.sockfd, common.net_pack("BBB",
-						PKT_PLR_BLK_COUNT, plr.pid, plr.blocks))
-				end
+				plr.set_blocks(oblocks)
 			end
 		end
 	end

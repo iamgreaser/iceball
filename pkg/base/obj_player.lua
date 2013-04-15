@@ -363,7 +363,22 @@ function new_player(settings)
 			this.score, this.kills, this.deaths,
 			this.name, this.squad))
 	end
-	
+
+	function this.set_blocks(blocks)
+		local oblocks = this.blocks
+		this.blocks = blocks
+
+		if not server then return end
+
+		if (blocks == 0) ~= (oblocks == 0) then
+			net_broadcast(nil, common.net_pack("BBB",
+				PKT_PLR_BLK_COUNT, this.pid, this.blocks))
+		else
+			net_send(this.sockfd, common.net_pack("BBB",
+				PKT_PLR_BLK_COUNT, this.pid, this.blocks))
+		end
+	end
+
 	function this.tent_restock()
 		this.health = 100
 		this.blocks = 100

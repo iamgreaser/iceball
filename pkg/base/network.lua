@@ -390,24 +390,18 @@ network.sys_handle_c2s(PKT_BLK_ADD, "HHHBBBB", nwdec_plrset(function (sockfd, cl
 	
 	if x >= 0 and x < xlen and z >= 0 and z < zlen then
 	if y >= 0 and y <= ylen-3 then
-		if plr.blocks > 0 and map_is_buildable(x,y,z) then
+		local blocks = plr.blocks
+		if blocks > 0 and map_is_buildable(x,y,z) then
 			if plr.mode == PLM_NORMAL then
-				plr.blocks = plr.blocks - 1
+				blocks = blocks - 1
 			end
 			map_block_set(x,y,z,ct,cr,cg,cb)
 			net_broadcast(nil, common.net_pack("BHHHBBBB",
 				PKT_BLK_ADD,x,y,z,cb,cg,cr,ct))
-		elseif plr.blocks < 0 then
-			plr.blocks = 0
+		elseif blocks < 0 then
+			blocks = 0
 		end
-		if plr.blocks == 0 then
-			net_broadcast(nil, common.net_pack("BBB",
-				PKT_PLR_BLK_COUNT, cli.plrid, 0))
-		else
-			-- to prevent desyncing issues.
-			net_send(sockfd, common.net_pack("BBB",
-				PKT_PLR_BLK_COUNT, cli.plrid, plr.blocks))
-		end
+		plr.set_blocks(blocks)
 	end
 	end
 end))
@@ -423,18 +417,12 @@ network.sys_handle_c2s(PKT_BLK_RM1, "HHH", nwdec_plrset(function (sockfd, cli, p
 			
 			if plr.tool == TOOL_SPADE then
 				local oblocks = plr.blocks
-				plr.blocks = plr.blocks + 1
-				if plr.blocks > 100 then
-					plr.blocks = 100
+				oblocks = oblocks + 1
+				if oblocks > 100 then
+					oblocks = 100
 				end
 				
-				if oblocks == 0 then
-					net_broadcast(nil, common.net_pack("BBB",
-						PKT_PLR_BLK_COUNT, cli.plrid, plr.blocks))
-				else
-					net_send(sockfd, common.net_pack("BBB",
-						PKT_PLR_BLK_COUNT, cli.plrid, plr.blocks))
-				end
+				plr.set_blocks(oblocks)
 			end
 		end
 	end
