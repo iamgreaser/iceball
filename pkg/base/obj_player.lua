@@ -1290,10 +1290,10 @@ function new_player(settings)
 					0.0, -this.angx, this.angy, 1)
 			end
 		elseif this.tool == TOOL_GUN then
-			this.wpn.draw(this.x+mdl_x, this.y+this.jerkoffs+mdl_y, this.z+mdl_z,
+			this.wpn.render(this.x+mdl_x, this.y+this.jerkoffs+mdl_y, this.z+mdl_z,
 				math.pi/2, -this.angx, this.angy)
 		elseif this.tool == TOOL_EXPL then
-			this.expl.draw(this.x+mdl_x, this.y+this.jerkoffs+mdl_y, this.z+mdl_z,
+			this.expl.render(this.x+mdl_x, this.y+this.jerkoffs+mdl_y, this.z+mdl_z,
 				math.pi/2, -this.angx, this.angy)
 		end
 

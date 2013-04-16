@@ -114,7 +114,7 @@ return function (plr)
 		return mdl_nade
 	end
 	
-	function this.draw(px, py, pz, ya, xa, ya2)
+	function this.render(px, py, pz, ya, xa, ya2)
 		if this.ammo > 0 then
 			client.model_render_bone_global(this.get_model(), 0,
 				px, py, pz, ya, xa, ya2, 1)

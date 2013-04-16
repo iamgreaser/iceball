@@ -38,7 +38,7 @@ return function (plr)
 		return 0xFFC0C0C0, ""..this.plr.blocks
 	end
 
-	function this.draw(px,py,pz,angx,angy)
+	function this.render(px,py,pz,angx,angy)
 		client.model_render_bone_global(mdl_spade, mdl_spade_bone,
 			px, py, pz,
 			0.0, -angx, angy, 1)

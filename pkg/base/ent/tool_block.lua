@@ -41,7 +41,7 @@ return function (plr)
 		return col, ""..this.plr.blocks
 	end
 
-	function this.draw(px,py,pz,angx,angy)
+	function this.render(px,py,pz,angx,angy)
 		client.model_render_bone_global(this.mdl, this.mdl_bone,
 			px, py, pz,
 			0.0, -angx, angy, 1)

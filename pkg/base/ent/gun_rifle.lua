@@ -186,7 +186,7 @@ return function (plr)
 		return weapon_models[WPN_RIFLE]
 	end
 	
-	function this.draw(px, py, pz, ya, xa, ya2)
+	function this.render(px, py, pz, ya, xa, ya2)
 		client.model_render_bone_global(this.get_model(), 0,
 			px, py, pz, ya, xa, ya2, 3)
 	end
