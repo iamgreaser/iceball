@@ -11,7 +11,10 @@
 		"height": 600,
 		"fullscreen": false,
 
-		"cubeshift": 0
+		"cubeshift": 0,
+
+		"antialiasinglevel": 4,
+		"smoothlighting": true
 	},
 	
 	"audio" : {

@@ -19,7 +19,7 @@
 #define VERSION_X 0
 #define VERSION_Y 0
 #define VERSION_A 0
-#define VERSION_Z 34
+#define VERSION_Z 35
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!
@@ -420,6 +420,8 @@ extern SDL_Surface *screen;
 extern int screen_width, screen_height;
 extern int screen_cubeshift;
 extern int screen_fullscreen;
+extern int screen_antialiasing_level;
+extern int screen_smooth_lighting;
 #endif
 extern int force_redraw;
 
