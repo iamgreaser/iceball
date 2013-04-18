@@ -166,6 +166,10 @@ void render_gl_cube_pmf(model_bone_t *bone, float x, float y, float z, float r, 
 
 	for(i = 0; i < 3; i++)
 	{
+		float s2 = ((int)cam_shading[i+0])/255.0f;
+		float s1 = ((int)cam_shading[i+3])/255.0f;
+		float cr,cg,cb;
+
 		ua = vfinf_cube[i*6+0];
 		ub = vfinf_cube[i*6+1];
 		uc = vfinf_cube[i*6+2];
@@ -175,15 +179,17 @@ void render_gl_cube_pmf(model_bone_t *bone, float x, float y, float z, float r, 
 		
 #define ARR_ADD(vx,vy,vz) \
 		*(arr++) = vx; *(arr++) = vy; *(arr++) = vz; \
-		*(arr++) = r; *(arr++) = g; *(arr++) = b;
+		*(arr++) = cr; *(arr++) = cg; *(arr++) = cb;
 
 		/* Quad 1 */
+		cr = r*s1; cg = g*s1, cb = b*s1;
 		ARR_ADD(x,y,z);
 		ARR_ADD(x+rad*ua,y+rad*ub,z+rad*uc);
 		ARR_ADD(x+rad*(ua+va),y+rad*(ub+vb),z+rad*(uc+vc));
 		ARR_ADD(x+rad*va,y+rad*vb,z+rad*vc);
 
 		/* Quad 2 */
+		cr = r*s2; cg = g*s2, cb = b*s2;
 		ARR_ADD(x+rad,y+rad,z+rad);
 		ARR_ADD(x+rad*(1-va),y+rad*(1-vb),z+rad*(1-vc));
 		ARR_ADD(x+rad*(1-ua-va),y+rad*(1-ub-vb),z+rad*(1-uc-vc));
