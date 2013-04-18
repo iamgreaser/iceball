@@ -15,8 +15,6 @@
     along with Iceball.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#import "common.h"
-
 int icelua_fn_common_argb_split_to_merged(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 3, 4);
