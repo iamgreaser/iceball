@@ -13,8 +13,8 @@
 
 		"cubeshift": 0,
 
-        "antialiasinglevel": 0,
-        "smoothlighting": false
+		"antialiasinglevel": 4,
+		"smoothlighting": true
 	},
 	
 	"audio" : {

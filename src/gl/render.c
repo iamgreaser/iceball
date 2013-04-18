@@ -92,45 +92,45 @@ uint32_t render_shade(uint32_t color, int face)
 
 GLfloat render_darken_color(GLfloat original_color, GLfloat factor)
 {
-    return original_color + (factor * (0.0f - original_color)) / 1.0f;
+	return original_color + (factor * (0.0f - original_color)) / 1.0f;
 }
 
 int render_map_get_block_at(map_t *map, int x, int y, int z)
 {
-    int i;
-    uint8_t *data = NULL;
+	int i;
+	uint8_t *data = NULL;
 
-    if (map == NULL)
-        return 0;
+	if (map == NULL)
+		return 0;
 
-    data = map->pillars[(z&(map->zlen-1))*(map->xlen)+(x&(map->xlen-1))];
-    data += 4;
+	data = map->pillars[(z&(map->zlen-1))*(map->xlen)+(x&(map->xlen-1))];
+	data += 4;
 
-    for(;;)
-    {
-        if (y>=data[1] && y<=data[2])
-            return 1;
+	for(;;)
+	{
+		if (y>=data[1] && y<=data[2])
+			return 1;
 
-        if (y>=data[3] && y<data[1])
-            return 0;
+		if (y>=data[3] && y<data[1])
+			return 0;
 
-        if(data[0] == 0)
-            return 1;
+		if(data[0] == 0)
+			return 1;
 
-        data += 4*(int)data[0];
-    }
-    return 0;
+		data += 4*(int)data[0];
+	}
+	return 0;
 }
 
 GLfloat render_get_average_light(map_t *map, int x1, int y1, int z1, int x2, int y2, int z2, int x3, int y3, int z3, int x4, int y4, int z4)
 {
-    GLfloat average = (
-                        render_map_get_block_at(map, x1, y1, z1)
-                        + render_map_get_block_at(map, x2, y2, z2)
-                        + render_map_get_block_at(map, x3, y3, z3)
-                        + render_map_get_block_at(map, x4, y4, z4)
-                        ) / 4.0f;
-    return average;
+	GLfloat average = (
+		render_map_get_block_at(map, x1, y1, z1)
+		+ render_map_get_block_at(map, x2, y2, z2)
+		+ render_map_get_block_at(map, x3, y3, z3)
+		+ render_map_get_block_at(map, x4, y4, z4)
+		) / 4.0f;
+	return average;
 }
 
 
@@ -177,13 +177,13 @@ void render_gl_cube_pmf(model_bone_t *bone, float x, float y, float z, float r, 
 		*(arr++) = vx; *(arr++) = vy; *(arr++) = vz; \
 		*(arr++) = r; *(arr++) = g; *(arr++) = b;
 
-        /* Quad 1 */
+		/* Quad 1 */
 		ARR_ADD(x,y,z);
 		ARR_ADD(x+rad*ua,y+rad*ub,z+rad*uc);
 		ARR_ADD(x+rad*(ua+va),y+rad*(ub+vb),z+rad*(uc+vc));
 		ARR_ADD(x+rad*va,y+rad*vb,z+rad*vc);
 
-        /* Quad 2 */
+		/* Quad 2 */
 		ARR_ADD(x+rad,y+rad,z+rad);
 		ARR_ADD(x+rad*(1-va),y+rad*(1-vb),z+rad*(1-vc));
 		ARR_ADD(x+rad*(1-ua-va),y+rad*(1-ub-vb),z+rad*(1-uc-vc));
@@ -197,105 +197,105 @@ void render_gl_cube_map(map_t *map, float x, float y, float z, float r, float g,
 	int i;
 	float ua,ub,uc;
 	float va,vb,vc;
-    float average_light_vertex1, average_light_vertex2, average_light_vertex3, average_light_vertex4;
+	float average_light_vertex1, average_light_vertex2, average_light_vertex3, average_light_vertex4;
 
 	float *arr = map->vbo_arr;
 
-    /*r = g = b =1.0f;*/
+	/*r = g = b =1.0f;*/
 
-    /* Quads rendering explained (sort of)
+	/* Quads rendering explained (sort of)
 
-       i = 0                                          | i = 1                                          | i = 2                                         
-       -----                                          | -----                                          | -----                                         
-                                                      |                                                |                                               
-       Quad 1 (left)               Quad 2 (right)     | Quad 1 (top)            Quad 2 (bottom)        | Quad 1 (back)              Quad 2 (front)     
-                                                      |                                                |         
-                   1                       3          |             1         4                        |            1        2                         
-         +-- x      +.......         .......+         |  +-- x       +------+         ........         |  +-- x      +------+         ........         
-        /|       4 /|     ..        ..   4 /|         | /|          /.     /.        ..     ..         | /|         .|     .|      3 ..     2.         
-       z y        +.|..... .       .......+ |         |z y         +------+ .       ........ .         |z y        ..|..... |       +------+ .         
-                  | +.......       . .....|.+         |           2. ......3.       . +------+         |           . +------+       | .....|..         
-                  |/ 2   ..        ..     |/ 2        |            ..     ..        ./ 3   ./ 4        |           .. 4   .. 3      |.     |/          
-                  +.......         .......+           |            ........         +------+           |           ........         +------+           
-                 3                         1          |                            2        1          |                           4        1                                                
-                                                      |                                                |                                               
-        ua = 0.0       va = 0.0                       | ua = 0.0       va = 1.0                        | ua = 1.0        va = 0.0                      
-        ub = 1.0       vb = 0.0                       | ub = 0.0       vb = 0.0                        | ub = 0.0        vb = 1.0                      
-        uc = 0.0       vc = 1.0                       | uc = 1.0       vc = 0.0                        | uc = 0.0        vc = 0.0                      
-                                                      |                                                |                                               
-                                                      |                                                |                                               
-        Neighbor to check for face drawing toggle     | Neighbor to check for face drawing toggle      | Neighbor to check for face drawing toggle
-                                                      |                                                |                                               
-        Quad1                       Quad2             | Quad1                       Quad2              | Quad1                       Quad2
-        x - 1                       x + 1             | y - 1                       y + 1              | z - 1                       z + 1             
-                                                      |                                                |                                              
-                                                      |                                                |                                               
-        Neighbors to check for light average          | Neighbors to check for light average           | Neighbors to check for light average
-                                                      |                                                |                                              
-        Left                      Right               | Top                       Bottom               | Back                      Front               
-        ----                      -----               | ------                    ---                  | ----                      -----               
-                                                      |                                                |                                               
-        Vertex1                   Vertex1             | Vertex1                   Vertex1              | Vertex1                   Vertex1                  
-        x-1, y,   z               x+1, y,   z         | x,   y-1, z               x,   y+1, z          | x,   y,   z-1             x,   y,   z+1                      
-        x-1, y-1, z               x+1, y+1, z         | x-1, y-1, z               x+1, y+1, z          | x-1, y,   z-1             x+1, y,   z+1                      
-        x-1, y-1, z-1             x+1, y+1, z+1       | x-1, y-1, z-1             x+1  y+1, z+1        | x-1, y-1, z-1             x+1, y+1, z+1                      
-        x-1, y,   z-1             x+1, y,   z+1       | x,   y-1, z-1             x,   y+1, z+1        | x,   y-1, z-1             x,   y+1, z+1                      
-                                                      |                                                |                                               
-        Vertex2                   Vertex2             | Vertex2                   Vertex2              | Vertex2                   Vertex2                  
-        x-1, y,   z               x+1, y,   z         | x,   y-1, z               x,   y+1, z          | x,   y,   z-1             x,   y,   z+1                   
-        x-1, y+1, z               x+1, y+1, z         | x-1, y-1, z               x-1, y+1, z          | x+1, y,   z-1             x+1, y,   z+1                   
-        x-1, y+1, z-1             x+1, y+1, z-1       | x-1, y-1, z+1             x-1, y+1, z+1        | x+1, y-1, z-1             x+1, y-1, z+1                   
-        x-1, y,   z-1             x+1, y,   z-1       | x,   y-1, z+1             x,   y+1, z+1        | x,   y-1, z-1             x,   y-1, z+1                   
-                                                      |                                                |                                               
-        Vertex3                   Vertex3             | Vertex3                   Vertex3              | Vertex3                   Vertex3                  
-        x-1, y,   z               x+1, y,   z         | x,   y-1, z               x,   y+1, z          | x,   y,   z-1             x,   y,   z+1                 
-        x-1, y+1, z               x+1, y-1, z         | x+1, y-1, z               x-1, y+1, z          | x+1, y,   z-1             x-1, y,   z+1                 
-        x-1, y+1, z+1             x+1, y-1, z-1       | x+1, y-1, z+1             x-1, y+1, z-1        | x+1, y+1, z-1             x-1, y-1, z+1                 
-        x-1, y,   z+1             x+1, y,   z-1       | x,   y-1, z+1             x,   y+1, z-1        | x,   y+1, z-1             x,   y-1, z+1                 
-                                                      |                                                |                                               
-        Vertex4                   Vertex4             | Vertex4                   Vertex4              | Vertex4                   Vertex4                  
-        x-1, y,   z               x+1, y,   z         | x,   y-1, z               x,   y+1  z          | x,   y,   z-1             x,   y,   z+1                  
-        x-1, y-1, z               x+1, y-1, z         | x+1, y-1, z               x+1, y+1  z          | x-1, y,   z-1             x-1, y,   z+1                  
-        x-1, y-1, z+1             x+1, y-1, z+1       | x+1, y-1, z-1             x+1, y+1  z-1        | x-1, y+1, z-1             x-1, y+1, z+1                  
-        x-1, y  , z+1             x+1, y,   z+1       | x,   y-1, z-1             x,   y+1  z-1        | x,   y+1, z-1             x,   y+1, z+1                  
-
-
-        Neighbors to check for face drawing :
-
-        Quad 1                                    Quad 2
-        ------                                    ------
-
-        x - ub, y - uc, z - ua                    x + vc, y + va, z + vb
+	   i = 0                                          | i = 1                                          | i = 2                                         
+	   -----                                          | -----                                          | -----                                         
+	                                                  |                                                |                                               
+	   Quad 1 (left)               Quad 2 (right)     | Quad 1 (top)            Quad 2 (bottom)        | Quad 1 (back)              Quad 2 (front)     
+	                                                  |                                                |         
+	               1                       3          |             1         4                        |            1        2                         
+	    +-- x       +.......         .......+         |  +-- x       +------+         ........         |  +-- x      +------+         ........         
+	   /|        4 /|     ..        ..   4 /|         | /|          /.     /.        ..     ..         | /|         .|     .|      3 ..     2.         
+	   z y        +.|..... .       .......+ |         |z y         +------+ .       ........ .         |z y        ..|..... |       +------+ .         
+	              | +.......       . .....|.+         |           2. ......3.       . +------+         |           . +------+       | .....|..         
+	              |/ 2   ..        ..     |/ 2        |            ..     ..        ./ 3   ./ 4        |           .. 4   .. 3      |.     |/          
+	              +.......         .......+           |            ........         +------+           |           ........         +------+           
+	             3                         1          |                            2        1          |                           4        1                                                
+	                                                  |                                                |                                               
+	    ua = 0.0       va = 0.0                       | ua = 0.0       va = 1.0                        | ua = 1.0        va = 0.0                      
+	    ub = 1.0       vb = 0.0                       | ub = 0.0       vb = 0.0                        | ub = 0.0        vb = 1.0                      
+	    uc = 0.0       vc = 1.0                       | uc = 1.0       vc = 0.0                        | uc = 0.0        vc = 0.0                      
+	                                                  |                                                |                                               
+	                                                  |                                                |                                               
+	    Neighbor to check for face drawing toggle     | Neighbor to check for face drawing toggle      | Neighbor to check for face drawing toggle
+	                                                  |                                                |                                               
+	    Quad1                       Quad2             | Quad1                       Quad2              | Quad1                       Quad2
+	    x - 1                       x + 1             | y - 1                       y + 1              | z - 1                       z + 1             
+	                                                  |                                                |                                              
+	                                                  |                                                |                                               
+	    Neighbors to check for light average          | Neighbors to check for light average           | Neighbors to check for light average
+	                                                  |                                                |                                              
+	    Left                      Right               | Top                       Bottom               | Back                      Front               
+	    ----                      -----               | ------                    ---                  | ----                      -----               
+	                                                  |                                                |                                               
+	    Vertex1                   Vertex1             | Vertex1                   Vertex1              | Vertex1                   Vertex1                  
+	    x-1, y,   z               x+1, y,   z         | x,   y-1, z               x,   y+1, z          | x,   y,   z-1             x,   y,   z+1                      
+	    x-1, y-1, z               x+1, y+1, z         | x-1, y-1, z               x+1, y+1, z          | x-1, y,   z-1             x+1, y,   z+1                      
+	    x-1, y-1, z-1             x+1, y+1, z+1       | x-1, y-1, z-1             x+1  y+1, z+1        | x-1, y-1, z-1             x+1, y+1, z+1                      
+	    x-1, y,   z-1             x+1, y,   z+1       | x,   y-1, z-1             x,   y+1, z+1        | x,   y-1, z-1             x,   y+1, z+1                      
+	                                                  |                                                |                                               
+	    Vertex2                   Vertex2             | Vertex2                   Vertex2              | Vertex2                   Vertex2                  
+	    x-1, y,   z               x+1, y,   z         | x,   y-1, z               x,   y+1, z          | x,   y,   z-1             x,   y,   z+1                   
+	    x-1, y+1, z               x+1, y+1, z         | x-1, y-1, z               x-1, y+1, z          | x+1, y,   z-1             x+1, y,   z+1                   
+	    x-1, y+1, z-1             x+1, y+1, z-1       | x-1, y-1, z+1             x-1, y+1, z+1        | x+1, y-1, z-1             x+1, y-1, z+1                   
+	    x-1, y,   z-1             x+1, y,   z-1       | x,   y-1, z+1             x,   y+1, z+1        | x,   y-1, z-1             x,   y-1, z+1                   
+	                                                  |                                                |                                               
+	    Vertex3                   Vertex3             | Vertex3                   Vertex3              | Vertex3                   Vertex3                  
+	    x-1, y,   z               x+1, y,   z         | x,   y-1, z               x,   y+1, z          | x,   y,   z-1             x,   y,   z+1                 
+	    x-1, y+1, z               x+1, y-1, z         | x+1, y-1, z               x-1, y+1, z          | x+1, y,   z-1             x-1, y,   z+1                 
+	    x-1, y+1, z+1             x+1, y-1, z-1       | x+1, y-1, z+1             x-1, y+1, z-1        | x+1, y+1, z-1             x-1, y-1, z+1                 
+	    x-1, y,   z+1             x+1, y,   z-1       | x,   y-1, z+1             x,   y+1, z-1        | x,   y+1, z-1             x,   y-1, z+1                 
+	                                                  |                                                |                                               
+	    Vertex4                   Vertex4             | Vertex4                   Vertex4              | Vertex4                   Vertex4                  
+	    x-1, y,   z               x+1, y,   z         | x,   y-1, z               x,   y+1  z          | x,   y,   z-1             x,   y,   z+1                  
+	    x-1, y-1, z               x+1, y-1, z         | x+1, y-1, z               x+1, y+1  z          | x-1, y,   z-1             x-1, y,   z+1                  
+	    x-1, y-1, z+1             x+1, y-1, z+1       | x+1, y-1, z-1             x+1, y+1  z-1        | x-1, y+1, z-1             x-1, y+1, z+1                  
+	    x-1, y  , z+1             x+1, y,   z+1       | x,   y-1, z-1             x,   y+1  z-1        | x,   y+1, z-1             x,   y+1, z+1                  
 
 
-        Generic coordinates formula to check for each vertex (god, I don't even know what I'm writing, it would miraculous if it works) :
+	    Neighbors to check for face drawing :
 
-        Quad 1                                    Quad 2               
-        ------                                    ------
+	    Quad 1                                    Quad 2
+	    ------                                    ------
 
-        V1                                        V1                           
-        x-ub, y-uc, z-ua                          x+vc, y+va, z+vb                         
-        x-1, y-1+ua, z-ua                         x+1, y+1-vb, z+vb                      
-        x-1, y-1, z-1                             x+1, y+1, z+1                             
-        x-ub, y-1+ub, z-1                         x+vc, y+1-vc, z+1                         
+	    x - ub, y - uc, z - ua                    x + vc, y + va, z + vb
 
-        V2                                        V2                           
-        x-ub, y-uc, z-ua                          x+vc, y+va, z+vb                          
-        x-1+2*ua, y+(1-ua)-2*uc, z-ua             x+1-2*va, y+1-vb, z+vb                           
-        x-1+2*ua, y-1+2*ub, z-1+2*uc              x+1-2*va, y+1-2*vb, z+1-2*vc                                                       
-        x-ub, y-1+ub, z-1+2*uc                    x+vc, y+(1-vc)-2*vb, z+1-2*vc                                                
 
-        V3                                        V3                           
-        x-ub, y-uc, z-ua                          x+vc, y+va, z+vb                                          
-        x+1-2*ub, y+(1-ua)-2*uc, z-ua             x-1+2*vc, y+(1-vb)-2*vc, z+vb                                               
-        x+1-2*ub, y+1-2*uc, z+1-2*ua              x-1+2*vc, y-1+2*va, z-1+2*vb                                                              
-        x-ub, y+(1-ub)-2*uc, z+1-2*ua             x+vc, y+(1-vc)-2*vb, z-1+2*vb                                                      
+	    Generic coordinates formula to check for each vertex (god, I don't even know what I'm writing, it would miraculous if it works) :
 
-        V4                                        V4                           
-        x-ub, y-uc, z-ua                          x+vc, y+va, z+vb                                          
-        x-1+2*uc, y-1+ua, z-ua                    x+1-2*vb, y+(1-vb)-2*vc, z+vb                                                
-        x-1+2*uc, y-1+2*ua, z-1+2*ub              x+1-2*vb, y+1-2*vc, z+1-2*va                                                     
-        x-ub, y+(1-ub)-2*uc, z-1+2*ub             x+vc, y+1-vc, z+1-2*va                                         
+	    Quad 1                                    Quad 2               
+	    ------                                    ------
+
+	    V1                                        V1                           
+	    x-ub, y-uc, z-ua                          x+vc, y+va, z+vb                         
+	    x-1, y-1+ua, z-ua                         x+1, y+1-vb, z+vb                      
+	    x-1, y-1, z-1                             x+1, y+1, z+1                             
+	    x-ub, y-1+ub, z-1                         x+vc, y+1-vc, z+1                         
+
+	    V2                                        V2                           
+	    x-ub, y-uc, z-ua                          x+vc, y+va, z+vb                          
+	    x-1+2*ua, y+(1-ua)-2*uc, z-ua             x+1-2*va, y+1-vb, z+vb                           
+	    x-1+2*ua, y-1+2*ub, z-1+2*uc              x+1-2*va, y+1-2*vb, z+1-2*vc                                                       
+	    x-ub, y-1+ub, z-1+2*uc                    x+vc, y+(1-vc)-2*vb, z+1-2*vc                                                
+
+	    V3                                        V3                           
+	    x-ub, y-uc, z-ua                          x+vc, y+va, z+vb                                          
+	    x+1-2*ub, y+(1-ua)-2*uc, z-ua             x-1+2*vc, y+(1-vb)-2*vc, z+vb                                               
+	    x+1-2*ub, y+1-2*uc, z+1-2*ua              x-1+2*vc, y-1+2*va, z-1+2*vb                                                              
+	    x-ub, y+(1-ub)-2*uc, z+1-2*ua             x+vc, y+(1-vc)-2*vb, z-1+2*vb                                                      
+
+	    V4                                        V4                           
+	    x-ub, y-uc, z-ua                          x+vc, y+va, z+vb                                          
+	    x-1+2*uc, y-1+ua, z-ua                    x+1-2*vb, y+(1-vb)-2*vc, z+vb                                                
+	    x-1+2*uc, y-1+2*ua, z-1+2*ub              x+1-2*vb, y+1-2*vc, z+1-2*va                                                     
+	    x-ub, y+(1-ub)-2*uc, z-1+2*ub             x+vc, y+1-vc, z+1-2*va                                         
 */
 
 	for(i = 0; i < 3; i++)
@@ -315,154 +315,154 @@ void render_gl_cube_map(map_t *map, float x, float y, float z, float r, float g,
 		*(arr++) = vx; *(arr++) = vy; *(arr++) = vz; \
 		*(arr++) = cr; *(arr++) = cg; *(arr++) = cb;
 
-        /* check visibility of the face (is face exposed to air ?) */
-        if (render_map_get_block_at(map, x - ub, y - uc, z - ua) == 0)
-        {
-            render_update_vbo(&(map->vbo_arr), &(map->vbo_arr_len), &(map->vbo_arr_max), map->vbo_arr_len+4);
-            arr = map->vbo_arr;
-            arr += map->vbo_arr_len*6;
-            map->vbo_arr_len += 4;
+		/* check visibility of the face (is face exposed to air ?) */
+		if (render_map_get_block_at(map, x - ub, y - uc, z - ua) == 0)
+		{
+			render_update_vbo(&(map->vbo_arr), &(map->vbo_arr_len), &(map->vbo_arr_max), map->vbo_arr_len+4);
+			arr = map->vbo_arr;
+			arr += map->vbo_arr_len*6;
+			map->vbo_arr_len += 4;
 
-            if (screen_smooth_lighting)
-            {
-                average_light_vertex1 = render_get_average_light(
-                map,
-                x-ub, y-uc, z-ua,
-                x-1, y-1+ua, z-ua,
-                x-1, y-1, z-1,
-                x-ub, y-1+ub, z-1);
+			if (screen_smooth_lighting)
+			{
+				average_light_vertex1 = render_get_average_light(
+					map,
+					x-ub, y-uc, z-ua,
+					x-1, y-1+ua, z-ua,
+					x-1, y-1, z-1,
+					x-ub, y-1+ub, z-1);
 
-                average_light_vertex2 = render_get_average_light(
-                map,
-                x-ub, y-uc, z-ua,
-                x-1+2*ua, y+(1-ua)-2*uc, z-ua,
-                x-1+2*ua, y-1+2*ub, z-1+2*uc,
-                x-ub, y-1+ub, z-1+2*uc);
+				average_light_vertex2 = render_get_average_light(
+					map,
+					x-ub, y-uc, z-ua,
+					x-1+2*ua, y+(1-ua)-2*uc, z-ua,
+					x-1+2*ua, y-1+2*ub, z-1+2*uc,
+					x-ub, y-1+ub, z-1+2*uc);
 
-                average_light_vertex3 = render_get_average_light(
-                map,
-                x-ub, y-uc, z-ua,
-                x+1-2*ub, y+(1-ua)-2*uc, z-ua,
-                x+1-2*ub, y+1-2*uc, z+1-2*ua,
-                x-ub, y+(1-ub)-2*uc, z+1-2*ua);
+				average_light_vertex3 = render_get_average_light(
+					map,
+					x-ub, y-uc, z-ua,
+					x+1-2*ub, y+(1-ua)-2*uc, z-ua,
+					x+1-2*ub, y+1-2*uc, z+1-2*ua,
+					x-ub, y+(1-ub)-2*uc, z+1-2*ua);
 
-                average_light_vertex4 = render_get_average_light(
-                map,
-                x-ub, y-uc, z-ua,
-                x-1+2*uc, y-1+ua, z-ua,
-                x-1+2*uc, y-1+2*ua, z-1+2*ub,
-                x-ub, y+(1-ub)-2*uc, z-1+2*ub);
-            } else {
-                average_light_vertex1 = 0.0f;
-                average_light_vertex2 = 0.0f;
-                average_light_vertex3 = 0.0f;
-                average_light_vertex4 = 0.0f;
-            }
+				average_light_vertex4 = render_get_average_light(
+					map,
+					x-ub, y-uc, z-ua,
+					x-1+2*uc, y-1+ua, z-ua,
+					x-1+2*uc, y-1+2*ua, z-1+2*ub,
+					x-ub, y+(1-ub)-2*uc, z-1+2*ub);
+			} else {
+				average_light_vertex1 = 0.0f;
+				average_light_vertex2 = 0.0f;
+				average_light_vertex3 = 0.0f;
+				average_light_vertex4 = 0.0f;
+			}
 
-            /* Quad 1 */
-            /* vertex 1 */
-            cr = r*s1; cg = g*s1, cb = b*s1;
-            cr = render_darken_color(cr, average_light_vertex1);
-            cg = render_darken_color(cg, average_light_vertex1);
-            cb = render_darken_color(cb, average_light_vertex1);
-    		ARR_ADD(x,y,z);
+			/* Quad 1 */
+			/* vertex 1 */
+			cr = r*s1; cg = g*s1, cb = b*s1;
+			cr = render_darken_color(cr, average_light_vertex1);
+			cg = render_darken_color(cg, average_light_vertex1);
+			cb = render_darken_color(cb, average_light_vertex1);
+			ARR_ADD(x,y,z);
 
-            /* vertex 2 */
-            cr = r*s1; cg = g*s1, cb = b*s1;
-            cr = render_darken_color(cr, average_light_vertex2);
-            cg = render_darken_color(cg, average_light_vertex2);
-            cb = render_darken_color(cb, average_light_vertex2);
-    		ARR_ADD(x+rad*ua,y+rad*ub,z+rad*uc);
+			/* vertex 2 */
+			cr = r*s1; cg = g*s1, cb = b*s1;
+			cr = render_darken_color(cr, average_light_vertex2);
+			cg = render_darken_color(cg, average_light_vertex2);
+			cb = render_darken_color(cb, average_light_vertex2);
+			ARR_ADD(x+rad*ua,y+rad*ub,z+rad*uc);
 
-            /* vertex 3 */
-            cr = r*s1; cg = g*s1, cb = b*s1;
-            cr = render_darken_color(cr, average_light_vertex3);
-            cg = render_darken_color(cg, average_light_vertex3);
-            cb = render_darken_color(cb, average_light_vertex3);
-    		ARR_ADD(x+rad*(ua+va),y+rad*(ub+vb),z+rad*(uc+vc));
+			/* vertex 3 */
+			cr = r*s1; cg = g*s1, cb = b*s1;
+			cr = render_darken_color(cr, average_light_vertex3);
+			cg = render_darken_color(cg, average_light_vertex3);
+			cb = render_darken_color(cb, average_light_vertex3);
+			ARR_ADD(x+rad*(ua+va),y+rad*(ub+vb),z+rad*(uc+vc));
 
-            /* vertex 4 */
-            cr = r*s1; cg = g*s1, cb = b*s1;
-            cr = render_darken_color(cr, average_light_vertex4);
-            cg = render_darken_color(cg, average_light_vertex4);
-            cb = render_darken_color(cb, average_light_vertex4);
-    		ARR_ADD(x+rad*va,y+rad*vb,z+rad*vc);
-        }
+			/* vertex 4 */
+			cr = r*s1; cg = g*s1, cb = b*s1;
+			cr = render_darken_color(cr, average_light_vertex4);
+			cg = render_darken_color(cg, average_light_vertex4);
+			cb = render_darken_color(cb, average_light_vertex4);
+			ARR_ADD(x+rad*va,y+rad*vb,z+rad*vc);
+		}
 
-        /* check visibility of the face (is face exposed to air ?) */
-        if (render_map_get_block_at(map, x + vc, y + va, z + vb) == 0)
-        {
-            render_update_vbo(&(map->vbo_arr), &(map->vbo_arr_len), &(map->vbo_arr_max), map->vbo_arr_len+4);
-            arr = map->vbo_arr;
-            arr += map->vbo_arr_len*6;
-            map->vbo_arr_len += 4;
+		/* check visibility of the face (is face exposed to air ?) */
+		if (render_map_get_block_at(map, x + vc, y + va, z + vb) == 0)
+		{
+			render_update_vbo(&(map->vbo_arr), &(map->vbo_arr_len), &(map->vbo_arr_max), map->vbo_arr_len+4);
+			arr = map->vbo_arr;
+			arr += map->vbo_arr_len*6;
+			map->vbo_arr_len += 4;
 
-            if (screen_smooth_lighting)
-            {
-                average_light_vertex1 = render_get_average_light(
-                    map, 
-                    x+vc, y+va, z+vb,
-                    x+1, y+1-vb, z+vb,
-                    x+1, y+1, z+1,
-                    x+vc, y+1-vc, z+1);
+			if (screen_smooth_lighting)
+			{
+				average_light_vertex1 = render_get_average_light(
+					map, 
+					x+vc, y+va, z+vb,
+					x+1, y+1-vb, z+vb,
+					x+1, y+1, z+1,
+					x+vc, y+1-vc, z+1);
 
-                average_light_vertex2 = render_get_average_light(
-                    map,
-                    x+vc, y+va, z+vb,
-                    x+1-2*va, y+1-vb, z+vb,
-                    x+1-2*va, y+1-2*vb, z+1-2*vc,
-                    x+vc, y+(1-vc)-2*vb, z+1-2*vc);
+				average_light_vertex2 = render_get_average_light(
+					map,
+					x+vc, y+va, z+vb,
+					x+1-2*va, y+1-vb, z+vb,
+					x+1-2*va, y+1-2*vb, z+1-2*vc,
+					x+vc, y+(1-vc)-2*vb, z+1-2*vc);
 
-                average_light_vertex3 = render_get_average_light(
-                    map,
-                    x+vc, y+va, z+vb,
-                    x-1+2*vc, y+(1-vb)-2*vc, z+vb,
-                    x-1+2*vc, y-1+2*va, z-1+2*vb,
-                    x+vc, y+(1-vc)-2*vb, z-1+2*vb);
+				average_light_vertex3 = render_get_average_light(
+					map,
+					x+vc, y+va, z+vb,
+					x-1+2*vc, y+(1-vb)-2*vc, z+vb,
+					x-1+2*vc, y-1+2*va, z-1+2*vb,
+					x+vc, y+(1-vc)-2*vb, z-1+2*vb);
 
-                average_light_vertex4 = render_get_average_light(
-                    map,
-                    x+vc, y+va, z+vb,
-                    x+1-2*vb, y+(1-vb)-2*vc, z+vb,
-                    x+1-2*vb, y+1-2*vc, z+1-2*va,
-                    x+vc, y+1-vc, z+1-2*va);
-            } else {
-                average_light_vertex1 = 0.0f;
-                average_light_vertex2 = 0.0f;
-                average_light_vertex3 = 0.0f;
-                average_light_vertex4 = 0.0f;
-            }
+				average_light_vertex4 = render_get_average_light(
+					map,
+					x+vc, y+va, z+vb,
+					x+1-2*vb, y+(1-vb)-2*vc, z+vb,
+					x+1-2*vb, y+1-2*vc, z+1-2*va,
+					x+vc, y+1-vc, z+1-2*va);
+			} else {
+				average_light_vertex1 = 0.0f;
+				average_light_vertex2 = 0.0f;
+				average_light_vertex3 = 0.0f;
+				average_light_vertex4 = 0.0f;
+			}
 
 
-            /* Quad 2 */
-            /* vertex 1 */
-            cr = r*s2; cg = g*s2, cb = b*s2;
-            cr = render_darken_color(cr, average_light_vertex1);
-            cg = render_darken_color(cg, average_light_vertex1);
-            cb = render_darken_color(cb, average_light_vertex1);
-    		ARR_ADD(x+rad,y+rad,z+rad);
+			/* Quad 2 */
+			/* vertex 1 */
+			cr = r*s2; cg = g*s2, cb = b*s2;
+			cr = render_darken_color(cr, average_light_vertex1);
+			cg = render_darken_color(cg, average_light_vertex1);
+			cb = render_darken_color(cb, average_light_vertex1);
+			ARR_ADD(x+rad,y+rad,z+rad);
 
-            /* vertex 2 */
-            cr = r*s2; cg = g*s2, cb = b*s2;
-            cr = render_darken_color(cr, average_light_vertex2);
-            cg = render_darken_color(cg, average_light_vertex2);
-            cb = render_darken_color(cb, average_light_vertex2);
-    		ARR_ADD(x+rad*(1-va),y+rad*(1-vb),z+rad*(1-vc));
-        
-            /* vertex 3 */
-            cr = r*s2; cg = g*s2, cb = b*s2;
-            cr = render_darken_color(cr, average_light_vertex3);
-            cg = render_darken_color(cg, average_light_vertex3);
-            cb = render_darken_color(cb, average_light_vertex3);
-    		ARR_ADD(x+rad*(1-ua-va),y+rad*(1-ub-vb),z+rad*(1-uc-vc));
+			/* vertex 2 */
+			cr = r*s2; cg = g*s2, cb = b*s2;
+			cr = render_darken_color(cr, average_light_vertex2);
+			cg = render_darken_color(cg, average_light_vertex2);
+			cb = render_darken_color(cb, average_light_vertex2);
+			ARR_ADD(x+rad*(1-va),y+rad*(1-vb),z+rad*(1-vc));
+		
+			/* vertex 3 */
+			cr = r*s2; cg = g*s2, cb = b*s2;
+			cr = render_darken_color(cr, average_light_vertex3);
+			cg = render_darken_color(cg, average_light_vertex3);
+			cb = render_darken_color(cb, average_light_vertex3);
+			ARR_ADD(x+rad*(1-ua-va),y+rad*(1-ub-vb),z+rad*(1-uc-vc));
 
-            /* vertex 4 */
-            cr = r*s2; cg = g*s2, cb = b*s2;
-            cr = render_darken_color(cr, average_light_vertex4);
-            cg = render_darken_color(cg, average_light_vertex4);
-            cb = render_darken_color(cb, average_light_vertex4);
-    		ARR_ADD(x+rad*(1-ua),y+rad*(1-ub),z+rad*(1-uc));
-        }
+			/* vertex 4 */
+			cr = r*s2; cg = g*s2, cb = b*s2;
+			cr = render_darken_color(cr, average_light_vertex4);
+			cg = render_darken_color(cg, average_light_vertex4);
+			cb = render_darken_color(cb, average_light_vertex4);
+			ARR_ADD(x+rad*(1-ua),y+rad*(1-ub),z+rad*(1-uc));
+		}
 #undef ARR_ADD
 	}
 }

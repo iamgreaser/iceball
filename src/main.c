@@ -83,11 +83,11 @@ int video_init(void)
 	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
-    if (screen_antialiasing_level > 0)
-    {
-        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, screen_antialiasing_level);
-    }
+	if (screen_antialiasing_level > 0)
+	{
+		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, screen_antialiasing_level);
+	}
 
 	screen = SDL_SetVideoMode(screen_width, screen_height, 32, SDL_OPENGL
 		| (screen_fullscreen ? SDL_FULLSCREEN : 0));

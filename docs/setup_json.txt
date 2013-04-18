@@ -26,16 +26,16 @@ clsave/config.json:
 
 		Note, "cubeshift" does not affect the OpenGL renderer.
 
-        "antialiasinglevel" sets antialiasing level for OpenGL
-        "0" disable antialiasing (safe option for older hardware)
-        "2" set multisamples to 2
-        "4" set multisamples to 4
-        The higher number, the better quality.
-        The better quality, the slower.
+		"antialiasinglevel" sets antialiasing level for OpenGL
+		"0" disable antialiasing (safe option for older hardware)
+		"2" set multisamples to 2
+		"4" set multisamples to 4
+		The higher number, the better quality.
+		The better quality, the slower.
 
-        "smoothlighting" enables the display of smooth dark corners and
-        shadows between cubes.
-        Disable for a faster FPS.
+		"smoothlighting" enables the display of smooth dark corners and
+		shadows between cubes.
+		Disable for a faster FPS.
 	
 	"audio" section:
 		"freq" is the master audio sampling frequency in Hz, as usual.
