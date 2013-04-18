@@ -28,6 +28,8 @@ int screen_width = 800;
 int screen_height = 600;
 int screen_cubeshift = 0;
 int screen_fullscreen = 0;
+int screen_antialiasing_level = 0;
+int screen_smooth_lighting = 0;
 
 int force_redraw = 1;
 
@@ -80,6 +82,13 @@ int video_init(void)
 	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+
+    if (screen_antialiasing_level > 0)
+    {
+        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, screen_antialiasing_level);
+    }
+
 	screen = SDL_SetVideoMode(screen_width, screen_height, 32, SDL_OPENGL
 		| (screen_fullscreen ? SDL_FULLSCREEN : 0));
 	GLenum err_glew = glewInit();

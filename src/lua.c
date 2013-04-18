@@ -331,16 +331,26 @@ int icelua_init(void)
 			v = lua_tointeger(Lc, -1);
 			if(v != 0) screen_cubeshift = -v;
 			lua_pop(Lc, 1);
+
+            lua_getfield(Lc, -1, "antialiasinglevel");
+            v = lua_tointeger(Lc, -1);
+            if(v >= 0) screen_antialiasing_level = v;
+            lua_pop(Lc, 1);
 			
-			lua_getfield(Lc, -1, "fullscreen");
-			v = lua_toboolean(Lc, -1);
-			if(!lua_isnil(Lc, -1)) screen_fullscreen = v;
-			lua_pop(Lc, 1);
+            lua_getfield(Lc, -1, "smoothlighting");
+            v = lua_toboolean(Lc, -1);
+            if(!lua_isnil(Lc, -1)) screen_smooth_lighting = v;
+            lua_pop(Lc, 1);
+
+            lua_getfield(Lc, -1, "fullscreen");
+            v = lua_toboolean(Lc, -1);
+            if(!lua_isnil(Lc, -1)) screen_fullscreen = v;
+            lua_pop(Lc, 1);
 			
 			// drop table
 			lua_pop(Lc, 1);
 
-			// set video stuff 
+			// set audio stuff 
 			lua_getfield(Lc, -1, "audio");
 
 			lua_getfield(Lc, -1, "freq");
