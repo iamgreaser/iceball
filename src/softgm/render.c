@@ -166,6 +166,52 @@ uint32_t render_fog_apply(uint32_t color, float depth)
 	return fcol|(t<<24);
 }
 
+void render_rect_clip_shaded(int *x1, int *y1, int *x2, int *y2, float depth, float *c11, float *c12, float *c21, float *c22)
+{
+	// arrange *1 <= *2
+	if(*x1 > *x2)
+	{
+		int t = *x1;
+		*x1 = *x2;
+		*x2 = t;
+	}
+	
+	if(*y1 > *y2)
+	{
+		int t = *y1;
+		*y1 = *y2;
+		*y2 = t;
+	}
+	
+	float fxlen = (*x2 - *x1);
+	float fylen = (*y2 - *y1);
+	float fx1 = *x1;
+	float fy1 = *y1;
+	// clip
+	if(*x1 < 0)
+	{
+		*c11 += (*c12-*c11)*(-fx1/fxlen);
+		*c21 += (*c22-*c21)*(-fx1/fxlen);
+		*x1 = 0;
+	}
+	if(*y1 < 0)
+	{
+		*c11 += (*c21-*c11)*(-fy1/fylen);
+		*c12 += (*c22-*c12)*(-fy1/fylen);
+		*y1 = 0;
+	}
+	if(*x2 > cubemap_size)
+	{
+		// TODO: lighting
+		*x2 = cubemap_size;
+	}
+	if(*y2 > cubemap_size)
+	{
+		// TODO: lighting
+		*y2 = cubemap_size;
+	}
+}
+
 void render_rect_clip(uint32_t *color, int *x1, int *y1, int *x2, int *y2, float depth)
 {
 	*color = render_fog_apply(*color, depth);
@@ -363,6 +409,100 @@ void render_rect_zbuf(uint32_t *ccolor, float *cdepth, int x1, int y1, int x2, i
 		cptr += pitch;
 	}
 #endif
+}
+
+// TODO: we'll need shading for htrap + vtrap, too!
+void render_vxl_rect_ftb_shaded(uint32_t *ccolor, float *cdepth, int x1, int y1, int x2, int y2, uint32_t color, float depth, float c11, float c12, float c21, float c22)
+{
+	int x,y;
+	
+	// clip
+	render_rect_clip_shaded(&x1, &y1, &x2, &y2, depth, &c11, &c12, &c21, &c22);
+	
+	if(x2 <= 0)
+		return;
+	if(x1 >= cubemap_size)
+		return;
+	if(y2 <= 0)
+		return;
+	if(y1 >= cubemap_size)
+		return;
+	if(x1 >= x2)
+		return;
+	if(y1 >= y2)
+		return;
+	
+	// render
+	uint32_t *cptr = &ccolor[(y1<<cubemap_shift)+x1];
+	float *dptr = &cdepth[(y1<<cubemap_shift)+x1];
+	int pitch = cubemap_size - (x2-x1);
+	
+	// calculate color bases
+	uint32_t c11a = (color&0x00FF00FF)<<8;
+	uint32_t c11b = (color&0xFF00FF00);
+	uint32_t c12a = (color&0x00FF00FF)<<8;
+	uint32_t c12b = (color&0xFF00FF00);
+	uint32_t c21a = (color&0x00FF00FF)<<8;
+	uint32_t c21b = (color&0xFF00FF00);
+	uint32_t c22a = (color&0x00FF00FF)<<8;
+	uint32_t c22b = (color&0xFF00FF00);
+
+	// apply lighting
+	c11a = (((int)((c11a&0xFFFF0000)*(double)c11))&0xFFFF0000)|(((int)((c11a&0x0000FFFF)*(double)c11))&0x0000FFFF);
+	c11b = (((int)((c11b&0xFFFF0000)*(double)c11))&0xFFFF0000)|(((int)((c11b&0x0000FFFF)*(double)c11))&0x0000FFFF);
+	c12a = (((int)((c12a&0xFFFF0000)*(double)c12))&0xFFFF0000)|(((int)((c12a&0x0000FFFF)*(double)c12))&0x0000FFFF);
+	c12b = (((int)((c12b&0xFFFF0000)*(double)c12))&0xFFFF0000)|(((int)((c12b&0x0000FFFF)*(double)c12))&0x0000FFFF);
+	c21a = (((int)((c21a&0xFFFF0000)*(double)c21))&0xFFFF0000)|(((int)((c21a&0x0000FFFF)*(double)c21))&0x0000FFFF);
+	c21b = (((int)((c21b&0xFFFF0000)*(double)c21))&0xFFFF0000)|(((int)((c21b&0x0000FFFF)*(double)c21))&0x0000FFFF);
+	c22a = (((int)((c22a&0xFFFF0000)*(double)c22))&0xFFFF0000)|(((int)((c22a&0x0000FFFF)*(double)c22))&0x0000FFFF);
+	c22b = (((int)((c22b&0xFFFF0000)*(double)c22))&0xFFFF0000)|(((int)((c22b&0x0000FFFF)*(double)c22))&0x0000FFFF);
+
+	// get deltas
+	double fxleni = 1.0/(x2-x1+1);
+	double fyleni = 1.0/(y2-y1+1);
+	if(fxleni < 0.0) fxleni = -fxleni;
+	if(fyleni < 0.0) fyleni = -fyleni;
+	// FIXME: Make this work with a delta in the OTHER direction, too
+	int32_t cdya1 = (c21a-c11a);
+	int32_t cdyb1 = (c21b-c11b);
+	int32_t cdya2 = (c22a-c12a);
+	int32_t cdyb2 = (c22b-c12b);
+	cdya1 = (((int)((cdya1&0xFFFF0000)*fyleni))&0xFFFF0000)|(((int)((cdya1&0x0000FFFF)*fyleni)));
+	cdyb1 = (((int)((cdyb1&0xFFFF0000)*fyleni))&0xFFFF0000)|(((int)((cdyb1&0x0000FFFF)*fyleni)));
+	cdya2 = (((int)((cdya2&0xFFFF0000)*fyleni))&0xFFFF0000)|(((int)((cdya2&0x0000FFFF)*fyleni)));
+	cdyb2 = (((int)((cdyb2&0xFFFF0000)*fyleni))&0xFFFF0000)|(((int)((cdyb2&0x0000FFFF)*fyleni)));
+
+	// dropping the SSE impl for now
+	// if we're going to use SSE we'll use it PROPERLY
+	for(y = y1; y < y2; y++)
+	{
+		int32_t cbasea = c11a;
+		int32_t cbaseb = c11b;
+		int32_t cdxa = (c12a-c11a);
+		int32_t cdxb = (c12b-c11b);
+		cdxa = (((int)((cdxa&0xFFFF0000)*fxleni))&0xFFFF0000)|(((int)((cdxa&0x0000FFFF)*fxleni)));
+		cdxb = (((int)((cdxb&0xFFFF0000)*fxleni))&0xFFFF0000)|(((int)((cdxb&0x0000FFFF)*fxleni)));
+
+		for(x = x1; x < x2; x++)
+		{
+			if(*cptr == fog_color)
+			{
+				*cptr = (cbaseb&0xFF00FF00)|((cbasea&0xFF00FF00)>>8);
+				*dptr = depth;
+			}
+			cptr++;
+			dptr++;
+			cbasea += cdxa;
+			cbaseb += cdxb;
+		}
+		
+		cptr += pitch;
+		dptr += pitch;
+		c11a += cdya1;
+		c11b += cdyb1;
+		c12a += cdya2;
+		c12b += cdyb2;
+	}
 }
 
 // TODO: fast ver?
@@ -683,7 +823,10 @@ void render_vxl_cube_sides(uint32_t *ccolor, float *cdepth, int x1, int y1, int 
 	int x4 = ((x2-hsize)*depth)/(depth+1.0f)+hsize;
 	int y4 = ((y2-hsize)*depth)/(depth+1.0f)+hsize+1;
 	
-	render_vxl_rect_ftb_fast(ccolor, cdepth, x1, y1, x2, y2, render_fog_apply_new(render_shade(color, face), fdist), depth);
+	if(screen_smooth_lighting)
+		render_vxl_rect_ftb_shaded(ccolor, cdepth, x1, y1, x2, y2, render_fog_apply_new(render_shade(color, face), fdist), depth, 0.6f, 0.8f, 0.8f, 1.0f);
+	else
+		render_vxl_rect_ftb_fast(ccolor, cdepth, x1, y1, x2, y2, render_fog_apply_new(render_shade(color, face), fdist), depth);
 	
 	depth += 0.5f;
 	
