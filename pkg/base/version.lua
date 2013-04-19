@@ -46,7 +46,7 @@ VERSION_BUGS = {
 {intro=19, fix=23, msg="[OpenGL] texture rendering is slow"},
 {intro=19, fix=24, msg="[OpenGL] VBOs not supported"},
 {intro=nil, fix=26, msg="TODO: give changelog for -25/-26 (which I think are the same version more or less)"},
-{intro=nil, fix=27, msg="altered the international keyboard thing to be more backwards compatible"},
+{intro=nil, fix=27, msg="Altered the international keyboard thing to be more backwards compatible"},
 {intro=25, fix=27, msg="THIS VERSION IS INCOMPATIBLE. PLEASE UPGRADE TO 0.0-27 AT LEAST."},
 {intro=nil, fix=28, msg="Sound loader only loads first half of 16-bit samples correctly"},
 {intro=19, fix=29, msg="[OpenGL] Crashes on map creation (as opposed to map loading)"},
@@ -54,5 +54,9 @@ VERSION_BUGS = {
 {intro=30, fix=31, msg="broke dedicated server build... again"},
 {intro=nil, fix=32, msg=".it module music not supported"},
 {intro=32, fix=nil, msg=".it module music might have stability issues. If it crashes, please tell us :)"},
+{intro=nil, fix=34, msg="Server must be manually seeded"},
+{intro=33, fix=34, msg="A few compilation warnings that shouldn't be there"},
+{intro=nil, fix=35, msg="[OpenGL] Smooth lighting not supported"},
+{intro=35, fix=36, msg="[OpenGL] Smooth lighting of PMF models not supported"},
 }
 
