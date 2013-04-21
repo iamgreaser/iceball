@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,0,0,0,37},
-	num=37,
-	str="0.0-37",
+	cmp={0,0,0,0,38},
+	num=38,
+	str="0.0-38",
 }
 
 VERSION_BUGS = {
@@ -57,7 +57,9 @@ VERSION_BUGS = {
 {intro=nil, fix=34, msg="Server must be manually seeded"},
 {intro=33, fix=34, msg="A few compilation warnings that shouldn't be there"},
 {intro=nil, fix=35, msg="[OpenGL] Smooth lighting not supported"},
-{intro=35, fix=36, msg="[OpenGL] Smooth lighting of PMF models not supported"},
+{intro=35, fix=nil, msg="[OpenGL] Smooth lighting of PMF models not supported"},
 {intro=37, fix=nil, msg="[softgm] Preliminary smooth lighting (WIP)"},
+{intro=nil, fix=38, msg="[OpenGL] slow rendering"},
+{intro=38, fix=nil, msg="[OpenGL] optimized rendering (WIP)"},
 }
 

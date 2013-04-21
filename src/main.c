@@ -204,6 +204,11 @@ int update_client_cont1(void)
 	// skip while still loading
 	if(mod_basedir == NULL || (boot_mode & 8))
 		return 0;
+
+#ifdef USE_OPENGL
+	if (render_map_visible_chunks_count_dirty(clmap) > 0)
+		force_redraw = 1;
+#endif
 	
 	// redraw scene if necessary
 	if(force_redraw

@@ -19,7 +19,7 @@
 #define VERSION_X 0
 #define VERSION_Y 0
 #define VERSION_A 0
-#define VERSION_Z 37
+#define VERSION_Z 38
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!
@@ -297,16 +297,30 @@ feel free to store it in the "invisible" parts.
 
 */
 
+#ifdef USE_OPENGL
+typedef struct map_chunk
+{
+	GLuint vbo;
+	int vbo_dirty;
+	int vbo_arr_len, vbo_arr_max;
+	int cx, cz;
+	float *vbo_arr;
+} map_chunk_t;
+#endif
+
 typedef struct map
 {
 	int udtype;
 	int xlen, ylen, zlen;
 #ifdef USE_OPENGL
-	GLuint vbo;
-	int vbo_dirty;
-	float *vbo_arr;
-	int vbo_arr_len, vbo_arr_max;
-	int vbo_cx, vbo_cz;
+	/* circular array of visible map chunks */
+	map_chunk_t *visible_chunks_arr;
+	/* current virtual center position in the circular array */
+	int visible_chunks_vcenter_x;
+	int visible_chunks_vcenter_z;
+	/* current virtual center chunk coordinates in the circular array */
+	int visible_chunks_vcenter_cx;
+	int visible_chunks_vcenter_cz;
 #endif
 	uint8_t **pillars;
 	// TODO ? heap allocator ?
@@ -504,6 +518,12 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 	img_t *src, int dx, int dy, int bw, int bh, int sx, int sy, uint32_t color);
 int render_init(int width, int height);
 void render_deinit(void);
+#ifdef USE_OPENGL
+void render_init_visible_chunks(map_t *map, int starting_chunk_coordinate_x, int starting_chunk_coordinate_z);
+void render_map_mark_chunks_as_dirty(map_t *map, int pillar_x, int pillar_z);
+void render_free_visible_chunks(map_t *map);
+int render_map_visible_chunks_count_dirty(map_t *map);
+#endif
 
 // vecmath.c
 vec4f_t mtx_apply_vec(matrix_t *mtx, vec4f_t *vec);

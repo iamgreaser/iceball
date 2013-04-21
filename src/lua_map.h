@@ -85,9 +85,8 @@ int icelua_fn_common_map_new(lua_State *L)
 		*(p++) = v; *(p++) = v; *(p++) = v; *(p++) = 1;
 	}
 #ifdef USE_OPENGL
-	map->vbo = 0;
-	map->vbo_dirty = 1;
-	map->vbo_arr = NULL;
+	map->visible_chunks_arr = NULL;
+	render_init_visible_chunks(map, 0, 0);
 #endif
 	
 	lua_pushlightuserdata(L, map);
@@ -327,7 +326,7 @@ int icelua_fn_common_map_pillar_set(lua_State *L)
 	}
 
 #ifdef USE_OPENGL
-	map->vbo_dirty = 1;
+	render_map_mark_chunks_as_dirty(map, px, pz);
 #endif
 	
 	force_redraw = 1;
