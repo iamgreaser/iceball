@@ -97,9 +97,8 @@ map_t *map_parse_root(const char *dend, const char *data, int xlen, int ylen, in
 	}
 
 #ifdef USE_OPENGL
-	map->vbo = 0;
-	map->vbo_dirty = 1;
-	map->vbo_arr = NULL;
+	map->visible_chunks_arr = NULL;
+	render_init_visible_chunks(map, 0, 0);
 #endif
 	
 	return map;
@@ -195,9 +194,8 @@ map_t *map_parse_icemap(int len, const char *data)
 	}
 
 #ifdef USE_OPENGL
-	map->vbo = 0;
-	map->vbo_dirty = 1;
-	map->vbo_arr = NULL;
+	map->visible_chunks_arr = NULL;
+	render_init_visible_chunks(map, 0, 0);
 #endif
 	
 	//printf("all good.\n");
@@ -400,10 +398,7 @@ void map_free(map_t *map)
 	if(map->pillars != NULL)
 		free(map->pillars);
 #ifdef USE_OPENGL
-	if(map->vbo != 0)
-		glDeleteBuffers(1, &(map->vbo));
-	if(map->vbo_arr != NULL)
-		free(map->vbo_arr);
+	render_free_visible_chunks(map);
 #endif
 	
 	free(map);
