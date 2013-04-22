@@ -49,6 +49,12 @@ const GLfloat vfinf_cube[3*6] = {
 #define DF_PZ 0x20
 #define DF_SPREAD 0x3F
 
+#define CHUNK_SIZE 16
+/* should be a odd square number to construct a circular array with a center cell (9, 25, 49, 81, 121...) */
+#define VISIBLE_CHUNKS 49
+/* number of chunks to tessellate per frame */
+#define CHUNKS_TO_TESSELATE_PER_FRAME 2
+
 enum
 {
 	CM_NX = 0,
@@ -76,12 +82,18 @@ uint32_t cam_shading[6] = {
 	 0x000C0, 0x000A0, 0x000D0, 0x000E0, 0x00FF, 0x000D0,
 };
 
-void render_pillar(map_t *map, int x, int z);
+void render_pillar(map_t *map, map_chunk_t *chunk, int x, int z);
 
 /*
  * REFERENCE IMPLEMENTATION
  * 
  */
+
+/* custom mod function that handles negative numbers */
+inline int render_mod ( int x , int y )
+{
+    return x >= 0 ? x % y : y - 1 - ((-x-1) % y) ;
+}
 
 uint32_t render_shade(uint32_t color, int face)
 {
@@ -101,6 +113,9 @@ int render_map_get_block_at(map_t *map, int x, int y, int z)
 	uint8_t *data = NULL;
 
 	if (map == NULL)
+		return 0;
+
+	if (y < 0)
 		return 0;
 
 	data = map->pillars[(z&(map->zlen-1))*(map->xlen)+(x&(map->xlen-1))];
@@ -133,6 +148,336 @@ GLfloat render_get_average_light(map_t *map, int x1, int y1, int z1, int x2, int
 	return average;
 }
 
+int render_visible_chunks_array_offset(int x, int z)
+{
+	return z * (int) sqrtf(VISIBLE_CHUNKS) + x;
+}
+
+void render_untesselate_visible_chunk(map_chunk_t *chunk)
+{
+	if (chunk == NULL)
+		return;
+
+	if (chunk->vbo_arr != NULL)
+	{
+		free(chunk->vbo_arr);
+		chunk->vbo_arr = NULL;
+	}
+	if (chunk->vbo != 0)
+	{
+		glDeleteBuffers(1, &(chunk->vbo));
+		chunk->vbo = 0;
+	}
+	chunk->vbo_dirty = 0;
+	chunk->vbo_arr_len = 0;
+}
+
+void render_free_visible_chunk(map_chunk_t *chunk)
+{
+	if (chunk == NULL)
+		return;
+
+	render_untesselate_visible_chunk(chunk);
+
+	chunk->cx = 0;
+	chunk->cz = 0;
+}
+
+void render_free_visible_chunks(map_t *map)
+{
+	int x, z;
+
+	if(map == NULL || map->visible_chunks_arr == NULL)
+		return;
+
+	for (x = 0; x < (int) sqrtf(VISIBLE_CHUNKS); x++)
+	{
+		for (z = 0; z < (int) sqrtf(VISIBLE_CHUNKS); z++)
+		{
+			render_free_visible_chunk(&map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)]);
+		}
+	}
+}
+
+void render_init_visible_chunks(map_t *map, int starting_chunk_coordinate_x, int starting_chunk_coordinate_z)
+{
+	/*
+		example for VISIBLE_CHUNKS = 9
+
+		- array size would be 3x3
+		- virtual center of the circular array would be [1,1] at init
+
+		    0   1   2  
+		  +---+---+---+
+		0 |   |   |   |
+		  +---#####---+
+		1 |   #   #   |
+		  +---#####---+
+		2 |   |   |   |
+		  +---+---+---+
+	*/
+
+	int x, z;
+	/* chunk coordinates */
+	int cx, cz;
+
+	if (map == NULL)
+		return;
+
+	if (map->visible_chunks_arr != NULL)
+	{
+		render_free_visible_chunks(map);
+		free(map->visible_chunks_arr);
+		map->visible_chunks_arr = NULL;
+	}
+	
+	map->visible_chunks_arr = (map_chunk_t *) malloc(VISIBLE_CHUNKS * sizeof(map_chunk_t));
+	map->visible_chunks_vcenter_cx = starting_chunk_coordinate_x;
+	map->visible_chunks_vcenter_cz = starting_chunk_coordinate_z;
+
+	for (x = 0; x < (int) sqrtf(VISIBLE_CHUNKS); x++)
+	{
+		for (z = 0; z < (int) sqrtf(VISIBLE_CHUNKS); z++)
+		{
+			cx = starting_chunk_coordinate_x - (int) sqrtf(VISIBLE_CHUNKS)/2 + x;
+			cz = starting_chunk_coordinate_z - (int) sqrtf(VISIBLE_CHUNKS)/2 + z;
+			map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)].cx = cx;
+			map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)].cz = cz;
+			map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)].vbo = 0;
+			map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)].vbo_dirty = 1;
+			map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)].vbo_arr_len = 0;
+			map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)].vbo_arr = NULL;
+		}
+	}
+
+	map->visible_chunks_vcenter_x = (int) sqrtf(VISIBLE_CHUNKS)/2;
+	map->visible_chunks_vcenter_z = (int) sqrtf(VISIBLE_CHUNKS)/2;
+}
+
+void render_shift_visible_chunks(map_t *map, int camera_chunk_coordinate_x, int camera_chunk_coordinate_z)
+{
+	int position_shift_x, position_shift_z;
+	int offset_x, offset_z;
+	int index_x, index_z;
+	int x, z;
+
+	if(map == NULL || map->visible_chunks_arr == NULL)
+		return;
+
+	position_shift_x = camera_chunk_coordinate_x - map->visible_chunks_vcenter_cx;
+	position_shift_z = camera_chunk_coordinate_z - map->visible_chunks_vcenter_cz;
+
+	/* if position is the same, nothing to do */
+    if (position_shift_x == 0 && position_shift_z == 0)
+        return;
+
+    /* setting the new virtual center of the circular array */
+    map->visible_chunks_vcenter_x = render_mod(map->visible_chunks_vcenter_x + position_shift_x, (int) sqrtf(VISIBLE_CHUNKS));
+    map->visible_chunks_vcenter_z = render_mod(map->visible_chunks_vcenter_z + position_shift_z, (int) sqrtf(VISIBLE_CHUNKS));
+
+    /* setting the chunk coordinates of the virtual center of the circular array */
+    map->visible_chunks_vcenter_cx = camera_chunk_coordinate_x;
+    map->visible_chunks_vcenter_cz = camera_chunk_coordinate_z;
+
+	for (x = 0; x < (int) sqrtf(VISIBLE_CHUNKS); x++)
+	{
+		for (z = 0; z < (int) sqrtf(VISIBLE_CHUNKS); z++)
+		{
+			offset_x = x - ((int) sqrtf(VISIBLE_CHUNKS)- 1)/2;
+			offset_z = z - ((int) sqrtf(VISIBLE_CHUNKS)- 1)/2;
+			index_x = render_mod(map->visible_chunks_vcenter_x + offset_x, (int) sqrtf(VISIBLE_CHUNKS));
+			index_z = render_mod(map->visible_chunks_vcenter_z + offset_z, (int) sqrtf(VISIBLE_CHUNKS));
+
+			/* untesselate chunks not visible anymore */
+			if (map->visible_chunks_arr[render_visible_chunks_array_offset(index_x, index_z)].cx != map->visible_chunks_vcenter_cx + offset_x
+				|| map->visible_chunks_arr[render_visible_chunks_array_offset(index_x, index_z)].cz != map->visible_chunks_vcenter_cz + offset_z)
+			{
+				render_free_visible_chunk(&map->visible_chunks_arr[render_visible_chunks_array_offset(index_x, index_z)]);
+			}
+
+			/* add chunks that are visible */
+			if (map->visible_chunks_arr[render_visible_chunks_array_offset(index_x, index_z)].vbo_arr == NULL)
+			{
+				map->visible_chunks_arr[render_visible_chunks_array_offset(index_x, index_z)].cx = map->visible_chunks_vcenter_cx + offset_x;
+				map->visible_chunks_arr[render_visible_chunks_array_offset(index_x, index_z)].cz = map->visible_chunks_vcenter_cz + offset_z;
+				map->visible_chunks_arr[render_visible_chunks_array_offset(index_x, index_z)].vbo_dirty = 1;
+			}
+		}
+	}
+
+}
+
+void render_map_visible_chunks_draw(map_t *map)
+{
+	int x, z;
+
+	if(map == NULL || map->visible_chunks_arr == NULL)
+		return;
+	
+	for (x = 0; x < (int) sqrtf(VISIBLE_CHUNKS); x++)
+	{
+		for (z = 0; z < (int) sqrtf(VISIBLE_CHUNKS); z++)
+		{
+			if (map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)].vbo_arr_len > 0)
+			{
+				glPushMatrix();
+				if (map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)].vbo == 0)
+				{
+					glVertexPointer(3, GL_FLOAT, sizeof(float)*6, map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)].vbo_arr);
+					glColorPointer(3, GL_FLOAT, sizeof(float)*6, map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)].vbo_arr+3);
+				} else {
+					glBindBuffer(GL_ARRAY_BUFFER, map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)].vbo);
+					glVertexPointer(3, GL_FLOAT, sizeof(float)*6, (void *)(0));
+					glColorPointer(3, GL_FLOAT, sizeof(float)*6, (void *)(0 + sizeof(float)*3));
+				}
+
+				glEnableClientState(GL_VERTEX_ARRAY);
+				glEnableClientState(GL_COLOR_ARRAY);
+				glDrawArrays(GL_QUADS, 0, map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)].vbo_arr_len);
+				glDisableClientState(GL_VERTEX_ARRAY);
+				glDisableClientState(GL_COLOR_ARRAY);
+				glPopMatrix();
+
+				if (map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)].vbo != 0)
+					glBindBuffer(GL_ARRAY_BUFFER, 0);
+			}
+		}
+	}	
+}
+
+int render_map_visible_chunks_count_dirty(map_t *map)
+{
+	int x, z;
+	int dirty_chunks_count = 0;
+
+	if(map == NULL || map->visible_chunks_arr == NULL)
+		return 0;
+	
+	for (x = 0; x < (int) sqrtf(VISIBLE_CHUNKS); x++)
+	{
+		for (z = 0; z < (int) sqrtf(VISIBLE_CHUNKS); z++)
+		{
+			if (map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)].vbo_dirty)
+			{
+				dirty_chunks_count++;
+			}
+		}
+	}
+	return dirty_chunks_count;
+}
+
+void render_map_tesselate_visible_chunks(map_t *map)
+{
+	int x, z;
+	/* pillar coords */
+	int px, pz;
+	map_chunk_t *chunk;
+	int chunks_tesselated = 0;
+
+	if(map == NULL || map->visible_chunks_arr == NULL)
+		return;
+	
+	for (x = 0; x < (int) sqrtf(VISIBLE_CHUNKS); x++)
+	{
+		for (z = 0; z < (int) sqrtf(VISIBLE_CHUNKS); z++)
+		{
+			chunk = &map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)];
+
+			if (chunks_tesselated > CHUNKS_TO_TESSELATE_PER_FRAME)
+				return;
+
+			if (chunk->vbo_dirty)
+			{
+				render_untesselate_visible_chunk(chunk);
+				for (px = 0; px < CHUNK_SIZE; px++)
+				{
+					for (pz = 0; pz < CHUNK_SIZE; pz++)
+					{
+						render_pillar(map, chunk, chunk->cx * CHUNK_SIZE + px, chunk->cz * CHUNK_SIZE + pz);
+						
+						if(chunk->vbo == 0 && GL_ARB_vertex_buffer_object)
+							glGenBuffers(1, &(chunk->vbo));
+
+						if(chunk->vbo != 0)
+						{
+							glBindBuffer(GL_ARRAY_BUFFER, chunk->vbo);
+							glBufferData(GL_ARRAY_BUFFER, sizeof(float)*6*chunk->vbo_arr_len, chunk->vbo_arr, GL_STATIC_DRAW);
+							glBindBuffer(GL_ARRAY_BUFFER, 0);
+						}
+						chunk->vbo_dirty = 0;
+						chunks_tesselated++;
+					}
+				}
+			}
+		}
+	}	
+}
+
+void render_map_mark_chunks_as_dirty(map_t *map, int pillar_x, int pillar_z)
+{
+	int x, z;
+	int chunk_x, chunk_z;
+	int neighbor_chunk_x, neighbor_chunk_z;
+	map_chunk_t *neighbor_chunk = NULL;
+
+	chunk_x = pillar_x/CHUNK_SIZE;
+	chunk_z = pillar_z/CHUNK_SIZE;
+
+	if(map == NULL || map->visible_chunks_arr == NULL)
+		return;
+	
+	for (x = 0; x < (int) sqrtf(VISIBLE_CHUNKS); x++)
+	{
+		for (z = 0; z < (int) sqrtf(VISIBLE_CHUNKS); z++)
+		{
+			if (map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)].cx == chunk_x && map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)].cz == chunk_z)
+			{
+				map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)].vbo_dirty = 1;
+
+				/* If pillar coords are between two chunks, we need to update the neighbor chunks as well */
+				if (render_mod(pillar_x, CHUNK_SIZE) == 0)
+				{
+					neighbor_chunk_x = render_mod(x - 1, (int) sqrtf(VISIBLE_CHUNKS));
+					neighbor_chunk_z = z;
+					neighbor_chunk = &map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)];
+					if (neighbor_chunk->cx == chunk_x - 1 && neighbor_chunk->cz == chunk_z)
+					{
+						neighbor_chunk->vbo_dirty = 1;
+					}
+				} else if (render_mod(pillar_x, CHUNK_SIZE) == CHUNK_SIZE-1)
+				{
+					neighbor_chunk_x = render_mod(x + 1, (int) sqrtf(VISIBLE_CHUNKS));
+					neighbor_chunk_z = z;
+					neighbor_chunk = &map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)];
+					if (neighbor_chunk->cx == chunk_x + 1 && neighbor_chunk->cz == chunk_z)
+					{
+						neighbor_chunk->vbo_dirty = 1;
+					}
+				}
+				if (render_mod(pillar_z, CHUNK_SIZE) == 0)
+				{
+					neighbor_chunk_x = x;
+					neighbor_chunk_z = render_mod(z - 1, (int) sqrtf(VISIBLE_CHUNKS));
+					neighbor_chunk = &map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)];
+					if (neighbor_chunk->cx == chunk_x && neighbor_chunk->cz == chunk_z - 1)
+					{
+						neighbor_chunk->vbo_dirty = 1;
+					}
+				} else if (render_mod(pillar_z, CHUNK_SIZE) == CHUNK_SIZE-1)
+				{
+					neighbor_chunk_x = x;
+					neighbor_chunk_z = render_mod(z + 1, (int) sqrtf(VISIBLE_CHUNKS));
+					neighbor_chunk = &map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)];
+					if (neighbor_chunk->cx == chunk_x && neighbor_chunk->cz == chunk_z + 1)
+					{
+						neighbor_chunk->vbo_dirty = 1;
+					}
+				}
+				return;
+			}
+		}
+	}
+}
 
 void render_update_vbo(float **arr, int *len, int *max, int newlen)
 {
@@ -198,16 +543,14 @@ void render_gl_cube_pmf(model_bone_t *bone, float x, float y, float z, float r, 
 	}
 }
 
-void render_gl_cube_map(map_t *map, float x, float y, float z, float r, float g, float b, float rad)
+void render_gl_cube_map(map_t *map, map_chunk_t *chunk, float x, float y, float z, float r, float g, float b, float rad)
 {
 	int i;
 	float ua,ub,uc;
 	float va,vb,vc;
 	float average_light_vertex1, average_light_vertex2, average_light_vertex3, average_light_vertex4;
 
-	float *arr = map->vbo_arr;
-
-	/*r = g = b =1.0f;*/
+	float *arr = chunk->vbo_arr;
 
 	/* Quads rendering explained (sort of)
 
@@ -324,10 +667,10 @@ void render_gl_cube_map(map_t *map, float x, float y, float z, float r, float g,
 		/* check visibility of the face (is face exposed to air ?) */
 		if (render_map_get_block_at(map, x - ub, y - uc, z - ua) == 0)
 		{
-			render_update_vbo(&(map->vbo_arr), &(map->vbo_arr_len), &(map->vbo_arr_max), map->vbo_arr_len+4);
-			arr = map->vbo_arr;
-			arr += map->vbo_arr_len*6;
-			map->vbo_arr_len += 4;
+			render_update_vbo(&(chunk->vbo_arr), &(chunk->vbo_arr_len), &(chunk->vbo_arr_max), chunk->vbo_arr_len+4);
+			arr = chunk->vbo_arr;
+			arr += chunk->vbo_arr_len*6;
+			chunk->vbo_arr_len += 4;
 
 			if (screen_smooth_lighting)
 			{
@@ -398,10 +741,10 @@ void render_gl_cube_map(map_t *map, float x, float y, float z, float r, float g,
 		/* check visibility of the face (is face exposed to air ?) */
 		if (render_map_get_block_at(map, x + vc, y + va, z + vb) == 0)
 		{
-			render_update_vbo(&(map->vbo_arr), &(map->vbo_arr_len), &(map->vbo_arr_max), map->vbo_arr_len+4);
-			arr = map->vbo_arr;
-			arr += map->vbo_arr_len*6;
-			map->vbo_arr_len += 4;
+			render_update_vbo(&(chunk->vbo_arr), &(chunk->vbo_arr_len), &(chunk->vbo_arr_max), chunk->vbo_arr_len+4);
+			arr = chunk->vbo_arr;
+			arr += chunk->vbo_arr_len*6;
+			chunk->vbo_arr_len += 4;
 
 			if (screen_smooth_lighting)
 			{
@@ -473,9 +816,9 @@ void render_gl_cube_map(map_t *map, float x, float y, float z, float r, float g,
 	}
 }
 
-void render_vxl_cube(map_t *map, int x, int y, int z, uint8_t *color)
+void render_vxl_cube(map_t *map, map_chunk_t *chunk, int x, int y, int z, uint8_t *color)
 {
-	render_gl_cube_map(map, x, y, z, color[2]/255.0f, color[1]/255.0f, color[0]/255.0f, 1);
+	render_gl_cube_map(map, chunk, x, y, z, color[2]/255.0f, color[1]/255.0f, color[0]/255.0f, 1);
 }
 
 void render_pmf_cube(model_bone_t *bone, float x, float y, float z, int r, int g, int b, float rad)
@@ -496,38 +839,16 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 	cy = camera->mpy;
 	cz = camera->mpz;
 
-	if((!map->vbo_dirty) && map->vbo_cx == cx && map->vbo_cz == cz)
-		return;
+	render_shift_visible_chunks(map, cx/CHUNK_SIZE, cz/CHUNK_SIZE);
 
-	// TODO: split map up into several arrays
-	map->vbo_arr_len = 0;
-	for(z = (int)(cz-fog_distance-1); z <= (int)(cz+fog_distance); z++) 
-	for(x = (int)(cx-fog_distance-1); x <= (int)(cx+fog_distance); x++) 
-	{
-		// TODO: proper fog dist check
-		render_pillar(map,x,z);
-	}
-
-	map->vbo_cx = cx;
-	map->vbo_cz = cz;
-	map->vbo_dirty = 0;
-
-	if(map->vbo == 0 && GL_ARB_vertex_buffer_object)
-		glGenBuffers(1, &(map->vbo));
-
-	if(map->vbo != 0)
-	{
-		glBindBuffer(GL_ARRAY_BUFFER, map->vbo);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(float)*6*map->vbo_arr_len, map->vbo_arr, GL_DYNAMIC_DRAW);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-	}
+	render_map_tesselate_visible_chunks(map);
 }
 
-void render_pillar(map_t *map, int x, int z)
+void render_pillar(map_t *map, map_chunk_t *chunk, int x, int z)
 {
 	int y, i;
 
-	if(map == NULL)
+	if(map == NULL || chunk == NULL)
 		return;
 	
 	uint8_t *data = map->pillars[(z&(map->zlen-1))*(map->xlen)+(x&(map->xlen-1))];
@@ -537,7 +858,7 @@ void render_pillar(map_t *map, int x, int z)
 	for(;;)
 	{
 		for(y = data[1]; y <= data[2]; y++)
-			render_vxl_cube(map, x, y, z, &data[4*(y-data[1]+1)]);
+			render_vxl_cube(map, chunk, x, y, z, &data[4*(y-data[1]+1)]);
 
 		lastct = -(data[2]-data[1]+1);
 		if(lastct < 0)
@@ -550,7 +871,7 @@ void render_pillar(map_t *map, int x, int z)
 		data += 4*(int)data[0];
 
 		for(y = data[3]-lastct; y < data[3]; y++)
-			render_vxl_cube(map, x, y, z, &data[4*(y-data[3])]);
+			render_vxl_cube(map, chunk, x, y, z, &data[4*(y-data[3])]);
 	}
 }
 
@@ -596,25 +917,10 @@ void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t
 	glLoadMatrixf(mtx_mv);
 	glTranslatef(-cx,-cy,-cz);
 	
-	if(map == NULL || map->vbo_arr == NULL)
+	if(map == NULL)
 		return;
 	
-	if(map->vbo == 0)
-	{
-		glVertexPointer(3, GL_FLOAT, sizeof(float)*6, map->vbo_arr);
-		glColorPointer(3, GL_FLOAT, sizeof(float)*6, map->vbo_arr+3);
-	} else {
-		glBindBuffer(GL_ARRAY_BUFFER, map->vbo);
-		glVertexPointer(3, GL_FLOAT, sizeof(float)*6, (void *)(0));
-		glColorPointer(3, GL_FLOAT, sizeof(float)*6, (void *)(0 + sizeof(float)*3));
-	}
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_COLOR_ARRAY);
-	glDrawArrays(GL_QUADS, 0, map->vbo_arr_len);
-	glDisableClientState(GL_VERTEX_ARRAY);
-	glDisableClientState(GL_COLOR_ARRAY);
-	if(map->vbo != 0)
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
+	render_map_visible_chunks_draw(map);
 }
 
 void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_t *cam_base,
