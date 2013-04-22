@@ -823,9 +823,9 @@ void render_vxl_cube_sides(uint32_t *ccolor, float *cdepth, int x1, int y1, int 
 	int x4 = ((x2-hsize)*depth)/(depth+1.0f)+hsize;
 	int y4 = ((y2-hsize)*depth)/(depth+1.0f)+hsize+1;
 	
-	if(screen_smooth_lighting)
-		render_vxl_rect_ftb_shaded(ccolor, cdepth, x1, y1, x2, y2, render_fog_apply_new(render_shade(color, face), fdist), depth, 0.6f, 0.8f, 0.8f, 1.0f);
-	else
+	//if(screen_smooth_lighting)
+	//	render_vxl_rect_ftb_shaded(ccolor, cdepth, x1, y1, x2, y2, render_fog_apply_new(render_shade(color, face), fdist), depth, 0.6f, 0.8f, 0.8f, 1.0f);
+	//else
 		render_vxl_rect_ftb_fast(ccolor, cdepth, x1, y1, x2, y2, render_fog_apply_new(render_shade(color, face), fdist), depth);
 	
 	depth += 0.5f;
