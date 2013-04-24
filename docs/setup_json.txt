@@ -36,6 +36,25 @@ clsave/config.json:
 		"smoothlighting" enables the display of smooth dark corners and
 		shadows between cubes.
 		Disable for a faster FPS.
+
+		"gl_chunk_size" sets the size of the map chunks in OpenGL mode
+		The bigger chunks are, the more time it will take to rebuild them when
+		modified.
+		Recommended value is 16.
+
+		"gl_visible_chunks" represent the number of cells of the chunks array
+		centered around the camera/player in OpenGL mode.
+		It is linked to gl_chunk_size and the fog distance.
+		It should be a odd square number to construct a circular array with a
+		center cell (9, 25, 49, 81, 121...).
+		For the current fog distance, and a gl_chunk_size of "16", the
+		recommended value is "49".
+
+		"gl_chunks_tesselated_per_frame" number of chunks to tessellate per
+		frame.
+		The more chunks are tesselated per frame, the more stutter may be
+		encountered.
+		A recommended value would be "2" (or "1" for slower computers).
 	
 	"audio" section:
 		"freq" is the master audio sampling frequency in Hz, as usual.

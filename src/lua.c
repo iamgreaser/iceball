@@ -342,6 +342,21 @@ int icelua_init(void)
 			if(!lua_isnil(Lc, -1)) screen_smooth_lighting = v;
 			lua_pop(Lc, 1);
 
+			lua_getfield(Lc, -1, "gl_chunk_size");
+			v = lua_tointeger(Lc, -1);
+			if(v > 0) gl_chunk_size = v;
+			lua_pop(Lc, 1);
+
+			lua_getfield(Lc, -1, "gl_visible_chunks");
+			v = lua_tointeger(Lc, -1);
+			if(v > 0) gl_visible_chunks = v;
+			lua_pop(Lc, 1);
+
+			lua_getfield(Lc, -1, "gl_chunks_tesselated_per_frame");
+			v = lua_tointeger(Lc, -1);
+			if(v > 0) gl_chunks_tesselated_per_frame = v;
+			lua_pop(Lc, 1);
+
 			lua_getfield(Lc, -1, "fullscreen");
 			v = lua_toboolean(Lc, -1);
 			if(!lua_isnil(Lc, -1)) screen_fullscreen = v;

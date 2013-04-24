@@ -19,7 +19,7 @@
 #define VERSION_X 0
 #define VERSION_Y 0
 #define VERSION_A 0
-#define VERSION_Z 39
+#define VERSION_Z 40
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!
@@ -436,6 +436,9 @@ extern int screen_cubeshift;
 extern int screen_fullscreen;
 extern int screen_antialiasing_level;
 extern int screen_smooth_lighting;
+extern int gl_chunk_size;
+extern int gl_visible_chunks;
+extern int gl_chunks_tesselated_per_frame;
 #endif
 extern int force_redraw;
 

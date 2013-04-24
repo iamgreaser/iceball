@@ -15,6 +15,9 @@
 
 		"antialiasinglevel": 0,
 		"smoothlighting": true,
+		"gl_chunk_size": 16,
+		"gl_visible_chunks": 49,
+		"gl_chunks_tesselated_per_frame": 2,
 	},
 	
 	"audio" : {

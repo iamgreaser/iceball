@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,0,0,0,39},
-	num=39,
-	str="0.0-39",
+	cmp={0,0,0,0,40},
+	num=40,
+	str="0.0-40",
 }
 
 VERSION_BUGS = {
@@ -61,5 +61,7 @@ VERSION_BUGS = {
 {intro=37, fix=39, msg="[softgm] Preliminary smooth lighting (WIP)"},
 {intro=nil, fix=38, msg="[OpenGL] Rendering tends to stutter on some cards"},
 {intro=38, fix=nil, msg="[OpenGL] Preliminary stutter-reduced rendering (WIP)"},
+{intro=nil, fix=40, msg="[OpenGL] Chunks rendering options not supported in game engine config file"},
+{intro=40, fix=40, msg="[OpenGL] Chunks rendering options added to game engine config file"},
 }
 
