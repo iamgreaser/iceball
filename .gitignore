@@ -3,6 +3,7 @@
 
 # final binaries
 iceball.exe
+iceball-gl.exe
 
 # windows build crap
 winlibs/
