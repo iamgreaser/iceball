@@ -436,6 +436,7 @@ extern int screen_cubeshift;
 extern int screen_fullscreen;
 extern int screen_antialiasing_level;
 extern int screen_smooth_lighting;
+extern int gl_use_vbo;
 extern int gl_chunk_size;
 extern int gl_visible_chunks;
 extern int gl_chunks_tesselated_per_frame;

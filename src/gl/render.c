@@ -390,7 +390,7 @@ void render_map_tesselate_visible_chunks(map_t *map)
 						render_pillar(map, chunk, chunk->cx * gl_chunk_size + px, chunk->cz * gl_chunk_size + pz);
 					}
 				}
-				if(chunk->vbo == 0 && GL_ARB_vertex_buffer_object)
+				if(chunk->vbo == 0 && GL_ARB_vertex_buffer_object && gl_use_vbo)
 					glGenBuffers(1, &(chunk->vbo));
 
 				if(chunk->vbo != 0)
@@ -943,7 +943,7 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 		
 		bone->vbo_dirty = 0;
 		
-		if(bone->vbo == 0 && GL_ARB_vertex_buffer_object)
+		if(bone->vbo == 0 && GL_ARB_vertex_buffer_object && gl_use_vbo)
 			glGenBuffers(1, &(bone->vbo));
 
 		if(bone->vbo != 0)
