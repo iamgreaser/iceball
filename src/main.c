@@ -30,6 +30,7 @@ int screen_cubeshift = 0;
 int screen_fullscreen = 0;
 int screen_antialiasing_level = 0;
 int screen_smooth_lighting = 0;
+int gl_expand_textures = 0;
 int gl_chunk_size = 16;
 int gl_visible_chunks = 49;
 int gl_chunks_tesselated_per_frame = 2;

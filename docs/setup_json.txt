@@ -37,6 +37,10 @@ clsave/config.json:
 		shadows between cubes.
 		Disable for a faster FPS.
 
+		"gl_expand_textures" expands textures to powers of 2 in OpenGL mode
+		This is for backwards-compatibility with old graphics cards.
+		Disable this unless all the text is white or something.
+
 		"gl_chunk_size" sets the size of the map chunks in OpenGL mode
 		The bigger chunks are, the more time it will take to rebuild them when
 		modified.

@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,0,0,0,41},
-	num=41,
-	str="0.0-41",
+	cmp={0,0,0,0,42},
+	num=42,
+	str="0.0-42",
 }
 
 VERSION_BUGS = {
@@ -63,5 +63,6 @@ VERSION_BUGS = {
 {intro=38, fix=nil, msg="[OpenGL] Preliminary stutter-reduced rendering (WIP)"},
 {intro=nil, fix=40, msg="[OpenGL] Chunks rendering options not supported in game engine config file"},
 {intro=nil, fix=41, msg="[OpenGL] option to disable VBOs not available"},
+{intro=nil, fix=42, msg="[OpenGL] lack of support for cards w/o non-power-of-2 texture support"},
 }
 

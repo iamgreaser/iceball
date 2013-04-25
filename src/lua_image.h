@@ -14,6 +14,9 @@
     You should have received a copy of the GNU General Public License
     along with Iceball.  If not, see <http://www.gnu.org/licenses/>.
 */
+#ifdef USE_OPENGL
+void expandtex_gl(int *iw, int *ih);
+#endif
 
 // client functions
 int icelua_fn_client_img_blit(lua_State *L)
@@ -114,11 +117,16 @@ int icelua_fn_common_img_new(lua_State *L)
 	
 	int w = lua_tointeger(L, 1);
 	int h = lua_tointeger(L, 2);
+	int iw = w;
+	int ih = h;
+#ifdef USE_OPENGL
+	expandtex_gl(&iw, &ih);
+#endif
 	
 	if(w < 1 || h < 1)
 		return luaL_error(L, "image too small");
 	
-	img_t *img = (img_t*)malloc(sizeof(img_t)+(w*h*sizeof(uint32_t)));
+	img_t *img = (img_t*)malloc(sizeof(img_t)+(iw*ih*sizeof(uint32_t)));
 	if(img == NULL)
 		return luaL_error(L, "could not allocate memory");
 	
@@ -135,7 +143,7 @@ int icelua_fn_common_img_new(lua_State *L)
 	img->head.bpp = 32;
 	img->head.flags = 0x20;
 	
-	for(i = 0; i < w*h; i++)
+	for(i = 0; i < iw*ih; i++)
 		img->pixels[i] = 0x00000000;
 	
 	img->udtype = UD_IMG;
@@ -161,8 +169,14 @@ int icelua_fn_common_img_pixel_set(lua_State *L)
 	
 	if(x < 0 || y < 0 || x >= img->head.width || y >= img->head.height)
 		return 0;
+
+	int iw = img->head.width;
+	int ih = img->head.height;
+#ifdef USE_OPENGL
+	expandtex_gl(&iw, &ih);
+#endif
 	
-	img->pixels[y*img->head.width+x] = color;
+	img->pixels[y*iw+x] = color;
 #ifdef USE_OPENGL
 	img->tex_dirty = 1;
 #endif
@@ -181,7 +195,12 @@ int icelua_fn_common_img_fill(lua_State *L)
 		return luaL_error(L, "not an image");
 	uint32_t color = lua_tointeger(L, 2);
 	
-	for (i=0; i<(img->head.width*img->head.height); i++)
+	int iw = img->head.width;
+	int ih = img->head.height;
+#ifdef USE_OPENGL
+	expandtex_gl(&iw, &ih);
+#endif
+	for (i=0; i<(iw*ih); i++)
 		img->pixels[i] = color;    
 	
 #ifdef USE_OPENGL

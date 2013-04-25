@@ -17,6 +17,10 @@
 
 #include "common.h"
 
+#ifdef USE_OPENGL
+void expandtex_gl(int *iw, int *ih);
+#endif
+
 uint32_t img_convert_color_to_32(uint32_t v, int bits)
 {
 	switch(bits)
@@ -76,7 +80,14 @@ img_t *img_parse_tga(int len, const char *data)
 	}
 	
 	// allocate + stash
-	img_t *img = (img_t*)malloc(sizeof(img_t)+4*head.width*head.height);
+	int iw, ih;
+	iw = head.width;
+	ih = head.height;
+#ifdef USE_OPENGL
+	expandtex_gl(&iw, &ih);
+#endif
+	printf("TEX: %i %i\n", iw, ih);
+	img_t *img = (img_t*)malloc(sizeof(img_t)+4*iw*ih);
 	// TODO: check if NULL
 	img->head = head;
 	img->udtype = UD_IMG;
@@ -87,7 +98,7 @@ img_t *img_parse_tga(int len, const char *data)
 	
 	// copy stuff
 	int bplen = ((head.bpp-1)>>3)+1;
-	int idx = (head.flags & 32 ? 0 : head.height-1)*head.width;
+	int idx = (head.flags & 32 ? 0 : head.height-1)*iw;
 	for(y = 0; y < head.height; y++)
 	{
 		if(head.imgtype & 8)
@@ -128,18 +139,19 @@ img_t *img_parse_tga(int len, const char *data)
 			}
 		}
 		
+		idx += iw-head.width;
 		if(!(head.flags & 32))
-			idx -= 2*head.width;
+			idx -= 2*iw;
 	}
 	
 	// convert pixels
 	if((head.imgtype&7) == 1)
 	{
-		for(i = head.width*head.height-1; i >= 0; i--)
+		for(i = iw*ih-1; i >= 0; i--)
 			img->pixels[i] = palette[(img->pixels[i] + head.cmoffs) % head.cmlen];
 		//printf("cm %i %i\n", head.cmoffs, head.cmlen);
 	} else {
-		for(i = head.width*head.height-1; i >= 0; i--)
+		for(i = iw*ih-1; i >= 0; i--)
 			img->pixels[i] = img_convert_color_to_32(img->pixels[i], head.bpp);
 	}
 	

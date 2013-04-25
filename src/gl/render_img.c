@@ -17,6 +17,33 @@
 
 #include "common.h"
 
+void expandtex_gl(int *iw, int *ih)
+{
+	if(gl_expand_textures)
+	{
+		(*iw)--;
+		(*iw) |= (*iw)>>1;
+		(*iw) |= (*iw)>>2;
+		(*iw) |= (*iw)>>4;
+		(*iw) |= (*iw)>>8;
+		(*iw) |= (*iw)>>16;
+		(*iw)++;
+
+		(*ih)--;
+		(*ih) |= (*ih)>>1;
+		(*ih) |= (*ih)>>2;
+		(*ih) |= (*ih)>>4;
+		(*ih) |= (*ih)>>8;
+		(*ih) |= (*ih)>>16;
+		(*ih)++;
+
+		if((*iw) < 64)
+			*iw = 64;
+		if((*ih) < 64)
+			*ih = 64;
+	}
+}
+
 void render_blit_img_toimg(uint32_t *pixels, int width, int height, int pitch,
 	img_t *src, int dx, int dy, int bw, int bh, int sx, int sy, uint32_t color);
 
@@ -24,7 +51,17 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 	img_t *src, int dx, int dy, int bw, int bh, int sx, int sy, uint32_t color)
 {
 	if(pixels != screen->pixels)
+	{
+		expandtex_gl(&width, &height);
+		pitch = width;
 		return render_blit_img_toimg(pixels,width,height,pitch,src,dx,dy,bw,bh,sx,sy,color);
+	}
+
+	int iw, ih;
+	iw = src->head.width;
+	ih = src->head.height;
+	expandtex_gl(&iw, &ih);
+
 	// TODO: cache shit so we don't have to constantly upload the same image over and over again
 	glEnable(GL_TEXTURE_2D);
 	if(src->tex_dirty)
@@ -33,7 +70,7 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 			glGenTextures(1, &(src->tex));
 		
 		glBindTexture(GL_TEXTURE_2D, src->tex);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, src->head.width, src->head.height, 0, GL_BGRA, GL_UNSIGNED_BYTE, src->pixels);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iw, ih, 0, GL_BGRA, GL_UNSIGNED_BYTE, src->pixels);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
@@ -59,10 +96,10 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 	float dx2 = dx+bw;
 	float dy2 = dy+bh;
 
-	float sx1 = (sx)/(float)src->head.width;
-	float sx2 = (sx+bw)/(float)src->head.width;
-	float sy1 = (sy)/(float)src->head.height;
-	float sy2 = (sy+bh)/(float)src->head.height;
+	float sx1 = (sx)/(float)iw;
+	float sx2 = (sx+bw)/(float)iw;
+	float sy1 = (sy)/(float)ih;
+	float sy2 = (sy+bh)/(float)ih;
 	
 	glColor4f(((color>>16)&255)/255.0f,((color>>8)&255)/255.0f,((color)&255)/255.0f,((color>>24)&255)/255.0f);
 	glBegin(GL_QUADS);
@@ -135,10 +172,14 @@ void render_blit_img_toimg(uint32_t *pixels, int width, int height, int pitch,
 		return;
 	
 	// get pointers
+	int iw, ih;
+	iw = src->head.width;
+	ih = src->head.height;
+	expandtex_gl(&iw, &ih);
 	uint32_t *ps = src->pixels;
-	ps = &ps[sx+sy*src->head.width];
+	ps = &ps[sx+sy*iw];
 	uint32_t *pd = &(pixels[dx+dy*pitch]);
-	int spitch = src->head.width - bw;
+	int spitch = iw - bw;
 	int dpitch = pitch - bw;
 	
 	//printf("[%i %i] [%i %i] %016llX %016llX %i %i %08X\n"

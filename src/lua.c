@@ -347,6 +347,11 @@ int icelua_init(void)
 			if(!lua_isnil(Lc, -1)) gl_use_vbo = v;
 			lua_pop(Lc, 1);
 
+			lua_getfield(Lc, -1, "gl_expand_textures");
+			v = lua_toboolean(Lc, -1);
+			if(!lua_isnil(Lc, -1)) gl_expand_textures = v;
+			lua_pop(Lc, 1);
+
 			lua_getfield(Lc, -1, "gl_chunk_size");
 			v = lua_tointeger(Lc, -1);
 			if(v > 0) gl_chunk_size = v;
