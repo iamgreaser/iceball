@@ -55,6 +55,9 @@ clsave/config.json:
 		The more chunks are tesselated per frame, the more stutter may be
 		encountered.
 		A recommended value would be "2" (or "1" for slower computers).
+
+		"vbo" enables vertex buffer objects (default: true)
+		May fail on older computers. Enable for a faster FPS.
 	
 	"audio" section:
 		"freq" is the master audio sampling frequency in Hz, as usual.
