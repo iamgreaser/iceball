@@ -45,6 +45,23 @@ REQUIREMENTS:
 - GNU make
   - if someone has BSD make, please tell us :)
 
+COMPILING ON UNIX:
+After installing/compiling all dependencies, just execute `make`. No `./configure` needed.
+If some trouble with lua, try uncomment line
+
+HEADERS_Lua = #-I /usr/include/lua5.1
+
+In Makefile.
+Also, if you get error "library not found for -llua" try change line in Makefile
+
+LIBS_Lua = -llua
+
+to 
+
+LIBS_Lua = -llua5.1
+
+If you encounter another problem, keep your eye on Makefile
+
 STUFF TO DO BEFORE 0.1 CAN BE RELEASED:
 - DOCS!!! (ones which aren't crap)
 - make net_pack more solid
