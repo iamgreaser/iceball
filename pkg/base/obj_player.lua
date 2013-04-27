@@ -35,6 +35,8 @@ function new_player(settings)
 	this.weapon = settings.weapon or WPN_RIFLE
 	this.explosive = settings.explosive or EXPL_GRENADE
 	
+	this.recoil_amt = 0
+	
 	this.pid = settings.pid or error("pid must be set when creating player!")
 	this.sockfd = settings.sockfd
 	this.alive = false
@@ -354,6 +356,7 @@ function new_player(settings)
 		local ydist = math.sqrt(ycos*ycos+yrec*yrec)
 		this.angy = this.angy + xrec
 		this.angx = math.asin(yrec/ydist)
+		this.recoil_time = sec_current
 	end
 	
 	function this.update_score()
@@ -804,6 +807,11 @@ function new_player(settings)
 		fwx,fwy,fwz = sya*cxa, sxa, cya*cxa
 		
 		if client and this.alive and (not this.t_switch) then
+		if this.recoil_time then
+			this.recoil_amt = (sec_current - this.recoil_time) * math.pow(2, 1 - 10 * (sec_current - this.recoil_time)) * 1.5
+		else
+			this.recoil_amt = 0
+		end
 		if this.ev_lmb and this.mode ~= PLM_SPECTATE then
 			if this.tool == TOOL_BLOCK and this.blx1 then
 				if (not this.t_newblock) and this.blocks > 0 then
@@ -1291,7 +1299,7 @@ function new_player(settings)
 			end
 		elseif this.tool == TOOL_GUN then
 			this.wpn.render(this.x+mdl_x, this.y+this.jerkoffs+mdl_y, this.z+mdl_z,
-				math.pi/2, -this.angx, this.angy)
+				math.pi/2, -this.angx + this.recoil_amt, this.angy)
 		elseif this.tool == TOOL_EXPL then
 			this.expl.render(this.x+mdl_x, this.y+this.jerkoffs+mdl_y, this.z+mdl_z,
 				math.pi/2, -this.angx, this.angy)
