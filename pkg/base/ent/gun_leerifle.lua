@@ -34,8 +34,8 @@ return function (plr)
 		time_fire = 1,
 		time_reload = 2.5,
 		
-		recoil_x = 0.00001,
-		recoil_y = -0.5,
+		recoil_x = 0.001,
+		recoil_y = -0.2,
 		
 		name = "Lee-Enfield Rifle"
 	}
@@ -144,6 +144,7 @@ return function (plr)
 		-- apply recoil
 		-- attempting to emulate classic behaviour provided i have it right
 		plr.recoil(sec_current, this.cfg.recoil_y, this.cfg.recoil_x)
+		plr.zooming = false
 	end
 	
 	function this.reload()
