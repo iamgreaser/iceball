@@ -88,7 +88,7 @@ loadfile("pkg/base/client_start.lua")(...)
 --stick in your plugins here
 
 -- main_client.lua (the actual client entry point)
-PKG_DIR_PMF = common.pkg_base.."/pmf"
+DIR_PKG_PMF = "pkg/"..common.base_dir.."/pmf"
 loadfile("pkg/base/main_client.lua")(...)
 
 -- main_server.lua
