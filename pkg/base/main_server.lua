@@ -74,6 +74,12 @@ function server.hook_file(sockfd, ftype, fname)
 	
 	if (ftype == "icemap" or ftype == "map") and (fname == "*MAP") then
 		return map_loaded
+	elseif (ftype == "tga") and (fname == "*MAPIMG") then
+		if map_fname then
+			return map_fname..".tga"
+		else
+			return nil
+		end
 	end
 	
 	return true

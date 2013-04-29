@@ -130,6 +130,10 @@ do
 			scene = gui_create_scene(w, h)
 			loading_img = scene.image{img=img_loading, x=w/2, y=h/2}
 			scene.root.add_child(loading_img)
+			if img_map then
+				map_img = scene.image{img=img_map, x=-w/2, y=h/2}
+				scene.root.add_child(map_img)
+			end
 		end
 		
 		local cname = ftype.."!"..fname
@@ -222,6 +226,9 @@ do
 					rgb = 85 + amount * 170.0
 					client.map_fog_set(rgb, rgb, rgb, 127.5)
 					loading_img.x = w/2 + amount * w
+					if map_img then
+						map_img.x = -w/2 + amount * w
+					end
 				end
 				
 				if csize then
