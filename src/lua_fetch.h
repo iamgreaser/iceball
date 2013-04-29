@@ -163,6 +163,18 @@ int icelua_fn_common_fetch_poll(lua_State *L)
 	if(L == lstate_server)
 		return luaL_error(L, "fetch_poll not supported for C->S transfers");
 	
+	if(to_client_local.cfetch_cpos == -1)
+	{
+		free(cfetch_fname);
+		free(cfetch_ftype);
+		free(to_client_local.cfetch_ubuf);
+		to_client_local.cfetch_ubuf = NULL;
+		to_client_local.cfetch_udtype = UD_INVALID;
+		to_client_local.cfetch_cpos = 0;
+		lua_pushnil(L);
+		return 1;
+	}
+	
 	if(to_client_local.cfetch_ubuf != NULL)
 	{
 		//printf("Decompressed!\n");
@@ -379,11 +391,12 @@ int icelua_fn_common_fetch_block(lua_State *L)
 		// local obj = common.fetch_poll()
 		lua_pushcfunction(L, icelua_fn_common_fetch_poll);
 		lua_call(L, 0, 1);
-		
 		// if obj ~= false then return obj end
-		if((!lua_isboolean(L, -1)) || lua_toboolean(L, -1))
+		if(!lua_isboolean(L, -1) || lua_toboolean(L, -1))
 			return 1;
-		
+		// if obj == nil then return nil end
+		if(lua_isnil(L, -1))
+			return 1;
 		lua_pop(L, 1);
 	}
 	// end

@@ -394,7 +394,7 @@ void net_eat_c2s(client_t *cli)
 			case 0x30: {
 				// 0x30 flags namelen name[namelen] 0x00
 				// file transfer request
-				char *fname = pkt->data + 3;
+				const char *fname = pkt->data + 3;
 				int udtype = pkt->data[1] & 15;
 				const char *ftype = net_aux_gettype_str(udtype);
 				
@@ -441,6 +441,10 @@ void net_eat_c2s(client_t *cli)
 						break;
 					} else if(lua_isboolean(lstate_server, -1) && lua_toboolean(lstate_server, -1)) {
 						// all good
+						lua_pop(lstate_server, 1);
+					} else if(lua_isstring(lstate_server, -1)) {
+						// filename redirect
+						fname = lua_tostring(lstate_server, -1);
 						lua_pop(lstate_server, 1);
 					} else {
 						use_serialised = 1;
@@ -693,6 +697,11 @@ void net_eat_s2c(client_t *cli)
 				// abort outgoing file transfer
 				//printf("abort transfer\n");
 				// TODO: actually abort
+				free(cli->cfetch_cbuf);
+				free(cli->cfetch_ubuf);
+				cli->cfetch_cbuf = NULL;
+				cli->cfetch_ubuf = NULL;
+				cli->cfetch_cpos = -1;
 				net_packet_free(pkt, &(cli->head), &(cli->tail));
 			} break;
 			default:

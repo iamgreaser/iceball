@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,0,0,0,42},
-	num=42,
-	str="0.0-42",
+	cmp={0,0,0,0,43},
+	num=43,
+	str="0.0-43",
 }
 
 VERSION_BUGS = {
@@ -64,5 +64,6 @@ VERSION_BUGS = {
 {intro=nil, fix=40, msg="[OpenGL] Chunks rendering options not supported in game engine config file"},
 {intro=nil, fix=41, msg="[OpenGL] option to disable VBOs not available"},
 {intro=nil, fix=42, msg="[OpenGL] lack of support for cards w/o non-power-of-2 texture support"},
+{intro=nil, fix=43, msg="File transfer cancellation not supported"},
 }
 

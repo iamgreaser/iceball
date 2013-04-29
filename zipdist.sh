@@ -1,6 +1,6 @@
 #!/bin/sh
 
-export ZIPNAME=nubdist/iceballfornoobs-0.0-42.zip
+export ZIPNAME=nubdist/iceballfornoobs-0.0-43.zip
 
 #zip -r $ZIPNAME *.dll *.exe *.txt *.bat docs/ \
 #	pkg/base/*.lua \
