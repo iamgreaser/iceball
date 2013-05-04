@@ -142,7 +142,7 @@ GLfloat render_get_average_light(map_t *map, int x1, int y1, int z1, int x2, int
 	return average;
 }
 
-int render_visible_chunks_array_offset(int x, int z)
+inline int render_visible_chunks_array_offset(int x, int z)
 {
 	return z * (int) sqrtf(gl_visible_chunks) + x;
 }
@@ -226,6 +226,14 @@ void render_init_visible_chunks(map_t *map, int starting_chunk_coordinate_x, int
 	}
 	
 	map->visible_chunks_arr = (map_chunk_t *) malloc(gl_visible_chunks * sizeof(map_chunk_t));
+	
+	/* check if the visible chunks array has been allocated properly */
+	if(map->visible_chunks_arr == NULL)
+		{
+			fprintf(stderr, "render_init_visible_chunks: could not allocate visible chunks array\n");
+			return;
+		}
+
 	map->visible_chunks_vcenter_cx = starting_chunk_coordinate_x;
 	map->visible_chunks_vcenter_cz = starting_chunk_coordinate_z;
 
@@ -547,13 +555,17 @@ void render_gl_cube_map(map_t *map, map_chunk_t *chunk, float x, float y, float 
 
 	/* Quads rendering explained (sort of)
 
+	   'o' in drawings represents the vertex at origin
+	   '+' a vertex
+	   '1' digits represents vertex number
+
 	   i = 0                                          | i = 1                                          | i = 2                                         
 	   -----                                          | -----                                          | -----                                         
 	                                                  |                                                |                                               
 	   Quad 1 (left)               Quad 2 (right)     | Quad 1 (top)            Quad 2 (bottom)        | Quad 1 (back)              Quad 2 (front)     
 	                                                  |                                                |         
 	               1                       3          |             1         4                        |            1        2                         
-	    +-- x       +.......         .......+         |  +-- x       +------+         ........         |  +-- x      +------+         ........         
+	    +-- x       o.......         o......+         |  +-- x       o------+         o.......         |  +-- x      o------+         o.......         
 	   /|        4 /|     ..        ..   4 /|         | /|          /.     /.        ..     ..         | /|         .|     .|      3 ..     2.         
 	   z y        +.|..... .       .......+ |         |z y         +------+ .       ........ .         |z y        ..|..... |       +------+ .         
 	              | +.......       . .....|.+         |           2. ......3.       . +------+         |           . +------+       | .....|..         
@@ -610,7 +622,7 @@ void render_gl_cube_map(map_t *map, map_chunk_t *chunk, float x, float y, float 
 	    x - ub, y - uc, z - ua                    x + vc, y + va, z + vb
 
 
-	    Generic coordinates formula to check for each vertex (god, I don't even know what I'm writing, it would miraculous if it works) :
+	    Generic coordinates formula (<=> regardless of i value) to check for each vertex (holy moly, it seems to be working ^^) :
 
 	    Quad 1                                    Quad 2               
 	    ------                                    ------

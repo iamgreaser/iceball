@@ -1,0 +1,244 @@
+OpenGL renderer notes
+=====================
+
+
+
+[Map]
+
+
+The map is constituted by one pillar for each x and z coordinate.
+A pillar lists the blocks at each height coordinate.
+The top block (the block at the highest coordinate) is at y = 0.
+The bottom block (the block at the lowest coordinate) is at y = 64.
+
+The map can be represented as the following (not showing the z pillars) :
+                    Map
+           <-------------------->   
+                                    
+           +------+------+------+ - - -> y = 0
+  +-- x   /|     /|     /|     /|   
+ /|      +------+------+------+ |   
+z y      | |    | |    | |    | |   
+         | |    | |    | |    | |   
+         | |    | |    | |    | |   
+         | |    | |    | |    | |   
+         | |    | |    | |    | |   
+         | |    | |    | |    | |   
+         | +----|-+----|-+----|-+ - - -> y = 64
+         |/     |/     |/     |/    
+         +------+------+------+     
+          Pillar Pillar Pillar      
+
+
+
+[Map chunks]
+
+
+For performance concerns, pillars are grouped in chunks.
+A chunk can contain 'gl_chunk_size' pillars (typically 8 or 16).
+When any block/voxel is altered within a chunk (or within a pillar), the
+whole chunk has to be rebuild (tesselated).
+That's because each chunk is linked with a buffer containing all vertices
+and faces data.
+
+
+
+[Tesselation]
+
+
+When we render map chunks, a naive approch would be to render a complete
+cube for each voxel different to air.
+In order to send less data to the videocard at each render call, our first
+optimization is to render only faces of voxels exposed to air, as shown
+briefly on the diagram below :
+
+.- - - +======+- - - .              +------+       
+. Air  |Solid | Air  .              |Solid |       
+.      |      |      .    Gives     |      |       
+.- - - +- - - +- - - .              +      +       
+. Air  |Solid | Air  .      =>      |      |       
+.      |      |      .              |      |       
+.- - - +======+======+              +------+------+
+. Air  . Air  |Solid |                     |Solid |
+.      .      |      |                     |      |
+.- - - .- - - +======+                     +------+
+
+We could achieve extra optimization by merging shared vertices and faces,
+which is not done currently in the engine.
+
+
+
+[Quads]
+
+
+Quads vertices for each face are drawn in the order shown below :
+
+Quad left                  Quad right
+                                          
+            1                       3     
+ +-- x       o.......         o......+    
+/|        4 /|     ..        ..   4 /|    
+z y        +.|..... .       .......+ |    
+           | +.......       . .....|.+    
+           |/ 2   ..        ..     |/ 2   
+           +.......         .......+      
+          3                         1     
+
+
+Quad top                   Quad bottom
+                                        
+             1         4                
+  +-- x       o------+         o....... 
+ /|          /.     /.        ..     .. 
+z y         +------+ .       ........ . 
+           2. ......3.       . +------+ 
+            ..     ..        ./ 3   ./ 4
+            ........         +------+   
+                            2        1  
+
+
+Quad back                  Quad front
+         
+            1        2                         
+  +-- x      o------+         o.......         
+ /|         .|     .|      3 ..     2.         
+z y        ..|..... |       +------+ .         
+           . +------+       | .....|..         
+           .. 4   .. 3      |.     |/          
+           ........         +------+           
+                           4        1 
+
+
+
+[Circular array]
+
+
+To display chunks around the camera/player, the engine implements a
+circular array of chunks.
+
+This circular array size is tied to the view distance (the smaller the
+array is, the less chunks are rendered, thus preventing far chunks to
+be rendered).
+
+Each cell of the circular array contains the coordinates of the chunks that
+are rendered or need to be rendered around the player.
+
+For a value of "gl_visible_chunks" = 9, the array size would be 3x3.
+
+At initialization, the virtual center (surrounded by '#') of the circular
+array would be [1, 1].
+
+If we decide that the camera/player is at coords [4,5], we would have the
+following array, at start :
+
+    0   1   2  
+  +---+---+---+
+0 |3,4|4,4|5,4|
+  +---#####---+
+1 |3,5#4,5#5,5|
+  +---#####---+
+2 |3,6|4,6|5,6|
+  +---+---+---+    
+
+Later, if the camera/player has moved from the chunk [4,5] to [5,5], the
+new virtual center of the circular array will be at coordinates [2,1].
+
+We then go through all cells and :
+- untesselate chunks at coords [3,4], [3,5] and [3,6], as they are not
+   needed anymore (out of the view distance)
+- add and tesselate chunks at coords [6,4], [6,5] and [6,6] newly visible
+- the others chunks don't need to be altered in any way at this point
+
+    0   1   2  
+  +---+---+---+
+0 |6,4|4,4|5,4|
+  +---+---#####
+1 |6,5|4,5#5,5#
+  +---+---#####
+2 |6,6|4,6|5,6|
+  +---+---+---+    
+
+At the moment, we tesselate "gl_chunks_tesselated_per_frame" chunks at each
+call to function render_map_tesselate_visible_chunks.
+It means that the chunks are tesselated in the order in the array and not
+according to the distance from the player.
+
+We could improve that by adding a list of chunks to be tesselated sorted by
+priority (could be here the distance from the camera/player).
+
+
+
+[Smooth lighting]
+
+
+Smooth lighting adds darkness to the inners corners of the voxels and helps
+differenciating blocks from each other.
+It's a cheap way to fake ambient occlusion without using shaders.
+To do this, we have to give each cube vertex a darkness value.
+This value is computed by averaging the light values of the 4 adjacents
+blocks touching the vertex.
+If a block is Air, the light value would be the maximum (we took 15, to
+simulate minecraft's light scales)
+If the block is Solid, the light value would be zero. That way, it will
+drag down the average value and thus create the dark corners effect.
+
+As an example, let's consider a cube :
+
+                    +======+       
+                   /|     /|  
+ +-- x            +======+ | 
+/|                | +----|-+
+z y               |/     |/
+                  +======+
+
+If we are currently rendering the vertex number 3 of the left face :
+
+                   1         
+ +-- x              +....... 
+/|               4 /|     .. 
+z y               +.|..... . 
+                  | +....... 
+                  |/ 2   ..  
+                  +.......   
+                 3           
+                             
+We have to get the averaged light value of the surrounded blocks drawn
+below :
+
+
+             +------+======+                                              
+            /|     /|     /|                                              
+ +-- x     +------+======+ |                                              
+/|        /| +---/|-+----|-+                                              
+z y      +------+ |/|    |/                                               
+         |-+----|-O======+
+         |/|    |/| +
+         +------+ |/
+         | +----|-+
+         |/     |/
+         +------+
+
+
+Now, if we are currently rendering the vertex number 1 of the bottom face :
+                    ........ 
+                   ..     .. 
+  +-- x           ........ . 
+ /|               . +------+ 
+ z y              ./ 3   ./ 4
+                  +------+   
+                 2        1  
+
+
+We have to get the average light value of the following blocks :
+
+ +-- x              +======+                                                            
+/|                 /|     /|                                                            
+z y               +======+ |                                                            
+                  | +----|-+------+                                                     
+                  |/|    |/|     /|                                                     
+                  +======O------+ |
+                 /| +---/|-+---/|-+
+                +------+------+ |/
+                | +----|-+----|-+
+                |/     |/     |/
+                +------+------+
