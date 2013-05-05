@@ -590,6 +590,12 @@ int print_usage(char *rname)
 #endif
 			,rname,rname);
 	
+#ifdef WIN32
+	MessageBox(NULL, "Don't double-click on iceball.exe. Open a commandline instead.\r\n"
+		"You should be able to see the usage information if you have.\r\n"
+		"TIP: double-clicking on opencmd.bat will get you a commandline in the right place.", "Iceball", MB_OK|MB_ICONERROR|MB_APPLMODAL);
+#endif
+	
 	return 99;
 }
 

@@ -86,6 +86,13 @@ extern "C" {
 };
 #endif
 
+#ifdef WIN32
+#ifdef stderr
+#undef stderr
+#endif
+#define stderr stdout
+#endif
+
 
 #ifndef DEDI
 #include <SDL.h>
@@ -102,6 +109,7 @@ extern "C" {
 // just so we can get getaddrinfo
 // you will need Windows 2000 at least!
 #define _WIN32_WINNT 0x0501
+#include <windows.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
 

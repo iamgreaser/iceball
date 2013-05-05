@@ -28,7 +28,7 @@ LIBS_sackit = -lsackit
 LIBS = -Lwinlibs -lm -lmingw32 $(LIBS_Lua) $(LIBS_SDL) $(LIBS_zlib) $(LIBS_Winsuck) $(LIBS_sackit)
 BINNAME = iceball.exe
 
-OBJDIR = build/mingw32_gl
+OBJDIR = build/mingw32
 
 MINGPREFIX = i686-pc-mingw32
 CC = $(MINGPREFIX)-gcc

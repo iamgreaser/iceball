@@ -65,5 +65,7 @@ VERSION_BUGS = {
 {intro=nil, fix=41, msg="[OpenGL] option to disable VBOs not available"},
 {intro=nil, fix=42, msg="[OpenGL] lack of support for cards w/o non-power-of-2 texture support"},
 {intro=nil, fix=43, msg="File transfer cancellation not supported"},
+{intro=nil, fix=44, msg="[Windows] MessageBox added to 0.0-44 telling people not to double-click the .exe files"},
+{intro=nil, fix=44, msg="[Windows binary build] stdout/stderr is now moved to the commandline in 0.0-44 - upgrade!"},
 }
 
