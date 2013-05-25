@@ -118,6 +118,7 @@ function argspew_gen(arr, idx)
 end
 
 dofile("pkg/base/lib_gui.lua")
+img_map = img_map or common.img_load("*MAPIMG")
 
 do
 	local scriptcache = {}
