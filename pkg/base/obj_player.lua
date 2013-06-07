@@ -990,8 +990,8 @@ function new_player(settings)
 		end
 
 		-- apply base slowdown
-		local mvspd = 8.0
-		local mvchange = 10.0
+		local mvspd = 7.0
+		local mvchange = 5.0
 		if this.mode ~= PLM_NORMAL then mvspd = 20.0 end
 		mvx = mvx * mvspd
 		mvy = mvy * mvspd
@@ -1000,8 +1000,8 @@ function new_player(settings)
 		-- apply extra slowdowns
 		if this.mode == PLM_NORMAL then
 			if not this.grounded then
-				mvx = mvx * 0.6
-				mvz = mvz * 0.6
+				mvx = mvx * 0.3
+				mvz = mvz * 0.3
 				mvchange = mvchange * 0.3
 			end
 			if inwater then
@@ -1111,6 +1111,8 @@ function new_player(settings)
 					local jdiff = jerky - ty1
 					if math.abs(jdiff) > 0.1 then
 						this.jerkoffs = this.jerkoffs + jdiff
+						this.vx = this.vx * 0.02
+						this.vz = this.vz * 0.02
 					end
 				end
 				
@@ -2327,7 +2329,8 @@ function new_player(settings)
 						py = h/2+w/2*dy*this.zoom/dz
 						local c
 						if plr.squad and plr.squad == this.squad then
-							client.img_blit(img_chevron, px - 4, py - 20)							c = {255,255,255}
+							client.img_blit(img_chevron, px - 4, py - 20)
+							c = {255,255,255}
 						else
 							c = teams[this.team].color_chat
 						end
