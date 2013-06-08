@@ -40,7 +40,7 @@ GOTO Menu
 
 :DevServer
 ECHO Connecting to dev server...
-iceball.exe -c iceballga.me 20737
+iceball.exe -c play.iceballga.me 20737
 ECHO.
 cls
 GOTO Menu
