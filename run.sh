@@ -10,7 +10,7 @@ do
             ;;
         "rakiru's server")
             echo "Joining rakiru's server..."
-            ./iceball -c aoswiki.rakiru.com 20737
+            ./iceball -c play.iceballga.me 20737
             ;;
         "Lighting test")
             echo "Starting local server with lighting test..."
