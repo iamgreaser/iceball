@@ -14,7 +14,6 @@ export ZIPNAME=nubdist/iceballfornoobs-0.0-45.zip
 #	clsave/config.json clsave/pub/user.json
 
 zip -r $ZIPNAME *.dll *.exe *.txt opencmd.bat connect-*.bat docs/ \
-	MANUAL/ \
 	dlcache/info.txt clsave/info.txt \
 	clsave/config.json clsave/pub/user.json \
 	pkg/iceball/halp/ \

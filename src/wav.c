@@ -17,7 +17,7 @@
 
 #include "common.h"
 
-int icesackit_bufoffs = 4096;
+int icesackit_bufoffs = 0;
 int icesackit_freq = 0;
 sackit_playback_t *icesackit_pb = NULL;
 float icesackit_vol = 1.0f;
