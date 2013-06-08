@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,0,0,0,44},
-	num=44,
-	str="0.0-44",
+	cmp={0,0,0,0,45},
+	num=45,
+	str="0.0-45",
 }
 
 VERSION_BUGS = {
@@ -67,5 +67,7 @@ VERSION_BUGS = {
 {intro=nil, fix=43, msg="File transfer cancellation not supported"},
 {intro=nil, fix=44, msg="[Windows] MessageBox added to 0.0-44 telling people not to double-click the .exe files"},
 {intro=nil, fix=44, msg="[Windows binary build] stdout/stderr is now moved to the commandline in 0.0-44 - upgrade!"},
+{intro=nil, fix=45, msg="Inbuilt tutorial not available in this version"},
+{intro=nil, fix=45, msg="libsackit is out of date and does not support IT 2.14p3 resonant filters"},
 }
 

@@ -591,9 +591,11 @@ int print_usage(char *rname)
 			,rname,rname);
 	
 #ifdef WIN32
+	/*
 	MessageBox(NULL, "Don't double-click on iceball.exe. Open a commandline instead.\r\n"
 		"You should be able to see the usage information if you have.\r\n"
 		"TIP: double-clicking on opencmd.bat will get you a commandline in the right place.", "Iceball", MB_OK|MB_ICONERROR|MB_APPLMODAL);
+	*/
 #endif
 	
 	return 99;
@@ -601,14 +603,29 @@ int print_usage(char *rname)
 
 int main_dbghelper(int argc, char *argv[])
 {
-	if(argc <= 1)
-		return print_usage(argv[0]);
-	
 	main_argc = argc;
 	main_argv = argv;
-#ifndef DEDI
-	if(!strcmp(argv[1], "-c"))
+
+#ifdef DEDI
+	if(argc <= 1)
+		return print_usage(argv[0]);
+#else
+	if(argc <= 1)
 	{
+		//print_usage(argv[0]);
+		net_port = 0;
+		mod_basedir = "pkg/iceball/halp";
+		printf("Starting server on port %i, mod \"%s\"\n", net_port, mod_basedir);
+		main_largstart = 4;
+		
+		boot_mode = 3;
+	} else
+#endif
+	
+#ifndef DEDI
+	if((!strcmp(argv[1], "-h")) || (!strcmp(argv[1], "/?")) || (!strcmp(argv[1], "-?")) || (!strcmp(argv[1], "--help"))) {
+		return print_usage(argv[0]);
+	} else if(!strcmp(argv[1], "-c")) {
 		if(argc <= 3)
 			return print_usage(argv[0]);
 		

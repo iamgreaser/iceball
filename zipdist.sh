@@ -1,6 +1,6 @@
 #!/bin/sh
 
-export ZIPNAME=nubdist/iceballfornoobs-0.0-44.zip
+export ZIPNAME=nubdist/iceballfornoobs-0.0-45.zip
 
 #zip -r $ZIPNAME *.dll *.exe *.txt *.bat docs/ \
 #	pkg/base/*.lua \
@@ -17,5 +17,6 @@ zip -r $ZIPNAME *.dll *.exe *.txt opencmd.bat connect-*.bat docs/ \
 	MANUAL/ \
 	dlcache/info.txt clsave/info.txt \
 	clsave/config.json clsave/pub/user.json \
+	pkg/iceball/halp/ \
 	clsave/pub/controls.json
 

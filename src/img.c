@@ -86,7 +86,7 @@ img_t *img_parse_tga(int len, const char *data)
 #ifdef USE_OPENGL
 	expandtex_gl(&iw, &ih);
 #endif
-	printf("TEX: %i %i\n", iw, ih);
+	//printf("TEX: %i %i\n", iw, ih);
 	img_t *img = (img_t*)malloc(sizeof(img_t)+4*iw*ih);
 	// TODO: check if NULL
 	img->head = head;

@@ -579,7 +579,7 @@ mus = common.mus_load_it(fname) @
 	remember to free it when you're done
 	as this is only a light userdata
 
-common.mus_free(wav) @
+common.mus_free(mus) @
 	free the given sound
 	if you don't do this then it's memoryleaktopia
 	(plus i'm allowed to kill you)

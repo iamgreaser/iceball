@@ -129,11 +129,10 @@ Sounds:
 - Maybe even some form of DFPWM, but that'll be for voice chat only.
 
 Music:
-- None yet! Aiming for *.it, if it's even worth adding in music.
+- *.it: Impulse Tracker.
+  - This is via libsackit.
+  - We are not supporting any other module formats. Convert it to .it.
   - WE ARE NOT USING SDL_MIXER FOR THIS
-  - We'll be using either sackit or libdumb instead,
-    probably the latter for now as sackit still needs lots of work...
-    If that happens, I'm enforcing *.it-only, or at least banning *.xm
 - Might possibly allow for *.ogg, too.
 
 Video:

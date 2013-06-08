@@ -35,7 +35,7 @@ int icelua_fn_client_mus_play(lua_State *L)
 	// XXX: i should probably add a proper API to sackit for this
 	if(icesackit_pb != NULL)
 		sackit_playback_free(icesackit_pb);
-	icesackit_pb = sackit_playback_new(mus, 4096, 256, MIXER_IT212S);
+	icesackit_pb = sackit_playback_new(mus, 4096, 256, MIXER_IT214FS);
 	if(icesackit_pb == NULL)
 	{
 		lua_pushboolean(L, 0);
