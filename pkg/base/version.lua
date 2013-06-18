@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,0,0,0,45},
-	num=45,
-	str="0.0-45",
+	cmp={0,0,0,0,46},
+	num=46,
+	str="0.0-46",
 }
 
 VERSION_BUGS = {
@@ -56,18 +56,19 @@ VERSION_BUGS = {
 {intro=32, fix=nil, msg=".it module music might have stability issues. If it crashes, please tell us :)"},
 {intro=nil, fix=34, msg="Server must be manually seeded"},
 {intro=33, fix=34, msg="A few compilation warnings that shouldn't be there"},
-{intro=nil, fix=35, msg="[OpenGL] Smooth lighting not supported"},
+{intro=22, fix=35, msg="[OpenGL] Smooth lighting not supported"},
 {intro=35, fix=nil, msg="[OpenGL] Smooth lighting of PMF models not supported"},
 {intro=37, fix=39, msg="[softgm] Preliminary smooth lighting (WIP)"},
-{intro=nil, fix=38, msg="[OpenGL] Rendering tends to stutter on some cards"},
+{intro=22, fix=38, msg="[OpenGL] Rendering tends to stutter on some cards"},
 {intro=38, fix=nil, msg="[OpenGL] Preliminary stutter-reduced rendering (WIP)"},
-{intro=nil, fix=40, msg="[OpenGL] Chunks rendering options not supported in game engine config file"},
-{intro=nil, fix=41, msg="[OpenGL] option to disable VBOs not available"},
-{intro=nil, fix=42, msg="[OpenGL] lack of support for cards w/o non-power-of-2 texture support"},
+{intro=22, fix=40, msg="[OpenGL] Chunks rendering options not supported in game engine config file"},
+{intro=22, fix=41, msg="[OpenGL] option to disable VBOs not available"},
+{intro=22, fix=42, msg="[OpenGL] lack of support for cards w/o non-power-of-2 texture support"},
 {intro=nil, fix=43, msg="File transfer cancellation not supported"},
 {intro=nil, fix=44, msg="[Windows] MessageBox added to 0.0-44 telling people not to double-click the .exe files"},
 {intro=nil, fix=44, msg="[Windows binary build] stdout/stderr is now moved to the commandline in 0.0-44 - upgrade!"},
 {intro=nil, fix=45, msg="Inbuilt tutorial not available in this version"},
 {intro=nil, fix=45, msg="libsackit is out of date and does not support IT 2.14p3 resonant filters"},
+{intro=22, fix=46, msg="[OpenGL] PMF models tend to z-fight"},
 }
 

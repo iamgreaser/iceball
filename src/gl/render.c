@@ -944,13 +944,23 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 	glRotatef(rx*180.0f/M_PI, 1.0f, 0.0f, 0.0f);
 	glRotatef(ry*180.0f/M_PI, 0.0f, 1.0f, 0.0f);
 
+
 	if(bone->vbo_dirty)
 	{
 		bone->vbo_arr_len = 0;
 		for(i = 0; i < bone->ptlen; i++)
 		{
+			float ox, oy, oz;
+
+			const float oamp = 0.0004;
+			const float oper = 0.031;
+			
+			ox = oamp*sin(i*oper*M_PI*2.0);
+			oy = oamp*sin(i*oper*M_PI*2.0 + M_PI*2.0/3.0);
+			oz = oamp*sin(i*oper*M_PI*2.0 - M_PI*2.0/3.0);
+
 			model_point_t *pt = &(bone->pts[i]);
-			render_pmf_cube(bone, pt->x/256.0f, pt->y/256.0f, pt->z/256.0f, pt->r, pt->g, pt->b, pt->radius*2.0f/256.0f);
+			render_pmf_cube(bone, pt->x/256.0f+ox, pt->y/256.0f+oy, pt->z/256.0f+oz, pt->r, pt->g, pt->b, pt->radius*2.0f/256.0f + oamp);
 		}
 		
 		bone->vbo_dirty = 0;
