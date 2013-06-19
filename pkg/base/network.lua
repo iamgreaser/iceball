@@ -351,8 +351,12 @@ network.sys_handle_s2c(PKT_TEAM_SCORE, "bh", function (sockfd, cli, plr, sec_cur
 	teams[tidx].score = score
 end)
 network.sys_handle_s2c(PKT_BLK_DAMAGE, "HHHH", function (sockfd, cli, plr, sec_current, x, y, z, amt, pkt)
-	client.wav_play_global(wav_hammer, x, y, z)
-	bhealth_damage(x, y, z, amt)
+	if map_block_get(x, y, z) then
+		client.wav_play_global(wav_hammer, x, y, z)
+		bhealth_damage(x, y, z, amt)
+	else
+		client.wav_play_global(wav_swish, x, y, z)
+	end
 end)
 network.sys_handle_s2c(PKT_PIANO, "B", function (sockfd, cli, plr, sec_current, pid, pkt)
 	local plr = players[pid]

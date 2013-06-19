@@ -122,6 +122,7 @@ if client then
 	wav_buld = skin_load("wav", "buld.wav", DIR_PKG_WAV)
 	wav_grif = skin_load("wav", "grif.wav", DIR_PKG_WAV)
 	wav_hammer = skin_load("wav", "hammer.wav", DIR_PKG_WAV)
+	wav_swish = skin_load("wav", "swish.wav", DIR_PKG_WAV)
 	wav_jump_up = skin_load("wav", "jump-up.wav", DIR_PKG_WAV)
 	wav_jump_down = skin_load("wav", "jump-down.wav", DIR_PKG_WAV)
 	wav_pin = skin_load("wav", "pin.wav", DIR_PKG_WAV)
