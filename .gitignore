@@ -26,12 +26,16 @@ gmon.out
 # kate
 *.kate-swp
 
-#visual studio files (personal config and whatnot)
+# visual studio files (personal config and whatnot)
 *.suo
 *.ncb
 *.user
 
 build/*
+
+# sackit copypasta
+xlibinc/libsackit.a
+xlibinc/sackit.h
 
 #cmake cache files
 CMakeFiles
