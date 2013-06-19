@@ -962,7 +962,7 @@ function new_player(settings)
 				this.crouching = true
 			end
 			if this.ev_jump and this.alive and (MODE_CHEAT_FLY or this.grounded) then
-				this.vy = -7
+				this.vy = -MODE_JUMP_SPEED
 				this.ev_jump = false
 				if client then
 					client.wav_play_global(wav_jump_up, this.x, this.y, this.z)
@@ -985,14 +985,14 @@ function new_player(settings)
 
 		-- apply tool speedup
 		if this.mode == PLM_NORMAL and (this.tool == TOOL_SPADE or this.tool == TOOL_BLOCK) then
-			mvx = mvx * 1.25
-			mvz = mvz * 1.25
+			mvx = mvx * MODE_PSPEED_SPADE
+			mvz = mvz * MODE_PSPEED_SPADE
 		end
 
 		-- apply base slowdown
-		local mvspd = 7.0
-		local mvchange = 5.0
-		if this.mode ~= PLM_NORMAL then mvspd = 20.0 end
+		local mvspd = MODE_PSPEED_NORMAL
+		local mvchange = MODE_PSPEED_CHANGE
+		if this.mode ~= PLM_NORMAL then mvspd = MODE_PSPEED_FLYMODE end
 		mvx = mvx * mvspd
 		mvy = mvy * mvspd
 		mvz = mvz * mvspd
@@ -1000,21 +1000,21 @@ function new_player(settings)
 		-- apply extra slowdowns
 		if this.mode == PLM_NORMAL then
 			if not this.grounded then
-				mvx = mvx * 0.3
-				mvz = mvz * 0.3
-				mvchange = mvchange * 0.3
+				mvx = mvx * MODE_PSPEED_AIRSLOW
+				mvz = mvz * MODE_PSPEED_AIRSLOW
+				mvchange = mvchange * MODE_PSPEED_AIRSLOW_CHANGE
 			end
 			if inwater then
-				mvx = mvx * 0.6
-				mvz = mvz * 0.6
+				mvx = mvx * MODE_PSPEED_WATER
+				mvz = mvz * MODE_PSPEED_WATER
 			end
 			if this.crouching then
-				mvx = mvx * 0.5
-				mvz = mvz * 0.5
+				mvx = mvx * MODE_PSPEED_CROUCH
+				mvz = mvz * MODE_PSPEED_CROUCH
 			end
 			if this.zooming or this.ev_sneak then
-				mvx = mvx * 0.5
-				mvz = mvz * 0.5
+				mvx = mvx * MODE_PSPEED_SNEAK
+				mvz = mvz * MODE_PSPEED_SNEAK
 			end
 		end
 
@@ -1024,7 +1024,7 @@ function new_player(settings)
 		this.vx = this.vx + (mvx - this.vx)*(1.0-math.exp(-sec_delta*mvchange))
 		this.vz = this.vz + (mvz - this.vz)*(1.0-math.exp(-sec_delta*mvchange))
 		if this.mode == PLM_NORMAL then
-			this.vy = this.vy + 2*9.81*sec_delta
+			this.vy = this.vy + 2*MODE_GRAVITY*sec_delta
 		else
 			this.vy = this.vy + (mvy - this.vy)*(1.0-math.exp(-sec_delta*mvchange))
 		end
