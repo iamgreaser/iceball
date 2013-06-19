@@ -128,6 +128,7 @@ if client then
 	wav_pin = skin_load("wav", "pin.wav", DIR_PKG_WAV)
 	wav_kapiano = skin_load("wav", "kapiano.wav", DIR_PKG_WAV)
 	wav_nade_boom = skin_load("wav", "nade-boom.wav", DIR_PKG_WAV)
+	wav_pop = skin_load("wav", "pop.wav", DIR_PKG_WAV)
 	wav_steps = {}
 	local i
 	for i=1,8 do
