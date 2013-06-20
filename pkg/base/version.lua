@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,0,0,0,46},
-	num=46,
-	str="0.0-46",
+	cmp={0,0,0,0,47},
+	num=47,
+	str="0.0-47",
 }
 
 VERSION_BUGS = {
@@ -70,5 +70,6 @@ VERSION_BUGS = {
 {intro=nil, fix=45, msg="Inbuilt tutorial not available in this version"},
 {intro=nil, fix=45, msg="libsackit is out of date and does not support IT 2.14p3 resonant filters"},
 {intro=22, fix=46, msg="[OpenGL] PMF models tend to z-fight"},
+{intro=nil, fix=47, msg="Binary file loading/saving not supported"},
 }
 

@@ -71,6 +71,12 @@ clsave/config.json:
 		
 		"volume" is a volume multiplier.
 		Best to leave this at 1.0.
+	
+	"security" section:
+		"bin_storage_allowed" allows/disallows saving of files to vol/ directories.
+		Set this to "false" if you are in any way worried about a server possibly
+		crapflooding your Iceball install.
+		Best to leave this set to "true" until we get better security.
 
 clsave/pub/user.json:
 	"name" should be set to something other than null;

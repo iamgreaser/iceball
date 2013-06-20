@@ -29,7 +29,8 @@
 		"volume": 1.0
 	}
 
-	"net" : {
+	"security" : {
+		"bin_storage_allowed": true,
 		"raw_whitelist" : [
 			["voxelauth.com", [80]]
 		]

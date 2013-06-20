@@ -39,6 +39,8 @@ int icelua_fnaux_fetch_gettype(lua_State *L, const char *ftype)
 		return UD_WAV;
 	else if(!strcmp(ftype, "it"))
 		return UD_MUS_IT;
+	else if(!strcmp(ftype, "bin"))
+		return UD_BIN;
 	else if(!strcmp(ftype, "log")) {
 		// TODO!
 		return luaL_error(L, "format not supported yet!");
@@ -103,6 +105,17 @@ int icelua_fnaux_fetch_immediate(lua_State *L, const char *ftype, const char *fn
 		
 		lua_pushlightuserdata(L, mus);
 		return 1;
+	} else if(!strcmp(ftype, "bin")) {
+		int flen = 0;
+		char *d = net_fetch_file(fname, &flen);
+		if(d == NULL)
+		{
+			return 0;
+		} else {
+			lua_pushlstring(L, d, flen);
+			free(d);
+			return 1;
+		}
 	} else if(!strcmp(ftype, "json")) {
 		return (json_load(L, fname) ? 0 : 1);
 	} else if(!strcmp(ftype, "log")) {
@@ -317,6 +330,11 @@ int icelua_fn_common_fetch_poll(lua_State *L)
 				free(tfname);
 			} break;
 			
+			case UD_BIN: {
+				lua_pushlstring(L, to_client_local.cfetch_ubuf, to_client_local.cfetch_ulen);
+				ret = 1;
+			} break;
+			
 			default:
 				fprintf(stderr, "EDOOFUS: invalid fetch type %i!\n",
 					to_client_local.cfetch_udtype);
@@ -401,3 +419,4 @@ int icelua_fn_common_fetch_block(lua_State *L)
 	}
 	// end
 }
+

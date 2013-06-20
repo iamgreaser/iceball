@@ -149,6 +149,9 @@ int icelua_fn_common_map_save(lua_State *L)
 	if(top >= 3)
 		type = lua_tostring(L, 3);
 	
+	if(L != lstate_server && !bin_storage_allowed)
+		return luaL_error(L, "saving disabled");
+	
 	if(L == lstate_server
 		? !path_type_server_writable(path_get_type(fname))
 		: !path_type_client_writable(path_get_type(fname)))

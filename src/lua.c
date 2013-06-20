@@ -25,6 +25,8 @@ struct icelua_entry {
 lua_State *lstate_client = NULL;
 lua_State *lstate_server = NULL;
 
+int bin_storage_allowed = 0;
+
 // helper functions
 int icelua_assert_stack(lua_State *L, int smin, int smax)
 {
@@ -54,6 +56,7 @@ int icelua_force_get_integer(lua_State *L, int table, char *name)
 #include "lua_fetch.h"
 
 #include "lua_base.h"
+#include "lua_bin.h"
 #include "lua_camera.h"
 #include "lua_image.h"
 #include "lua_input.h"
@@ -147,6 +150,8 @@ struct icelua_entry icelua_common[] = {
 	{icelua_fn_common_wav_free, "wav_free"},
 	{icelua_fn_common_mus_load_it, "mus_load_it"},
 	{icelua_fn_common_mus_free, "mus_free"},
+	{icelua_fn_common_bin_load, "bin_load"},
+	{icelua_fn_common_bin_save, "bin_save"},
 	{icelua_fn_common_argb_split_to_merged, "argb_split_to_merged"},
 	{icelua_fn_common_argb_merged_to_split, "argb_merged_to_split"},
 	{icelua_fn_common_time, "time"},
@@ -391,6 +396,17 @@ int icelua_init(void)
 			lua_getfield(Lc, -1, "volume");
 			f = lua_tonumber(Lc, -1);
 			if(!lua_isnil(Lc, -1)) wav_gvol = f;
+			lua_pop(Lc, 1);
+			
+			// drop table
+			lua_pop(Lc, 1);
+
+			// set security stuff 
+			lua_getfield(Lc, -1, "security");
+
+			lua_getfield(Lc, -1, "bin_storage_allowed");
+			v = lua_toboolean(Lc, -1);
+			if(!lua_isnil(Lc, -1)) bin_storage_allowed = v;
 			lua_pop(Lc, 1);
 			
 			// drop table

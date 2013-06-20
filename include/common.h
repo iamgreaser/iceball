@@ -19,7 +19,7 @@
 #define VERSION_X 0
 #define VERSION_Y 0
 #define VERSION_A 0
-#define VERSION_Z 46
+#define VERSION_Z 47
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!
@@ -140,6 +140,7 @@ enum
 	UD_IMG_TGA,
 	UD_WAV,
 	UD_MUS_IT,
+	UD_BIN,
 	
 	UD_MAX_SUPPORTED,
 	

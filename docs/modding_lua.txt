@@ -40,13 +40,13 @@ lua base library stuff:
 	- dofile(x) = loadfile(x)()
 	- loadfile(x) = common.fetch_block("lua", x)
 	- common.fetch_block(ftype, x) =
-	    local obj = common.fetch_start(ftype, x)
-	    if obj ~= true then return obj end
-	    while true do
-	      local obj = common.fetch_poll()
-	      if obj ~= false then return obj end
-	      yield()
-	    end
+		local obj = common.fetch_start(ftype, x)
+		if obj ~= true then return obj end
+		while true do
+		  local obj = common.fetch_poll()
+		  if obj ~= false then return obj end
+		  yield()
+		end
 	- just about every "load" function is based on common.fetch_block
 
 common.base_dir @
@@ -124,10 +124,10 @@ server.hook_connect = fn(sockfd, addrinfo) @
 	- "proto" / "addr": protocol / address used, one of the following:
 	  - "local" / nil
 	  - "tcp/ip" or "tcp/ip6" / {
-	    ["ip"] = address,
-	    ["host"] = hostname or nil,
-	    ["cport"] = client port,
-	    ["sport"] = server port,
+		["ip"] = address,
+		["host"] = hostname or nil,
+		["cport"] = client port,
+		["sport"] = server port,
 	  }
 	
 	note, not all of the features are supported.
@@ -157,8 +157,10 @@ obj = common.fetch_start(ftype, fname)
 	- "pmf": pmf model
 	- "tga": tga image
 	- "json": json data
+	- "wav": wav sound
+	- "it": it music module
+	- "bin": raw data
 	- "log": log data (TODO)
-	- "wav": wav sound (TODO)
 	
 	for the server, this just loads the file from the disk.
 	
@@ -296,7 +298,7 @@ dx, dy, dz = client.camera_get_forward() @
 
 client.camera_shade_set(xn, yn, zn, xp, yp, zp)
 	sets the face shading levels per face (0 <= v <= 1)
-    sides relative to map are: east, bottom, south, west, top, north
+	sides relative to map are: east, bottom, south, west, top, north
 
 pmf = common.model_new(bonemax = 5) @
 	creates a new model
@@ -596,92 +598,98 @@ client.mus_stop() @
 client.mus_vol_set(vol) @
 	sets the mixing volume for the music
 
+str = common.bin_load(fname) @
+	loads a raw file into a string
+
+common.bin_save(fname, str) @
+	saves a raw string to a file
+
 font_mini
-    Small ASCII font, for most body text.
-    
+	Small ASCII font, for most body text.
+	
 font_large
-    Big ASCII font, for headers and stuff.
-    
+	Big ASCII font, for headers and stuff.
+	
 font_digits
-    Big numeric font, for HUD counters.
+	Big numeric font, for HUD counters.
 
 gui_index_mini(i)
-    Character lookup helper for the mini font
-    
+	Character lookup helper for the mini font
+	
 gui_index_digit(i)
-    Character lookup helper for the digit font
+	Character lookup helper for the digit font
 
 gui_create_fixwidth_font(image, char_width, char_height, indexing_fn, shadow)
-    Creates a new fixed width bitmap font.
-        
-        compute_unwrapped(x, y, color, string)
-            Computes specific glyphs and positions needed from a string, color, and x/y coordinates.
-        
-        compute_ctab(ctab, x, y)
-            Computes specific glyphs and positions from a color table, 
-            where each line of the table contains a string "msg" and a color "color",
-            and will be positioned underneath the previous line.
-            
-        compute_wordwrap(width, x, y, color, string)
-            Computes specific glyphs and positions from a word-wrapped string, within the width argument.
-        
-        dimensions(data)
-            Get the AABB dimensions of text(l,r,t,b, width, height) given precomputed text data
-        
-        calc_shadow(color)
-            Calculate the shadow strength from the percieved luminance of the font; brighter color = darker shadow
-        
-        print(x, y, color, string, buffer=nil)
-            Print text with topleft at x, y, color c, string str.
-            buffer defines where the text is drawn - to the screen or to an offscreen buffer.
-            
-        print_precomputed(data, offx, offy, buffer=nil)
-            Print precomputed text to the given buffer.
-        
-        print_wrap(wp, x, y, c, str, buffer)
-            Print text with minimum-space wordwrapping, pixelwidth wp, topleft at x, y, color c, string str
+	Creates a new fixed width bitmap font.
+		
+	compute_unwrapped(x, y, color, string)
+		Computes specific glyphs and positions needed from a string, color, and x/y coordinates.
+	
+	compute_ctab(ctab, x, y)
+		Computes specific glyphs and positions from a color table, 
+		where each line of the table contains a string "msg" and a color "color",
+		and will be positioned underneath the previous line.
+		
+	compute_wordwrap(width, x, y, color, string)
+		Computes specific glyphs and positions from a word-wrapped string, within the width argument.
+	
+	dimensions(data)
+		Get the AABB dimensions of text(l,r,t,b, width, height) given precomputed text data
+	
+	calc_shadow(color)
+		Calculate the shadow strength from the percieved luminance of the font; brighter color = darker shadow
+	
+	print(x, y, color, string, buffer=nil)
+		Print text with topleft at x, y, color c, string str.
+		buffer defines where the text is drawn - to the screen or to an offscreen buffer.
+		
+	print_precomputed(data, offx, offy, buffer=nil)
+		Print precomputed text to the given buffer.
+	
+	print_wrap(wp, x, y, c, str, buffer)
+		Print text with minimum-space wordwrapping, pixelwidth wp, topleft at x, y, color c, string str
 
 alarm{time=1, progress=0, active=true, loop=false, preserve_accumulator=true, on_frame=nil, on_trigger=nil}
-    Create an alarm with an abstract time value.
-    
-    time: The target amount of time before the alarm triggers.
-    progress: How much time has elapsed(counting from 0 to the target time).
-    active: Whether the alarm is presently ticking.
-    loop: Whether the alarm loops.
-    preserve_accumulator: If the alarm loops, allow the leftover time to carry into the next loop.
-    on_frame: A callback run every frame. Recieves the time delta.
-    on_trigger: A callback run each time the alarm reaches its target time. Recieves the time delta.
-            
+	Create an alarm with an abstract time value.
+	
+	time: The target amount of time before the alarm triggers.
+	progress: How much time has elapsed(counting from 0 to the target time).
+	active: Whether the alarm is presently ticking.
+	loop: Whether the alarm loops.
+	preserve_accumulator: If the alarm loops, allow the leftover time to carry into the next loop.
+	on_frame: A callback run every frame. Recieves the time delta.
+	on_trigger: A callback run each time the alarm reaches its target time. Recieves the time delta.
+			
 gui_create_scene(width, height, shared_rate=1/60)
-    Creates a new GUI scene of designated width and height, and a shared update rate in seconds equal to shared_rate.
-    
-    The GUI system is modelled similarly to the Flash AS3 APIs.
-    
-    A GUI scene can contain any number of display objects, ordered in a tree structure.
-    Each time the GUI is ticked, it processes an event pipeline. An event is a message containing a type and some attached data.
-    When an event reaches a display object with a listener of the same type, the listener's callback is called with the event's data.
-    
-    These events are available:
-        GE_DELTA_TIME
-            The delta time passed in when listeners are pumped. You can use this to drive tweening over time, for example.
-            Callback passes in the dT value.
-        GE_SHARED_ALARM
-            A tick running at a fixed rate. This is an alternative to delta time for situations where you specifically need a fixed rate,
-            for example, an animation that relies on multiplying previous values every step.
-            Callback passes in the dT value of the shared alarm timer.
-        GE_KEY
-            A keypress(up or down) event.
-            Callback passes in {key(int), state(bool), modif(int bitmask)}
-        GE_BUTTON
-            A mapped button press(up or down) event. Use this when you expect the button to be reassignable.
-            Callback passes in {key(int), button{name(string), desc(string)}, state(bool), modif(int bitmask)}
-        GE_MOUSE
-            A mouse movement event.
-            Callback passes in {x(number), y(number), dx(number), dy(number)}
-        GE_MOUSE_BUTTON
-            A mouse button press(up or down).
-            Callback passes in {button(int), down(bool)}
+	Creates a new GUI scene of designated width and height, and a shared update rate in seconds equal to shared_rate.
+	
+	The GUI system is modelled similarly to the Flash AS3 APIs.
+	
+	A GUI scene can contain any number of display objects, ordered in a tree structure.
+	Each time the GUI is ticked, it processes an event pipeline. An event is a message containing a type and some attached data.
+	When an event reaches a display object with a listener of the same type, the listener's callback is called with the event's data.
+	
+	These events are available:
+		GE_DELTA_TIME
+			The delta time passed in when listeners are pumped. You can use this to drive tweening over time, for example.
+			Callback passes in the dT value.
+		GE_SHARED_ALARM
+			A tick running at a fixed rate. This is an alternative to delta time for situations where you specifically need a fixed rate,
+			for example, an animation that relies on multiplying previous values every step.
+			Callback passes in the dT value of the shared alarm timer.
+		GE_KEY
+			A keypress(up or down) event.
+			Callback passes in {key(int), state(bool), modif(int bitmask)}
+		GE_BUTTON
+			A mapped button press(up or down) event. Use this when you expect the button to be reassignable.
+			Callback passes in {key(int), button{name(string), desc(string)}, state(bool), modif(int bitmask)}
+		GE_MOUSE
+			A mouse movement event.
+			Callback passes in {x(number), y(number), dx(number), dy(number)}
+		GE_MOUSE_BUTTON
+			A mouse button press(up or down).
+			Callback passes in {button(int), down(bool)}
 
-    
-            
+	
+			
 #

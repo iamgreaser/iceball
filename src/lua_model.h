@@ -60,6 +60,9 @@ int icelua_fn_common_model_save_pmf(lua_State *L)
 	if(fname == NULL)
 		return luaL_error(L, "filename must be a string");
 	
+	if(L != lstate_server && !bin_storage_allowed)
+		return luaL_error(L, "saving disabled");
+	
 	if(L == lstate_server
 		? !path_type_server_writable(path_get_type(fname))
 		: !path_type_client_writable(path_get_type(fname)))

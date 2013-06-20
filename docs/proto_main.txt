@@ -53,8 +53,9 @@ Base encapsulation:
 				0110 = autodetected map data
 				0111 = pmf model
 				1000 = tga image
-				1001 = wav audio [ NOT SUPPORTED YET ]
-				101x = * RESERVED *
+				1001 = wav audio
+				1010 = .it music module
+				1011 = raw binary data
 				11xx = * RESERVED *
 		
 		if the server is still sending a file, FATAL ERROR
