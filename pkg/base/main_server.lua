@@ -71,6 +71,10 @@ end
 
 function server.hook_file(sockfd, ftype, fname)
 	print("hook_file:", sockfd, ftype, fname)
+
+	if fname:lower():find("svsave") then
+		return nil
+	end
 	
 	if (ftype == "icemap" or ftype == "map") and (fname == "*MAP") then
 		return map_loaded
