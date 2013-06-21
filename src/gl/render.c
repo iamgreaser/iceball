@@ -142,9 +142,9 @@ GLfloat render_get_average_light(map_t *map, int x1, int y1, int z1, int x2, int
 	return average;
 }
 
-inline int render_visible_chunks_array_offset(int x, int z)
+inline int render_visible_chunks_array_offset(map_t *map, int x, int z)
 {
-	return z * (int) sqrtf(gl_visible_chunks) + x;
+	return z * (int) map->visible_chunks_len + x;
 }
 
 void render_untesselate_visible_chunk(map_chunk_t *chunk)
@@ -184,11 +184,11 @@ void render_free_visible_chunks(map_t *map)
 	if(map == NULL || map->visible_chunks_arr == NULL)
 		return;
 
-	for (x = 0; x < (int) sqrtf(gl_visible_chunks); x++)
+	for (x = 0; x < (int) map->visible_chunks_len; x++)
 	{
-		for (z = 0; z < (int) sqrtf(gl_visible_chunks); z++)
+		for (z = 0; z < (int) map->visible_chunks_len; z++)
 		{
-			render_free_visible_chunk(&map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)]);
+			render_free_visible_chunk(&map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)]);
 		}
 	}
 }
@@ -224,8 +224,9 @@ void render_init_visible_chunks(map_t *map, int starting_chunk_coordinate_x, int
 		free(map->visible_chunks_arr);
 		map->visible_chunks_arr = NULL;
 	}
-	
-	map->visible_chunks_arr = (map_chunk_t *) malloc(gl_visible_chunks * sizeof(map_chunk_t));
+
+	map->visible_chunks_len = ((((int)fog_distance)+(gl_chunk_size+1)/2)/gl_chunk_size)*2+1;
+	map->visible_chunks_arr = (map_chunk_t *) malloc(map->visible_chunks_len * map->visible_chunks_len * sizeof(map_chunk_t));
 	
 	/* check if the visible chunks array has been allocated properly */
 	if(map->visible_chunks_arr == NULL)
@@ -237,23 +238,23 @@ void render_init_visible_chunks(map_t *map, int starting_chunk_coordinate_x, int
 	map->visible_chunks_vcenter_cx = starting_chunk_coordinate_x;
 	map->visible_chunks_vcenter_cz = starting_chunk_coordinate_z;
 
-	for (x = 0; x < (int) sqrtf(gl_visible_chunks); x++)
+	for (x = 0; x < (int) map->visible_chunks_len; x++)
 	{
-		for (z = 0; z < (int) sqrtf(gl_visible_chunks); z++)
+		for (z = 0; z < (int) map->visible_chunks_len; z++)
 		{
-			cx = starting_chunk_coordinate_x - (int) sqrtf(gl_visible_chunks)/2 + x;
-			cz = starting_chunk_coordinate_z - (int) sqrtf(gl_visible_chunks)/2 + z;
-			map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)].cx = cx;
-			map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)].cz = cz;
-			map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)].vbo = 0;
-			map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)].vbo_dirty = 1;
-			map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)].vbo_arr_len = 0;
-			map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)].vbo_arr = NULL;
+			cx = starting_chunk_coordinate_x - (int) map->visible_chunks_len/2 + x;
+			cz = starting_chunk_coordinate_z - (int) map->visible_chunks_len/2 + z;
+			map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)].cx = cx;
+			map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)].cz = cz;
+			map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)].vbo = 0;
+			map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)].vbo_dirty = 1;
+			map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)].vbo_arr_len = 0;
+			map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)].vbo_arr = NULL;
 		}
 	}
 
-	map->visible_chunks_vcenter_x = (int) sqrtf(gl_visible_chunks)/2;
-	map->visible_chunks_vcenter_z = (int) sqrtf(gl_visible_chunks)/2;
+	map->visible_chunks_vcenter_x = (int) map->visible_chunks_len/2;
+	map->visible_chunks_vcenter_z = (int) map->visible_chunks_len/2;
 }
 
 void render_shift_visible_chunks(map_t *map, int camera_chunk_coordinate_x, int camera_chunk_coordinate_z)
@@ -274,35 +275,35 @@ void render_shift_visible_chunks(map_t *map, int camera_chunk_coordinate_x, int 
         return;
 
     /* setting the new virtual center of the circular array */
-    map->visible_chunks_vcenter_x = render_mod(map->visible_chunks_vcenter_x + position_shift_x, (int) sqrtf(gl_visible_chunks));
-    map->visible_chunks_vcenter_z = render_mod(map->visible_chunks_vcenter_z + position_shift_z, (int) sqrtf(gl_visible_chunks));
+    map->visible_chunks_vcenter_x = render_mod(map->visible_chunks_vcenter_x + position_shift_x, (int) map->visible_chunks_len);
+    map->visible_chunks_vcenter_z = render_mod(map->visible_chunks_vcenter_z + position_shift_z, (int) map->visible_chunks_len);
 
     /* setting the chunk coordinates of the virtual center of the circular array */
     map->visible_chunks_vcenter_cx = camera_chunk_coordinate_x;
     map->visible_chunks_vcenter_cz = camera_chunk_coordinate_z;
 
-	for (x = 0; x < (int) sqrtf(gl_visible_chunks); x++)
+	for (x = 0; x < (int) map->visible_chunks_len; x++)
 	{
-		for (z = 0; z < (int) sqrtf(gl_visible_chunks); z++)
+		for (z = 0; z < (int) map->visible_chunks_len; z++)
 		{
-			offset_x = x - ((int) sqrtf(gl_visible_chunks)- 1)/2;
-			offset_z = z - ((int) sqrtf(gl_visible_chunks)- 1)/2;
-			index_x = render_mod(map->visible_chunks_vcenter_x + offset_x, (int) sqrtf(gl_visible_chunks));
-			index_z = render_mod(map->visible_chunks_vcenter_z + offset_z, (int) sqrtf(gl_visible_chunks));
+			offset_x = x - ((int) map->visible_chunks_len- 1)/2;
+			offset_z = z - ((int) map->visible_chunks_len- 1)/2;
+			index_x = render_mod(map->visible_chunks_vcenter_x + offset_x, (int) map->visible_chunks_len);
+			index_z = render_mod(map->visible_chunks_vcenter_z + offset_z, (int) map->visible_chunks_len);
 
 			/* untesselate chunks not visible anymore */
-			if (map->visible_chunks_arr[render_visible_chunks_array_offset(index_x, index_z)].cx != map->visible_chunks_vcenter_cx + offset_x
-				|| map->visible_chunks_arr[render_visible_chunks_array_offset(index_x, index_z)].cz != map->visible_chunks_vcenter_cz + offset_z)
+			if (map->visible_chunks_arr[render_visible_chunks_array_offset(map, index_x, index_z)].cx != map->visible_chunks_vcenter_cx + offset_x
+				|| map->visible_chunks_arr[render_visible_chunks_array_offset(map, index_x, index_z)].cz != map->visible_chunks_vcenter_cz + offset_z)
 			{
-				render_free_visible_chunk(&map->visible_chunks_arr[render_visible_chunks_array_offset(index_x, index_z)]);
+				render_free_visible_chunk(&map->visible_chunks_arr[render_visible_chunks_array_offset(map, index_x, index_z)]);
 			}
 
 			/* add chunks that are visible */
-			if (map->visible_chunks_arr[render_visible_chunks_array_offset(index_x, index_z)].vbo_arr == NULL)
+			if (map->visible_chunks_arr[render_visible_chunks_array_offset(map, index_x, index_z)].vbo_arr == NULL)
 			{
-				map->visible_chunks_arr[render_visible_chunks_array_offset(index_x, index_z)].cx = map->visible_chunks_vcenter_cx + offset_x;
-				map->visible_chunks_arr[render_visible_chunks_array_offset(index_x, index_z)].cz = map->visible_chunks_vcenter_cz + offset_z;
-				map->visible_chunks_arr[render_visible_chunks_array_offset(index_x, index_z)].vbo_dirty = 1;
+				map->visible_chunks_arr[render_visible_chunks_array_offset(map, index_x, index_z)].cx = map->visible_chunks_vcenter_cx + offset_x;
+				map->visible_chunks_arr[render_visible_chunks_array_offset(map, index_x, index_z)].cz = map->visible_chunks_vcenter_cz + offset_z;
+				map->visible_chunks_arr[render_visible_chunks_array_offset(map, index_x, index_z)].vbo_dirty = 1;
 			}
 		}
 	}
@@ -316,31 +317,31 @@ void render_map_visible_chunks_draw(map_t *map)
 	if(map == NULL || map->visible_chunks_arr == NULL)
 		return;
 	
-	for (x = 0; x < (int) sqrtf(gl_visible_chunks); x++)
+	for (x = 0; x < (int) map->visible_chunks_len; x++)
 	{
-		for (z = 0; z < (int) sqrtf(gl_visible_chunks); z++)
+		for (z = 0; z < (int) map->visible_chunks_len; z++)
 		{
-			if (map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)].vbo_arr_len > 0)
+			if (map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)].vbo_arr_len > 0)
 			{
 				glPushMatrix();
-				if (map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)].vbo == 0)
+				if (map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)].vbo == 0)
 				{
-					glVertexPointer(3, GL_FLOAT, sizeof(float)*6, map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)].vbo_arr);
-					glColorPointer(3, GL_FLOAT, sizeof(float)*6, map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)].vbo_arr+3);
+					glVertexPointer(3, GL_FLOAT, sizeof(float)*6, map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)].vbo_arr);
+					glColorPointer(3, GL_FLOAT, sizeof(float)*6, map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)].vbo_arr+3);
 				} else {
-					glBindBuffer(GL_ARRAY_BUFFER, map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)].vbo);
+					glBindBuffer(GL_ARRAY_BUFFER, map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)].vbo);
 					glVertexPointer(3, GL_FLOAT, sizeof(float)*6, (void *)(0));
 					glColorPointer(3, GL_FLOAT, sizeof(float)*6, (void *)(0 + sizeof(float)*3));
 				}
 
 				glEnableClientState(GL_VERTEX_ARRAY);
 				glEnableClientState(GL_COLOR_ARRAY);
-				glDrawArrays(GL_QUADS, 0, map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)].vbo_arr_len);
+				glDrawArrays(GL_QUADS, 0, map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)].vbo_arr_len);
 				glDisableClientState(GL_VERTEX_ARRAY);
 				glDisableClientState(GL_COLOR_ARRAY);
 				glPopMatrix();
 
-				if (map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)].vbo != 0)
+				if (map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)].vbo != 0)
 					glBindBuffer(GL_ARRAY_BUFFER, 0);
 			}
 		}
@@ -355,11 +356,11 @@ int render_map_visible_chunks_count_dirty(map_t *map)
 	if(map == NULL || map->visible_chunks_arr == NULL)
 		return 0;
 	
-	for (x = 0; x < (int) sqrtf(gl_visible_chunks); x++)
+	for (x = 0; x < (int) map->visible_chunks_len; x++)
 	{
-		for (z = 0; z < (int) sqrtf(gl_visible_chunks); z++)
+		for (z = 0; z < (int) map->visible_chunks_len; z++)
 		{
-			if (map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)].vbo_dirty)
+			if (map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)].vbo_dirty)
 			{
 				dirty_chunks_count++;
 			}
@@ -368,9 +369,10 @@ int render_map_visible_chunks_count_dirty(map_t *map)
 	return dirty_chunks_count;
 }
 
-void render_map_tesselate_visible_chunks(map_t *map)
+void render_map_tesselate_visible_chunks(map_t *map, int camx, int camz)
 {
-	int x, z;
+	int x, z, i, vx, vz;
+	int bx, bz;
 	/* pillar coords */
 	int px, pz;
 	map_chunk_t *chunk;
@@ -379,37 +381,50 @@ void render_map_tesselate_visible_chunks(map_t *map)
 	if(map == NULL || map->visible_chunks_arr == NULL)
 		return;
 	
-	for (x = 0; x < (int) sqrtf(gl_visible_chunks); x++)
+	bx = bz = 0;
+	vx = 1; vz = 0;
+	for(i = 0; i < map->visible_chunks_len * map->visible_chunks_len; i++)
 	{
-		for (z = 0; z < (int) sqrtf(gl_visible_chunks); z++)
+		x = render_mod(bx + camx + map->visible_chunks_len/2, map->visible_chunks_len);
+		z = render_mod(bz + camz + map->visible_chunks_len/2, map->visible_chunks_len);
+		chunk = &map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)];
+
+		if (chunks_tesselated >= gl_chunks_tesselated_per_frame)
+			return;
+
+		if (chunk->vbo_dirty)
 		{
-			chunk = &map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)];
-
-			if (chunks_tesselated >= gl_chunks_tesselated_per_frame)
-				return;
-
-			if (chunk->vbo_dirty)
+			render_untesselate_visible_chunk(chunk);
+			for (px = 0; px < gl_chunk_size; px++)
 			{
-				render_untesselate_visible_chunk(chunk);
-				for (px = 0; px < gl_chunk_size; px++)
+				for (pz = 0; pz < gl_chunk_size; pz++)
 				{
-					for (pz = 0; pz < gl_chunk_size; pz++)
-					{
-						render_pillar(map, chunk, chunk->cx * gl_chunk_size + px, chunk->cz * gl_chunk_size + pz);
-					}
+					render_pillar(map, chunk, chunk->cx * gl_chunk_size + px, chunk->cz * gl_chunk_size + pz);
 				}
-				if(chunk->vbo == 0 && GL_ARB_vertex_buffer_object && gl_use_vbo)
-					glGenBuffers(1, &(chunk->vbo));
-
-				if(chunk->vbo != 0)
-				{
-					glBindBuffer(GL_ARRAY_BUFFER, chunk->vbo);
-					glBufferData(GL_ARRAY_BUFFER, sizeof(float)*6*chunk->vbo_arr_len, chunk->vbo_arr, GL_STATIC_DRAW);
-					glBindBuffer(GL_ARRAY_BUFFER, 0);
-				}
-				chunk->vbo_dirty = 0;
-				chunks_tesselated++;
 			}
+			if(chunk->vbo == 0 && GL_ARB_vertex_buffer_object && gl_use_vbo)
+				glGenBuffers(1, &(chunk->vbo));
+
+			if(chunk->vbo != 0)
+			{
+				glBindBuffer(GL_ARRAY_BUFFER, chunk->vbo);
+				glBufferData(GL_ARRAY_BUFFER, sizeof(float)*6*chunk->vbo_arr_len, chunk->vbo_arr, GL_STATIC_DRAW);
+				glBindBuffer(GL_ARRAY_BUFFER, 0);
+			}
+			chunk->vbo_dirty = 0;
+			chunks_tesselated++;
+		}
+
+		// rotate around in a spiral
+		bx += vx;
+		bz += vz;
+		if(vz == 0
+			? (vx == 1 ? bx > bz : bx <= bz )
+			: (vz == 1 ? bz >= -bx : bz <= -bx ))
+		{
+			int t = vx;
+			vx = vz;
+			vz = -t;
 		}
 	}
 }
@@ -427,29 +442,29 @@ void render_map_mark_chunks_as_dirty(map_t *map, int pillar_x, int pillar_z)
 	if(map == NULL || map->visible_chunks_arr == NULL)
 		return;
 	
-	for (x = 0; x < (int) sqrtf(gl_visible_chunks); x++)
+	for (x = 0; x < (int) map->visible_chunks_len; x++)
 	{
-		for (z = 0; z < (int) sqrtf(gl_visible_chunks); z++)
+		for (z = 0; z < (int) map->visible_chunks_len; z++)
 		{
-			if (map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)].cx == chunk_x && map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)].cz == chunk_z)
+			if (map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)].cx == chunk_x && map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)].cz == chunk_z)
 			{
-				map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)].vbo_dirty = 1;
+				map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)].vbo_dirty = 1;
 
 				/* If pillar coords are between two chunks, we need to update the neighbor chunks as well */
 				if (render_mod(pillar_x, gl_chunk_size) == 0)
 				{
-					neighbor_chunk_x = render_mod(x - 1, (int) sqrtf(gl_visible_chunks));
+					neighbor_chunk_x = render_mod(x - 1, (int) map->visible_chunks_len);
 					neighbor_chunk_z = z;
-					neighbor_chunk = &map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)];
+					neighbor_chunk = &map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)];
 					if (neighbor_chunk->cx == chunk_x - 1 && neighbor_chunk->cz == chunk_z)
 					{
 						neighbor_chunk->vbo_dirty = 1;
 					}
 				} else if (render_mod(pillar_x, gl_chunk_size) == gl_chunk_size-1)
 				{
-					neighbor_chunk_x = render_mod(x + 1, (int) sqrtf(gl_visible_chunks));
+					neighbor_chunk_x = render_mod(x + 1, (int) map->visible_chunks_len);
 					neighbor_chunk_z = z;
-					neighbor_chunk = &map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)];
+					neighbor_chunk = &map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)];
 					if (neighbor_chunk->cx == chunk_x + 1 && neighbor_chunk->cz == chunk_z)
 					{
 						neighbor_chunk->vbo_dirty = 1;
@@ -458,8 +473,8 @@ void render_map_mark_chunks_as_dirty(map_t *map, int pillar_x, int pillar_z)
 				if (render_mod(pillar_z, gl_chunk_size) == 0)
 				{
 					neighbor_chunk_x = x;
-					neighbor_chunk_z = render_mod(z - 1, (int) sqrtf(gl_visible_chunks));
-					neighbor_chunk = &map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)];
+					neighbor_chunk_z = render_mod(z - 1, (int) map->visible_chunks_len);
+					neighbor_chunk = &map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)];
 					if (neighbor_chunk->cx == chunk_x && neighbor_chunk->cz == chunk_z - 1)
 					{
 						neighbor_chunk->vbo_dirty = 1;
@@ -467,8 +482,8 @@ void render_map_mark_chunks_as_dirty(map_t *map, int pillar_x, int pillar_z)
 				} else if (render_mod(pillar_z, gl_chunk_size) == gl_chunk_size-1)
 				{
 					neighbor_chunk_x = x;
-					neighbor_chunk_z = render_mod(z + 1, (int) sqrtf(gl_visible_chunks));
-					neighbor_chunk = &map->visible_chunks_arr[render_visible_chunks_array_offset(x, z)];
+					neighbor_chunk_z = render_mod(z + 1, (int) map->visible_chunks_len);
+					neighbor_chunk = &map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)];
 					if (neighbor_chunk->cx == chunk_x && neighbor_chunk->cz == chunk_z + 1)
 					{
 						neighbor_chunk->vbo_dirty = 1;
@@ -846,7 +861,7 @@ void render_vxl_redraw(camera_t *camera, map_t *map)
 
 	render_shift_visible_chunks(map, cx/gl_chunk_size, cz/gl_chunk_size);
 
-	render_map_tesselate_visible_chunks(map);
+	render_map_tesselate_visible_chunks(map, cx/gl_chunk_size, cz/gl_chunk_size);
 }
 
 void render_pillar(map_t *map, map_chunk_t *chunk, int x, int z)

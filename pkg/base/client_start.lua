@@ -733,7 +733,14 @@ common.map_set(map_loaded)
 
 print(client.map_fog_get())
 --client.map_fog_set(24,0,32,60)
-client.map_fog_set(192,238,255,60)
+foglvl = user_config.fog or MODE_DEFAULT_FOG
+if MODE_MAX_FOG and foglvl > MODE_MAX_FOG then
+	foglvl = MODE_MAX_FOG
+end
+if MODE_FOG_GL_EXTEND and client.renderer == "gl" then
+	foglvl = foglvl * math.sqrt(2)
+end
+client.map_fog_set(192,238,255,foglvl)
 print(client.map_fog_get())
 
 -- create map overview

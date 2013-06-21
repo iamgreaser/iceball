@@ -17,9 +17,9 @@
 		"smoothlighting": true,
 		"gl_expand_textures": false,
 		"gl_chunk_size": 16,
-		"gl_visible_chunks": 49,
-		"gl_chunks_tesselated_per_frame": 2,
-		"vbo": true
+		"gl_chunks_tesselated_per_frame": 4,
+		"gl_shaders": true,
+		"gl_vbo": true
 	},
 	
 	"audio" : {

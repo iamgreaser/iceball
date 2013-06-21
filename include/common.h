@@ -19,7 +19,7 @@
 #define VERSION_X 0
 #define VERSION_Y 0
 #define VERSION_A 0
-#define VERSION_Z 47
+#define VERSION_Z 48
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!
@@ -330,6 +330,7 @@ typedef struct map
 	/* current virtual center chunk coordinates in the circular array */
 	int visible_chunks_vcenter_cx;
 	int visible_chunks_vcenter_cz;
+	int visible_chunks_len;
 #endif
 	uint8_t **pillars;
 	// TODO ? heap allocator ?

@@ -44,7 +44,8 @@ local function bug_str_gen()
 	for i=1,#VERSION_BUGS do
 		local bug = VERSION_BUGS[i]
 		if ((not bug.intro) or bug.intro <= cver.num) and
-			((not bug.fix) or bug.fix > cver.num) then
+			((not bug.fix) or bug.fix > cver.num) and
+				(client.renderer == nil or bug.renderer == nil or client.renderer == bug.renderer) then
 			s = s.."- "..bug.msg.."\n"
 		end
 	end
@@ -197,7 +198,7 @@ do
 			end
 			font_mini.print(2, sh-10, 0xFFFFFFFF, loadstr)
 			
-			font_mini.print(2, 2+(12)*8, 0xFFFFFFFF, "Version: "..cver.str)
+			font_mini.print(2, 2+(12)*8, 0xFFFFFFFF, "Version: "..cver.str.." - renderer: "..(client.renderer or "<unknown>"))
 			local l = string.split(vernotes,"\n")
 			for i=1,#l do
 				font_mini.print(2, 2+(i+14)*8, 0xFFFFFFFF, l[i])

@@ -46,23 +46,21 @@ clsave/config.json:
 		modified.
 		Recommended value is 16.
 
-		"gl_visible_chunks" represent the number of cells of the chunks array
-		centered around the camera/player in OpenGL mode.
-		It is linked to gl_chunk_size and the fog distance.
-		It should be a odd square number to construct a circular array with a
-		center cell (9, 25, 49, 81, 121...).
-		For the current fog distance, and a gl_chunk_size of "16", the
-		recommended value is "49".
-
 		"gl_chunks_tesselated_per_frame" number of chunks to tessellate per
 		frame.
 		The more chunks are tesselated per frame, the more stutter may be
 		encountered.
 		A recommended value would be "2" (or "1" for slower computers).
 
-		"vbo" enables vertex buffer objects (default: true)
+		"gl_shaders" enables GLSL shaders (default: true).
+		If your card does not support these, it SHOULD fall back.
+		If you are having issues, you can turn these off.
+		NOTE: not supported yet - this will be ignored.
+
+		"gl_vbo" enables vertex buffer objects (default: true)
 		May fail on older computers. Enable for a faster FPS.
-	
+		It is recommended you disable these on Intel integrated GPUs.
+
 	"audio" section:
 		"freq" is the master audio sampling frequency in Hz, as usual.
 		"channels" is how many channels you can output to;
@@ -87,6 +85,11 @@ clsave/pub/user.json:
 	
 	"sensitivity" is mouse sensitivity.
 	it takes 1000/sensitivity pixels to rotate by 180 degrees.
+
+	"fog" is the fog distance.
+	If you have an old/budget graphics card/chip, 60 is a good value.
+	Maximum fog distance is determined by the server in pkg/base/common.lua,
+	and is usually 127.5. This value will be clamped by the code given by the server.
 	
 	"skins" is explained later in this document.
 	
@@ -125,8 +128,12 @@ Skins:
 
 This is not defined yet.
 
+If you wish to add skins, add them to clsave/pub/skin/ DIRECTLY
+- that is, do NOT put them into subdirectories! e.g. clsave/pub/skin/music.it
+
 -------------------------------------------------------------------------------
 
 TODO: all the things!
 
 -------------------------------------------------------------------------------
+

@@ -357,6 +357,8 @@ int icelua_fn_client_map_fog_get(lua_State *L)
 int icelua_fn_client_map_fog_set(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 4, 4);
+
+	map_t *map = (L == lstate_server ? svmap : clmap);
 	
 #ifdef DEDI
 	return luaL_error(L, "lm: why the hell is this being called in the dedi version?");
@@ -364,11 +366,18 @@ int icelua_fn_client_map_fog_set(lua_State *L)
 	int r = lua_tointeger(L, 1)&255;
 	int g = lua_tointeger(L, 2)&255;
 	int b = lua_tointeger(L, 3)&255;
+	float old_dist = fog_distance;
 	fog_distance = lua_tonumber(L, 4);
 	if(fog_distance < 5.0f)
 		fog_distance = 5.0f;
 	if(fog_distance > FOG_MAX_DISTANCE)
 		fog_distance = FOG_MAX_DISTANCE;
+	
+#ifdef USE_OPENGL
+	// TODO: take advantage of realloc()
+	if(fog_distance != old_dist)
+		render_init_visible_chunks(map, 0, 0);
+#endif
 	
 	fog_color = (r<<16)|(g<<8)|b;
 	force_redraw = 1;

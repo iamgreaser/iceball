@@ -233,6 +233,15 @@ int icelua_initfetch(void)
 	lua_setfield(lstate_client, -2, "base_dir");
 	lua_pop(lstate_client, 1);
 	
+	lua_getglobal(lstate_client, "client");
+#ifdef USE_OPENGL
+	lua_pushstring(lstate_client, "gl");
+#else
+	lua_pushstring(lstate_client, "softgm");
+#endif
+	lua_setfield(lstate_client, -2, "renderer");
+	lua_pop(lstate_client, 1);
+	
 	snprintf(xpath, 128, "%s/main_client.lua", mod_basedir);
 	lua_pushcfunction(lstate_client, icelua_fn_common_fetch_block);
 	lua_pushstring(lstate_client, "lua");
@@ -347,7 +356,16 @@ int icelua_init(void)
 			if(!lua_isnil(Lc, -1)) screen_smooth_lighting = v;
 			lua_pop(Lc, 1);
 
+			// backwards compatibility
 			lua_getfield(Lc, -1, "vbo");
+			v = lua_toboolean(Lc, -1);
+			if(!lua_isnil(Lc, -1)) {
+				gl_use_vbo = v;
+				printf("WARNING: clsave/config.json: \"vbo\" is deprecated - use \"gl_vbo\" instead\n");
+			}
+			lua_pop(Lc, 1);
+
+			lua_getfield(Lc, -1, "gl_vbo");
 			v = lua_toboolean(Lc, -1);
 			if(!lua_isnil(Lc, -1)) gl_use_vbo = v;
 			lua_pop(Lc, 1);

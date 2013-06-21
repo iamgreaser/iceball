@@ -56,6 +56,11 @@ i = nil
 MODE_DEBUG_SHOWBOXES = false
 MODE_CHEAT_FLY = false
 
+MODE_MAX_FOG = 127.5
+MODE_DEFAULT_FOG = 60
+-- v This extends the fog distance a bit for gl users, to match the softgm renderer at the screen centre.
+MODE_FOG_GL_EXTEND = true 
+
 MODE_AUTOCLIMB = true
 MODE_AIRJUMP = false
 MODE_SOFTCROUCH = true
