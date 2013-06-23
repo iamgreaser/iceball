@@ -19,7 +19,7 @@
 #define VERSION_X 0
 #define VERSION_Y 0
 #define VERSION_A 0
-#define VERSION_Z 48
+#define VERSION_Z 49
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!
@@ -76,6 +76,8 @@ typedef unsigned __int64	uint64_t;
 
 #include <math.h>
 
+#include <enet/enet.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -108,6 +110,9 @@ extern "C" {
 
 // just so we can get getaddrinfo
 // you will need Windows 2000 at least!
+#ifdef _WIN32_WINNT
+#undef _WIN32_WINNT
+#endif
 #define _WIN32_WINNT 0x0501
 #include <windows.h>
 #include <winsock2.h>
@@ -355,10 +360,14 @@ struct packet
 
 typedef struct client
 {
+	// legacy proto only
 	packet_t *head, *tail;
 	packet_t *send_head, *send_tail;
 	int sockfd;
 	int isfull;
+
+	// enet proto only
+	ENetPeer *peer;
 	
 	// client only
 	char *cfetch_ubuf;
@@ -374,7 +383,7 @@ typedef struct client
 	int sfetch_cpos;
 	int sfetch_udtype;
 	
-	// serialisation
+	// serialisation - legacy proto only
 	char rpkt_buf[PACKET_LEN_MAX*2];
 	int rpkt_len;
 	char spkt_buf[PACKET_LEN_MAX*2];
@@ -384,6 +393,7 @@ typedef struct client
 
 #define SOCKFD_NONE -1
 #define SOCKFD_LOCAL -2
+#define SOCKFD_ENET -3
 
 enum
 {
@@ -498,6 +508,8 @@ int net_packet_push(int len, const char *data, int sockfd, packet_t **head, pack
 int net_packet_push_lua(int len, const char *data, int sockfd, packet_t **head, packet_t **tail);
 packet_t *net_packet_pop(packet_t **head, packet_t **tail);
 void net_packet_free(packet_t *pkt, packet_t **head, packet_t **tail);
+void net_kick_sockfd_immediate(int sockfd, const char *msg);
+void net_kick_client_immediate(client_t *cli, const char *msg);
 void net_flush(void);
 int net_connect(void);
 void net_disconnect(void);

@@ -82,6 +82,16 @@ command_register({
 	end
 })
 
+-- for testing. not like it can be abused. well, i hope it can't be abused. --GM
+command_register({
+	command = "kickme",
+	permission = nil,
+	usage = "/kickme",
+	func = function(plr, plrid, sockfd, prms, msg)
+		server.net_kick(sockfd, "requested!")
+	end
+})
+
 command_register({
 	command = "me",
 	permission = "me",

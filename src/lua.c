@@ -166,6 +166,7 @@ struct icelua_entry icelua_common_client[] = {
 #endif
 
 struct icelua_entry icelua_common_server[] = {
+	{icelua_fn_server_net_kick, "net_kick"},
 	{NULL, NULL}
 };
 

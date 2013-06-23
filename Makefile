@@ -12,11 +12,12 @@ HEADERS_Lua = #-I /usr/include/lua5.1
 
 LDFLAGS = -pg -g $(LDFLAGS_EXTRA) -fopenmp
 LIBS_SDL = `sdl-config --libs`
+LIBS_ENet = xlibinc/libenet.a
 LIBS_Lua = -llua
 # Lua is not an acronym. Get used to typing it with lower case u/a.
 LIBS_zlib = -lz
 LIBS_sackit = -lsackit
-LIBS = -Lxlibinc -lm $(LIBS_Lua) $(LIBS_SDL) $(LIBS_zlib) $(LIBS_sackit)
+LIBS = -Lxlibinc -lm $(LIBS_Lua) $(LIBS_SDL) $(LIBS_zlib) $(LIBS_sackit) $(LIBS_ENet)
 
 BINNAME = iceball
 

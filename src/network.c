@@ -33,8 +33,10 @@ int setsockopt( SOCKET s, int level, int optname,  void* optval, int optlen )
 #endif
 #endif
 
-int server_sockfd_ipv4 = -1;
-int server_sockfd_ipv6 = -1;
+int server_sockfd_ipv4 = SOCKFD_NONE;
+int server_sockfd_ipv6 = SOCKFD_NONE;
+ENetPeer *server_peer;
+ENetPeer *client_peer;
 
 client_t to_server;
 client_t to_client_local;
@@ -238,15 +240,20 @@ void net_packet_free(packet_t *pkt, packet_t **head, packet_t **tail)
 
 void net_deinit_client(client_t *cli)
 {
-	while(cli->head != NULL)
-		net_packet_free(cli->head, &(cli->head), &(cli->tail));
-	while(cli->send_head != NULL)
-		net_packet_free(cli->send_head, &(cli->send_head), &(cli->send_tail));
+	if(cli->sockfd == SOCKFD_ENET)
+	{
+		// TODO: disconnect properly
+	} else {
+		while(cli->head != NULL)
+			net_packet_free(cli->head, &(cli->head), &(cli->tail));
+		while(cli->send_head != NULL)
+			net_packet_free(cli->send_head, &(cli->send_head), &(cli->send_tail));
+	}
 	
-	cli->sockfd = -1;
+	cli->sockfd = SOCKFD_NONE;
 }
 
-void net_kick_sockfd_immediate(int sockfd, char *msg)
+void net_kick_sockfd_immediate(int sockfd, const char *msg)
 {
 	char buf[260];
 	buf[0] = 0x17;
@@ -283,27 +290,54 @@ void net_kick_sockfd_immediate(int sockfd, char *msg)
 			lua_pop(lstate_server, 1);
 		}
 	}
-	
-	// nuke it
-	close(sockfd);
+
+	// if sockfd is local, then send the kick message to the local client
+	if(sockfd == SOCKFD_LOCAL)
+	{
+		net_kick_client_immediate(&to_client_local, msg);
+	} else {
+		// otherwise, nuke it
+		close(sockfd);
+	}
 }
 
-void net_kick_client_immediate(client_t *cli, char *msg)
+void net_kick_client_immediate(client_t *cli, const char *msg)
 {
 	if(cli == &to_client_local)
 	{
 		fprintf(stderr, "KICK: local \"%s\"\n", msg);
-		fprintf(stderr, "PANIC: I don't know how to handle a local client kick yet!\n");
-		fflush(stderr);
-		abort();
+		if(cli->sockfd == SOCKFD_NONE)
+			// we shouldn't reach here, but we might as well fail silently for now
+			// we might as well find out why people's comps are breaking if this ever DOES occur
+			return;
+
+		lua_getglobal(lstate_client, "client");
+		lua_getfield(lstate_client, -1, "hook_kick");
+		lua_remove(lstate_client, -2);
+		if(lua_isnil(lstate_client, -1))
+		{
+			lua_pop(lstate_client, 1);
+		} else {
+			lua_pushstring(lstate_client, msg);
+			
+			if(lua_pcall(lstate_client, 1, 0, 0) != 0)
+			{
+				fprintf(stderr, "ERROR running client Lua (hook_kick): %s\n"
+					, lua_tostring(lstate_client, -1));
+				lua_pop(lstate_client, 1);
+			}
+		}
 	}
 	
 	if(cli == NULL)
 		return;
 	
-	net_kick_sockfd_immediate(cli->sockfd, msg);
-	cli->sockfd = -1;
-	net_deinit_client(cli);
+	cli->sockfd = SOCKFD_NONE;
+	if(cli != &to_client_local)
+	{
+		net_kick_sockfd_immediate(cli->sockfd, msg);
+		net_deinit_client(cli);
+	}
 }
 
 const char *net_aux_gettype_str(int ftype)
@@ -627,6 +661,16 @@ void net_eat_s2c(client_t *cli)
 				} else {
 					fprintf(stderr, "ERROR: base dir already defined!\n");
 					// TODO: make this fatal
+				}
+				
+				net_packet_free(pkt, &(cli->head), &(cli->tail));
+			} break;
+			case 0x17: {
+				if(pkt->data[pkt->len-1] != '\x00')
+				{
+					fprintf(stderr, "ERROR: string not zero-terminated!\n");
+				} else {
+					net_kick_client_immediate(&to_client_local, &(pkt->data[2]));
 				}
 				
 				net_packet_free(pkt, &(cli->head), &(cli->tail));
@@ -1109,6 +1153,9 @@ void net_flush_accept(void)
 
 void net_flush_snr(client_t *cli)
 {
+	if(cli->sockfd == SOCKFD_NONE)
+		return;
+	
 	if(cli == &to_client_local)
 	{
 		if(boot_mode & 2)
@@ -1537,16 +1584,19 @@ int net_init(void)
 	
 	for(i = 0; i < CLIENT_MAX; i++)
 	{
-		to_clients[i].sockfd = -1;
+		to_clients[i].sockfd = SOCKFD_NONE;
+		to_clients[i].peer = NULL;
 		to_clients[i].head = to_clients[i].tail = NULL;
 		to_clients[i].send_head = to_clients[i].send_tail = NULL;
 	}
 	
-	to_server.sockfd = -1;
+	to_server.sockfd = SOCKFD_NONE;
+	to_server.peer = NULL;
 	to_server.head = to_server.tail = NULL;
 	to_server.send_head = to_server.send_tail = NULL;
 	
-	to_client_local.sockfd = -1;
+	to_client_local.sockfd = SOCKFD_NONE;
+	to_client_local.peer = NULL;
 	to_client_local.head = to_client_local.tail = NULL;
 	to_client_local.send_head = to_client_local.send_tail = NULL;
 	

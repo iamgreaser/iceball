@@ -15,6 +15,16 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
+function client.hook_kick(reason)
+	print("Kicked - "..reason)
+	function client.hook_tick()
+		error("Kicked - "..reason)
+	end
+	function client.hook_render()
+		error("Kicked - "..reason)
+	end
+end
+
 dofile("pkg/base/preconf.lua")
 
 -- if you don't want music, set FILE_MUSIC to "true".

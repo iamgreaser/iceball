@@ -370,7 +370,14 @@ int icelua_fn_common_net_recv(lua_State *L)
 	} else {
 		packet_t *pkt = net_packet_pop(&(to_client_local.head), &(to_client_local.tail));
 		if(pkt == NULL)
+		{
+			if(to_client_local.sockfd == SOCKFD_NONE)
+			{
+				lua_pushboolean(L, 0);
+				return 1;
+			}
 			return 0;
+		}
 		
 		if(pkt->data[0] >= 0x40 && pkt->data[0] <= 0x7E)
 			lua_pushlstring(L, &pkt->data[1], pkt->len-1);
@@ -386,3 +393,30 @@ int icelua_fn_common_net_recv(lua_State *L)
 		return 2;
 	}
 }
+
+int icelua_fn_server_net_kick(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 2, 2);
+
+	const char *msg = lua_tostring(L, 2);
+	if(msg == NULL)
+		return luaL_error(L, "not a string");
+
+	if(lua_isboolean(L, 1) && lua_toboolean(L, 1))
+	{
+		// local player kick
+		net_kick_sockfd_immediate(SOCKFD_LOCAL, msg);
+	} else if(lua_isnumber(L, 1)) {
+		// remote player kick
+		int sockfd = lua_tointeger(L, 1);
+		if(sockfd >= 0)
+			net_kick_sockfd_immediate(sockfd, msg);
+		else
+			return luaL_error(L, "invalid sockfd");
+	} else {
+		return luaL_error(L, "invalid sockfd");
+	}
+
+	return 0;
+}
+

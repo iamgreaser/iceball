@@ -520,21 +520,35 @@ success = common.net_send(sockfd, str) @
 	"sockfd" is ignored C->S and should be nil
 	S->C local multiplayer should set "sockfd" to "true"
 
+	COMPATIBILITY WARNING:
+	[ writing this before I actually do it --GM ]
+	before 0.0-50, sockfd pertains to an ACTUAL sockfd.
+	from 0.0-50 onwards, sockfd pertains to a CLIENT HANDLE.
+
+	this should not be of any concern to you unless you do Really Stupid Stuff.
+	having said that, DO NOT EXPECT THIS TO BE A ONE-TO-ONE MAPPING TO CLIENT INDICES.
+
+	oh, and as expected, same applies to common.net_recv and every other case you see a sockfd.
+
 str, sockfd = common.net_recv() @
 	receives a packet
 	
 	for C->S "sockfd" is nil
 	S->C local multiplayer will result in "sockfd" being "true"
 	
-	returns nil if nothing is there
+	returns nil, nil if nothing is there
+	returns false, nil on the client if the connection was terminated
 
-server.net_kick(sockfd, reason)
+server.net_kick(sockfd, reason) @
 	kicks a client from the server
 	
-	fails silently if sockfd is invalid,
+	fails silently if sockfd is invalid (but still a plausible parameter),
 	or sockfd is closed / errors out
 	
 	throws a lua error for other weird errors.
+
+client.hook_kick = fn(reason) @
+	sets a hook called when the player gets kicked
 
 wav = common.wav_load(fname) @
 	loads a sound with filename "fname"

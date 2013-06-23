@@ -858,6 +858,27 @@ client.hook_mouse_button = h_mouse_button
 client.hook_mouse_motion = h_mouse_motion
 client.hook_window_activate = h_window_activate
 
+function client.hook_kick(reason)
+	print("Kicked - "..reason)
+	function client.hook_tick()
+		client.mouse_lock_set(false)
+		client.mouse_visible_set(true)
+		return 0.01
+	end
+	local old_render = client.hook_render
+	local new_render = nil
+	function new_render_fn(...)
+		client.hook_render = old_render
+		local ret = client.hook_render(...)
+		old_render = client.hook_render
+		client.hook_render = new_render
+		font_large.print(30, 30, 0xFFAA0000, "KICKED")
+		font_mini.print(30, 65, 0xFFAA0000, reason)
+	end
+	new_render = new_render_fn
+	client.hook_render = new_render
+end
+
 print("pkg/base/client_start.lua loaded.")
 
 --dofile("pkg/base/plug_snow.lua")

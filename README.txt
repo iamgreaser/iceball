@@ -1,18 +1,11 @@
 GUYS GUYS GUYS
 FIRST THING YOU NEED TO READ:
 
-docs/READ_THIS_FIRST.txt might work.
+docs/READ_THIS_FIRST.txt might work (OK, it's out of date right now. Try running the tutorial.)
 If not, there's a tutorial on the forums:
 	http://iceballga.me
 
  ------------------------------------------------------------------------------
-
-This is FINALLY a game, BUT is not ready to be released yet.
-
-NOTE:
-By Stack's request, this project is now known as "Iceball".
-
-mesa.vxl is by Triplefox, and is currently being used to test load/render.
 
 LICENSING NOTES:
 Iceball is licensed under the regular GNU GPL version 3.
@@ -42,6 +35,7 @@ REQUIREMENTS:
 - zlib - http://zlib.net/
 - sackit - https://github.com/iamgreaser/sackit/
   - you should copy libsackit.a and sackit.h to xlibinc.
+- enet 1.3 - http://enet.bespin.org/
 - GNU make
   - if someone has BSD make, please tell us :)
 
@@ -52,10 +46,10 @@ STUFF TO DO BEFORE 0.1 CAN BE RELEASED:
 - make kicking not suck
 
 MSVC readme (wip):
-- create a folder 'winlibs' in the buldenthesnip dir
+- create a folder 'winlibs' in the iceball dir
   dump all dll's + lib's in this folder (opengl,lua,zlib, sdl, glew)
   dump all includes in submaps (glew in glew submap, and so on)
-  /buldenthesnip/
+  /iceball/
     /winlibs/
 	  /glew/
 	  /lua/
@@ -79,7 +73,7 @@ for the git starters:
 - git update-index --assume-unchanged clsave\pub\user.json
 
 and to get updates from the main repo:
-- git remote add upstream git://github.com/iamgreaser/buldthensnip.git
+- git remote add upstream git://github.com/iamgreaser/iceball.git
 - git pull --rebase upstream master
 - git push origin master
 

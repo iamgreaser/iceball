@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,0,0,0,48},
-	num=48,
-	str="0.0-48",
+	cmp={0,0,0,0,49},
+	num=49,
+	str="0.0-49",
 }
 
 VERSION_BUGS = {
@@ -74,5 +74,7 @@ VERSION_BUGS = {
 {renderer="gl", intro=nil, fix=48, msg="[OpenGL] Chunk count is static and does not adapt to different fog values"},
 {intro=nil, fix=48, msg="No way to determine from the Lua end what renderer a client is using"},
 {renderer="gl", intro=nil, fix=48, msg="[OpenGL] Chunk generation pattern kinda sucks"},
+{intro=nil, fix=49, msg="Kick not handled gracefully"},
+{intro=49, fix=nil, msg="Kick message isn't communicated properly"},
 }
 
