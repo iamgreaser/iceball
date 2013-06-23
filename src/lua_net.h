@@ -344,6 +344,12 @@ int icelua_fn_common_net_recv(lua_State *L)
 	
 	if(L == lstate_server)
 	{
+		if(to_server.head != NULL && (to_server.head->data[0] < 0x40 || (unsigned char)(to_server.head->data[0]) > 0x7F))
+		{
+			fprintf(stderr, "BUG EVASION: system packet hit common.net_recv. Returning nil.\n");
+			return 0;
+		}
+
 		packet_t *pkt = net_packet_pop(&(to_server.head), &(to_server.tail));
 		if(pkt == NULL)
 			return 0;
@@ -353,9 +359,9 @@ int icelua_fn_common_net_recv(lua_State *L)
 		else if(pkt->data[0] == 0x7F)
 			lua_pushlstring(L, &pkt->data[3], pkt->len-3);
 		else {
-			fprintf(stderr, "EDOOFUS: SYSTEM PACKET *MUST NOT* REACH common.net_recv!\n");
-			fflush(stderr);
-			abort();
+			//fprintf(stderr, "EDOOFUS: SYSTEM PACKET *MUST NOT* REACH common.net_recv! %i %i\n", pkt->neth, to_client_local.sockfd);
+			//fflush(stderr);
+			//abort();
 		}
 		
 		if(pkt->neth == SOCKFD_NONE)

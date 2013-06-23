@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,0,0,0,51},
-	num=51,
-	str="0.0-51",
+	cmp={0,0,0,0,52},
+	num=52,
+	str="0.0-52",
 }
 
 VERSION_BUGS = {
@@ -78,5 +78,6 @@ VERSION_BUGS = {
 {intro=49, fix=nil, msg="Kick message isn't communicated properly"},
 {intro=nil, fix=50, msg="Network handle architecture changed. If it breaks, upgrade. If your mods break, FIX THEM."},
 {intro=nil, fix=51, msg="ENet protocol not supported"},
+{intro=51, fix=52, msg="Server tends to crash when a TCP connection loads and there's at least one other client still connected"},
 }
 
