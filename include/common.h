@@ -19,7 +19,7 @@
 #define VERSION_X 0
 #define VERSION_Y 0
 #define VERSION_A 0
-#define VERSION_Z 50
+#define VERSION_Z 51
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!
@@ -505,12 +505,12 @@ extern client_t to_client_local;
 client_t *net_neth_get_client(int neth);
 char *net_fetch_file(const char *fname, int *flen);
 int net_packet_push(int len, const char *data, int neth, packet_t **head, packet_t **tail);
-int net_packet_push_lua(int len, const char *data, int neth, packet_t **head, packet_t **tail);
+int net_packet_push_lua(int len, const char *data, int neth, int unreliable, packet_t **head, packet_t **tail);
 packet_t *net_packet_pop(packet_t **head, packet_t **tail);
 void net_packet_free(packet_t *pkt, packet_t **head, packet_t **tail);
-void net_kick_sockfd_immediate(int sockfd, const char *msg);
+void net_kick_sockfd_immediate(int sockfd, ENetPeer *peer, const char *msg);
 void net_kick_client_immediate(client_t *cli, const char *msg);
-client_t *net_find_sockfd(int sockfd);
+client_t *net_find_sockfd(int sockfd, ENetPeer *peer);
 void net_flush(void);
 int net_connect(void);
 void net_disconnect(void);

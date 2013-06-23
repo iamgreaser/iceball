@@ -514,11 +514,15 @@ str = common.net_pack(fmt, ...) @
 	
 	returns nil for fields that could not be decoded
 
-success = common.net_send(neth, str) @
+success = common.net_send(neth, str, unreliable = false) @
 	sends a packet
 	
 	"neth" is ignored C->S and should be nil
 	S->C local multiplayer should set "neth" to "true"
+
+	"unreliable" only makes sense on ENet connections;
+	it is ignored for the TCP protocol.
+	if "unreliable" is set to "true", we don't care if it arrives or not.
 
 	COMPATIBILITY WARNING:
 	before 0.0-50, neth pertains to an ACTUAL socket.

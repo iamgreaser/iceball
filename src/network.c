@@ -35,8 +35,8 @@ int setsockopt( SOCKET s, int level, int optname,  void* optval, int optlen )
 
 int server_sockfd_ipv4 = SOCKFD_NONE;
 int server_sockfd_ipv6 = SOCKFD_NONE;
-ENetPeer *server_peer;
-ENetPeer *client_peer;
+ENetHost *server_host = NULL, *client_host = NULL;
+ENetAddress server_addr, client_addr;
 
 client_t to_server;
 client_t to_client_local;
@@ -155,38 +155,53 @@ int net_packet_push(int len, const char *data, int neth, packet_t **head, packet
 		return 1;
 	}
 	
-	if(len < 1)
+	client_t *cli = net_neth_get_client(neth);
+
+	if(cli == NULL)
 	{
-		fprintf(stderr, "net_packet_new: packet too small (%i < 1)\n"
-			, len);
-		return 1;
+		fprintf(stderr, "PANIC: NULL client in packet pusher!\n");
+		fflush(stderr);
+		abort();
 	}
-	
-	packet_t *pkt = (packet_t*)malloc(sizeof(packet_t)+len);
-	if(pkt == NULL)
+
+	if(cli->sockfd == SOCKFD_ENET)
 	{
-		error_perror("net_packet_new");
-		return 1;
-	}
-	
-	memcpy(pkt->data, data, len);
-	pkt->len = len;
-	pkt->neth = neth;
-	if(*head == NULL)
-	{
-		pkt->p = pkt->n = NULL;
-		*head = *tail = pkt;
+		ENetPacket *ep = enet_packet_create(data, len, ENET_PACKET_FLAG_RELIABLE);
+		enet_peer_send(cli->peer, 1, ep);
 	} else {
-		(*tail)->n = pkt;
-		pkt->p = (*tail);
-		pkt->n = NULL;
-		*tail = pkt;
+		if(len < 1)
+		{
+			fprintf(stderr, "net_packet_new: packet too small (%i < 1)\n"
+				, len);
+			return 1;
+		}
+		
+		packet_t *pkt = (packet_t*)malloc(sizeof(packet_t)+len);
+		if(pkt == NULL)
+		{
+			error_perror("net_packet_new");
+			return 1;
+		}
+		
+		memcpy(pkt->data, data, len);
+		pkt->len = len;
+		pkt->neth = neth;
+		if(*head == NULL)
+		{
+			pkt->p = pkt->n = NULL;
+			*head = *tail = pkt;
+		} else {
+			(*tail)->n = pkt;
+			pkt->p = (*tail);
+			pkt->n = NULL;
+			*tail = pkt;
+		}
 	}
 	
 	return 0;
 }
 
-int net_packet_push_lua(int len, const char *data, int neth, packet_t **head, packet_t **tail)
+int net_packet_push_lua_enet(int len, const char *data, int neth, packet_t **head, packet_t **tail)
 {
 	if(len+4 > PACKET_LEN_MAX)
 	{
@@ -202,6 +217,15 @@ int net_packet_push_lua(int len, const char *data, int neth, packet_t **head, pa
 		return 1;
 	}
 	
+	client_t *cli = net_neth_get_client(neth);
+
+	if(cli == NULL)
+	{
+		fprintf(stderr, "PANIC: NULL client in packet pusher (lua_enet)!\n");
+		fflush(stderr);
+		abort();
+	}
+
 	int poffs = (len >= 64 ? 3 : 1);
 	
 	packet_t *pkt = (packet_t*)malloc(sizeof(packet_t)+len+poffs);
@@ -230,6 +254,70 @@ int net_packet_push_lua(int len, const char *data, int neth, packet_t **head, pa
 		pkt->p = (*tail);
 		pkt->n = NULL;
 		*tail = pkt;
+	}
+	
+	return 0;
+}
+
+int net_packet_push_lua(int len, const char *data, int neth, int unreliable, packet_t **head, packet_t **tail)
+{
+	if(len+4 > PACKET_LEN_MAX)
+	{
+		fprintf(stderr, "net_packet_new: packet too large (%i > %i)\n"
+			, len, PACKET_LEN_MAX-4);
+		return 1;
+	}
+	
+	if(len < 1)
+	{
+		fprintf(stderr, "net_packet_new: packet too small (%i < 1)\n"
+			, len);
+		return 1;
+	}
+	
+	client_t *cli = net_neth_get_client(neth);
+
+	if(cli == NULL)
+	{
+		fprintf(stderr, "PANIC: NULL client in packet pusher (lua)!\n");
+		fflush(stderr);
+		abort();
+	}
+
+	if(cli->sockfd == SOCKFD_ENET)
+	{
+		ENetPacket *ep = enet_packet_create(data, len, unreliable ? 0 : ENET_PACKET_FLAG_RELIABLE);
+		enet_peer_send(cli->peer, 0, ep);
+	} else {
+		int poffs = (len >= 64 ? 3 : 1);
+		
+		packet_t *pkt = (packet_t*)malloc(sizeof(packet_t)+len+poffs);
+		if(pkt == NULL)
+		{
+			error_perror("net_packet_new");
+			return 1;
+		}
+		
+		pkt->data[0] = (poffs == 1 ? len+0x3F : 0x7F);
+		if(poffs != 1)
+		{
+			pkt->data[1] = len&255;
+			pkt->data[2] = len>>8;
+		}
+		
+		memcpy(poffs + pkt->data, data, len);
+		pkt->len = len + poffs;
+		pkt->neth = neth;
+		if(*head == NULL)
+		{
+			pkt->p = pkt->n = NULL;
+			*head = *tail = pkt;
+		} else {
+			(*tail)->n = pkt;
+			pkt->p = (*tail);
+			pkt->n = NULL;
+			*tail = pkt;
+		}
 	}
 	
 	return 0;
@@ -271,7 +359,11 @@ void net_deinit_client(client_t *cli)
 {
 	if(cli->sockfd == SOCKFD_ENET)
 	{
-		// TODO: disconnect properly
+		if(cli->peer != NULL)
+		{
+			enet_peer_disconnect(cli->peer, 0);
+			cli->peer = NULL;
+		}
 	} else {
 		while(cli->head != NULL)
 			net_packet_free(cli->head, &(cli->head), &(cli->tail));
@@ -282,12 +374,12 @@ void net_deinit_client(client_t *cli)
 	cli->sockfd = SOCKFD_NONE;
 }
 
-void net_kick_sockfd_immediate(int sockfd, const char *msg)
+void net_kick_sockfd_immediate(int sockfd, ENetPeer *peer, const char *msg)
 {
 	if(sockfd == SOCKFD_NONE || sockfd == SOCKFD_LOCAL)
 		return;
 	
-	client_t *cli = net_find_sockfd(sockfd);
+	client_t *cli = net_find_sockfd(sockfd, peer);
 
 	char buf[260];
 	buf[0] = 0x17;
@@ -376,7 +468,7 @@ void net_kick_client_immediate(client_t *cli, const char *msg)
 	int oldsockfd = cli->sockfd;
 	if(cli != &to_client_local)
 	{
-		net_kick_sockfd_immediate(oldsockfd, msg);
+		net_kick_sockfd_immediate(cli->sockfd, cli->peer, msg);
 		net_deinit_client(cli);
 	}
 	cli->sockfd = SOCKFD_NONE;
@@ -452,6 +544,218 @@ char *net_fetch_file(const char *fname, int *flen)
 	return buf;
 }
 
+int net_eat_c2s_packet(client_t *cli, client_t *other, int neth, int len, const char *data)
+{
+	int i;
+
+	switch(data[0])
+	{
+		case 0x30: {
+			// 0x30 flags namelen name[namelen] 0x00
+			// file transfer request
+			const char *fname = data + 3;
+			int udtype = data[1] & 15;
+			const char *ftype = net_aux_gettype_str(udtype);
+			
+			printf("file request: %02X %s \"%s\"\n",
+				udtype, (ftype == NULL ? "*ERROR*" : ftype), fname);
+			
+			// call hook_file if it exists
+			int use_serialised = 0;
+			
+			lua_getglobal(lstate_server, "server");
+			lua_getfield(lstate_server, -1, "hook_file");
+			lua_remove(lstate_server, -2);
+			if(lua_isnil(lstate_server, -1))
+			{
+				lua_pop(lstate_server, 1);
+			} else {
+				if(neth >= 0)
+					lua_pushinteger(lstate_server, neth);
+				else
+					lua_pushboolean(lstate_server, 1);
+				
+				lua_pushstring(lstate_server, ftype);
+				lua_pushstring(lstate_server, fname);
+				
+				if(lua_pcall(lstate_server, 3, 1, 0) != 0)
+				{
+					fprintf(stderr, "ERROR running server Lua (hook_file): %s\n"
+						, lua_tostring(lstate_server, -1));
+					lua_pop(lstate_server, 1);
+					
+					net_kick_client_immediate(net_neth_get_client(neth), "hook_file failed on server");
+					return 1;
+				}
+				
+				// check result
+				if(lua_isnil(lstate_server, -1))
+				{
+					char buf[] = "\x35";
+					net_packet_push(1, buf, neth,
+						&(cli->send_head), &(cli->send_tail));
+					lua_pop(lstate_server, 1);
+					return 1;
+				} else if(lua_isboolean(lstate_server, -1) && lua_toboolean(lstate_server, -1)) {
+					// all good
+					lua_pop(lstate_server, 1);
+				} else if(lua_isstring(lstate_server, -1)) {
+					// filename redirect
+					fname = lua_tostring(lstate_server, -1);
+					lua_pop(lstate_server, 1);
+				} else {
+					use_serialised = 1;
+					switch(udtype)
+					{
+						case UD_MAP:
+						case UD_MAP_ICEMAP: {
+							if(!lua_isuserdata(lstate_server, -1))
+							{
+								fprintf(stderr, "S->C transfer error: not a map\n");
+								use_serialised = -1;
+								break;
+							}
+							map_t *map = (map_t*)lua_touserdata(lstate_server, -1);
+							lua_pop(lstate_server, 1);
+							other->sfetch_ubuf = map_serialise_icemap(
+								map, &(other->sfetch_ulen));
+						} break;
+						default:
+							fprintf(stderr,
+						"S->C transfer error: type %s not supported for serialisation\n"
+								, ftype);
+							use_serialised = -1;
+							break;
+					}
+					
+					if(use_serialised == -1)
+					{
+						lua_pop(lstate_server, 1);
+						return 1;
+					}
+				}
+			}
+			
+			if(use_serialised)
+			{
+				// do nothing - we have the thing
+			} else {
+				// check if we're allowed to fetch that
+				if(!path_type_server_readable(path_get_type(fname)))
+				{
+					// error! ignoring for now.
+					fprintf(stderr, "S->C transfer error: access denied\n");
+					return 1;
+				}
+				
+				// check if we have a file in the queue
+				if(other->sfetch_udtype != UD_INVALID)
+				{
+					// error! ignoring for now.
+					fprintf(stderr, "S->C transfer error: still sending file\n");
+					return 1;
+				}
+				
+				// k let's give this a whirl
+				other->sfetch_ubuf = net_fetch_file(fname, &(other->sfetch_ulen));
+			}
+			
+			if(other->sfetch_ubuf != NULL)
+			{
+				other->sfetch_udtype = udtype;
+				
+				uLongf cbound = compressBound(other->sfetch_ulen);
+				other->sfetch_cbuf = (char*)malloc(cbound);
+				// TODO: check if NULL
+				if(compress((Bytef *)(other->sfetch_cbuf), &cbound,
+					(Bytef *)(other->sfetch_ubuf), other->sfetch_ulen))
+				{
+					// abort
+					fprintf(stderr, "S->C transfer error: could not compress!\n");
+					
+					if(other->sfetch_cbuf != NULL)
+						free(other->sfetch_cbuf);
+					free(other->sfetch_ubuf);
+					other->sfetch_cbuf = NULL;
+					other->sfetch_ubuf = NULL;
+					
+					char buf[] = "\x35";
+					net_packet_push(1, buf, neth,
+						&(cli->send_head), &(cli->send_tail));
+					return 1;
+				}
+				other->sfetch_clen = (int)cbound;
+				free(other->sfetch_ubuf);
+				other->sfetch_ubuf = NULL;
+				
+				// assemble packets...
+				
+				// initial packet
+				{
+					char buf[9];
+					buf[0] = 0x31;
+					*(uint32_t *)&buf[1] = other->sfetch_clen;
+					*(uint32_t *)&buf[5] = other->sfetch_ulen;
+					
+					net_packet_push(9, buf, neth,
+						&(cli->send_head), &(cli->send_tail));
+				}
+				
+				// data packets
+				{
+					char buf[1+4+2+1024];
+					buf[0] = 0x33;
+					for(i = 0; i < other->sfetch_clen; i += 1024)
+					{
+						int plen = other->sfetch_clen - i;
+						if(plen > 1024)
+							plen = 1024;
+						*(uint32_t *)&buf[1] = (uint32_t)i;
+						*(uint16_t *)&buf[5] = (uint16_t)plen;
+						
+						memcpy(&buf[7], &(other->sfetch_cbuf[i]), plen);
+						
+						net_packet_push(plen+7, buf, neth,
+							&(cli->send_head), &(cli->send_tail));
+					}
+				}
+				
+				// success packet
+				{
+					char buf[1];
+					buf[0] = 0x32;
+					
+					net_packet_push(1, buf, neth,
+						&(cli->send_head), &(cli->send_tail));
+				}
+				
+				// all good!
+				free(other->sfetch_cbuf);
+				other->sfetch_cbuf = NULL;
+				other->sfetch_udtype = UD_INVALID;
+			} else {
+				// abort
+				char buf[] = "\x35";
+				net_packet_push(1, buf, neth,
+					&(cli->send_head), &(cli->send_tail));
+				
+			}
+			return 1;
+		} break;
+		case 0x34: {
+			// 0x34:
+			// abort incoming file transfer
+			// TODO: actually abort
+			return 1;
+		} break;
+		default:
+			if(data[0] >= 0x40 && ((uint8_t)data[0]) <= 0x7F)
+				break;
+			return 1;
+	}
+	return 0;
+}
+
 void net_eat_c2s(client_t *cli)
 {
 	int i;
@@ -464,221 +768,125 @@ void net_eat_c2s(client_t *cli)
 		
 		// TODO: actually discern the source
 		client_t *other = &to_client_local;
-		
-		switch(pkt->data[0])
-		{
-			case 0x30: {
-				// 0x30 flags namelen name[namelen] 0x00
-				// file transfer request
-				const char *fname = pkt->data + 3;
-				int udtype = pkt->data[1] & 15;
-				const char *ftype = net_aux_gettype_str(udtype);
-				
-				printf("file request: %02X %s \"%s\"\n",
-					udtype, (ftype == NULL ? "*ERROR*" : ftype), fname);
-				
-				// call hook_file if it exists
-				int use_serialised = 0;
-				
-				lua_getglobal(lstate_server, "server");
-				lua_getfield(lstate_server, -1, "hook_file");
-				lua_remove(lstate_server, -2);
-				if(lua_isnil(lstate_server, -1))
-				{
-					lua_pop(lstate_server, 1);
-				} else {
-					if(pkt->neth >= 0)
-						lua_pushinteger(lstate_server, pkt->neth);
-					else
-						lua_pushboolean(lstate_server, 1);
-					
-					lua_pushstring(lstate_server, ftype);
-					lua_pushstring(lstate_server, fname);
-					
-					if(lua_pcall(lstate_server, 3, 1, 0) != 0)
-					{
-						fprintf(stderr, "ERROR running server Lua (hook_file): %s\n"
-							, lua_tostring(lstate_server, -1));
-						lua_pop(lstate_server, 1);
-						
-						net_kick_client_immediate(net_neth_get_client(pkt->neth), "hook_file failed on server");
-						net_packet_free(pkt, &(cli->head), &(cli->tail));
-						break;
-					}
-					
-					// check result
-					if(lua_isnil(lstate_server, -1))
-					{
-						char buf[] = "\x35";
-						net_packet_push(1, buf, pkt->neth,
-							&(cli->send_head), &(cli->send_tail));
-						net_packet_free(pkt, &(cli->head), &(cli->tail));
-						lua_pop(lstate_server, 1);
-						break;
-					} else if(lua_isboolean(lstate_server, -1) && lua_toboolean(lstate_server, -1)) {
-						// all good
-						lua_pop(lstate_server, 1);
-					} else if(lua_isstring(lstate_server, -1)) {
-						// filename redirect
-						fname = lua_tostring(lstate_server, -1);
-						lua_pop(lstate_server, 1);
-					} else {
-						use_serialised = 1;
-						switch(udtype)
-						{
-							case UD_MAP:
-							case UD_MAP_ICEMAP: {
-								if(!lua_isuserdata(lstate_server, -1))
-								{
-									fprintf(stderr, "S->C transfer error: not a map\n");
-									use_serialised = -1;
-									break;
-								}
-								map_t *map = (map_t*)lua_touserdata(lstate_server, -1);
-								lua_pop(lstate_server, 1);
-								other->sfetch_ubuf = map_serialise_icemap(
-									map, &(other->sfetch_ulen));
-							} break;
-							default:
-								fprintf(stderr,
-							"S->C transfer error: type %s not supported for serialisation\n"
-									, ftype);
-								use_serialised = -1;
-								break;
-						}
-						
-						if(use_serialised == -1)
-						{
-							net_packet_free(pkt, &(cli->head), &(cli->tail));
-							lua_pop(lstate_server, 1);
-							break;
-						}
-					}
-				}
-				
-				if(use_serialised)
-				{
-					// do nothing - we have the thing
-				} else {
-					// check if we're allowed to fetch that
-					if(!path_type_server_readable(path_get_type(fname)))
-					{
-						// error! ignoring for now.
-						fprintf(stderr, "S->C transfer error: access denied\n");
-						net_packet_free(pkt, &(cli->head), &(cli->tail));
-						break;
-					}
-					
-					// check if we have a file in the queue
-					if(other->sfetch_udtype != UD_INVALID)
-					{
-						// error! ignoring for now.
-						fprintf(stderr, "S->C transfer error: still sending file\n");
-						net_packet_free(pkt, &(cli->head), &(cli->tail));
-						break;
-					}
-					
-					// k let's give this a whirl
-					other->sfetch_ubuf = net_fetch_file(fname, &(other->sfetch_ulen));
-				}
-				
-				if(other->sfetch_ubuf != NULL)
-				{
-					other->sfetch_udtype = udtype;
-					
-					uLongf cbound = compressBound(other->sfetch_ulen);
-					other->sfetch_cbuf = (char*)malloc(cbound);
-					// TODO: check if NULL
-					if(compress((Bytef *)(other->sfetch_cbuf), &cbound,
-						(Bytef *)(other->sfetch_ubuf), other->sfetch_ulen))
-					{
-						// abort
-						fprintf(stderr, "S->C transfer error: could not compress!\n");
-						
-						if(other->sfetch_cbuf != NULL)
-							free(other->sfetch_cbuf);
-						free(other->sfetch_ubuf);
-						other->sfetch_cbuf = NULL;
-						other->sfetch_ubuf = NULL;
-						
-						char buf[] = "\x35";
-						net_packet_push(1, buf, pkt->neth,
-							&(cli->send_head), &(cli->send_tail));
-						net_packet_free(pkt, &(cli->head), &(cli->tail));
-						break;
-					}
-					other->sfetch_clen = (int)cbound;
-					free(other->sfetch_ubuf);
-					other->sfetch_ubuf = NULL;
-					
-					// assemble packets...
-					
-					// initial packet
-					{
-						char buf[9];
-						buf[0] = 0x31;
-						*(uint32_t *)&buf[1] = other->sfetch_clen;
-						*(uint32_t *)&buf[5] = other->sfetch_ulen;
-						
-						net_packet_push(9, buf, pkt->neth,
-							&(cli->send_head), &(cli->send_tail));
-					}
-					
-					// data packets
-					{
-						char buf[1+4+2+1024];
-						buf[0] = 0x33;
-						for(i = 0; i < other->sfetch_clen; i += 1024)
-						{
-							int plen = other->sfetch_clen - i;
-							if(plen > 1024)
-								plen = 1024;
-							*(uint32_t *)&buf[1] = (uint32_t)i;
-							*(uint16_t *)&buf[5] = (uint16_t)plen;
-							
-							memcpy(&buf[7], &(other->sfetch_cbuf[i]), plen);
-							
-							net_packet_push(plen+7, buf, pkt->neth,
-								&(cli->send_head), &(cli->send_tail));
-						}
-					}
-					
-					// success packet
-					{
-						char buf[1];
-						buf[0] = 0x32;
-						
-						net_packet_push(1, buf, pkt->neth,
-							&(cli->send_head), &(cli->send_tail));
-					}
-					
-					// all good!
-					free(other->sfetch_cbuf);
-					other->sfetch_cbuf = NULL;
-					other->sfetch_udtype = UD_INVALID;
-				} else {
-					// abort
-					char buf[] = "\x35";
-					net_packet_push(1, buf, pkt->neth,
-						&(cli->send_head), &(cli->send_tail));
-					
-				}
-				net_packet_free(pkt, &(cli->head), &(cli->tail));
-			} break;
-			case 0x34: {
-				// 0x34:
-				// abort incoming file transfer
-				// TODO: actually abort
-				net_packet_free(pkt, &(cli->head), &(cli->tail));
-			} break;
-			default:
-				if(pkt->data[0] >= 0x40 && ((uint8_t)pkt->data[0]) <= 0x7F)
-					break;
-				
-				net_packet_free(pkt, &(cli->head), &(cli->tail));
-				break;
-		}
+
+		if(net_eat_c2s_packet(cli, other, pkt->neth, pkt->len, pkt->data))
+			net_packet_free(pkt, &(cli->head), &(cli->tail));
+		else
+			break;
 	}
+}
+
+int net_eat_s2c_packet(client_t *cli, client_t *other, int neth, int len, const char *data)
+{
+	int i;
+
+	switch(data[0])
+	{
+		case 0x0F: {
+			if(data[len-1] != '\x00')
+			{
+				fprintf(stderr, "ERROR: string not zero-terminated!\n");
+			} else if(mod_basedir == NULL) {
+				mod_basedir = strdup(2+data);
+				boot_mode |= 8;
+				printf("base dir = \"%s\"\n", mod_basedir);
+			} else {
+				fprintf(stderr, "ERROR: base dir already defined!\n");
+				// TODO: make this fatal
+			}
+			
+			return 1;
+		} break;
+		case 0x17: {
+			if(data[len-1] != '\x00')
+			{
+				fprintf(stderr, "ERROR: string not zero-terminated!\n");
+			} else {
+				net_kick_client_immediate(&to_client_local, &(data[2]));
+			}
+			
+			return 1;
+		} break;
+		case 0x31: {
+			// 0x31 clen.u32 ulen.u32:
+			// file transfer initiation
+			int clen = (int)*(uint32_t *)&(data[1]);
+			int ulen = (int)*(uint32_t *)&(data[5]);
+			//printf("clen=%i ulen=%i\n", clen, ulen);
+			cli->cfetch_clen = clen;
+			cli->cfetch_ulen = ulen;
+			cli->cfetch_cbuf = (char*)malloc(clen);
+			cli->cfetch_ubuf = NULL;
+			cli->cfetch_cpos = 0;
+			// TODO: check if NULL
+			
+			return 1;
+		} break;
+		case 0x32: {
+			// 0x32:
+			// file transfer end
+			//printf("transfer END\n");
+			cli->cfetch_ubuf = (char*)malloc(cli->cfetch_ulen);
+			// TODO: check if NULL
+			
+			uLongf dlen = cli->cfetch_ulen;
+			if(uncompress((Bytef *)(cli->cfetch_ubuf), &dlen,
+				(Bytef *)(cli->cfetch_cbuf), cli->cfetch_clen) != Z_OK)
+			{
+				fprintf(stderr, "FETCH ERROR: could not decompress!\n");
+				// TODO: make this fatal
+				
+				free(cli->cfetch_cbuf);
+				free(cli->cfetch_ubuf);
+				cli->cfetch_cbuf = NULL;
+				cli->cfetch_ubuf = NULL;
+				return 1;
+			}
+			
+			free(cli->cfetch_cbuf);
+			cli->cfetch_cbuf = NULL;
+			
+			return 1;
+		} break;
+		case 0x33: {
+			// 0x33: offset.u32 len.u16 data[len]:
+			// file transfer data
+			int offs = (int)*(uint32_t *)&(data[1]);
+			int plen = (int)*(uint16_t *)&(data[5]);
+			//printf("pdata %08X: %i bytes\n", offs, plen);
+			if(plen <= 0 || plen > 1024)
+			{
+				fprintf(stderr, "FETCH ERROR: length too long/short!\n");
+			} else if(offs < 0 || offs+plen > cli->cfetch_clen) {
+				fprintf(stderr, "FETCH ERROR: buffer overrun!\n");
+				// TODO: make this fatal
+			} else {
+				memcpy(offs + cli->cfetch_cbuf, &(data[7]), plen);
+				cli->cfetch_cpos = offs + plen;
+			}
+			
+			return 1;
+		} break;
+		case 0x35: {
+			// 0x35:
+			// abort outgoing file transfer
+			//printf("abort transfer\n");
+			// TODO: actually abort
+			free(cli->cfetch_cbuf);
+			free(cli->cfetch_ubuf);
+			cli->cfetch_cbuf = NULL;
+			cli->cfetch_ubuf = NULL;
+			cli->cfetch_cpos = -1;
+			return 1;
+		} break;
+		default:
+			if(data[0] >= 0x40 && ((uint8_t)data[0]) <= 0x7F)
+				break;
+			
+			return 1;
+	}
+
+	return 0;
 }
 
 void net_eat_s2c(client_t *cli)
@@ -690,113 +898,8 @@ void net_eat_s2c(client_t *cli)
 	{
 		npkt = pkt->n;
 		
-		switch(pkt->data[0])
-		{
-			case 0x0F: {
-				if(pkt->data[pkt->len-1] != '\x00')
-				{
-					fprintf(stderr, "ERROR: string not zero-terminated!\n");
-				} else if(mod_basedir == NULL) {
-					mod_basedir = strdup(2+pkt->data);
-					boot_mode |= 8;
-					printf("base dir = \"%s\"\n", mod_basedir);
-				} else {
-					fprintf(stderr, "ERROR: base dir already defined!\n");
-					// TODO: make this fatal
-				}
-				
-				net_packet_free(pkt, &(cli->head), &(cli->tail));
-			} break;
-			case 0x17: {
-				if(pkt->data[pkt->len-1] != '\x00')
-				{
-					fprintf(stderr, "ERROR: string not zero-terminated!\n");
-				} else {
-					net_kick_client_immediate(&to_client_local, &(pkt->data[2]));
-				}
-				
-				net_packet_free(pkt, &(cli->head), &(cli->tail));
-			} break;
-			case 0x31: {
-				// 0x31 clen.u32 ulen.u32:
-				// file transfer initiation
-				int clen = (int)*(uint32_t *)&(pkt->data[1]);
-				int ulen = (int)*(uint32_t *)&(pkt->data[5]);
-				//printf("clen=%i ulen=%i\n", clen, ulen);
-				cli->cfetch_clen = clen;
-				cli->cfetch_ulen = ulen;
-				cli->cfetch_cbuf = (char*)malloc(clen);
-				cli->cfetch_ubuf = NULL;
-				cli->cfetch_cpos = 0;
-				// TODO: check if NULL
-				
-				net_packet_free(pkt, &(cli->head), &(cli->tail));
-			} break;
-			case 0x32: {
-				// 0x32:
-				// file transfer end
-				//printf("transfer END\n");
-				cli->cfetch_ubuf = (char*)malloc(cli->cfetch_ulen);
-				// TODO: check if NULL
-				
-				uLongf dlen = cli->cfetch_ulen;
-				if(uncompress((Bytef *)(cli->cfetch_ubuf), &dlen,
-					(Bytef *)(cli->cfetch_cbuf), cli->cfetch_clen) != Z_OK)
-				{
-					fprintf(stderr, "FETCH ERROR: could not decompress!\n");
-					// TODO: make this fatal
-					
-					free(cli->cfetch_cbuf);
-					free(cli->cfetch_ubuf);
-					cli->cfetch_cbuf = NULL;
-					cli->cfetch_ubuf = NULL;
-					net_packet_free(pkt, &(cli->head), &(cli->tail));
-					break;
-				}
-				
-				free(cli->cfetch_cbuf);
-				cli->cfetch_cbuf = NULL;
-				
-				net_packet_free(pkt, &(cli->head), &(cli->tail));
-			} break;
-			case 0x33: {
-				// 0x33: offset.u32 len.u16 data[len]:
-				// file transfer data
-				int offs = (int)*(uint32_t *)&(pkt->data[1]);
-				int plen = (int)*(uint16_t *)&(pkt->data[5]);
-				//printf("pdata %08X: %i bytes\n", offs, plen);
-				if(plen <= 0 || plen > 1024)
-				{
-					fprintf(stderr, "FETCH ERROR: length too long/short!\n");
-				} else if(offs < 0 || offs+plen > cli->cfetch_clen) {
-					fprintf(stderr, "FETCH ERROR: buffer overrun!\n");
-					// TODO: make this fatal
-				} else {
-					memcpy(offs + cli->cfetch_cbuf, &(pkt->data[7]), plen);
-					cli->cfetch_cpos = offs + plen;
-				}
-				
-				net_packet_free(pkt, &(cli->head), &(cli->tail));
-			} break;
-			case 0x35: {
-				// 0x35:
-				// abort outgoing file transfer
-				//printf("abort transfer\n");
-				// TODO: actually abort
-				free(cli->cfetch_cbuf);
-				free(cli->cfetch_ubuf);
-				cli->cfetch_cbuf = NULL;
-				cli->cfetch_ubuf = NULL;
-				cli->cfetch_cpos = -1;
-				net_packet_free(pkt, &(cli->head), &(cli->tail));
-			} break;
-			default:
-				if(pkt->data[0] >= 0x40 && ((uint8_t)pkt->data[0]) <= 0x7F)
-					break;
-				
-				net_packet_free(pkt, &(cli->head), &(cli->tail));
-				break;
-		}
+		if(net_eat_s2c_packet(cli, other, pkt->neth, pkt->len, pkt->data))
+			net_packet_free(pkt, &(cli->head), &(cli->tail));
 	}
 }
 
@@ -938,13 +1041,17 @@ void net_flush_parse_s2c(client_t *cli)
 	}
 }
 
-client_t *net_find_sockfd(int sockfd)
+client_t *net_find_sockfd(int sockfd, ENetPeer *peer)
 {
 	int i;
 	
 	if(sockfd == SOCKFD_LOCAL)
 	{
 		return &to_client_local;
+	} else if(sockfd == SOCKFD_ENET) {
+		for(i = 0; i < CLIENT_MAX; i++)
+			if(to_clients[i].sockfd == SOCKFD_ENET && to_clients[i].peer == peer)
+				return &to_clients[i];
 	} else if(sockfd >= 0) {
 		for(i = 0; i < CLIENT_MAX; i++)
 			if(to_clients[i].sockfd == sockfd)
@@ -956,19 +1063,21 @@ client_t *net_find_sockfd(int sockfd)
 	return NULL;
 }
 
-client_t *net_alloc_sockfd(int sockfd)
+client_t *net_alloc_sockfd(int sockfd, ENetPeer *peer)
 {
 	int i;
-	client_t *cli = net_find_sockfd(sockfd);
+
+	client_t *cli = net_find_sockfd(sockfd, peer);
 	
 	if(cli != NULL)
 		return cli;
 	
 	for(i = 0; i < CLIENT_MAX; i++)
 	{
-		if(to_clients[i].sockfd == -1)
+		if(to_clients[i].sockfd == SOCKFD_NONE)
 		{
 			to_clients[i].sockfd = sockfd;
+			to_clients[i].peer = peer;
 			return &to_clients[i];
 		}
 	}
@@ -1034,55 +1143,63 @@ int net_flush_transfer(client_t *cfrom, client_t *cto, packet_t *pfrom)
 	return 0;
 }
 
-void net_flush_accept_one(int sockfd, struct sockaddr_storage *ss, socklen_t slen)
+void net_flush_accept_one(int sockfd, ENetPeer *peer, struct sockaddr_storage *ss, socklen_t slen)
 {
 	char xstr[128];
 	xstr[0] = '?';
 	xstr[1] = '\0';
 	int cport = 0;
-	switch(ss->ss_family)
+
+	if(sockfd == SOCKFD_ENET)
 	{
-		case AF_INET:
-			inet_ntop(AF_INET, &(((struct sockaddr_in *)(ss))->sin_addr)
-				, xstr, 127);
-			cport = ((struct sockaddr_in *)(ss))->sin_port;
-			break;
-		case AF_INET6:
-			inet_ntop(AF_INET6, &(((struct sockaddr_in6 *)(ss))->sin6_addr)
-				, xstr, 127);
-			cport = ((struct sockaddr_in6 *)(ss))->sin6_port;
-			break;
-	}
-	
-	printf("connection from %s, port %i, family %i\n", xstr, cport, ss->ss_family);
-	
-	// disable Nagle's algo
-	int yes = 1;
-	if(setsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, (void *)&yes, sizeof(yes)) == -1)
-	{
-		net_kick_sockfd_immediate(sockfd, "Could not disable Nagle's algorithm!"
-			" Kicked because gameplay will be complete shit otherwise.");
-		return;
-	}
-	
-	// set connection nonblocking
-	yes = 1;
-#ifdef WIN32
-	if(ioctlsocket(sockfd,FIONBIO,(u_long *)&yes) == -1) {
-#else
-	if(fcntl(sockfd, F_SETFL,
-			fcntl(sockfd, F_GETFL) | O_NONBLOCK) == -1) {
-#endif
-		net_kick_sockfd_immediate(sockfd, "Could not set up a nonblocking connection!");
-		return;
+		enet_address_get_host_ip(&(peer->address), xstr, 127);
+		cport = peer->address.port;
+		printf("connection from %s, port %i, ENet\n", xstr, cport);
+	} else {
+		switch(ss->ss_family)
+		{
+			case AF_INET:
+				inet_ntop(AF_INET, &(((struct sockaddr_in *)(ss))->sin_addr)
+					, xstr, 127);
+				cport = ((struct sockaddr_in *)(ss))->sin_port;
+				break;
+			case AF_INET6:
+				inet_ntop(AF_INET6, &(((struct sockaddr_in6 *)(ss))->sin6_addr)
+					, xstr, 127);
+				cport = ((struct sockaddr_in6 *)(ss))->sin6_port;
+				break;
+		}
+		
+		printf("connection from %s, port %i, family %i\n", xstr, cport, ss->ss_family);
+		
+		// disable Nagle's algo
+		int yes = 1;
+		if(setsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, (void *)&yes, sizeof(yes)) == -1)
+		{
+			net_kick_sockfd_immediate(sockfd, NULL, "Could not disable Nagle's algorithm!"
+				" Kicked because gameplay will be complete shit otherwise.");
+			return;
+		}
+		
+		// set connection nonblocking
+		yes = 1;
+	#ifdef WIN32
+		if(ioctlsocket(sockfd,FIONBIO,(u_long *)&yes) == -1) {
+	#else
+		if(fcntl(sockfd, F_SETFL,
+				fcntl(sockfd, F_GETFL) | O_NONBLOCK) == -1) {
+	#endif
+			net_kick_sockfd_immediate(sockfd, NULL, "Could not set up a nonblocking connection!");
+			return;
+		}
 	}
 	
 	// get a slot
-	client_t *cli = net_alloc_sockfd(sockfd);
+	client_t *cli = net_alloc_sockfd(sockfd, peer);
 	
 	if(cli == NULL)
 	{
-		net_kick_sockfd_immediate(sockfd, "Server ran out of free slots!");
+		net_kick_sockfd_immediate(sockfd, peer, "Server ran out of free slots!");
 		return;
 	}
 	
@@ -1095,36 +1212,55 @@ void net_flush_accept_one(int sockfd, struct sockaddr_storage *ss, socklen_t sle
 		lua_pushinteger(lstate_server, net_client_get_neth(cli));
 		lua_newtable(lstate_server);
 		
-		switch(ss->ss_family)
+		if(sockfd == SOCKFD_ENET)
 		{
-			case AF_INET:
-			case AF_INET6:
-				if(ss->ss_family == AF_INET6)
-					lua_pushstring(lstate_server, "tcp/ip6");
-				else
-					lua_pushstring(lstate_server, "tcp/ip");
-				
-				lua_setfield(lstate_server, -2, "proto");
-				
-				lua_newtable(lstate_server);
-				lua_pushstring(lstate_server, xstr);
-				lua_setfield(lstate_server, -2, "ip");
-				lua_pushnil(lstate_server); // not supported yet!
-				lua_setfield(lstate_server, -2, "host");
-				lua_pushinteger(lstate_server, cport);
-				lua_setfield(lstate_server, -2, "cport");
-				lua_pushinteger(lstate_server, net_port);
-				lua_setfield(lstate_server, -2, "sport");
-				
-				lua_setfield(lstate_server, -2, "addr");
-				break;
+			lua_pushstring(lstate_server, "enet/ip");
+			
+			lua_setfield(lstate_server, -2, "proto");
+			
+			lua_newtable(lstate_server);
+			lua_pushstring(lstate_server, xstr);
+			lua_setfield(lstate_server, -2, "ip");
+			lua_pushnil(lstate_server); // not supported yet! (even though it's easy to do, i'm worried about lagging the server though --GM)
+			lua_setfield(lstate_server, -2, "host");
+			lua_pushinteger(lstate_server, cport);
+			lua_setfield(lstate_server, -2, "cport");
+			lua_pushinteger(lstate_server, net_port);
+			lua_setfield(lstate_server, -2, "sport");
+			
+			lua_setfield(lstate_server, -2, "addr");
+		} else {
+			switch(ss->ss_family)
+			{
+				case AF_INET:
+				case AF_INET6:
+					if(ss->ss_family == AF_INET6)
+						lua_pushstring(lstate_server, "tcp/ip6");
+					else
+						lua_pushstring(lstate_server, "tcp/ip");
+					
+					lua_setfield(lstate_server, -2, "proto");
+					
+					lua_newtable(lstate_server);
+					lua_pushstring(lstate_server, xstr);
+					lua_setfield(lstate_server, -2, "ip");
+					lua_pushnil(lstate_server); // not supported yet!
+					lua_setfield(lstate_server, -2, "host");
+					lua_pushinteger(lstate_server, cport);
+					lua_setfield(lstate_server, -2, "cport");
+					lua_pushinteger(lstate_server, net_port);
+					lua_setfield(lstate_server, -2, "sport");
+					
+					lua_setfield(lstate_server, -2, "addr");
+					break;
+			}
 		}
 		
 		if(lua_pcall(lstate_server, 2, 0, 0) != 0)
 		{
 			printf("ERROR running server Lua (hook_connect): %s\n", lua_tostring(lstate_server, -1));
 			lua_pop(lstate_server, 1);
-			net_kick_sockfd_immediate(sockfd, "hook_connect failed on server");
+			net_kick_sockfd_immediate(sockfd, NULL, "hook_connect failed on server");
 			return;
 		}
 	} else {
@@ -1165,7 +1301,7 @@ void net_flush_accept(void)
 				perror("net_flush_accept(accept.6)");
 			}
 		} else {
-			net_flush_accept_one(sockfd, &ss, slen);
+			net_flush_accept_one(sockfd, NULL, &ss, slen);
 		}
 	}
 	
@@ -1188,9 +1324,11 @@ void net_flush_accept(void)
 				perror("net_flush_accept(accept.4)");
 			}
 		} else {
-			net_flush_accept_one(sockfd, &ss, slen);
+			net_flush_accept_one(sockfd, NULL, &ss, slen);
 		}
 	}
+
+	// ENet acceptance is handled with the rest of the ENet stuff, not here
 }
 
 void net_flush_snr(client_t *cli)
@@ -1258,6 +1396,8 @@ void net_flush_snr(client_t *cli)
 				}
 			}
 		}
+	} else if(cli->sockfd == SOCKFD_ENET) {
+		// do nothing
 	} else {
 		//printf("send sockfd %i %i %i\n", cli->sockfd, cli->rpkt_len, cli->rpkt_len);
 		{
@@ -1319,10 +1459,53 @@ void net_flush(void)
 {
 	packet_t *pkt, *npkt;
 	int i;
+	int err;
+	ENetEvent ev;
 	
 	if(boot_mode & 2)
 	{
 		net_flush_accept();
+
+		// parse ENet crap
+		for(;;)
+		{
+			err = enet_host_service(server_host, &ev, 0);
+			if(err == 0)
+				break;
+
+			if(err < 0)
+			{
+				fprintf(stderr, "PANIC: don't know how to handle ENet serverside errors!\n");
+				fflush(stderr);
+				abort();
+			}
+
+			switch(ev.type)
+			{
+				case ENET_EVENT_TYPE_CONNECT:
+					if(ev.data == 0x42454331)
+						net_flush_accept_one(SOCKFD_ENET, ev.peer, NULL, 0);
+					break;
+				case ENET_EVENT_TYPE_DISCONNECT:
+					net_kick_sockfd_immediate(SOCKFD_ENET, ev.peer, "Connection axed.");
+					break;
+				case ENET_EVENT_TYPE_RECEIVE:
+					if(ev.channelID == 0)
+					{
+						// Lua packet
+						net_packet_push_lua_enet(ev.packet->dataLength, (char *)(ev.packet->data),
+							net_client_get_neth(net_find_sockfd(SOCKFD_ENET, ev.peer)), &(to_server.head), &(to_server.tail));
+					} else if(ev.channelID == 1) {
+						// system packet
+						net_eat_c2s_packet(&to_server, &to_client_local, net_client_get_neth(net_find_sockfd(SOCKFD_ENET, ev.peer)),
+							ev.packet->dataLength, (char *)(ev.packet->data));
+					}
+					enet_packet_destroy(ev.packet);
+					break;
+				default:
+					break;
+			}
+		}
 		
 		// clear full flags
 		for(i = 0; i < CLIENT_MAX; i++)
@@ -1334,8 +1517,6 @@ void net_flush(void)
 		for(pkt = to_server.send_head; pkt != NULL; pkt = npkt)
 		{
 			npkt = pkt->n;
-			
-			//printf("pkt = %016llX\n", pkt);
 			
 			client_t *cli = net_neth_get_client(pkt->neth);
 			
@@ -1366,18 +1547,58 @@ void net_flush(void)
 	
 	if(boot_mode & 1)
 	{
-		to_server.isfull = 0;
-		
-		for(pkt = to_client_local.send_head; pkt != NULL; pkt = npkt)
+		if(boot_mode & 16)
 		{
-			npkt = pkt->n;
+			// parse ENet crap
+			for(;;)
+			{
+				err = enet_host_service(client_host, &ev, 0);
+				if(err == 0)
+					break;
+
+				if(err < 0)
+				{
+					fprintf(stderr, "PANIC: don't know how to handle ENet kicks yet!\n");
+					fflush(stderr);
+					abort();
+				}
+
+				switch(ev.type)
+				{
+					case ENET_EVENT_TYPE_DISCONNECT:
+						net_kick_client_immediate(&to_client_local, "Connection axed.");
+						break;
+					case ENET_EVENT_TYPE_RECEIVE:
+						if(ev.channelID == 0)
+						{
+							// Lua packet
+							net_packet_push_lua_enet(ev.packet->dataLength, (char *)(ev.packet->data),
+								SOCKFD_LOCAL, &(to_client_local.head), &(to_client_local.tail));
+						} else if(ev.channelID == 1) {
+							// system packet
+							net_eat_s2c_packet(&to_client_local, &to_server, SOCKFD_LOCAL, ev.packet->dataLength, (char *)(ev.packet->data));
+						}
+						enet_packet_destroy(ev.packet);
+						break;
+					default:
+						break;
+				}
+			}
+		} else {
+			// the usual stuff
+			to_server.isfull = 0;
 			
-			net_flush_transfer(&to_client_local, &to_server, pkt);
+			for(pkt = to_client_local.send_head; pkt != NULL; pkt = npkt)
+			{
+				npkt = pkt->n;
+				
+				net_flush_transfer(&to_client_local, &to_server, pkt);
+			}
+			
+			net_flush_snr(&to_client_local);
+			
+			net_flush_parse_s2c(&to_client_local);
 		}
-		
-		net_flush_snr(&to_client_local);
-		
-		net_flush_parse_s2c(&to_client_local);
 	}
 	
 	if(boot_mode & 2)
@@ -1449,31 +1670,76 @@ int net_connect(void)
 	{
 		case 1: {
 			// client only
-			struct sockaddr_storage sa;
-			if(net_gethost(net_addr, net_port, (struct sockaddr *)&sa, sizeof(sa)))
-				return 1;
-			
-			int sockfd = socket(sa.ss_family, SOCK_STREAM, 0);
-			
-			if(sockfd == -1)
-				return error_perror("net_connect(socket)");
-			
-			if(connect(sockfd, (struct sockaddr *)&sa, sizeof(sa)) == -1)
-				return error_perror("net_connect(connect)");
-			
-			int yes = 1;
+			if(boot_mode & 16)
+			{
+				// ENet
+				ENetHost *host = enet_host_create(NULL, 1, 2, 0, 0);
+				if(host == NULL)
+				{
+					fprintf(stderr, "net_connect(enet_host_create): failed\n");
+					return 1;
+				}
+				if(enet_host_compress_with_range_coder(host) < 0)
+				{
+					fprintf(stderr, "net_connect(enet_host_compress_with_range_coder): failed\n");
+					return 1;
+				}
+
+				ENetAddress caddr;
+				caddr.port = net_port;
+				if(enet_address_set_host(&caddr, net_addr) < 0)
+				{
+					fprintf(stderr, "net_connect(enet_address_set_host): failed\n");
+					return 1;
+				}
+
+				ENetPeer *peer = enet_host_connect(host, &caddr, 2, 0x42454331);
+				if(peer == NULL)
+				{
+					fprintf(stderr, "net_connect(enet_host_connect): failed\n");
+					return 1;
+				}
+
+				printf("Connecting to UDP port...\n");
+				ENetEvent ev;
+				if(enet_host_service(host, &ev, 5000) <= 0 || ev.type != ENET_EVENT_TYPE_CONNECT)
+				{
+					fprintf(stderr, "net_connect(enet_host_service): failed\n");
+					return 1;
+				}
+
+				printf("Done!\n");
+				to_client_local.sockfd = SOCKFD_ENET;
+				to_client_local.peer = peer;
+				client_host = host;
+			} else {
+				// TCP
+				struct sockaddr_storage sa;
+				if(net_gethost(net_addr, net_port, (struct sockaddr *)&sa, sizeof(sa)))
+					return 1;
+				
+				int sockfd = socket(sa.ss_family, SOCK_STREAM, 0);
+				
+				if(sockfd == -1)
+					return error_perror("net_connect(socket)");
+				
+				if(connect(sockfd, (struct sockaddr *)&sa, sizeof(sa)) == -1)
+					return error_perror("net_connect(connect)");
+				
+				int yes = 1;
 #ifdef WIN32
-			if(ioctlsocket(sockfd, FIONBIO, (u_long *)&yes))
+				if(ioctlsocket(sockfd, FIONBIO, (u_long *)&yes))
 #else
-			if(fcntl(sockfd, F_SETFL,
-				fcntl(sockfd, F_GETFL) | O_NONBLOCK))
+				if(fcntl(sockfd, F_SETFL,
+					fcntl(sockfd, F_GETFL) | O_NONBLOCK))
 #endif
-				return error_perror("net_connect(nonblock)");
-			
-			if(setsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, (void *)&yes, sizeof(yes)) == -1)
-				return error_perror("net_connect(nodelay)");
-			
-			to_client_local.sockfd = sockfd;
+					return error_perror("net_connect(nonblock)");
+				
+				if(setsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, (void *)&yes, sizeof(yes)) == -1)
+					return error_perror("net_connect(nodelay)");
+				
+				to_client_local.sockfd = sockfd;
+			}
 		} break;
 		
 		case 3: {
@@ -1497,9 +1763,23 @@ void net_disconnect(void)
 		close(to_client_local.sockfd);
 #endif
 		to_client_local.sockfd = SOCKFD_NONE;
+	} else if(to_client_local.sockfd == SOCKFD_ENET) {
+		if(to_client_local.peer != NULL)
+		{
+			enet_peer_disconnect(to_client_local.peer, 0);
+			to_client_local.peer = NULL;
+		}
+
+		if(client_host != NULL)
+		{
+			enet_host_flush(client_host);
+			enet_host_destroy(client_host);
+			client_host = NULL;
+		}
 	}
 	
 	for(i = 0; i < CLIENT_MAX; i++)
+	{
 		if(to_clients[i].sockfd >= 0)
 		{
 #ifdef WIN32
@@ -1508,7 +1788,21 @@ void net_disconnect(void)
 			close(to_clients[i].sockfd);
 #endif
 			to_clients[i].sockfd = SOCKFD_NONE;
+		} else if(to_clients[i].sockfd == SOCKFD_ENET) {
+			if(to_clients[i].peer != NULL)
+			{
+				enet_peer_disconnect(to_clients[i].peer, 0);
+				to_clients[i].peer = NULL;
+			}
 		}
+	}
+
+	if(server_host != NULL)
+	{
+		enet_host_flush(server_host);
+		enet_host_destroy(server_host);
+		server_host = NULL;
+	}
 }
 
 int net_bind(void)
@@ -1594,6 +1888,25 @@ int net_bind(void)
 		, server_sockfd_ipv4
 		, server_sockfd_ipv6);
 	
+	// ENet server setup
+	ENetAddress saddr;
+	saddr.host = ENET_HOST_ANY;
+	saddr.port = net_port;
+	server_host = enet_host_create(&saddr, CLIENT_MAX+2, 2, 0, 0);
+
+	if(server_host == NULL)
+	{
+		fprintf(stderr, "net_bind(enet_host_create): Failed to bind UDP port for ENet\n");
+		return 1;
+	}
+	if(enet_host_compress_with_range_coder(server_host) < 0)
+	{
+		fprintf(stderr, "net_bind(enet_host_compress_with_range_coder): failed\n");
+		return 1;
+	}
+
+	printf("ENet host bound\n");
+	
 	return 0;
 }
 
@@ -1610,6 +1923,12 @@ void net_unbind(void)
 		close(server_sockfd_ipv6);
 		server_sockfd_ipv6 = SOCKFD_NONE;
 	}
+
+	if(server_host != NULL)
+	{
+		enet_host_destroy(server_host);
+		server_host = NULL;
+	}
 }
 
 int net_init(void)
@@ -1618,12 +1937,24 @@ int net_init(void)
 	
 #ifdef WIN32
 	// complete hackjob
+	if(!((boot_mode & 16) || (boot_mode & 2)))
 	if(WSAStartup(MAKEWORD(2,0), &wsaStartup) != 0)
 	{
 		fprintf(stderr, "net_init: WSAStartup failed\n");
 		return 1;
 	}
 #endif
+	
+	// start ENet unless running a TCP-only client
+	if((boot_mode & 16) || (boot_mode & 2))
+	{
+		if(enet_initialize() != 0)
+		{
+			fprintf(stderr, "net_init: enet_initialize failed\n");
+			return 1;
+		}
+	}
+	atexit(enet_deinitialize);
 	
 	for(i = 0; i < CLIENT_MAX; i++)
 	{
@@ -1656,7 +1987,13 @@ void net_deinit(void)
 	for(i = 0; i < CLIENT_MAX; i++)
 		net_deinit_client(&(to_clients[i]));
 	
+	if(server_host != NULL)
+		enet_host_destroy(server_host);
+	if(client_host != NULL)
+		enet_host_destroy(client_host);
+	
 #ifdef WIN32
 	WSACleanup();
 #endif
 }
+

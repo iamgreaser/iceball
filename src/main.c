@@ -38,7 +38,8 @@ int gl_use_vbo = 1;
 
 int force_redraw = 1;
 
-// bit 0 = client, bit 1 = server, bit 2 == main_client.lua has been loaded
+// bit 0 = client, bit 1 = server, bit 2 = main_client.lua has been loaded,
+// bit 3 = currently loading main_client.lua and co, bit 4 == use ENet for client
 int boot_mode = 0;
 
 char *mod_basedir = NULL;
@@ -561,7 +562,8 @@ int print_usage(char *rname)
 	fprintf(stderr, "usage:\n"
 #ifndef DEDI
 			"\tfor clients:\n"
-			"\t\t%s -c address port {clargs}\n"
+			"\t\t%s -c address port {clargs} <-- connect via ENet protocol (UDP)\n"
+			"\t\t%s -C address port {clargs} <-- connect via TCP protocol\n"
 			"\tfor servers (quick-start, not recommended for anything serious!):\n"
 			"\t\t%s -s port mod {args}\n"
 #endif
@@ -586,7 +588,7 @@ int print_usage(char *rname)
 #endif
 			"\targs:     arguments to send to the server Lua script\n"
 #ifndef DEDI
-			,rname,rname
+			,rname,rname,rname
 #endif
 			,rname,rname);
 	
@@ -631,7 +633,18 @@ int main_dbghelper(int argc, char *argv[])
 		
 		net_addr = argv[2];
 		net_port = atoi(argv[3]);
-		printf("Connecting to \"%s\" port %i\n", net_addr, net_port);
+		printf("Connecting to \"%s\" port %i (ENet mode)\n", net_addr, net_port);
+		mod_basedir = NULL;
+		main_largstart = 4;
+		
+		boot_mode = 1 | 16;
+	} else if(!strcmp(argv[1], "-C")) {
+		if(argc <= 3)
+			return print_usage(argv[0]);
+		
+		net_addr = argv[2];
+		net_port = atoi(argv[3]);
+		printf("Connecting to \"%s\" port %i (TCP mode)\n", net_addr, net_port);
 		mod_basedir = NULL;
 		main_largstart = 4;
 		
@@ -643,7 +656,7 @@ int main_dbghelper(int argc, char *argv[])
 		
 		net_port = atoi(argv[2]);
 		mod_basedir = argv[3];
-		printf("Starting server on port %i, mod \"%s\"\n", net_port, mod_basedir);
+		printf("Starting server on port %i, mod \"%s\" (local mode client)\n", net_port, mod_basedir);
 		main_largstart = 4;
 		
 		boot_mode = 3;

@@ -305,18 +305,17 @@ int icelua_fn_common_net_unpack(lua_State *L)
 
 int icelua_fn_common_net_send(lua_State *L)
 {
-	int top = icelua_assert_stack(L, 2, 2);
+	int top = icelua_assert_stack(L, 2, 3);
 	
 	size_t bsize;
 	const char *str = lua_tolstring(L, 2, &bsize);
 	if(str == NULL)
 		return luaL_error(L, "not a string");
+	int unreliable = (top >= 3 ? lua_toboolean(L, 3) : 0);
 	
-	// TODO: incorporate the neth field
-	//net_packet_push(int len, uint8_t *data, packet_t **head, packet_t **tail);
 	if(L != lstate_server)
 	{
-		net_packet_push_lua((int)bsize, str, to_client_local.sockfd,
+		net_packet_push_lua((int)bsize, str, SOCKFD_LOCAL, unreliable,
 			&(to_client_local.send_head), &(to_client_local.send_tail));
 		lua_pushboolean(L, 1);
 		return 1;
@@ -333,7 +332,7 @@ int icelua_fn_common_net_send(lua_State *L)
 		if(neth == SOCKFD_NONE)
 			return 0;
 		
-		net_packet_push_lua((int)bsize, str, neth, &(to_server.send_head), &(to_server.send_tail));
+		net_packet_push_lua((int)bsize, str, neth, unreliable, &(to_server.send_head), &(to_server.send_tail));
 		lua_pushboolean(L, 1);
 		return 1;
 	}

@@ -2,6 +2,21 @@
 Notes:
 	"FATAL ERROR" means "terminate the damn connection".
 
+ENet variant:
+	Lua packets (0x40..0x7E, 0x7F) are sent on channel 0
+	WITHOUT ID or length bytes.
+
+	System packets (everything else) are sent on channel 1
+	and are ALWAYS marked with ENET_PACKET_FLAG_RELIABLE.
+	Yes, you WILL need the ID byte!
+	No, you must NOT pad the packets past their expected length.
+
+	Packets are compressed:
+	- Use enet_host_compress_with_range_coder() on your ENetHost.
+	
+	Connection data field is "1CEB" in little-endian
+	- that's 0x42454331, and that's a one not a capital 'i'.
+
 Base encapsulation:
 	0x0F baselen.u8 base[baselen] 0x00:
 		S->C Set base directory
@@ -99,6 +114,8 @@ Base encapsulation:
 Iceball Base Mod:
 	Notes:
 	- pid is from the range 1 to 250.
+	- The actual packet IDs might vary.
+	--- Check pkg/base/network.lua for the correct order.
 	
 	0x01 time.u16:
 		ping with lower 16 bits of current time in msecs
@@ -294,3 +311,4 @@ Iceball Base Mod:
 
 	0x20 x.u16 y.u16 z.u16 damage.u16 @
 		damage a block
+

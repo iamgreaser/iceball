@@ -22,13 +22,13 @@ CFLAGS = -O2 -fno-strict-aliasing -g -Wall -Wextra \
 
 LDFLAGS = -g $(LDFLAGS_EXTRA)
 LIBS_SDL = -lSDLmain -lSDL
-LIBS_ENet = winlibs/libenet.a
+LIBS_ENet = winlibs/libenet.a -lwinmm
 LIBS_Lua = -llua
 LIBS_Winsuck = -lws2_32
 # Lua is not an acronym. Get used to typing it with lower case u/a.
 LIBS_zlib = -lz
 LIBS_sackit = -lsackit
-LIBS = -Lwinlibs -lm -lmingw32 $(LIBS_Lua) $(LIBS_SDL) $(LIBS_zlib) $(LIBS_Winsuck) $(LIBS_sackit) ./glew32.dll -lopengl32 $(LIBS_ENet)
+LIBS = -Lwinlibs $(LIBS_ENet) -lm -lmingw32 $(LIBS_Lua) $(LIBS_SDL) $(LIBS_zlib) $(LIBS_Winsuck) $(LIBS_sackit) ./glew32.dll -lopengl32
 BINNAME = iceball-gl.exe
 RENDERER = gl
 
