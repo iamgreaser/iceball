@@ -750,10 +750,10 @@ int net_eat_c2s_packet(client_t *cli, client_t *other, int neth, int len, const 
 		} break;
 		default:
 			if(data[0] >= 0x40 && ((uint8_t)data[0]) <= 0x7F)
-				break;
+				return 0;
 			return 1;
 	}
-	return 0;
+	return 1;
 }
 
 void net_eat_c2s(client_t *cli)
@@ -881,12 +881,12 @@ int net_eat_s2c_packet(client_t *cli, client_t *other, int neth, int len, const 
 		} break;
 		default:
 			if(data[0] >= 0x40 && ((uint8_t)data[0]) <= 0x7F)
-				break;
+				return 0;
 			
 			return 1;
 	}
 
-	return 0;
+	return 1;
 }
 
 void net_eat_s2c(client_t *cli)
