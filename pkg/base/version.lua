@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,0,0,0,49},
-	num=49,
-	str="0.0-49",
+	cmp={0,0,0,0,50},
+	num=50,
+	str="0.0-50",
 }
 
 VERSION_BUGS = {
@@ -76,5 +76,6 @@ VERSION_BUGS = {
 {renderer="gl", intro=nil, fix=48, msg="[OpenGL] Chunk generation pattern kinda sucks"},
 {intro=nil, fix=49, msg="Kick not handled gracefully"},
 {intro=49, fix=nil, msg="Kick message isn't communicated properly"},
+{intro=nil, fix=50, msg="Network handle architecture changed. If it breaks, upgrade. If your mods break, FIX THEM."},
 }
 

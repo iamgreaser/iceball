@@ -312,7 +312,7 @@ int icelua_fn_common_net_send(lua_State *L)
 	if(str == NULL)
 		return luaL_error(L, "not a string");
 	
-	// TODO: incorporate the sockfd field
+	// TODO: incorporate the neth field
 	//net_packet_push(int len, uint8_t *data, packet_t **head, packet_t **tail);
 	if(L != lstate_server)
 	{
@@ -321,19 +321,19 @@ int icelua_fn_common_net_send(lua_State *L)
 		lua_pushboolean(L, 1);
 		return 1;
 	} else {
-		int sockfd = -1;
+		int neth = SOCKFD_NONE;
 		if(lua_isboolean(L, 1) && lua_toboolean(L, 1))
 		{
-			sockfd = -2;
+			neth = SOCKFD_LOCAL;
 		} else if(lua_isnumber(L, 1)){
-			sockfd = lua_tonumber(L, 1);
-			if(sockfd < 0)
-				sockfd = -1;
+			neth = lua_tonumber(L, 1);
+			if(neth < 0)
+				neth = SOCKFD_NONE;
 		}
-		if(sockfd == -1)
+		if(neth == SOCKFD_NONE)
 			return 0;
 		
-		net_packet_push_lua((int)bsize, str, sockfd, &(to_server.send_head), &(to_server.send_tail));
+		net_packet_push_lua((int)bsize, str, neth, &(to_server.send_head), &(to_server.send_tail));
 		lua_pushboolean(L, 1);
 		return 1;
 	}
@@ -359,12 +359,12 @@ int icelua_fn_common_net_recv(lua_State *L)
 			abort();
 		}
 		
-		if(pkt->sockfd == -1)
+		if(pkt->neth == SOCKFD_NONE)
 			lua_pushnil(L);
-		else if(pkt->sockfd < 0)
+		else if(pkt->neth == SOCKFD_LOCAL)
 			lua_pushboolean(L, 1);
 		else
-			lua_pushinteger(L, pkt->sockfd);
+			lua_pushinteger(L, pkt->neth);
 		
 		return 2;
 	} else {
@@ -405,16 +405,15 @@ int icelua_fn_server_net_kick(lua_State *L)
 	if(lua_isboolean(L, 1) && lua_toboolean(L, 1))
 	{
 		// local player kick
-		net_kick_sockfd_immediate(SOCKFD_LOCAL, msg);
+		net_kick_client_immediate(&to_client_local, msg);
 	} else if(lua_isnumber(L, 1)) {
 		// remote player kick
-		int sockfd = lua_tointeger(L, 1);
-		if(sockfd >= 0)
-			net_kick_sockfd_immediate(sockfd, msg);
-		else
-			return luaL_error(L, "invalid sockfd");
+		int neth = lua_tointeger(L, 1);
+		client_t *cli = net_neth_get_client(neth);
+		if(cli != NULL)
+			net_kick_client_immediate(cli, msg);
 	} else {
-		return luaL_error(L, "invalid sockfd");
+		return luaL_error(L, "invalid neth");
 	}
 
 	return 0;

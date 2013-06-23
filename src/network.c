@@ -117,7 +117,36 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t cnt)
 #endif
 // END SNIP
 
-int net_packet_push(int len, const char *data, int sockfd, packet_t **head, packet_t **tail)
+int net_client_get_neth(client_t *cli)
+{
+	int i;
+
+	if(cli == &to_client_local)
+		return SOCKFD_LOCAL;
+	
+	for(i = 0; i < CLIENT_MAX; i++)
+		if(cli == &to_clients[i])
+			return i*2+1;
+	
+	return SOCKFD_NONE;
+}
+
+client_t *net_neth_get_client(int neth)
+{
+	client_t *cli = NULL;
+
+	if(neth == SOCKFD_LOCAL)
+		cli = &to_client_local;
+	else if((neth & 1) && neth >= 0 && neth < CLIENT_MAX*2)
+		cli = &to_clients[neth>>1];
+	
+	if(cli == NULL || cli->sockfd == SOCKFD_NONE)
+		return NULL;
+	
+	return cli;
+}
+
+int net_packet_push(int len, const char *data, int neth, packet_t **head, packet_t **tail)
 {
 	if(len > PACKET_LEN_MAX)
 	{
@@ -142,7 +171,7 @@ int net_packet_push(int len, const char *data, int sockfd, packet_t **head, pack
 	
 	memcpy(pkt->data, data, len);
 	pkt->len = len;
-	pkt->sockfd = sockfd;
+	pkt->neth = neth;
 	if(*head == NULL)
 	{
 		pkt->p = pkt->n = NULL;
@@ -157,7 +186,7 @@ int net_packet_push(int len, const char *data, int sockfd, packet_t **head, pack
 	return 0;
 }
 
-int net_packet_push_lua(int len, const char *data, int sockfd, packet_t **head, packet_t **tail)
+int net_packet_push_lua(int len, const char *data, int neth, packet_t **head, packet_t **tail)
 {
 	if(len+4 > PACKET_LEN_MAX)
 	{
@@ -191,7 +220,7 @@ int net_packet_push_lua(int len, const char *data, int sockfd, packet_t **head, 
 	
 	memcpy(poffs + pkt->data, data, len);
 	pkt->len = len + poffs;
-	pkt->sockfd = sockfd;
+	pkt->neth = neth;
 	if(*head == NULL)
 	{
 		pkt->p = pkt->n = NULL;
@@ -255,6 +284,11 @@ void net_deinit_client(client_t *cli)
 
 void net_kick_sockfd_immediate(int sockfd, const char *msg)
 {
+	if(sockfd == SOCKFD_NONE || sockfd == SOCKFD_LOCAL)
+		return;
+	
+	client_t *cli = net_find_sockfd(sockfd);
+
 	char buf[260];
 	buf[0] = 0x17;
 	buf[1] = strlen(msg);
@@ -262,18 +296,27 @@ void net_kick_sockfd_immediate(int sockfd, const char *msg)
 	buf[2+(int)(uint8_t)buf[1]] = 0x00;
 	
 	fprintf(stderr, "KICK: %i \"%s\"\n", sockfd, msg);
+
 	// only send what's necessary
-	send(sockfd, buf, ((int)(uint8_t)buf[1])+1, 0);
+
+	// TODO: fix the server abrupt quit with error code 141 we're getting
+	// it DOESN'T show up when being debugged, but something just does exit(141);
+	// and quite frankly it's pissing me off --GM
+	/*
+	if(sockfd != SOCKFD_LOCAL)
+		send(sockfd, buf, ((int)(uint8_t)buf[1])+1, 0);
+	*/
 	
-	// call hook_disconnect
+	// call hook_disconnect if there's a valid client
+	if(cli != NULL)
 	{
 		lua_getglobal(lstate_server, "server");
 		lua_getfield(lstate_server, -1, "hook_disconnect");
 		lua_remove(lstate_server, -2);
 		if(!lua_isnil(lstate_server, -1))
 		{
-			if(sockfd >= 0)
-				lua_pushinteger(lstate_server, sockfd);
+			if(sockfd != SOCKFD_LOCAL)
+				lua_pushinteger(lstate_server, net_client_get_neth(cli));
 			else
 				lua_pushboolean(lstate_server, 1);
 			
@@ -291,12 +334,9 @@ void net_kick_sockfd_immediate(int sockfd, const char *msg)
 		}
 	}
 
-	// if sockfd is local, then send the kick message to the local client
-	if(sockfd == SOCKFD_LOCAL)
+	// if sockfd is not local, nuke the connection
+	if(sockfd >= 0)
 	{
-		net_kick_client_immediate(&to_client_local, msg);
-	} else {
-		// otherwise, nuke it
 		close(sockfd);
 	}
 }
@@ -311,6 +351,7 @@ void net_kick_client_immediate(client_t *cli, const char *msg)
 			// we might as well find out why people's comps are breaking if this ever DOES occur
 			return;
 
+		printf("calling hook_kick\n");
 		lua_getglobal(lstate_client, "client");
 		lua_getfield(lstate_client, -1, "hook_kick");
 		lua_remove(lstate_client, -2);
@@ -332,12 +373,13 @@ void net_kick_client_immediate(client_t *cli, const char *msg)
 	if(cli == NULL)
 		return;
 	
-	cli->sockfd = SOCKFD_NONE;
+	int oldsockfd = cli->sockfd;
 	if(cli != &to_client_local)
 	{
-		net_kick_sockfd_immediate(cli->sockfd, msg);
+		net_kick_sockfd_immediate(oldsockfd, msg);
 		net_deinit_client(cli);
 	}
+	cli->sockfd = SOCKFD_NONE;
 }
 
 const char *net_aux_gettype_str(int ftype)
@@ -445,8 +487,8 @@ void net_eat_c2s(client_t *cli)
 				{
 					lua_pop(lstate_server, 1);
 				} else {
-					if(pkt->sockfd >= 0)
-						lua_pushinteger(lstate_server, pkt->sockfd);
+					if(pkt->neth >= 0)
+						lua_pushinteger(lstate_server, pkt->neth);
 					else
 						lua_pushboolean(lstate_server, 1);
 					
@@ -459,7 +501,7 @@ void net_eat_c2s(client_t *cli)
 							, lua_tostring(lstate_server, -1));
 						lua_pop(lstate_server, 1);
 						
-						net_kick_sockfd_immediate(pkt->sockfd, "hook_file failed on server");
+						net_kick_client_immediate(net_neth_get_client(pkt->neth), "hook_file failed on server");
 						net_packet_free(pkt, &(cli->head), &(cli->tail));
 						break;
 					}
@@ -468,7 +510,7 @@ void net_eat_c2s(client_t *cli)
 					if(lua_isnil(lstate_server, -1))
 					{
 						char buf[] = "\x35";
-						net_packet_push(1, buf, pkt->sockfd,
+						net_packet_push(1, buf, pkt->neth,
 							&(cli->send_head), &(cli->send_tail));
 						net_packet_free(pkt, &(cli->head), &(cli->tail));
 						lua_pop(lstate_server, 1);
@@ -560,7 +602,7 @@ void net_eat_c2s(client_t *cli)
 						other->sfetch_ubuf = NULL;
 						
 						char buf[] = "\x35";
-						net_packet_push(1, buf, pkt->sockfd,
+						net_packet_push(1, buf, pkt->neth,
 							&(cli->send_head), &(cli->send_tail));
 						net_packet_free(pkt, &(cli->head), &(cli->tail));
 						break;
@@ -578,7 +620,7 @@ void net_eat_c2s(client_t *cli)
 						*(uint32_t *)&buf[1] = other->sfetch_clen;
 						*(uint32_t *)&buf[5] = other->sfetch_ulen;
 						
-						net_packet_push(9, buf, pkt->sockfd,
+						net_packet_push(9, buf, pkt->neth,
 							&(cli->send_head), &(cli->send_tail));
 					}
 					
@@ -596,7 +638,7 @@ void net_eat_c2s(client_t *cli)
 							
 							memcpy(&buf[7], &(other->sfetch_cbuf[i]), plen);
 							
-							net_packet_push(plen+7, buf, pkt->sockfd,
+							net_packet_push(plen+7, buf, pkt->neth,
 								&(cli->send_head), &(cli->send_tail));
 						}
 					}
@@ -606,7 +648,7 @@ void net_eat_c2s(client_t *cli)
 						char buf[1];
 						buf[0] = 0x32;
 						
-						net_packet_push(1, buf, pkt->sockfd,
+						net_packet_push(1, buf, pkt->neth,
 							&(cli->send_head), &(cli->send_tail));
 					}
 					
@@ -617,7 +659,7 @@ void net_eat_c2s(client_t *cli)
 				} else {
 					// abort
 					char buf[] = "\x35";
-					net_packet_push(1, buf, pkt->sockfd,
+					net_packet_push(1, buf, pkt->neth,
 						&(cli->send_head), &(cli->send_tail));
 					
 				}
@@ -844,7 +886,7 @@ void net_flush_parse_c2s(client_t *cli)
 			break;
 		
 		net_packet_push(nlen, data+offs,
-			cli->sockfd, &(to_server.head), &(to_server.tail));
+			net_client_get_neth(cli), &(to_server.head), &(to_server.tail));
 		
 		offs += nlen;
 	}
@@ -878,7 +920,7 @@ void net_flush_parse_s2c(client_t *cli)
 		//printf("nlen=%i\n",nlen);
 		
 		net_packet_push(nlen, data+offs,
-			cli->sockfd, &(cli->head), &(cli->tail));
+			net_client_get_neth(cli), &(cli->head), &(cli->tail));
 		
 		offs += nlen;
 	}
@@ -1050,7 +1092,7 @@ void net_flush_accept_one(int sockfd, struct sockaddr_storage *ss, socklen_t sle
 	lua_remove(lstate_server, -2);
 	if(!lua_isnil(lstate_server, -1))
 	{
-		lua_pushinteger(lstate_server, sockfd);
+		lua_pushinteger(lstate_server, net_client_get_neth(cli));
 		lua_newtable(lstate_server);
 		
 		switch(ss->ss_family)
@@ -1097,7 +1139,7 @@ void net_flush_accept_one(int sockfd, struct sockaddr_storage *ss, socklen_t sle
 		memcpy(buf+2, mod_basedir, (int)(uint8_t)buf[1]);
 		buf[2+(int)(uint8_t)buf[1]] = 0x00;
 		
-		net_packet_push(2+((int)(uint8_t)buf[1])+1, buf, sockfd,
+		net_packet_push(2+((int)(uint8_t)buf[1])+1, buf, net_client_get_neth(cli),
 			&(to_server.send_head), &(to_server.send_tail));
 	}
 }
@@ -1295,12 +1337,13 @@ void net_flush(void)
 			
 			//printf("pkt = %016llX\n", pkt);
 			
-			client_t *cli = net_find_sockfd(pkt->sockfd);
+			client_t *cli = net_neth_get_client(pkt->neth);
 			
 			if(cli == NULL)
 			{
-				fprintf(stderr, "EDOOFUS: given sockfd %i could not be found!\n"
-					, pkt->sockfd);
+				// this happens when a packet is dropped
+				//fprintf(stderr, "EDOOFUS: given neth %i could not be found!\n"
+				//	, pkt->neth);
 				net_packet_free(pkt, &(to_server.send_head), &(to_server.send_tail));
 				//fflush(stderr);
 				//abort();
@@ -1310,12 +1353,12 @@ void net_flush(void)
 		}
 		
 		for(i = 0; i < CLIENT_MAX; i++)
-			if(to_clients[i].sockfd != -1)
+			if(to_clients[i].sockfd != SOCKFD_NONE)
 				net_flush_snr(&to_clients[i]);
 		
 		// parse the incoming stuff
 		for(i = 0; i < CLIENT_MAX; i++)
-			if(to_clients[i].sockfd != -1)
+			if(to_clients[i].sockfd != SOCKFD_NONE)
 				net_flush_parse_c2s(&to_clients[i]);
 		
 		net_flush_parse_c2s(&to_client_local);
@@ -1453,7 +1496,7 @@ void net_disconnect(void)
 #else
 		close(to_client_local.sockfd);
 #endif
-		to_client_local.sockfd = -1;
+		to_client_local.sockfd = SOCKFD_NONE;
 	}
 	
 	for(i = 0; i < CLIENT_MAX; i++)
@@ -1464,7 +1507,7 @@ void net_disconnect(void)
 #else
 			close(to_clients[i].sockfd);
 #endif
-			to_clients[i].sockfd = -1;
+			to_clients[i].sockfd = SOCKFD_NONE;
 		}
 }
 
@@ -1493,25 +1536,25 @@ int net_bind(void)
 	if(setsockopt(server_sockfd_ipv6, SOL_SOCKET, SO_REUSEADDR, (void *)&yes, sizeof(yes)) == -1)
 	{
 		perror("net_bind(reuseaddr.6)");
-		server_sockfd_ipv6 = -1;
+		server_sockfd_ipv6 = SOCKFD_NONE;
 	}
 	yes = 1;
 	if(setsockopt(server_sockfd_ipv4, SOL_SOCKET, SO_REUSEADDR, (void *)&yes, sizeof(yes)) == -1)
 	{
 		perror("net_bind(reuseaddr.4)");
-		server_sockfd_ipv4 = -1;
+		server_sockfd_ipv4 = SOCKFD_NONE;
 	}
 	
 	yes = 1;
-	if(server_sockfd_ipv6 != -1)
+	if(server_sockfd_ipv6 != SOCKFD_NONE)
 	{
 		if(bind(server_sockfd_ipv6, (void *)&sa6, sizeof(sa6)) == -1)
 		{
 			perror("net_bind(bind.6)");
-			server_sockfd_ipv6 = -1;
+			server_sockfd_ipv6 = SOCKFD_NONE;
 		} else if(listen(server_sockfd_ipv6, 5) == -1) {
 			perror("net_bind(listen.6)");
-			server_sockfd_ipv6 = -1;
+			server_sockfd_ipv6 = SOCKFD_NONE;
 #ifdef WIN32
 		} else if(ioctlsocket(server_sockfd_ipv6,FIONBIO,(u_long *)&yes)) {
 #else
@@ -1519,20 +1562,20 @@ int net_bind(void)
 			fcntl(server_sockfd_ipv6, F_GETFL) | O_NONBLOCK)) {
 #endif
 			perror("net_bind(nonblock.6)");
-			server_sockfd_ipv6 = -1;
+			server_sockfd_ipv6 = SOCKFD_NONE;
 		}
 	}
 	
 	yes = 1;
-	if(server_sockfd_ipv4 != -1)
+	if(server_sockfd_ipv4 != SOCKFD_NONE)
 	{
 		if(bind(server_sockfd_ipv4, (void *)&sa4, sizeof(sa4)) == -1)
 		{
 			perror("net_bind(bind.4)");
-			server_sockfd_ipv4 = -1;
+			server_sockfd_ipv4 = SOCKFD_NONE;
 		} else if(listen(server_sockfd_ipv4, 5) == -1) {
 			perror("net_bind(listen.4)");
-			server_sockfd_ipv4 = -1;
+			server_sockfd_ipv4 = SOCKFD_NONE;
 #ifdef WIN32
 		} else if(ioctlsocket(server_sockfd_ipv4,FIONBIO,(u_long *)&yes)) {
 #else
@@ -1540,11 +1583,11 @@ int net_bind(void)
 			fcntl(server_sockfd_ipv4, F_GETFL) | O_NONBLOCK)) {
 #endif
 			perror("net_bind(nonblock.4)");
-			server_sockfd_ipv4 = -1;
+			server_sockfd_ipv4 = SOCKFD_NONE;
 		}
 	}
 	
-	if(server_sockfd_ipv4 == -1 && server_sockfd_ipv6 == -1)
+	if(server_sockfd_ipv4 == SOCKFD_NONE && server_sockfd_ipv6 == SOCKFD_NONE)
 		return 1;
 	
 	printf("sockfds: IPv4 = %i, IPv6 = %i\n"
@@ -1556,16 +1599,16 @@ int net_bind(void)
 
 void net_unbind(void)
 {
-	if(server_sockfd_ipv4 != -1)
+	if(server_sockfd_ipv4 != SOCKFD_NONE)
 	{
 		close(server_sockfd_ipv4);
-		server_sockfd_ipv4 = -1;
+		server_sockfd_ipv4 = SOCKFD_NONE;
 	}
 	
-	if(server_sockfd_ipv6 != -1)
+	if(server_sockfd_ipv6 != SOCKFD_NONE)
 	{
 		close(server_sockfd_ipv6);
-		server_sockfd_ipv6 = -1;
+		server_sockfd_ipv6 = SOCKFD_NONE;
 	}
 }
 

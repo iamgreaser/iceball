@@ -19,7 +19,7 @@
 #define VERSION_X 0
 #define VERSION_Y 0
 #define VERSION_A 0
-#define VERSION_Z 49
+#define VERSION_Z 50
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!
@@ -353,7 +353,7 @@ typedef struct packet packet_t;
 struct packet
 {
 	packet_t *p, *n;
-	int sockfd;
+	int neth;
 	int len;
 	char data[];
 };
@@ -389,7 +389,6 @@ typedef struct client
 	char spkt_buf[PACKET_LEN_MAX*2];
 	int spkt_ppos,spkt_len;
 } client_t;
-
 
 #define SOCKFD_NONE -1
 #define SOCKFD_LOCAL -2
@@ -503,13 +502,15 @@ int model_save_pmf(model_t *pmf, const char *fname);
 extern client_t to_server;
 extern client_t to_clients[];
 extern client_t to_client_local;
+client_t *net_neth_get_client(int neth);
 char *net_fetch_file(const char *fname, int *flen);
-int net_packet_push(int len, const char *data, int sockfd, packet_t **head, packet_t **tail);
-int net_packet_push_lua(int len, const char *data, int sockfd, packet_t **head, packet_t **tail);
+int net_packet_push(int len, const char *data, int neth, packet_t **head, packet_t **tail);
+int net_packet_push_lua(int len, const char *data, int neth, packet_t **head, packet_t **tail);
 packet_t *net_packet_pop(packet_t **head, packet_t **tail);
 void net_packet_free(packet_t *pkt, packet_t **head, packet_t **tail);
 void net_kick_sockfd_immediate(int sockfd, const char *msg);
 void net_kick_client_immediate(client_t *cli, const char *msg);
+client_t *net_find_sockfd(int sockfd);
 void net_flush(void);
 int net_connect(void);
 void net_disconnect(void);

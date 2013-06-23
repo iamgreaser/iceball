@@ -79,10 +79,10 @@ client/server.hook_tick = fn(sec_curtime, sec_delta)->sec_wait @
 	NOTE: DO NOT USE COMMON FOR THIS HOOK!
 	(only client/server is accepted)
 
-server.hook_file = fn(sockfd, ftype, fname)->object
+server.hook_file = fn(neth, ftype, fname)->object
 	sets a hook to intercept networked file requests
 	
-	"sockfd" is the socket pertaining to the file request
+	"neth" is the socket handle pertaining to the file request
 	
 	can return nil to cancel the request
 	can return true to perform the default request
@@ -119,10 +119,10 @@ client.hook_mouse_motion = fn(x, y, dx, dy) @
 	you will probably use the latter pair if the mouse is "locked"
 	as x, y are not defined the same on all platforms!
 
-server.hook_connect = fn(sockfd, addrinfo) @
+server.hook_connect = fn(neth, addrinfo) @
 	sets a hook called every time a client connects
 	
-	note, sockfd == true for "local multiplayer" mode
+	note, neth == true for "local multiplayer" mode
 	
 	"addrinfo" is a table which may or may not contain:
 	- "proto" / "addr": protocol / address used, one of the following:
@@ -136,7 +136,7 @@ server.hook_connect = fn(sockfd, addrinfo) @
 	
 	note, not all of the features are supported.
 
-server.hook_disconnect = fn(sockfd, server_force, reason) @
+server.hook_disconnect = fn(neth, server_force, reason) @
 	sets a hook called every time a client disconnects
 	
 	"server_force" is true where the server forces the disconnect
@@ -514,36 +514,35 @@ str = common.net_pack(fmt, ...) @
 	
 	returns nil for fields that could not be decoded
 
-success = common.net_send(sockfd, str) @
+success = common.net_send(neth, str) @
 	sends a packet
 	
-	"sockfd" is ignored C->S and should be nil
-	S->C local multiplayer should set "sockfd" to "true"
+	"neth" is ignored C->S and should be nil
+	S->C local multiplayer should set "neth" to "true"
 
 	COMPATIBILITY WARNING:
-	[ writing this before I actually do it --GM ]
-	before 0.0-50, sockfd pertains to an ACTUAL sockfd.
-	from 0.0-50 onwards, sockfd pertains to a CLIENT HANDLE.
+	before 0.0-50, neth pertains to an ACTUAL socket.
+	from 0.0-50 onwards, neth pertains to a CLIENT HANDLE.
 
 	this should not be of any concern to you unless you do Really Stupid Stuff.
 	having said that, DO NOT EXPECT THIS TO BE A ONE-TO-ONE MAPPING TO CLIENT INDICES.
 
-	oh, and as expected, same applies to common.net_recv and every other case you see a sockfd.
+	oh, and as expected, same applies to common.net_recv and every other case you see a neth.
 
-str, sockfd = common.net_recv() @
+str, neth = common.net_recv() @
 	receives a packet
 	
-	for C->S "sockfd" is nil
-	S->C local multiplayer will result in "sockfd" being "true"
+	for C->S "neth" is nil
+	S->C local multiplayer will result in "neth" being "true"
 	
 	returns nil, nil if nothing is there
 	returns false, nil on the client if the connection was terminated
 
-server.net_kick(sockfd, reason) @
+server.net_kick(neth, reason) @
 	kicks a client from the server
 	
-	fails silently if sockfd is invalid (but still a plausible parameter),
-	or sockfd is closed / errors out
+	fails silently if neth is invalid (but still a plausible parameter),
+	or the socket is closed / errors out
 	
 	throws a lua error for other weird errors.
 
