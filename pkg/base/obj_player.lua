@@ -816,7 +816,7 @@ function new_player(settings)
 			if this.tool == TOOL_BLOCK and this.blx1 then
 				if (not this.t_newblock) and this.blocks > 0 then
 					for dist=5,1,-1 do
-						_, blx1, bly1, blz1 = trace_map_ray_dist(this.x+0.4*sxa,this.y,this.z+0.4*cya, sya*cxa,sxa,cya*cxa, dist, false)
+						_, blx1, bly1, blz1 = trace_map_ray_dist(this.x+0.4*sya,this.y,this.z+0.4*cya, sya*cxa,sxa,cya*cxa, dist, false)
 						if blx1 >= 0 and blx1 < xlen and bly1 >= 0 and bly1 <= ylen - 3 and blz1 >= 0 and blz1 < zlen and map_is_buildable(blx1, bly1, blz1) then
 							net_send(nil, common.net_pack("BHHHBBBB",
 								PKT_BLK_ADD,
@@ -2231,7 +2231,7 @@ function new_player(settings)
 			local xlen,ylen,zlen = common.map_get_dims()
 			local err = true
 			for dist=5,1,-1 do
-				_, blx1, bly1, blz1 = trace_map_ray_dist(this.x+0.4*axs,this.y,this.z+0.4*ayc, ays*axc,axs,ayc*axc, dist, false)
+				_, blx1, bly1, blz1 = trace_map_ray_dist(this.x+0.4*ays,this.y,this.z+0.4*ayc, ays*axc,axs,ayc*axc, dist, false)
 				if blx1 >= 0 and blx1 < xlen and bly1 >= 0 and bly1 <= ylen - 3 and blz1 >= 0 and blz1 < zlen and (map_is_buildable(blx1, bly1, blz1) or MODE_BLOCK_PLACE_IN_AIR) then
 					bname, mdl_data = client.model_bone_get(mdl_cube, mdl_cube_bone)
 					
@@ -2256,7 +2256,7 @@ function new_player(settings)
 			end
 			if err and not MODE_BLOCK_NO_RED_MARKER then
 				for dist=5,0,-1 do
-					_, blx1, bly1, blz1 = trace_map_ray_dist(this.x+0.4*axs,this.y,this.z+0.4*ayc, ays*axc,axs,ayc*axc, dist, false)
+					_, blx1, bly1, blz1 = trace_map_ray_dist(this.x+0.4*ays,this.y,this.z+0.4*ayc, ays*axc,axs,ayc*axc, dist, false)
 					if blx1 >= 0 and blx1 < xlen and bly1 >= 0 and bly1 <= ylen - 3 and blz1 >= 0 and blz1 < zlen then
 						client.model_render_bone_global(mdl_Xcube, mdl_Xcube_bone,
 							blx1+0.5, bly1+0.5, blz1+0.5,
