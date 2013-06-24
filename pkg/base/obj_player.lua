@@ -418,7 +418,9 @@ function new_player(settings)
 	end
 
 	function this.set_health_damage(amt, kcol, kmsg, enemy)
+		local oldhealth = this.health
 		this.health = math.max(amt, 0)
+		local hdelta = this.health - oldhealth
 		
 		if this.health <= 0 and this.alive then
 			if server then
@@ -453,6 +455,14 @@ function new_player(settings)
 		end
 		
 		if client then
+			if hdelta < 0 then
+				local arr = wav_ouches
+				if this.health <= 0 then arr = wav_splats end
+				client.wav_play_global(arr[
+					math.floor(math.random()*#arr)+1],
+						this.x, this.y, this.z,
+						1.0, 1.0)
+			end
 			blood_particles()	
 		end
 	end

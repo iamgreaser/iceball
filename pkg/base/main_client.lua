@@ -36,7 +36,7 @@ dofile("pkg/base/version.lua")
 
 local wav_buld = skin_load("wav", "buld.wav", DIR_PKG_WAV)
 local wav_buld_frq = math.pow(0.5,3.0)
-local wav_buld_inc = math.pow(2.0,1.0/12.0)
+local wav_buld_inc = math.pow(2.0,0.5/12.0)
 
 local wav_mus = nil
 local mus_main = nil
