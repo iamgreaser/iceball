@@ -233,7 +233,6 @@ do
 				obj, csize, usize, amount = common.fetch_poll()
 				-- TODO: don't do this every time fetch_poll returns - give it a bit of a rest!
 				if PKT_KEEPALIVE then
-					print(PKT_KEEPALIVE)
 					common.net_send(nil, common.net_pack("BB", PKT_KEEPALIVE), true)
 				end
 				--print("obj:", obj, csize, usize, amount)
