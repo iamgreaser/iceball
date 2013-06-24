@@ -632,7 +632,6 @@ function new_player(settings)
 				--print("server respawn!")
 				this.t_respawn = nil
 				this.spawn()
-				print(this.angy, this.angx, this.angy*128/math.pi, this.angx*256/math.pi)
 				net_broadcast(nil, common.net_pack("BBfffbb",
 					PKT_PLR_SPAWN, this.pid,
 					this.x, this.y, this.z,
