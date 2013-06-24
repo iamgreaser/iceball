@@ -135,6 +135,7 @@ do
 	local scriptcache = {}
 	
 	local fnlist = {}
+	local last_keepalive = common.time()
 	function load_screen_fetch(ftype, fname)
 		if string.sub(fname, 1,6) == "clsave" then return client.fetch_block(ftype, fname) end
 		if widgets ~= nil then
@@ -229,7 +230,6 @@ do
 		amount = 0.0
 		if obj == true then
 			rgb = 85
-			local last_keepalive = common.time()
 			while true do
 				local ctime = common.time()
 				obj, csize, usize, amount = common.fetch_poll()
