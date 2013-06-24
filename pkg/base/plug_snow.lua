@@ -17,7 +17,7 @@
 
 PKT_SNOW_DROP = network.sys_alloc_packet()
 
-network.sys_handle_s2c(PKT_SNOW_DROP, "HHH", function (sockfd, cli, plr, sec_current, x, y, z, pkt)
+network.sys_handle_s2c(PKT_SNOW_DROP, "HHH", function (neth, cli, plr, sec_current, x, y, z, pkt)
 	map_block_set(x,y,z,2,255,255,255)
 end)
 

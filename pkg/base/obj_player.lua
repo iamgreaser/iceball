@@ -38,7 +38,7 @@ function new_player(settings)
 	this.recoil_amt = 0
 	
 	this.pid = settings.pid or error("pid must be set when creating player!")
-	this.sockfd = settings.sockfd
+	this.neth = settings.neth
 	this.alive = false
 	this.spawned = false
 	this.zooming = false
@@ -373,11 +373,13 @@ function new_player(settings)
 
 		if not server then return end
 
+		print(blocks, oblocks, this.neth)
+
 		if (blocks == 0) ~= (oblocks == 0) then
 			net_broadcast(nil, common.net_pack("BBB",
 				PKT_PLR_BLK_COUNT, this.pid, this.blocks))
 		else
-			net_send(this.sockfd, common.net_pack("BBB",
+			net_send(this.neth, common.net_pack("BBB",
 				PKT_PLR_BLK_COUNT, this.pid, this.blocks))
 		end
 	end

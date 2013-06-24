@@ -389,9 +389,9 @@ function h_tick_main(sec_current, sec_delta)
 	chat_prune(chat_text, sec_current)
 	chat_prune(chat_killfeed, sec_current)
 
-	local pkt, sockfd
+	local pkt, neth
 	while true do
-		pkt, sockfd = common.net_recv()
+		pkt, neth = common.net_recv()
 		if not pkt then break end
 
 		local cid
@@ -400,7 +400,7 @@ function h_tick_main(sec_current, sec_delta)
 		
 		local hdl = network.sys_tab_handlers[cid]
 		if hdl then
-			hdl.f(sockfd, cli, plr, sec_current, common.net_unpack(hdl.s, pkt))
+			hdl.f(neth, cli, plr, sec_current, common.net_unpack(hdl.s, pkt))
 		else
 			print(string.format("C: unhandled packet %02X", cid))
 		end
