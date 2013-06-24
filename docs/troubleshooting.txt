@@ -1,0 +1,51 @@
+First things first, if you have a Windows build, double-click on iceball.exe.
+
+Things to check if it fails:
+
+*** Is this file in the same folder as iceball.exe? ***
+If so, you extraced the .zip wrong.
+You *MUST* retain the correct directory structure.
+
+*** Have you tried running it in the command line? ***
+Open opencmd.bat, and run it from there.
+See if you get any errors.
+You don't need to worry about stdout.txt/stderr.txt with the official builds,
+however if you built it yourself, you may need to check those files.
+
+*** Does opencmd.bat not work for you? ***
+Um, you will need access to a commandline *somehow*.
+
+*** I typed in the iceball-gl -c thing and it doesn't work! ***
+Did you hit enter?
+
+If so, and you get an error,
+take a screenshot or a copy of the EXACT text in your command prompt,
+and we can extend this section.
+
+*** Does it *actually* crash? ***
+Give us a screenshot of the commandline window showing how it crashed.
+
+The best idea?
+Run it in a debugger such as GDB (available with MinGW32).
+
+If you're using GDB, run it like do this:
+	handle SIGPIPE nostop noprint pass
+	run
+and then when it crashes, type:
+	bt full
+
+Note, if you get a SIGPIPE/Broken pipe "crash",
+you didn't set up the debugger correctly.
+I *think* this might be a non-Windows issue though.
+
+In my case I tend to prepend the commandline with "gdb --args ".
+
+Someone else can elaborate here if necessary.
+
+*** How do I change my name? ***
+Did you read the built-in tutorial?
+
+*** Anything else? ***
+Join us on IRC: #iceball @ irc.quacknet.org (NOT quaKEnet!).
+This really should be on a wiki somewhere.
+

@@ -1,9 +1,12 @@
-GUYS GUYS GUYS
-FIRST THING YOU NEED TO READ:
+Forums: http://iceballga.me
+Our IRC channel is #iceball @ irc.quacknet.org (not quaKEnet, but quaCKnet).
 
-docs/READ_THIS_FIRST.txt might work (OK, it's out of date right now. Try running the tutorial.)
-If not, there's a tutorial on the forums:
-	http://iceballga.me
+If you have a Windows build, running iceball.exe should give you a tutorial
+on how to actually run this thing.
+
+If you've built this for not-Windows, running ./iceball should do the same.
+
+The tutorial files are located in pkg/iceball/halp/.
 
  ------------------------------------------------------------------------------
 

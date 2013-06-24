@@ -32,7 +32,7 @@ dofile("pkg/base/commands.lua")
 client_list = {fdlist={}}
 server_tick_accum = 0.
 
-function slot_add(sockfd, tidx, wpn, name)
+function slot_add(neth, tidx, wpn, name)
 	local i
 	for i=1,players.max do
 		if not players[i] then
@@ -53,7 +53,7 @@ function slot_add(sockfd, tidx, wpn, name)
 				team = tidx, -- 0 == blue, 1 == green
 				weapon = _wpn,
 				pid = i,
-				sockfd = sockfd
+				neth = neth
 			})
 			if permissions["default"] ~= nil then
 				players[i].add_permission_group(permissions["default"].perms)
@@ -69,8 +69,10 @@ function slot_add(sockfd, tidx, wpn, name)
 end
 
 
-function server.hook_file(sockfd, ftype, fname)
-	print("hook_file:", sockfd, ftype, fname)
+function server.hook_file(neth, ftype, fname)
+	print("hook_file:", neth, ftype, fname)
+	local cli = client_list[neth]
+	if cli then cli.lastmsg = sec_current end
 
 	if fname:lower():find("svsave") then
 		return nil
@@ -89,50 +91,51 @@ function server.hook_file(sockfd, ftype, fname)
 	return true
 end
 
-function server.hook_connect(sockfd, addrinfo)
+function server.hook_connect(neth, addrinfo)
 	-- TODO: enforce bans
-	client_list.fdlist[#(client_list.fdlist)+1] = sockfd
-	client_list[sockfd] = {
+	client_list.fdlist[#(client_list.fdlist)+1] = neth
+	client_list[neth] = {
 		fdidx = #(client_list.fdlist),
 		addrinfo = addrinfo,
+		lastmsg = nil,
 		plrid = nil
 	}
-	print("connect:", sockfd, addrinfo.proto,
+	print("connect:", neth, addrinfo.proto,
 		addrinfo.addr and addrinfo.addr.sport,
 		addrinfo.addr and addrinfo.addr.ip,
 		addrinfo.addr and addrinfo.addr.cport)
 	
-	local ss = (sockfd == true and "(local)") or sockfd
+	local ss = (neth == true and "(local)") or neth
 	--[[net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFF800000,
-		"Connected: player on sockfd "..ss))]]
-	print("Connected: player on sockfd "..ss)
+		"Connected: player on neth "..ss))]]
+	print("Connected: player on neth "..ss)
 end
 
-function server.hook_disconnect(sockfd, server_force, reason)
+function server.hook_disconnect(neth, server_force, reason)
 	-- just in case we get any stray disconnect messages
-	if not client_list[sockfd] then return end
+	if not client_list[neth] then return end
 	
-	local plrid = client_list[sockfd].plrid
+	local plrid = client_list[neth].plrid
 	local plr = players[plrid]
 	
-	local fdidx = client_list[sockfd].fdidx
+	local fdidx = client_list[neth].fdidx
 	local cli2 = client_list[client_list.fdlist[#(client_list.fdlist)]]
 	cli2.fdidx = fdidx
 	client_list.fdlist[fdidx] = client_list.fdlist[#(client_list.fdlist)]
 	client_list.fdlist[#(client_list.fdlist)] = nil
-	client_list[sockfd] = nil
-	print("disconnect:", sockfd, server_force, reason)
+	client_list[neth] = nil
+	print("disconnect:", neth, server_force, reason)
 	
-	local ss = (sockfd == true and "(local)") or sockfd
+	local ss = (neth == true and "(local)") or neth
 	--[[net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFF800000,
-		"Disconnected: player on sockfd "..ss))]]
-	print("Disconnected: player on sockfd "..ss)
+		"Disconnected: player on neth "..ss))]]
+	print("Disconnected: player on neth "..ss)
 	
 	if plr then
 		plr.intel_drop()
 		net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFF800000,
 			"* Player "..plr.name.." disconnected"))
-		net_broadcast(sockfd, common.net_pack("BB",
+		net_broadcast(neth, common.net_pack("BB",
 			PKT_PLR_RM, plrid))
 			
 		-- TODO fix crash bug
@@ -159,22 +162,40 @@ function server.hook_tick(sec_current, sec_delta)
 			lflush = sec_current
 		end
 	end
-	local pkt, sockfd
+
+	local pkt, neth, cli
+	for neth, cli in pairs(client_list) do
+		if type(neth) == type(0) or neth == true then
+			--print(neth,cli.lastmsg, sec_current)
+			if not cli.lastmsg then
+				cli.lastmsg = sec_current
+			elseif neth ~= "true" and cli.lastmsg + NET_MAX_LAG < sec_current then
+				-- don't autokick the local client - it never ACTUALLY "disconnects"
+				-- otherwise we'll be chewing through this over and over again
+				print("Autokicking client "..((neth == true and "local") or neth))
+				server.net_kick(neth, "Connection timed out")
+				-- net_disconnect should be called by this point
+			end
+		end
+	end
+
 	while true do
-		pkt, sockfd = common.net_recv()
+		pkt, neth = common.net_recv()
 		if not pkt then break end
 		
-		local cli = client_list[sockfd]
+		local cli = client_list[neth]
 		local plr = cli and players[cli.plrid]
+
+		if cli then cli.lastmsg = sec_current end
 		
 		local cid
 		cid, pkt = common.net_unpack("B", pkt)
 		
-		--print("in",sockfd,cid)
+		--print("in",neth,cid)
 		
 		local hdl = network.sys_tab_handlers[cid]
 		if hdl then
-			hdl.f(sockfd, cli, plr, sec_current, common.net_unpack(hdl.s, pkt))
+			hdl.f(neth, cli, plr, sec_current, common.net_unpack(hdl.s, pkt))
 		else
 			print(string.format("S: unhandled packet %02X", cid))
 		end

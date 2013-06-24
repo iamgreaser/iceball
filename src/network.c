@@ -159,9 +159,10 @@ int net_packet_push(int len, const char *data, int neth, packet_t **head, packet
 
 	if(cli == NULL)
 	{
-		fprintf(stderr, "PANIC: NULL client in packet pusher!\n");
-		fflush(stderr);
-		abort();
+		fprintf(stderr, "Note: NULL client in packet pusher, ignoring\n");
+		return 0;
+		//fflush(stderr);
+		//abort();
 	}
 
 	if(cli->sockfd == SOCKFD_ENET)
@@ -1467,6 +1468,7 @@ void net_flush(void)
 		net_flush_accept();
 
 		// parse ENet crap
+		if(server_host != NULL)
 		for(;;)
 		{
 			err = enet_host_service(server_host, &ev, 0);

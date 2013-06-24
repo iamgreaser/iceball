@@ -173,10 +173,10 @@ int64_t frame_prev = 0;
 int64_t frame_now = 0;
 int fps = 0;
 
-float sec_curtime = 0.0f;
-float sec_lasttime = 0.0f;
-float sec_wait = 0.0f;
-float sec_serv_wait = 0.0f;
+double sec_curtime = 0.0;
+double sec_lasttime = 0.0;
+double sec_wait = 0.0;
+double sec_serv_wait = 0.0;
 
 float ompx = -M_PI, ompy = -M_PI, ompz = -M_PI;
 
@@ -487,7 +487,7 @@ int run_game_cont1(void)
 	// update time
 	sec_lasttime = sec_curtime;
 	int64_t usec_curtime = platform_get_time_usec() - usec_basetime;
-	sec_curtime = ((float)usec_curtime)/1000000.0f;
+	sec_curtime = ((double)usec_curtime)/1000000.0;
 	
 	// update client/server
 	quitflag = quitflag || update_client_contpre1();
@@ -505,7 +505,7 @@ int run_game_cont2(void)
 	// update time
 	sec_lasttime = sec_curtime;
 	int64_t usec_curtime = platform_get_time_usec() - usec_basetime;
-	sec_curtime = ((float)usec_curtime)/1000000.0f;
+	sec_curtime = ((double)usec_curtime)/1000000.0;
 	
 	return quitflag;
 }
@@ -541,7 +541,7 @@ void run_game(void)
 		// update time
 		sec_lasttime = sec_curtime;
 		int64_t usec_curtime = platform_get_time_usec() - usec_basetime;
-		sec_curtime = ((float)usec_curtime)/1000000.0f;
+		sec_curtime = ((double)usec_curtime)/1000000.0;
 		
 		// update client/server
 #ifndef DEDI

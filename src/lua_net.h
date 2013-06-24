@@ -346,7 +346,7 @@ int icelua_fn_common_net_recv(lua_State *L)
 	{
 		if(to_server.head != NULL && (to_server.head->data[0] < 0x40 || (unsigned char)(to_server.head->data[0]) > 0x7F))
 		{
-			fprintf(stderr, "BUG EVASION: system packet hit common.net_recv. Returning nil.\n");
+			//fprintf(stderr, "BUG EVASION: system packet hit common.net_recv. Returning nil.\n");
 			return 0;
 		}
 

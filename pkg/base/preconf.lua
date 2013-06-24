@@ -31,6 +31,7 @@ end
 -- network throttling
 NET_FLUSH_C2S = 0.05
 NET_FLUSH_S2C = 0.1
+NET_MAX_LAG = 15.0
 
 -- base dir stuff
 DIR_PKG_ROOT = DIR_PKG_ROOT or "pkg/base"

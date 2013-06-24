@@ -133,7 +133,7 @@ TOOL_EXPL = 3
 
 -- sounds
 if client then
-	client.wav_cube_size(2)
+	client.wav_cube_size(1)
 	wav_rifle_shot = skin_load("wav", "rifle-shot.wav", DIR_PKG_WAV)
 	wav_rifle_reload = skin_load("wav", "rifle-reload.wav", DIR_PKG_WAV)
 	wav_whoosh = skin_load("wav", "whoosh.wav", DIR_PKG_WAV)

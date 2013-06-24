@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,0,0,0,52},
-	num=52,
-	str="0.0-52",
+	cmp={0,0,0,0,53},
+	num=53,
+	str="0.0-53",
 }
 
 VERSION_BUGS = {
@@ -79,5 +79,8 @@ VERSION_BUGS = {
 {intro=nil, fix=50, msg="Network handle architecture changed. If it breaks, upgrade. If your mods break, FIX THEM."},
 {intro=nil, fix=51, msg="ENet protocol not supported"},
 {intro=51, fix=52, msg="Server tends to crash when a TCP connection loads and there's at least one other client still connected"},
+{intro=51, fix=53, msg="Local mode (-s) broken and causes a crash"},
+{intro=nil, fix=53, msg="Timing accuracy somewhat bad (uses a float instead of a double, mostly an issue for sec_current)"},
+{intro=nil, fix=53, msg="There are some weird network stability issues"},
 }
 
