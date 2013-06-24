@@ -229,10 +229,12 @@ do
 		amount = 0.0
 		if obj == true then
 			rgb = 85
+			local last_keepalive = common.time()
 			while true do
+				local ctime = common.time()
 				obj, csize, usize, amount = common.fetch_poll()
-				-- TODO: don't do this every time fetch_poll returns - give it a bit of a rest!
-				if PKT_KEEPALIVE then
+				if PKT_KEEPALIVE and ctime ~= last_keepalive then
+					last_keepalive = ctime
 					common.net_send(nil, common.net_pack("BB", PKT_KEEPALIVE), true)
 				end
 				--print("obj:", obj, csize, usize, amount)
