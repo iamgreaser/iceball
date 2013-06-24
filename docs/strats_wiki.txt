@@ -1,0 +1,61 @@
+The strategies listed here were copied from the official Ace of Spades wiki, with some of the stupid shit removed (e.g. the links to the really shit tutorials that suggest you join a squad).
+They pertain to pre-SMG Ace of Spades on a gen map, and are theoretically applicable to Iceball, although the terrain generation tends to be different (more often than not, Green has two rivers, and the mountains start closer to the Blue side AFAIK).
+The licensing information is unknown, but it is believed to be under a CC licence of some sort which allows modification.
+
+I believe the bulk of the strategy information is by Articsledder.
+
+Sources:
+* http://aceofspadeswiki.com/index.php/Green_Team
+* http://aceofspadeswiki.com/index.php/Blue_Team
+
+Hope this helps.
+-- GreaseMonkey
+
+= Blue Team =
+Blue Team spawns on the western more mountainous side of the [[map]].  The Blue Team has been said to attract more snipers, who tend to build buildings on mountains due to fact that the Blue Team spawns on the mountain range.
+
+This means that Blue are more specialized in camping and sniping. Blue team almost never uses bridges to cross water and instead, they crawl through the water slowly. This is why bridges that are near Blue team territory are destroyed quite quickly by simply wrecking supports on both ends.
+
+Blue team also is infamous for their sniping technique which includes tunnels. This is done by digging into a mountain or small hill and creating several crawl space tunnels and having the end of each added with a small hole to shoot from. After they have been spotted from one of these holes they move to another one of their many tunnels to attempt to kill another player on the opposing team.
+
+== Blue Team strategy ==
+
+As noted above, the Blue Team tends to attract more aggressive players. This is no coincidence. Because the Blues have far less advantages in terms of defense, such as the absence of a river on their side, Blues often find themselves unable to defend the much larger territory they tend to control. Because of this, the Blues are more often than not on the offensive, trying to destroy enemy [[Buildings|fortifications]] and building small, invisible defenses in order to deter any rogue [[Green]] attackers.
+
+=== Defense ===
+
+The Blues are at a severe disadvantage when it comes to defense. The Greens have much more space to tunnel under the Blue intel without detection, while lacking defensive terrain such as rivers and islands. For this reason, Blue can take several precautions when defending:
+
+# Keep the area around the intel as level as possible and as low as possible, to stop tunnelers
+# Make sure all bunkers and trenches are well hidden with earthen colours, in order to surprise the Greens when they attack. Large structures are more easily destroyed on the Blue side due to the aforementioned tunneling disadvantage. Keeping structures small avoids this problem because a lost building is no longer a major loss
+# Make sure at least 1 Blue is defending at all times. A common mistake is to have all team members charge in all guns blazing. This is a terrible move and leads to an easy attack for the Greens. While offense is indeed a good defense, this is only true when there is at least some defense to complement it; communication is the key for this to work.
+
+=== Offense ===
+
+This is where the Blues have the upper hand. While the Greens are able to organize defense better than the Blues due to the smaller area they have to work with, the Blues are more easily able to keep said area under constant attack. Building small, invisible sniper nests in to the mountains facing the greens is a sure fire way to keep the Greens under fire. When attacking, attack en masse and have enough momentum in the attack so that the Greens can't rebuild in time. Waves of attack are not as effective because the pause in the fighting gives the Greens the opportunity to regroup and reorganize. A constant stream of less men is far more effective, especially when attacking a heavily fortified position. Again, communication is the key for Blue victory; do not let organization slip, as it is then that the Green's window of opportunity arises.
+
+
+
+= Green Team =
+The Green Team is the team with the green pants, green long-sleeve shirt, green hat and brown shoes. They are the enemies of the [[Blue Team]]. They spawn at the eastern side of the map, east of the rivers. The Green Team is usually found taking the more defensive approach by leveling mountainous terrain and building megaforts with their green colored uniforms.
+
+== Green Team strategy ==
+
+Of the 2 teams, Green is more versatile due to the lowland terrain where they are based.  From forts built near the river it is easy to see blue silhouettes against the sky when they are on top of a mountain, and your field of view is maximized at the bottom of a hill.  
+
+Your team should split up its players, those who will attack, and those who will defend.  
+
+=== Defense ===
+Defensive players should set up a main base around the intelligence.  It is important that the intelligence is off the ground, otherwise the enemy may tunnel into it.  
+
+Outside of the intel, it is a good idea to set up smaller bases, with 1 at the tent, and 1 or 2 more on your side of the river overlooking frequently traveled areas.
+Transport to these bases is important, as it can allow people to quickly heal themselves at the tent, or rush to intercept a Blue attack.  Build [[Buildings#Bridges|bridges]] 2-3 blocks wide across rivers, and if the terrain is rough or cratered, level a road for your team mates.  
+
+However, don't forget your job! Check up on the objective every once and a while, listen for tunnelers, and make sure the enemy doesn't get it!
+
+=== Offense ===
+If you are playing offense, try and secure any central mountains as fast as possible to prevent the Blue team from firing down on your team mates. 
+Once you have captured the ridge, it is a good idea to set up a forward base.  This can be a trench, a foxhole, or a small building.  Just don't get carried away, you have fighting to do!  These forward bases can offer cover for team mates as they cross the river or start climbing the mountain.  Be aware however, if Blue captures these buildings they may be difficult to re-capture.
+
+Once you have set up a Forward base, attack in groups of 2 or more into the Blue territory, or optionally go back down to the base of the mountain, and begin tunneling.  Get as close to the blue intel as you can, and try and grab it without leaving the ground.  If it is on a building, carefully try and remove the supports of the building while remaining unseen.  When the building falls, grab the intel quick, and head home!
+

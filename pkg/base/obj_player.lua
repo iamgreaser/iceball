@@ -373,8 +373,6 @@ function new_player(settings)
 
 		if not server then return end
 
-		print(blocks, oblocks, this.neth)
-
 		if (blocks == 0) ~= (oblocks == 0) then
 			net_broadcast(nil, common.net_pack("BBB",
 				PKT_PLR_BLK_COUNT, this.pid, this.blocks))
