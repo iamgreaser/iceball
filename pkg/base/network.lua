@@ -229,7 +229,7 @@ end)
 network.sys_handle_s2c(PKT_CHAT_ADD_KILLFEED, "Iz", function (neth, cli, plr, sec_current, color, msg, pkt)
 	chat_add(chat_killfeed, sec_current, msg, color)
 end)
-network.sys_handle_s2c(PKT_PLR_SPAWN, "Bfffbb", function (neth, cli, plr, sec_current, pid, x, y, z, xa, ya, pkt)
+network.sys_handle_s2c(PKT_PLR_SPAWN, "Bfffbb", function (neth, cli, plr, sec_current, pid, x, y, z, ya, xa, pkt)
 	local plr = players[pid]
 	--print("client respawn!", players.current, pid, plr)
 	if plr then

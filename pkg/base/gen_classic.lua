@@ -18,9 +18,11 @@
 do
 	local loose, user_toggles, user_settings
 	loose, user_toggles, user_settings = ...
-	local mw,mh
-	mw = user_settings["mw"] or 512
-	mh = user_settings["mh"] or 512
+	local mw,mh,mt
+	mw = user_settings["mw"] or 512 -- width
+	mh = user_settings["mh"] or 512 -- height
+	mt = user_settings["mt"] or 1.0 -- turbulence
+	mwater = user_settings["mwater"] or 0.0 -- water offset
 	local xs,zs
 	xs = math.floor(512/mw)
 	zs = math.floor(512/mh)
@@ -67,9 +69,9 @@ do
 				local c21=hmap[y2][x1]
 				local c22=hmap[y2][x2]
 				
-				hmap[y1][x+1] = (c11+c12)/2+rnd()*math.min(64,s)
-				hmap[y+1][x1] = (c11+c21)/2+rnd()*math.min(64,s)
-				hmap[y+1][x+1] = (c11+c12+c21+c22)/4+rnd()*math.min(64,s)
+				hmap[y1][x+1] = (c11+c12)/2+rnd()*math.min(64,s*mt)
+				hmap[y+1][x1] = (c11+c21)/2+rnd()*math.min(64,s*mt)
+				hmap[y+1][x+1] = (c11+c12+c21+c22)/4+rnd()*math.min(64,s*mt)
 			end
 		end
 		s = s / 2
@@ -90,7 +92,7 @@ do
 	
 	for y=1,512 do for x=1,512 do
 		hmap[y][x] = (hmap[y][x] - m1)/(m2-m1)*2.2 + hbias(x,y)
-		hmap[y][x] = math.sin(hmap[y][x]*math.pi*1.1/4)*32+64
+		hmap[y][x] = math.sin(hmap[y][x]*math.pi*1.1/4)*32+64-mwater
 	end end
 	
 	local water_lo = 97
