@@ -461,7 +461,6 @@ function vpl_gen_from_sphere(ssx, ssy, ssz, maxcount, maxdist, maxtries)
 				}
 
 				max_prob = max_prob + prob
-				break
 			end
 		end
 	end

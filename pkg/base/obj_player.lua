@@ -2400,7 +2400,7 @@ function new_player(settings)
 				if VPLPOINT then
 					x,y,z = VPLPOINT.x, VPLPOINT.y, VPLPOINT.z
 				end
-				local vpls = vpl_gen_from_sphere(x, y, z, 300, 30, 1000)
+				local vpls = vpl_gen_from_sphere(x, y, z, MODE_NADE_VPL_MAX_COUNT, MODE_NADE_VPL_MAX_RANGE, MODE_NADE_VPL_MAX_TRIES)
 				local i
 				local l = {{x = x*8, y = y*8, z = z*8, r=255, g=255, b=255, radius = 2}}
 				for i=1,#vpls do
