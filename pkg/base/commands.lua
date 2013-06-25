@@ -93,6 +93,33 @@ command_register({
 })
 
 command_register({
+	command = "kick",
+	permission = "kick",
+	usage = "/kick <player>",
+	func = function(plr, plrid, neth, prms, msg)
+		if table.getn(prms) == 1 then
+			prms[1] = tostring(prms[1])
+			if prms[1]:sub(0, 1) == "#" then
+				target = players[tonumber(prms[1]:sub(2))]
+			end
+			for i=1,players.max do
+				if players[i] ~= nil and players[i].name == prms[1] then
+					target = players[i]
+					break
+				end
+			end
+			if target then
+				server.net_kick(target.neth, "requested!")
+			else
+				net_send(neth, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_error, "Error: Player not found"))
+			end
+		else
+			commands["help"].func(plr, plrid, neth, {"piano"})
+		end
+	end
+})
+
+command_register({
 	command = "me",
 	permission = "me",
 	usage = "/me <action>",
