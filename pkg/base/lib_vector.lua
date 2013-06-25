@@ -15,6 +15,17 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
+-- Random vectors
+function vrand(amp)
+	local x = (math.random()*2.0-1.0)*amp
+	local y = (math.random()*2.0-1.0)*amp
+	math.random() -- screw with the linear congruential generator a bit because it kinda sucks
+	local z = (math.random()*2.0-1.0)*amp
+	math.random() -- screw with it once more
+	return x, y, z
+end
+
+-- Useful linear algebra primitives
 function vcross(x1,y1,z1,x2,y2,z2)
 	return    y1*z2 - z1*y2
 		, z1*x2 - x1*z2
@@ -58,6 +69,7 @@ function vrotate(theta,x,y,z,bx,by,bz)
 		x*(bz*bx*(1-ct) + st*-by) + y*(bz*by*(1-ct) + st*bx)   + z*(bz*bz*(1-ct)+ct)
 end
 
+-- Map helpers
 function trace_gap(x,y,z)
 	local xlen,ylen,zlen
 	xlen,ylen,zlen = common.map_get_dims()
@@ -115,6 +127,7 @@ function box_is_clear(x1,y1,z1,x2,y2,z2,canwrap)
 	return true
 end
 
+-- Ray tracing
 function trace_map_ray_dist(x1,y1,z1, vx,vy,vz, maxdist, nil_on_maxdist)
 	if nil_on_maxdist == nil then nil_on_maxdist = true end
 
@@ -367,6 +380,7 @@ function trace_map_box(x1,y1,z1, x2,y2,z2, bx1,by1,bz1, bx2,by2,bz2, canwrap)
 	return rx or x2, ry or y2, rz or z2
 end
 
+-- Intersections
 function isect_line_sphere_delta(dx,dy,dz,fwx,fwy,fwz)
 	local dd = dx*dx+dy*dy+dz*dz
 	local dotk = dx*fwx+dy*fwy+dz*fwz
@@ -377,5 +391,84 @@ end
 
 function isect_line_sphere(x1,y1,z1,fx,fy,fz,x2,y2,z2)
 	return isect_line_sphere_delta(x2-x1,y2-y1,z2-z1,fx,fy,fz)
+end
+
+-- Instant Radiosity methods
+function vpl_gen_from_sphere(ssx, ssy, ssz, maxcount, maxdist, maxtries)
+	local vpls = {}
+	local max_prob = 1.0
+
+	while #vpls < maxcount and maxtries > 0 do
+		maxtries = maxtries - 1
+		local vx, vy, vz
+
+		while true do
+			-- pick a random direction
+			-- TODO: try something more uniform than this crap
+			vx, vy, vz = vnorm(vrand(1.0))
+
+			-- pick a random number to find a VPL
+			local r = math.random()*max_prob
+			local px, py, pz, pd, ps, pc -- x,y,z, distance, strength, current index
+			local pvx, pvy, pvz, pns -- vx,vy,vz, new strength
+			local isgood = false
+			if r < 1.0 then
+				px, py, pz, pd, ps, pc = ssx, ssy, ssz, 0.0, 1.0, nil
+				pvx, pvy, pvz = vx, vy, vz
+				pns = 1.0
+				isgood = true
+			else
+				r = r - 1.0
+				local i
+				for i=1,#vpls do
+					local v = vpls[i]
+					if r < v.s then
+						px, py, pz, pd, ps, pc = v.x, v.y, v.z, v.d, v.s, i
+						pvx, pvy, pvz = v.vx, v.vy, v.vz
+						pns = vdot(pvx, pvy, pvz, vx, vy, vz)
+						isgood = pns > math.random()
+						break
+					end
+					r = r - v.s
+				end
+			end
+
+			-- check if it's good enough for us
+			if isgood then
+				-- trace
+				local dist, cx, cy, cz, ncx, ncy, ncz
+				dist, cx, cy, cz, ncx, ncy, ncz = trace_map_ray_dist(px, py, pz, vx, vy, vz, maxdist - pd, true)
+				if dist then
+					-- now move along
+					dist = dist - 0.01
+					px = px + vx*dist
+					py = py + vy*dist
+					pz = pz + vz*dist
+
+					-- get the normal
+					local nx, ny, nz
+					nx = cx - ncx
+					ny = cy - ncy
+					nz = cz - ncz
+					nx, ny, nz = vnorm(nx, ny, nz)
+
+					-- add a VPL
+					local prob = ps*pns
+					vpls[#vpls + 1] = {
+						x = px, y = py, z = pz,
+						vx = nx, vy = ny, vz = nz,
+						d = pd + dist, s = prob,
+						c = pc
+					}
+
+					max_prob = max_prob + prob
+					break
+				end
+			end
+		end
+	end
+
+	-- return the list of VPLs
+	return vpls
 end
 

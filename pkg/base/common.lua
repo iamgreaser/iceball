@@ -54,6 +54,7 @@ i = nil
 
 -- mode stuff
 MODE_DEBUG_SHOWBOXES = false
+MODE_DEBUG_VPLTEST = false
 MODE_CHEAT_FLY = false
 
 MODE_MAX_FOG = 127.5
@@ -85,6 +86,15 @@ MODE_NADE_ADAMP = 0.5
 MODE_NADE_BDAMP = 1.0
 MODE_NADE_RANGE = 8.0
 MODE_NADE_DAMAGE = 110.0
+
+-- WARNING: EXPERIMENTAL - set to false if your server slows down an awful lot or locks up!
+MODE_NADE_VPL_ENABLE = true
+MODE_NADE_VPL_MAX_COUNT = 300 -- O(n*m) stuff, n == number of players, m == THIS
+MODE_NADE_VPL_MAX_TRIES = 1000
+MODE_NADE_VPL_MAX_RANGE = 30.0
+MODE_NADE_VPL_MIN_RANGE = 1.0 -- Cap the damage per VPL
+MODE_NADE_VPL_DIRECT_STRENGTH = 1.0 -- Local illumination damage
+MODE_NADE_VPL_DAMAGE_1 = 2000.0
 
 MODE_TEAM_GUNS = false
 

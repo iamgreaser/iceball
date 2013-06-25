@@ -109,28 +109,80 @@ function new_nade(settings)
 		xlen,ylen,zlen = common.map_get_dims()
 		
 		local hplr = this.pid and players[this.pid]
+
+		local vpls = nil
+		if MODE_NADE_VPL_ENABLE then
+			vpls = vpl_gen_from_sphere(this.x, this.y, this.z,
+				MODE_NADE_VPL_MAX_COUNT, MODE_NADE_VPL_MAX_RANGE, MODE_NADE_VPL_MAX_TRIES)
+		end
 		
 		local i
 		for i=1,players.max do
 			local plr = players[i]
 			if plr and ((not hplr) or plr == hplr or plr.team ~= hplr.team) then
-				local dx,dy,dz
-				dx = plr.x-this.x
-				dy = (plr.y+0.9)-this.y
-				dz = plr.z-this.z
-				
-				local dd = dx*dx+dy*dy+dz*dz
-				if dd < MODE_NADE_RANGE*MODE_NADE_RANGE then
-					dd = math.sqrt(dd)
-					dx = dx/dd
-					dy = dy/dd
-					dz = dz/dd
-					local nd
-					nd = trace_map_ray_dist(this.x,this.y,this.z, dx,dy,dz, dd)
-					if not nd then
-						local dmg = (-(math.pow(dd / MODE_NADE_RANGE, 4)) + 1) * MODE_NADE_DAMAGE
-						
-						plr.explosive_damage(dmg, hplr)
+				if MODE_NADE_VPL_ENABLE then
+					local dmg_acc = 0.0
+					local j
+					vpls[#vpls+1] = {x = this.x, y = this.y, z = this.z,
+						s = MODE_NADE_VPL_DIRECT_STRENGTH, d = 0.0, special = true}
+					--print(#vpls)
+					for j=1,#vpls do
+						local v = vpls[j]
+
+						local dx,dy,dz
+						dx = plr.x-v.x
+						dy = (plr.y+0.9)-v.y
+						dz = plr.z-v.z
+
+						local dd = dx*dx+dy*dy+dz*dz
+						dd = math.sqrt(dd) + v.d
+						if dd < MODE_NADE_VPL_MAX_RANGE then
+							dx = dx/dd
+							dy = dy/dd
+							dz = dz/dd
+							local nd
+							nd = trace_map_ray_dist(this.x,this.y,this.z, dx,dy,dz, dd)
+							if not nd then
+								dd = math.max(dd, MODE_NADE_VPL_MIN_RANGE)
+								local dmg = MODE_NADE_VPL_DAMAGE_1/(dd*dd)*v.s
+								if not v.special then
+									local da = vdot(dx, dy, dz, v.vx, v.vy, v.vz)
+									--print(dmg, da)
+									da = math.max(0, da)
+									da = math.sqrt(da) -- let's amplify it a bit around the edges
+									dmg = dmg * da
+								else
+									--print("S: ", dmg, dd)
+								end
+								dmg_acc = dmg_acc + dmg
+								--print(dmg_acc)
+							end
+						end
+					end
+					print(dmg_acc)
+					dmg_acc = math.floor(dmg_acc + 0.8)
+					if dmg_acc >= 1 then
+						plr.explosive_damage(dmg_acc, hplr)
+					end
+				else
+					local dx,dy,dz
+					dx = plr.x-this.x
+					dy = (plr.y+0.9)-this.y
+					dz = plr.z-this.z
+					
+					local dd = dx*dx+dy*dy+dz*dz
+					if dd < MODE_NADE_RANGE*MODE_NADE_RANGE then
+						dd = math.sqrt(dd)
+						dx = dx/dd
+						dy = dy/dd
+						dz = dz/dd
+						local nd
+						nd = trace_map_ray_dist(this.x,this.y,this.z, dx,dy,dz, dd)
+						if not nd then
+							local dmg = (-(math.pow(dd / MODE_NADE_RANGE, 4)) + 1) * MODE_NADE_DAMAGE
+							
+							plr.explosive_damage(dmg, hplr)
+						end
 					end
 				end
 			end

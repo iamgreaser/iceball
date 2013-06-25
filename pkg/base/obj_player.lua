@@ -2217,6 +2217,13 @@ function new_player(settings)
 		end
 	end
 
+	local mdl_vpl, mdl_vpl_bone, mdl_vpl_done
+	if MODE_DEBUG_VPLTEST then
+		mdl_vpl = common.model_new(1)
+		mdl_vpl, mdl_vpl_bone = common.model_bone_new(mdl_vpl, 10)
+		mdl_vpl_done = false
+	end
+
 	function this.show_hud()
 		local fogr,fogg,fogb,fogd = client.map_fog_get()
 
@@ -2385,6 +2392,25 @@ function new_player(settings)
 			font_mini.print(4, 4, 0x80FFFFFF, cam_pos_str)
 		end
 
+		-- VPL TEST
+		if MODE_DEBUG_VPLTEST then
+			if not mdl_vpl_done then
+				local vpls = vpl_gen_from_sphere(this.x, this.y, this.z, 1000, 100, 100000)
+				local i
+				local l = {}
+				for i=1,#vpls do
+					local v = vpls[i]
+					l[#l+1] = {
+						x = v.x*8, y = v.y*8, z = v.z*8,
+						r=math.min(255, v.d*255/100), g=math.min(255, v.s*255), b=(v.c and 255) or 32,
+						radius=1,
+					}
+				end
+				common.model_bone_set(mdl_vpl, mdl_vpl_bone, "vplvpl", l)
+				mdl_vpl_done = true
+			end
+			client.model_render_bone_global(mdl_vpl, mdl_vpl_bone, 0, 0, 0, 0, 0, 0, 256.0/8.0)
+		end
 	end
 
 	return this
