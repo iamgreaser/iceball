@@ -399,10 +399,10 @@ function vpl_gen_from_sphere(ssx, ssy, ssz, maxcount, maxdist, maxtries)
 	local max_prob = 1.0
 
 	while #vpls < maxcount and maxtries > 0 do
-		maxtries = maxtries - 1
 		local vx, vy, vz
 
 		while true do
+			maxtries = maxtries - 1
 			-- pick a random direction
 			-- TODO: try something more uniform than this crap
 			vx, vy, vz = vnorm(vrand(1.0))
