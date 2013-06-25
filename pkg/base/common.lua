@@ -57,6 +57,8 @@ MODE_DEBUG_SHOWBOXES = false
 MODE_DEBUG_VPLTEST = false
 MODE_CHEAT_FLY = false
 
+MODE_PLAYERS_MAX = 64
+
 MODE_MAX_FOG = 127.5
 MODE_DEFAULT_FOG = 60
 -- v This extends the fog distance a bit for gl users, to match the softgm renderer at the screen centre.
@@ -270,7 +272,7 @@ do
 end
 
 damage_blk = {}
-players = {max = 32, current = 1}
+players = {max = MODE_PLAYERS_MAX, current = 1}
 intent = {}
 nades = {head = 1, tail = 0}
 

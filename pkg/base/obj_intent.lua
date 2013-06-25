@@ -60,7 +60,7 @@ function new_intel(settings)
 			-- see if anyone has picked us up
 			local mplr = nil
 			local mdd = 2*2
-			for i=1,32 do
+			for i=1,players.max do
 				local plr = players[i]
 				
 				if plr and plr.alive then
@@ -266,7 +266,7 @@ function new_tent(settings)
 		end
 		
 		-- see if anyone is restocking
-		for i=1,32 do
+		for i=1,players.max do
 			local plr = players[i]
 			
 			if plr then
