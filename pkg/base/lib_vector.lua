@@ -401,69 +401,67 @@ function vpl_gen_from_sphere(ssx, ssy, ssz, maxcount, maxdist, maxtries)
 	while #vpls < maxcount and maxtries > 0 do
 		local vx, vy, vz
 
-		while true do
-			maxtries = maxtries - 1
-			-- pick a random direction
-			-- TODO: try something more uniform than this crap
-			vx, vy, vz = vnorm(vrand(1.0))
+		maxtries = maxtries - 1
+		-- pick a random direction
+		-- TODO: try something more uniform than this crap
+		vx, vy, vz = vnorm(vrand(1.0))
 
-			-- pick a random number to find a VPL
-			local r = math.random()*max_prob
-			local px, py, pz, pd, ps, pc -- x,y,z, distance, strength, current index
-			local pvx, pvy, pvz, pns -- vx,vy,vz, new strength
-			local isgood = false
-			if r < 1.0 then
-				px, py, pz, pd, ps, pc = ssx, ssy, ssz, 0.0, 1.0, nil
-				pvx, pvy, pvz = vx, vy, vz
-				pns = 1.0
-				isgood = true
-			else
-				r = r - 1.0
-				local i
-				for i=1,#vpls do
-					local v = vpls[i]
-					if r < v.s then
-						px, py, pz, pd, ps, pc = v.x, v.y, v.z, v.d, v.s, i
-						pvx, pvy, pvz = v.vx, v.vy, v.vz
-						pns = vdot(pvx, pvy, pvz, vx, vy, vz)
-						isgood = pns > 0.1 --math.random()
-						break
-					end
-					r = r - v.s
-				end
-			end
-
-			-- check if it's good enough for us
-			if isgood then
-				-- trace
-				local dist, cx, cy, cz, ncx, ncy, ncz
-				dist, cx, cy, cz, ncx, ncy, ncz = trace_map_ray_dist(px, py, pz, vx, vy, vz, maxdist - pd, true)
-				if dist then
-					-- now move along
-					dist = dist - 0.01
-					px = px + vx*dist
-					py = py + vy*dist
-					pz = pz + vz*dist
-
-					-- get the normal
-					local nx, ny, nz
-					nx = cx - ncx
-					ny = cy - ncy
-					nz = cz - ncz
-					nx, ny, nz = vnorm(nx, ny, nz)
-
-					-- add a VPL
-					local prob = ps*pns
-					vpls[#vpls + 1] = {
-						x = px, y = py, z = pz,
-						vx = nx, vy = ny, vz = nz,
-						d = pd + dist, s = prob,
-						c = pc
-					}
-
-					max_prob = max_prob + prob
+		-- pick a random number to find a VPL
+		local r = math.random()*max_prob
+		local px, py, pz, pd, ps, pc -- x,y,z, distance, strength, current index
+		local pvx, pvy, pvz, pns -- vx,vy,vz, new strength
+		local isgood = false
+		if r < 1.0 then
+			px, py, pz, pd, ps, pc = ssx, ssy, ssz, 0.0, 1.0, nil
+			pvx, pvy, pvz = vx, vy, vz
+			pns = 1.0
+			isgood = true
+		else
+			r = r - 1.0
+			local i
+			for i=1,#vpls do
+				local v = vpls[i]
+				if r < v.s then
+					px, py, pz, pd, ps, pc = v.x, v.y, v.z, v.d, v.s, i
+					pvx, pvy, pvz = v.vx, v.vy, v.vz
+					pns = vdot(pvx, pvy, pvz, vx, vy, vz)
+					isgood = pns > 0.1 --math.random()
 					break
 				end
+				r = r - v.s
+			end
+		end
+
+		-- check if it's good enough for us
+		if isgood then
+			-- trace
+			local dist, cx, cy, cz, ncx, ncy, ncz
+			dist, cx, cy, cz, ncx, ncy, ncz = trace_map_ray_dist(px, py, pz, vx, vy, vz, maxdist - pd, true)
+			if dist then
+				-- now move along
+				dist = dist - 0.01
+				px = px + vx*dist
+				py = py + vy*dist
+				pz = pz + vz*dist
+
+				-- get the normal
+				local nx, ny, nz
+				nx = cx - ncx
+				ny = cy - ncy
+				nz = cz - ncz
+				nx, ny, nz = vnorm(nx, ny, nz)
+
+				-- add a VPL
+				local prob = ps*pns
+				vpls[#vpls + 1] = {
+					x = px, y = py, z = pz,
+					vx = nx, vy = ny, vz = nz,
+					d = pd + dist, s = prob,
+					c = pc
+				}
+
+				max_prob = max_prob + prob
+				break
 			end
 		end
 	end
