@@ -426,7 +426,7 @@ function vpl_gen_from_sphere(ssx, ssy, ssz, maxcount, maxdist, maxtries)
 						px, py, pz, pd, ps, pc = v.x, v.y, v.z, v.d, v.s, i
 						pvx, pvy, pvz = v.vx, v.vy, v.vz
 						pns = vdot(pvx, pvy, pvz, vx, vy, vz)
-						isgood = pns > math.random()
+						isgood = pns > 0.1 --math.random()
 						break
 					end
 					r = r - v.s

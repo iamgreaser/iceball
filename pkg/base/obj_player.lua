@@ -2218,11 +2218,7 @@ function new_player(settings)
 	end
 
 	local mdl_vpl, mdl_vpl_bone, mdl_vpl_done
-	if MODE_DEBUG_VPLTEST then
-		mdl_vpl = common.model_new(1)
-		mdl_vpl, mdl_vpl_bone = common.model_bone_new(mdl_vpl, 10)
-		mdl_vpl_done = false
-	end
+	mdl_vpl_done = false
 
 	function this.show_hud()
 		local fogr,fogg,fogb,fogd = client.map_fog_get()
@@ -2395,14 +2391,23 @@ function new_player(settings)
 		-- VPL TEST
 		if MODE_DEBUG_VPLTEST then
 			if not mdl_vpl_done then
-				local vpls = vpl_gen_from_sphere(this.x, this.y, this.z, 1000, 100, 100000)
+				if not mdl_vpl then
+					mdl_vpl = common.model_new(1)
+					mdl_vpl, mdl_vpl_bone = common.model_bone_new(mdl_vpl, 10)
+				end
+				local x,y,z
+				x,y,z = this.x, this.y, this.z
+				if VPLPOINT then
+					x,y,z = VPLPOINT.x, VPLPOINT.y, VPLPOINT.z
+				end
+				local vpls = vpl_gen_from_sphere(x, y, z, 300, 30, 1000)
 				local i
-				local l = {}
+				local l = {{x = x*8, y = y*8, z = z*8, r=255, g=255, b=255, radius = 2}}
 				for i=1,#vpls do
 					local v = vpls[i]
 					l[#l+1] = {
 						x = v.x*8, y = v.y*8, z = v.z*8,
-						r=math.min(255, v.d*255/100), g=math.min(255, v.s*255), b=(v.c and 255) or 32,
+						r=math.min(255, v.s/(1 + v.d/30)*255), g =16, b = 16,
 						radius=1,
 					}
 				end
@@ -2413,5 +2418,18 @@ function new_player(settings)
 		end
 	end
 
+	function this.vpl()
+		mdl_vpl_done = false
+	end
+
 	return this
 end
+
+function v(noreset)
+	MODE_DEBUG_VPLTEST = true
+	if not noreset then
+		VPLPOINT = nil
+	end
+	players[players.current].vpl()
+end
+

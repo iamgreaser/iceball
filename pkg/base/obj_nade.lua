@@ -231,6 +231,10 @@ function new_nade(settings)
 		if this.fuse <= 0 then
 			if client then
 				client.wav_play_global(wav_nade_boom, this.x, this.y, this.z)
+				if MODE_DEBUG_VPLTEST then
+					VPLPOINT = {x = this.x, y = this.y, z = this.z}
+					v(true)
+				end
 				local i
 				local nade_particlecount = math.random() * 10 + 20
 				local pvel = 2
