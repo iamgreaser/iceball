@@ -397,6 +397,7 @@ end
 function vpl_gen_from_sphere(ssx, ssy, ssz, maxcount, maxdist, maxtries)
 	local vpls = {}
 	local max_prob = 1.0
+	local max_rad3 = maxdist * maxdist * maxdist
 
 	while #vpls < maxcount and maxtries > 0 do
 		local vx, vy, vz
@@ -421,14 +422,16 @@ function vpl_gen_from_sphere(ssx, ssy, ssz, maxcount, maxdist, maxtries)
 			local i
 			for i=1,#vpls do
 				local v = vpls[i]
-				if r < v.s then
+				local rad = (maxdist - v.d)
+				local prob = rad*rad*rad/max_rad3
+				if r < prob then
 					px, py, pz, pd, ps, pc = v.x, v.y, v.z, v.d, v.s, i
 					pvx, pvy, pvz = v.vx, v.vy, v.vz
 					pns = vdot(pvx, pvy, pvz, vx, vy, vz)
-					isgood = pns > 0.1 --math.random()
+					isgood = pns > 0.01 --math.random()
 					break
 				end
-				r = r - v.s
+				r = r - prob
 			end
 		end
 
@@ -439,7 +442,7 @@ function vpl_gen_from_sphere(ssx, ssy, ssz, maxcount, maxdist, maxtries)
 			dist, cx, cy, cz, ncx, ncy, ncz = trace_map_ray_dist(px, py, pz, vx, vy, vz, maxdist - pd, true)
 			if dist then
 				-- now move along
-				dist = dist - 0.01
+				dist = dist - 0.04
 				px = px + vx*dist
 				py = py + vy*dist
 				pz = pz + vz*dist
@@ -452,11 +455,13 @@ function vpl_gen_from_sphere(ssx, ssy, ssz, maxcount, maxdist, maxtries)
 				nx, ny, nz = vnorm(nx, ny, nz)
 
 				-- add a VPL
-				local prob = ps*pns
+				local rad = (maxdist - pd)
+				local prob = rad*rad*rad/max_rad3
+				local ns = ps * pns
 				vpls[#vpls + 1] = {
 					x = px, y = py, z = pz,
 					vx = nx, vy = ny, vz = nz,
-					d = pd + dist, s = prob,
+					d = pd + dist, s = ns,
 					c = pc
 				}
 

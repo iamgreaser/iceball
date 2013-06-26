@@ -121,41 +121,41 @@ function new_nade(settings)
 			local plr = players[i]
 			if plr and ((not hplr) or plr == hplr or plr.team ~= hplr.team) then
 				if MODE_NADE_VPL_ENABLE then
-					local dmg_acc = 0.0
+					local dmg_acc = 0
 					local j
 					vpls[#vpls+1] = {x = this.x, y = this.y, z = this.z,
 						s = MODE_NADE_VPL_DIRECT_STRENGTH, d = 0.0, special = true}
 					--print(#vpls)
 					for j=1,#vpls do
+						-- Get the VPL.
 						local v = vpls[j]
 
+						-- Get the delta vector to the player's head.
 						local dx,dy,dz
 						dx = plr.x-v.x
-						dy = (plr.y+0.9)-v.y
+						dy = (plr.y+((plr.crouching and 0.6) or 0.9))-v.y
 						dz = plr.z-v.z
 
+						-- Get the distance.
 						local dd = dx*dx+dy*dy+dz*dz
-						dd = math.sqrt(dd) + v.d
-						if dd < MODE_NADE_VPL_MAX_RANGE then
+						dd = math.sqrt(dd)
+
+						-- Compare it against the maximum distance.
+						-- Incorporate the already-travelled distance of the VPL.
+						if dd + v.d < MODE_NADE_VPL_MAX_RANGE then
+							-- Normalise the delta vector.
 							dx = dx/dd
 							dy = dy/dd
 							dz = dz/dd
+
+							-- See if there's anything between you and the game^H^H^H^H VPL.
 							local nd
-							nd = trace_map_ray_dist(this.x,this.y,this.z, dx,dy,dz, dd)
+							nd = trace_map_ray_dist(v.x,v.y,v.z, dx,dy,dz, dd)
 							if not nd then
-								dd = math.max(dd, MODE_NADE_VPL_MIN_RANGE)
-								local dmg = MODE_NADE_VPL_DAMAGE_1/(dd*dd)*v.s
-								if not v.special then
-									local da = vdot(dx, dy, dz, v.vx, v.vy, v.vz)
-									--print(dmg, da)
-									da = math.max(0, da)
-									da = math.sqrt(da) -- let's amplify it a bit around the edges
-									dmg = dmg * da
-								else
-									--print("S: ", dmg, dd)
-								end
-								dmg_acc = dmg_acc + dmg
-								--print(dmg_acc)
+								-- Didn't hit anything. Calculate damage.
+								dd = dd + v.d
+								local dmg = MODE_NADE_VPL_DAMAGE_1*v.s/(dd*dd)
+								dmg_acc = math.max(dmg_acc, dmg)
 							end
 						end
 					end

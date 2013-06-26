@@ -2405,9 +2405,10 @@ function new_player(settings)
 				local l = {{x = x*8, y = y*8, z = z*8, r=255, g=255, b=255, radius = 2}}
 				for i=1,#vpls do
 					local v = vpls[i]
+					local rad = MODE_NADE_VPL_MAX_RANGE - v.d
 					l[#l+1] = {
 						x = v.x*8, y = v.y*8, z = v.z*8,
-						r=math.min(255, v.s/(1 + v.d/30)*255), g =16, b = 16,
+						r=math.max(1, rad*255/MODE_NADE_VPL_MAX_RANGE), g =16, b = 16,
 						radius=1,
 					}
 				end
