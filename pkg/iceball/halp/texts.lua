@@ -8,6 +8,14 @@ tutorial to here.
 
 Use your up/down arrow keys to
 scroll through the text.
+
+Please read this whole document
+carefully, as it contains
+important information, and we
+don't want to have to tell people
+the same things all over again
+which could be avoided if they
+had read this tutorial.
 $-
 
 $cFFFFFF55What is Iceball?
@@ -41,6 +49,12 @@ If this directory does not exist,
 download the source code from:
 $cFF55FF55https://
 $cFF55FF55  github.com/iamgreaser/iceball/
+
+$cFFFF5555If you are running a serious
+$cFFFF5555server, you SHOULD be getting
+$cFFFF5555your code from the github
+$cFFFF5555repository, as it contains fixes
+$cFFFF5555and whatnot.
 
 $-
 $cFFFFFF55How do I run Iceball?
@@ -80,6 +94,9 @@ $cFFFF0000COMMUNICATE
 $cFFFF0000COMMUNICATE
 This cannot be stressed enough.
 This is a team game.
+If you cannot speak the language
+of the server, find another
+server.
 
 Controls:
 $pWASD = movement
@@ -105,6 +122,9 @@ $pSpade = dig 3 high
 $pBlock = pick block colour
 $pGun = scope
 
+TIP: you move slightly faster
+with a spade in your hand.
+
 $-
 $cFFFFFF55Further documentation
 
@@ -122,6 +142,9 @@ $cFFFF5555  docs/modding_lua.txt
 This is also useful, though not
 everything is available:
 $cFF55FF55  http://lua.org/manual/5.1/
+
+Modding API core reference:
+$cFFFF5555  docs/modding_scripts.txt
 
 File format specifications:
 $cFFFF5555  docs/format_icemap.txt

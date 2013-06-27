@@ -86,12 +86,13 @@ server.hook_file = fn(neth, ftype, fname)->object
 	
 	can return nil to cancel the request
 	can return true to perform the default request
+	can return a string to load a different file instead
 	otherwise, return an object to be serialised
 	
 	currently supported values for ftype:
 	- "icemap"
 	
-	the rest must be either nil or true.
+	the rest must be either nil, true, or a string.
 
 client.hook_render = fn() @
 	sets a hook called every frame

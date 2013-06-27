@@ -15,22 +15,42 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
+if common.version.num < 4194304 then
+	error("You need Iceball version 0.1 or later to run this code.")
+end
+
 dofile("pkg/base/preconf.lua")
+dofile("pkg/base/lib_util.lua")
 
 print("pkg/base/main_server.lua starting")
 print(...)
 
-if common.version == nil then
-	error("You must have at least version 0.0-1 to run this server!"
-	.." iceballfornoobs-004 is FAR TOO OLD!"
-	.." If you are using an old git version, PLEASE UPDATE!")
+-- parse arguments
+local loose, server_toggles, server_settings = parse_commandline_options({...})
+local server_config_filename = server_settings['server'] or "svsave/pub/server.json"
+server_config = common.json_load(server_config_filename)
+-- TODO: Check that server_config ~= nil
+if server_settings.svseed then
+	math.randomseed(0+server_settings.svseed)
+elseif common.time ~= nil then
+	math.randomseed(common.time())
 end
+
+-- load mod config
+mod_conf_file = server_config.mod_config or "svsave/pub/mods.json"
+mod_data = common.json_load(mod_conf_file)
+
+-- load mod JSON files
+dofile("pkg/base/lib_mods.lua")
+load_mod_list(getfenv(), mod_data.mods, {"preload", "preload_server"}, server_config, mod_data)
 
 dofile("pkg/base/common.lua")
 dofile("pkg/base/commands.lua")
 
 client_list = {fdlist={}}
-server_tick_accum = 0.
+server_tick_accum = 0
+
+map_fname = loose[1]
 
 function slot_add(neth, tidx, wpn, name)
 	local i
@@ -68,7 +88,6 @@ function slot_add(neth, tidx, wpn, name)
 	return nil
 end
 
-
 function server.hook_file(neth, ftype, fname)
 	print("hook_file:", neth, ftype, fname)
 	local cli = client_list[neth]
@@ -80,6 +99,8 @@ function server.hook_file(neth, ftype, fname)
 	
 	if (ftype == "icemap" or ftype == "map") and (fname == "*MAP") then
 		return map_loaded
+	elseif (ftype == "json") and (fname == "*MODCFG") then
+		return mod_conf_file
 	elseif (ftype == "tga") and (fname == "*MAPIMG") then
 		if map_fname then
 			return map_fname..".tga"
@@ -236,18 +257,6 @@ function server.hook_tick(sec_current, sec_delta)
 	return 0.005
 end
 
--- parse arguments
-
-local loose, server_toggles, server_settings = parse_commandline_options({...})
-local server_config_filename = server_settings['server'] or "svsave/pub/server.json"
-server_config = common.json_load(server_config_filename)
--- TODO: Check that server_config ~= nil
-if server_settings.svseed then
-	math.randomseed(0+server_settings.svseed)
-elseif common.time ~= nil then
-	math.randomseed(common.time())
-end
-
 permissions = {}
 
 if server_config.permissions ~= nil then
@@ -333,12 +342,8 @@ if server_config.permissions ~= nil then
 end
 
 -- load map
-map_fname = loose[1]
---[[map_fname = map_fname or MAP_DEFAULT
-map_loaded = common.map_load(map_fname, "auto")
-]]
-if map_fname == "flat" then
-	map_loaded = loadfile("pkg/base/gen_flat.lua")(loose, server_toggles, server_settings)
+if server_settings.gen then
+	map_loaded = loadfile(server_settings.gen)(loose, server_toggles, server_settings)
 elseif map_fname then
 	map_loaded = common.map_load(map_fname, "auto")
 else
@@ -358,4 +363,7 @@ do
 	end
 end
 
+print("pkg/base/main_server.lua: Loading mods...")
+load_mod_list(getfenv(), mod_data.mods, {"load", "load_server"}, server_config, mod_data)
 print("pkg/base/main_server.lua loaded.")
+

@@ -3,6 +3,17 @@
 		
 		This file contains configuration for the engine itself.
 		It cannot be read by any mods.
+
+		If you have a graphics card that's reasonably fast
+		and has at least 128MB of VRAM (64MB *might* cut it),
+		set gl_vbo to true.
+		(Yes, this DOES help on an Intel 3000 HD.)
+		If your game crashes when the map starts appearing, set it to false.
+
+		If you have an OpenGL-2.0-capable card (or one with non-power-of-two support),
+		and you wish to conserve a little bit of VRAM,
+		set gl_expand_textures to false.
+		If you get white boxes, it obviously wasn't capable - set it to true.
 		
 	",
 	
@@ -15,7 +26,7 @@
 
 		"antialiasinglevel": 0,
 		"smoothlighting": true,
-		"gl_expand_textures": false,
+		"gl_expand_textures": true,
 		"gl_chunk_size": 16,
 		"gl_chunks_tesselated_per_frame": 4,
 		"gl_shaders": true,

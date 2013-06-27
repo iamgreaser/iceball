@@ -1854,22 +1854,13 @@ function new_player(settings)
 		end
 		
 		function this.typing_text.on_return(options)
-			
 			if this.typing_text.text ~= "" then
-				if string.sub(this.typing_text.text,1,1) == "~" then
-					local a,b
-					a,b = pcall(function () loadstring(string.sub(this.typing_text.text,2))() end) --nasty, but handy
-					if not a then
-						print("quickcall err:", b)
-					end
-				else
-					if this.typing_type.text == "Chat: " then
-						net_send(nil, common.net_pack("Bz", PKT_CHAT_SEND, this.typing_text.text))
-					elseif this.typing_type.text == "Team: " then
-						net_send(nil, common.net_pack("Bz", PKT_CHAT_SEND_TEAM, this.typing_text.text))
-					elseif this.typing_type.text == "Squad: " then
-						net_send(nil, common.net_pack("Bz", PKT_CHAT_SEND_SQUAD, this.typing_text.text))
-					end
+				if this.typing_type.text == "Chat: " then
+					net_send(nil, common.net_pack("Bz", PKT_CHAT_SEND, this.typing_text.text))
+				elseif this.typing_type.text == "Team: " then
+					net_send(nil, common.net_pack("Bz", PKT_CHAT_SEND_TEAM, this.typing_text.text))
+				elseif this.typing_type.text == "Squad: " then
+					net_send(nil, common.net_pack("Bz", PKT_CHAT_SEND_SQUAD, this.typing_text.text))
 				end
 			end
 			
@@ -1946,7 +1937,8 @@ function new_player(settings)
 							"#",
 							"Score",
 							"K",
-							"D"})
+							"D",
+							"?"})
 						for row=1, #v do
 							local squad = ""
 							local plr = v[row]
@@ -1972,7 +1964,9 @@ function new_player(settings)
 						for row_idx,row in pairs(strtable) do
 							if row[7] ~= nil then
 								local concat = {msg="", color=0xAAAAAAFF}
-								if row[7] == this then -- highlight the client's name
+								if row_idx == 1 then -- this is the header
+									concat.color = 0xFF888888
+								elseif row[7] == this then -- highlight the client's name
 									concat.color = 0xFFFFFFFF
 								elseif this.squad == row[7].squad and this.team == row[7].team and this.squad ~= "" and this.squad ~= nil then
 									if row[7].alive then

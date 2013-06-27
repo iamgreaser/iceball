@@ -288,3 +288,5 @@ if client then
 	client.hook_tick = snow_tick
 end
 
+print("Snow plugin loaded.")
+

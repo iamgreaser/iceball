@@ -43,7 +43,7 @@ In my case I tend to prepend the commandline with "gdb --args ".
 Someone else can elaborate here if necessary.
 
 *** How do I change my name? ***
-Did you read the built-in tutorial?
+Did you read the built-in tutorial? It mentioned a file. What was it called?
 
 *** Anything else? ***
 Join us on IRC: #iceball @ irc.quacknet.org (NOT quaKEnet!).

@@ -1,1 +1,4 @@
-iceball -c localhost 1337
+@echo off
+iceball-gl -c localhost 20737
+pause
+

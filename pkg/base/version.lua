@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,0,0,0,53},
-	num=53,
-	str="0.0-53",
+	cmp={0,1,0,0,0},
+	num=4194304,
+	str="0.1",
 }
 
 VERSION_BUGS = {
@@ -82,5 +82,8 @@ VERSION_BUGS = {
 {intro=51, fix=53, msg="Local mode (-s) broken and causes a crash"},
 {intro=nil, fix=53, msg="Timing accuracy somewhat bad (uses a float instead of a double, mostly an issue for sec_current)"},
 {intro=nil, fix=53, msg="There are some weird network stability issues"},
+{intro=nil, fix=4194304+0, msg="Binary files don't have a type name"},
+{intro=nil, fix=4194304+0, msg="JSON files cannot be remotely sent to clients"},
+{intro=nil, fix=nil, msg="Occasional crash in sackit_module_free on common.mus_free - this is probably a sackit bug."},
 }
 

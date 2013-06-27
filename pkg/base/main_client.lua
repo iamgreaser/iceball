@@ -15,6 +15,10 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
+if common.version.num < 4194304 then
+	error("You need Iceball version 0.1 or later to connect to this server.")
+end
+
 function client.hook_kick(reason)
 	print("Kicked - "..reason)
 	function client.hook_tick()
@@ -26,6 +30,11 @@ function client.hook_kick(reason)
 end
 
 dofile("pkg/base/preconf.lua")
+
+-- load mod JSON files
+mod_data = common.json_load("*MODCFG")
+dofile("pkg/base/lib_mods.lua")
+load_mod_list(getfenv(), mod_data.mods, {"preload", "preload_client"}, client_config, mod_data)
 
 -- if you don't want music, set FILE_MUSIC to "true".
 FILE_MUSIC = FILE_MUSIC or "music.it"
@@ -110,14 +119,6 @@ else
 This is an older version than this mod expects.
 You should have at least ]]..VERSION_ENGINE.str..[[.
 ]]..bug_str..[[]]
-end
-
--- BACKWARD COMPAT HACKS
-client.camera_point_sky = client.camera_point_sky or function(dx,dy,dz,zoom,sx,sy,sz)
-	return client.camera_point(dx,dy,dz,zoom,0.0)
-end
-common.camera_point_sky = common.camera_point_sky or function(dx,dy,dz,zoom,sx,sy,sz)
-	return common.camera_point(dx,dy,dz,zoom,0.0)
 end
 
 -- please excuse this hack.
@@ -311,6 +312,5 @@ function client.hook_tick()
 	return 0.005
 end
 
---dofile("pkg/base/client_start.lua")
 print("pkg/base/main_client.lua loaded.")
 

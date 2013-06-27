@@ -1,40 +1,29 @@
-DEVELOPERS DEVELOPERS DEVELOPERS DEVELOPERS.
+This was out of date. I'm going to try and collate all the names.
+If your name is missing, please prod us (even if we don't use your contribution anymore)
+and we'll chuck it in.
 
-GreaseMonkey [Lead Developer]:
-	Everything other people didn't.
+Lead Developer + the guy who started the project out of frustration:
+	GreaseMonkey
 
+And the rest in alphabetical order, without whom this project would not have been possible to run without a degree and a supercomputer:
+	10se1ucgo
+	Articsledder
+	BR
+	Bully
+	Dany0
+	learn_more
+	melchips
+	rakiru
+	Sonarpulse
+	topo
+	Triplefox
+	ulyssecarion
+	UnrealIncident
 
+Special thanks to:
+	BR, for your countless contributions to the code and whatnot.
+	melchips, for your seriously awesome work on the OpenGL renderer.
+	rakiru, for hosting the server from day 42 (as well as some other cool things too).
+	Triplefox, for your GUI system I *still* have yet to learn how to use,
+		and the many other contributions you did earlier on.
 
-And the rest in alphabetical order:
-
-Arctic77:
-	Rifle model added January 2013
-
-BR:
-	Player name list
-	Team switching
-	"Are you sure?" on quit
-	Improved key binding system
-
-Dany0:
-	Czech translation
-
-Ericson2314:
-	Rearranged the build tree
-	Added an SSE-optimised matrix-vector multiply
-
-rakiru:
-	Scroll wheel to switch tools
-	Lent his VPS to host an Iceball server
-
-topo:
-	FPS counter
-	Basic key binding system
-
-Triplefox:
-	Widget system (in progress)
-	Miscellaneous utility functions
-	Kindly let me use his map, mesa.vxl
-
-UnrealIncident:
-	Debug info (which is the reason I use string.format at all)

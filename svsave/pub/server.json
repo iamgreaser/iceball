@@ -1,13 +1,14 @@
 {
 	"name": "Iceball Server",
 	"motd": "Welcome to Iceball",
+	"mod_config": "svsave/pub/mods.json",
 	"permissions": {
 		"default" : {
 			"permissions" : [
 				"me",
 				"kill",
 				"squad",
-                "logout"
+				"logout"
 			]
 		},
 		"griefer" : {

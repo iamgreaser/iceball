@@ -516,13 +516,6 @@ function h_tick_init(sec_current, sec_delta)
 	intent[#intent+1] = new_intel({team = 1, iid = #intent+1})
 	intent[#intent+1] = new_tent({team = 1, iid = #intent+1})
 	
-	--[[
-	chat_add(chat_text, sec_current, "Just testing the chat...", 0xFFFFFFFF)
-	chat_add(chat_text, sec_current, "BLUE MASTER RACE", 0xFF0000FF)
-	chat_add(chat_text, sec_current, "GREEN MASTER RACE", 0xFF00C000)
-	chat_add(chat_text, sec_current, "SALLY MASTER RACE", 0xFFAA00FF)
-	chat_add(chat_text, sec_current, "YOU ALL SUCK", 0xFFC00000)
-	]]
 	chat_add(chat_text, sec_current, "Welcome to Iceball!", 0xFFFF00AA)
 	chat_add(chat_killfeed, sec_current, "If it's broken, fix it yourself.", 0xFFFF00AA)
 	
@@ -879,7 +872,7 @@ function client.hook_kick(reason)
 	client.hook_render = new_render
 end
 
+print("pkg/base/client_start.lua: Loading mods...")
+load_mod_list(getfenv(), nil, {"load", "load_client"}, client_config)
 print("pkg/base/client_start.lua loaded.")
 
---dofile("pkg/base/plug_snow.lua")
---dofile("pkg/base/plug_pmfedit.lua")

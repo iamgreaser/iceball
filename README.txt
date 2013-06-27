@@ -8,6 +8,9 @@ If you've built this for not-Windows, running ./iceball should do the same.
 
 The tutorial files are located in pkg/iceball/halp/.
 
+If you can't run the tutorial, or you can't read the text on it,
+read docs/troubleshooting.txt.
+
  ------------------------------------------------------------------------------
 
 LICENSING NOTES:
@@ -27,7 +30,10 @@ It is marked accordingly.
 
 The manual is in the public domain, except where otherwise specified.
 
-REQUIREMENTS:
+MINIMUM SYSTEM REQUIREMENTS:
+A computer.
+
+BUILDING REQUIREMENTS:
 - a C compiler that isn't crap (read: not MSVC++)
   - specifically, GCC
   - MinGW is a port of GCC for Windows: http://mingw.org/
@@ -38,15 +44,12 @@ REQUIREMENTS:
 - zlib - http://zlib.net/
 - sackit - https://github.com/iamgreaser/sackit/
   - you should copy libsackit.a and sackit.h to xlibinc.
-- enet 1.3 - http://enet.bespin.org/
+- ENet 1.3 - http://enet.bespin.org/
 - GNU make
   - if someone has BSD make, please tell us :)
 
-STUFF TO DO BEFORE 0.1 CAN BE RELEASED:
-- DOCS!!! (ones which aren't crap)
-- make net_pack more solid
-- JSON writer
-- make kicking not suck
+On Windows, read Makefile.mingw for some instructions.
+On other OSes, some files for sackit and ENet need to be in xlibinc.
 
 MSVC readme (wip):
 - create a folder 'winlibs' in the iceball dir

@@ -498,6 +498,8 @@ const char *net_aux_gettype_str(int ftype)
 			return "it";
 		case UD_JSON:
 			return "json";
+		case UD_BIN:
+			return "bin";
 	}
 	
 	return NULL;
@@ -816,7 +818,7 @@ int net_eat_s2c_packet(client_t *cli, client_t *other, int neth, int len, const 
 			//printf("clen=%i ulen=%i\n", clen, ulen);
 			cli->cfetch_clen = clen;
 			cli->cfetch_ulen = ulen;
-			cli->cfetch_cbuf = (char*)malloc(clen);
+			cli->cfetch_cbuf = (char*)malloc(clen+1);
 			cli->cfetch_ubuf = NULL;
 			cli->cfetch_cpos = 0;
 			// TODO: check if NULL
@@ -827,7 +829,7 @@ int net_eat_s2c_packet(client_t *cli, client_t *other, int neth, int len, const 
 			// 0x32:
 			// file transfer end
 			//printf("transfer END\n");
-			cli->cfetch_ubuf = (char*)malloc(cli->cfetch_ulen);
+			cli->cfetch_ubuf = (char*)malloc(cli->cfetch_ulen+1);
 			// TODO: check if NULL
 			
 			uLongf dlen = cli->cfetch_ulen;

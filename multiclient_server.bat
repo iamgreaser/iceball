@@ -1,1 +1,4 @@
-iceball.exe -s 1337 pkg/base
+@echo off
+iceball-gl.exe -d 20737 pkg/base
+pause
+

@@ -1,0 +1,38 @@
+Each mod must be in its own directory in the form of:
+	pkg/author/mod/
+
+You can nest further so you can, for example, do:
+	pkg/author/mod/submod/subsubmod/thisisgettingridiculous/
+
+To load mods, set up a file named svsave/pub/mods.json with a "mods" list, e.g.
+{
+	"mods" : [
+		"pkg/iceball/hack_console/",
+		"pkg/iceball/snowtest/"
+	]
+}
+
+hack_console is very useful but also opens a huge gaping hole in the game that allows people to run really, really weird hacks. Don't use it on a really public server.
+snowtest makes the map snow. It is not a good example of how you should code your mods - it's the oldest mod in Iceball's existance and predates iceballfornoobs-004... and the ability for the player to place blocks, for that matter.
+
+Each mod has a mod.json file in its root, of the form (all fields are optional):
+{
+	"depends": ["pkg/author/some_mod_you_depend_on", "pkg/other_author/another_mod"],
+	"preload": ["pre.lua"],
+	"preload_client": ["pre_client.lua"],
+	"preload_server": ["pre_server.lua"],
+	"load": ["load.lua"],
+	"load_client": ["load_client.lua"],
+	"load_server": ["load_server.lua"],
+}
+
+"depends" will autoload required mods if necessary.
+
+"preload" executes code just after pkg/base/preconf.lua is loaded.
+"load" executes code at the very end of main_server.lua / client_start.lua.
+The client/server-specific versions execute after their generic counterparts.
+
+Currently there is no documentation on the engine itself as it may change at any time. Beware!
+Have a nosey through the code to see what you can override.
+pkg/iceball/hack_console/ shows you how to do a rather complex override in a *cough* "class" *cough*.
+

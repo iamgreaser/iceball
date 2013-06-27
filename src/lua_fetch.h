@@ -196,6 +196,11 @@ int icelua_fn_common_fetch_poll(lua_State *L)
 		switch(to_client_local.cfetch_udtype)
 		{
 			case UD_JSON:
+				to_client_local.cfetch_ubuf[to_client_local.cfetch_ulen] = 0;
+				ret = (json_parse(L, to_client_local.cfetch_ubuf)
+						? 0
+						: 1);
+				break;
 			case UD_LUA:
 				ret = (luaL_loadbuffer (L,
 					to_client_local.cfetch_ubuf,
