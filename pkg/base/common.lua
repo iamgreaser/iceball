@@ -17,7 +17,6 @@
 
 print("base dir:",common.base_dir)
 
-dofile("pkg/base/preconf.lua")
 dofile("pkg/base/version.lua")
 dofile("pkg/base/network.lua")
 
