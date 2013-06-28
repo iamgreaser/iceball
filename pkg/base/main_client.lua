@@ -307,7 +307,8 @@ function client.hook_tick()
 	end
 	if mus_main then
 		client.mus_stop()
-		client.mus_free(mus_main)
+		-- disabled until we fix that race condition that causes a crash
+		--client.mus_free(mus_main)
 	end
 	return 0.005
 end
