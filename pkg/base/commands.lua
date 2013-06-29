@@ -120,6 +120,36 @@ command_register({
 })
 
 command_register({
+	command = "resetscore",
+	permission = "kick", -- TODO: give own permission for this
+	usage = "/resetscore",
+	func = function(plr, plrid, neth, prms, msg)
+		local i
+		for i=1,players.max do
+			if players[i] then
+				players[i].score = 0
+				players[i].kills = 0
+				players[i].deaths = 0
+				players[i].update_score()
+			end
+		end
+	end
+})
+
+command_register({
+	command = "me",
+	permission = "me",
+	usage = "/me <action>",
+	func = function(plr, plrid, neth, prms, msg)
+		if table.getn(prms) > 0 then
+			net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFFFFFFFF, "* "..plr.name.." "..string.sub(msg,5)))
+		else
+			commands["help"].func(plr, plrid, neth, {"me"})
+		end 
+	end
+})
+
+command_register({
 	command = "resetgame",
 	permission = "kick", -- TODO: give own permission for this
 	usage = "/resetgame",
