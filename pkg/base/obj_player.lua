@@ -1236,6 +1236,13 @@ function new_player(settings)
 			local offs = dt-dc - df
 			client.camera_move_global(sya*offs, 0, cya*offs)
 		end
+
+		-- BUG WORKAROUND: adjust wav_cube_size dependent on zoom
+		if client.renderer == "gl" then
+			client.wav_cube_size(1.0*this.zoom)
+		else
+			client.wav_cube_size(1.0/this.zoom)
+		end
 	end
 
 	function this.render(sec_current, sec_delta)
