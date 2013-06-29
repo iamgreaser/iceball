@@ -15,6 +15,34 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
+function reset_game_ctf()
+	local i
+	for i=1,players.max do
+		if players[i] ~= nil then
+			players[i].spawn()
+			net_broadcast(nil, common.net_pack("BBfffBB",
+				PKT_PLR_SPAWN, i,
+				players[i].x, players[i].y, players[i].z,
+				players[i].angy*128/math.pi, players[i].angx*256/math.pi))
+		end
+	end
+	for i=1,#intent do
+		intent[i].spawn()
+		local x,y,z
+		x,y,z = intent[i].get_pos()
+		intent[i].player = nil
+		net_broadcast(nil, common.net_pack("BHhhhB", PKT_ITEM_POS,
+			i, x,y,z, intent[i].get_flags() ))
+		net_broadcast(nil, common.net_pack("BHB", PKT_ITEM_CARRIER, i, 0))
+	end
+	for i=0,teams.max do
+		if teams[i] ~= nil then
+			teams[i].score = 0
+			net_broadcast(nil, common.net_pack("Bbh", PKT_TEAM_SCORE, i, teams[i].score))
+		end
+	end
+end
+
 if client then
 	mdl_tent, mdl_tent_bone = skin_load("pmf", "tent.pmf", DIR_PKG_PMF), 0
 	mdl_intel, mdl_intel_bone = skin_load("pmf", "intel.pmf", DIR_PKG_PMF), 0
@@ -106,6 +134,8 @@ function new_intel(settings)
 	end
 	
 	function this.intel_drop()
+		if not this.player then return end
+
 		this.visible = true
 		this.x = math.floor(this.player.x+0.5)+0.5
 		this.y = math.floor(this.player.y+0.5)
@@ -126,22 +156,7 @@ function new_intel(settings)
 		teams[this.player.team].score = teams[this.player.team].score + 1
 		net_broadcast(nil, common.net_pack("Bbh", PKT_TEAM_SCORE, this.player.team, teams[this.player.team].score))
 		if teams[this.player.team].score >= TEAM_INTEL_LIMIT then
-			local i
-			for i=1,players.max do
-				if players[i] ~= nil then
-					players[i].spawn()
-					net_broadcast(nil, common.net_pack("BBfffBB",
-						PKT_PLR_SPAWN, i,
-						players[i].x, players[i].y, players[i].z,
-						players[i].angy*128/math.pi, players[i].angx*256/math.pi))
-				end
-			end
-			for i=0,teams.max do
-				if teams[i] ~= nil then
-					teams[i].score = 0
-					net_broadcast(nil, common.net_pack("Bbh", PKT_TEAM_SCORE, i, teams[i].score))
-				end
-			end
+			reset_game_ctf()
 		else
 			local i
 			for i=1,players.max do

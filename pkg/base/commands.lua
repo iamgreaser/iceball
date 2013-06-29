@@ -120,15 +120,11 @@ command_register({
 })
 
 command_register({
-	command = "me",
-	permission = "me",
-	usage = "/me <action>",
+	command = "resetgame",
+	permission = "kick", -- TODO: give own permission for this
+	usage = "/resetgame",
 	func = function(plr, plrid, neth, prms, msg)
-		if table.getn(prms) > 0 then
-			net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFFFFFFFF, "* "..plr.name.." "..string.sub(msg,5)))
-		else
-			commands["help"].func(plr, plrid, neth, {"me"})
-		end
+		reset_game_ctf()
 	end
 })
 
