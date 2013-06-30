@@ -155,17 +155,7 @@ function new_intel(settings)
 	function this.intel_capture(sec_current)
 		teams[this.player.team].score = teams[this.player.team].score + 1
 		net_broadcast(nil, common.net_pack("Bbh", PKT_TEAM_SCORE, this.player.team, teams[this.player.team].score))
-		if teams[this.player.team].score >= TEAM_INTEL_LIMIT then
-			reset_game_ctf()
-		else
-			local i
-			for i=1,players.max do
-				local plr = players[i]
-				if plr and plr.team == this.player.team then
-					plr.t_rcirc = sec_current + MODE_RCIRC_LINGER
-				end
-			end
-		end
+
 		local plr = this.player
 		this.player = nil
 		this.spawn()
@@ -179,6 +169,18 @@ function new_intel(settings)
 			if plr then
 				plr.score = plr.score + SCORE_INTEL
 				plr.update_score()
+			end
+		end
+
+		if teams[this.player.team].score >= TEAM_INTEL_LIMIT then
+			reset_game_ctf()
+		else
+			local i
+			for i=1,players.max do
+				local plr = players[i]
+				if plr and plr.team == this.player.team then
+					plr.t_rcirc = sec_current + MODE_RCIRC_LINGER
+				end
 			end
 		end
 	end
