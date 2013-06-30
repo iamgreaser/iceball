@@ -176,8 +176,10 @@ function new_intel(settings)
 			net_broadcast(nil, common.net_pack("BHhhhB",
 				PKT_ITEM_POS, this.iid, x,y,z, f))
 			net_broadcast(nil, common.net_pack("BHB", PKT_ITEM_CARRIER, this.iid, 0))
-			plr.score = plr.score + SCORE_INTEL
-			plr.update_score()
+			if plr then
+				plr.score = plr.score + SCORE_INTEL
+				plr.update_score()
+			end
 		end
 	end
 	

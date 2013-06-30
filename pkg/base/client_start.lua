@@ -409,7 +409,7 @@ function h_tick_main(sec_current, sec_delta)
 	bhealth_prune(sec_current)
 
 	local tickrate = 1/60.
-	local lowest_fps = 15
+	local lowest_fps = 7.5 -- some people have REALLY shit GPUs. might as well lower this requirement.
 	local max_ticksize = 1/lowest_fps
 	
 	if sec_delta > max_ticksize then sec_delta = max_ticksize end
