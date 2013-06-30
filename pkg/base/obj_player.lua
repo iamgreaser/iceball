@@ -209,8 +209,6 @@ function new_player(settings)
 		
 		this.tool = 2
 		this.tool_last = 0
-		
-		this.has_intel = nil
 	end
 
 	local function prv_spawn_cont1()
@@ -254,6 +252,14 @@ function new_player(settings)
 		this.spawn()
 	else
 		this.prespawn()
+	end
+
+	function this.item_add(item)
+		-- override me!
+	end
+
+	function this.item_remove(item)
+		-- override me!
 	end
 
 	function this.tool_switch(tool)
@@ -417,14 +423,18 @@ function new_player(settings)
 		end
 	end
 
+	function this.on_death(kcol, kmsg)
+		-- override me!
+	end
+
 	function this.set_health_damage(amt, kcol, kmsg, enemy)
 		local oldhealth = this.health
 		this.health = math.max(amt, 0)
 		local hdelta = this.health - oldhealth
 		
 		if this.health <= 0 and this.alive then
+			this.on_death()
 			if server then
-				this.intel_drop()
 				this.deaths = this.deaths + 1
 				if enemy == nil then
 					-- do nothing --
@@ -564,60 +574,6 @@ function new_player(settings)
 		this.damage(amt, c, kmsg, enemy)
 	end
 
-	function this.intel_pickup(intel)
-		if not this.has_permission("intel") then return false end
-
-		if this.mode ~= PLM_NORMAL or this.has_intel or intel.team == this.team then
-			return false
-		end
-		
-		if server then
-			local x,y,z,f
-			x,y,z = intel.get_pos()
-			intel.visible = false
-			f = intel.get_flags()
-			net_broadcast(nil, common.net_pack("BHhhhB", PKT_ITEM_POS, intel.iid, x,y,z,f))
-			net_broadcast(nil, common.net_pack("BHB", PKT_ITEM_CARRIER, intel.iid, this.pid))
-			local s = "* "..this.name.." has picked up the "..teams[intel.team].name.." intel."
-			net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFF800000, s))
-			this.has_intel = intel
-		end
-
-		return true
-	end
-
-	function this.intel_drop()
-		if server then
-			local intel = this.has_intel
-			--print("dropped", intel)
-			if not intel then
-				return
-			end
-			
-			intel.intel_drop()
-			this.has_intel = nil
-			
-			local s = "* "..this.name.." has dropped the "..teams[intel.team].name.." intel."
-			net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFF800000, s))
-		end
-	end
-
-	function this.intel_capture(sec_current)
-		if server then
-			local intel = this.has_intel
-			if not intel then
-				return
-			end
-			
-			intel.intel_capture(sec_current)
-			this.has_intel = nil
-			
-			local s = "* "..this.name.." has captured the "..teams[intel.team].name.." intel."
-			net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFF800000, s))
-			net_broadcast_team(this.team, common.net_pack("B", PKT_MAP_RCIRC))
-		end
-	end
-	
 	function this.tick_listeners(sec_current, sec_delta)
 		if this.scene then
 			this.scene.pump_listeners(sec_delta, input_events)
@@ -1361,10 +1317,6 @@ function new_player(settings)
 		client.model_render_bone_global(this.mdl_player, mdl_player_body,
 			this.x, this.y+this.jerkoffs+0.8, this.z,
 			0.0, 0.0, this.angy-math.pi, 1.5)
-
-		if this.has_intel then
-			this.has_intel.render_backpack()
-		end
 	end
 	
 	--[[create static widgets for hud.
@@ -1372,6 +1324,7 @@ function new_player(settings)
 	]]
 	function this.create_hud()
 		local scene = gui_create_scene(client.screen_get_dims())
+		this.scene = scene
 		local root = scene.root
 		local w = root.width
 		local h = root.height
@@ -1426,12 +1379,9 @@ function new_player(settings)
 			function() return ""..this.expl.ammo end
 		}
 		local bounce = 0. -- picked tool bounce
-		
-		local bone_intel = scene.bone{model=mdl_intel, bone=mdl_intel_bone,
-			x=w*0.1,y=h*0.5,scale=0.18,visible=false}
-		scene.root.add_child(bone_intel)
-		
+
 		local function bone_rotate(dT)
+			local k, bone
 			for k,bone in pairs(this.tools_align.children) do
 				bone.rot_y = bone.rot_y + dT * 120 * 0.01
 				bone.y = tool_y[k]
@@ -1442,14 +1392,7 @@ function new_player(settings)
 				end
 				bone.y = bone.y * h/2
 			end
-			for k,bone in pairs({bone_intel}) do
-				bone.rot_y = bone.rot_y + dT * 120 * 0.01
-			end
 			bounce = bounce + dT * 4
-			bone_intel.visible = (this.has_intel ~= nil)
-			if this.has_intel then
-				bone_intel.model = this.has_intel.mdl_intel
-			end
 		end
 		this.tools_align.add_listener(GE_DELTA_TIME, bone_rotate)
 		
@@ -1562,8 +1505,8 @@ function new_player(settings)
 					end
 				end
 				
-				for j=1,#intent do
-					local obj = intent[j]
+				for j=1,#miscents do
+					local obj = miscents[j]
 	
 					if obj.visible then
 						local x,y
@@ -2377,8 +2320,8 @@ function new_player(settings)
 			end
 		end
 
-		for i=1,#intent do
-			local obj = intent[i]
+		for i=1,#miscents do
+			local obj = miscents[i]
 			if obj.visible then
 				obj.render()
 			end

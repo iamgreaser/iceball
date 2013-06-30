@@ -36,9 +36,9 @@ LIB_LIST = LIB_LIST or {
 	DIR_PKG_LIB.."/lib_vector.lua",
 	
 	DIR_PKG_LIB.."/obj_player.lua",
-	DIR_PKG_LIB.."/obj_intent.lua",
 	DIR_PKG_LIB.."/obj_nade.lua",
 	DIR_PKG_LIB.."/obj_particle.lua",
+	GAME_MODE,
 }
 
 -- load libs
@@ -271,7 +271,7 @@ end
 
 damage_blk = {}
 players = {max = MODE_PLAYERS_MAX, current = 1}
-intent = {}
+miscents = {}
 nades = {head = 1, tail = 0}
 
 function player_ranking(x, y)
@@ -405,3 +405,4 @@ function bhealth_prune(time)
 	
 	bhealth.time = time
 end
+

@@ -154,7 +154,7 @@ command_register({
 	permission = "resetgame",
 	usage = "/resetgame",
 	func = function(plr, plrid, neth, prms, msg)
-		reset_game_ctf()
+		mode_reset()
 	end
 })
 
@@ -303,9 +303,9 @@ command_register({
 	func = function(plr, plrid, neth, prms, msg)
 		if table.getn(prms) == 0 then
 			local i
-			for i=1,#intent do
-				if intent[i] ~= nil then
-					net_send(neth, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_text, teams[intent[i].team].name..": "..intent[i].x..", "..intent[i].y..", "..intent[i].z))
+			for i=1,#miscents do
+				if miscents[i] ~= nil then
+					net_send(neth, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_text, teams[miscents[i].team].name..": "..miscents[i].x..", "..miscents[i].y..", "..miscents[i].z))
 				end
 			end
 		else

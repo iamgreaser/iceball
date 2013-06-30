@@ -15,41 +15,14 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
-function reset_game_ctf()
-	local i
-	for i=1,players.max do
-		if players[i] ~= nil then
-			players[i].spawn()
-			net_broadcast(nil, common.net_pack("BBfffBB",
-				PKT_PLR_SPAWN, i,
-				players[i].x, players[i].y, players[i].z,
-				players[i].angy*128/math.pi, players[i].angx*256/math.pi))
-		end
-	end
-	for i=1,#intent do
-		intent[i].spawn()
-		local x,y,z
-		x,y,z = intent[i].get_pos()
-		intent[i].player = nil
-		net_broadcast(nil, common.net_pack("BHhhhB", PKT_ITEM_POS,
-			i, x,y,z, intent[i].get_flags() ))
-		net_broadcast(nil, common.net_pack("BHB", PKT_ITEM_CARRIER, i, 0))
-	end
-	for i=0,teams.max do
-		if teams[i] ~= nil then
-			teams[i].score = 0
-			net_broadcast(nil, common.net_pack("Bbh", PKT_TEAM_SCORE, i, teams[i].score))
-		end
-	end
-end
-
 if client then
-	mdl_tent, mdl_tent_bone = skin_load("pmf", "tent.pmf", DIR_PKG_PMF), 0
 	mdl_intel, mdl_intel_bone = skin_load("pmf", "intel.pmf", DIR_PKG_PMF), 0
 end
 
 function new_intel(settings)
 	local this = {} this.this = this
+
+	this.type = "intel"
 	
 	this.team = settings.team or -1
 	this.iid = settings.iid
@@ -156,7 +129,7 @@ function new_intel(settings)
 		teams[this.player.team].score = teams[this.player.team].score + 1
 		net_broadcast(nil, common.net_pack("Bbh", PKT_TEAM_SCORE, this.player.team, teams[this.player.team].score))
 
-		local plr = this.player
+		local cplr = this.player
 		this.player = nil
 		this.spawn()
 		if server then
@@ -172,13 +145,13 @@ function new_intel(settings)
 			end
 		end
 
-		if teams[this.player.team].score >= TEAM_INTEL_LIMIT then
-			reset_game_ctf()
+		if teams[cplr.team].score >= TEAM_INTEL_LIMIT then
+			mode_reset()
 		else
 			local i
 			for i=1,players.max do
 				local plr = players[i]
-				if plr and plr.team == this.player.team then
+				if plr and plr.team == cplr.team then
 					plr.t_rcirc = sec_current + MODE_RCIRC_LINGER
 				end
 			end
@@ -250,148 +223,6 @@ function new_intel(settings)
 		mname,mdata = common.model_bone_get(mdl_intel, 0)
 		recolor_component(l[1],l[2],l[3],mdata)
 		common.model_bone_set(this.mdl_intel, 0, mname, mdata)
-	end
-	
-	this.prespawn()
-	
-	return this
-end
-
-function new_tent(settings)
-	local this = {} this.this = this
-	
-	this.team = settings.team or -1
-	this.iid = settings.iid
-	this.mspr = mspr_tent
-	
-	function this.tick(sec_current, sec_delta)
-		local i
-		
-		if not server then return end
-		
-		if not this.spawned then return end
-		
-		-- set position
-		local l = common.map_pillar_get(
-			math.floor(this.x),
-			math.floor(this.z))
-		
-		local ty = l[1+(1)]
-		if this.y ~= ty and this.visible then
-			this.y = ty
-			net_broadcast(nil, common.net_pack("BHhhhB", PKT_ITEM_POS, this.iid,
-				this.x, this.y, this.z,
-				this.get_flags()))
-		end
-		
-		-- see if anyone is restocking
-		for i=1,players.max do
-			local plr = players[i]
-			
-			if plr then
-				local dx = plr.x-this.x
-				local dy = (plr.y+2.4)-this.y
-				local dz = plr.z-this.z
-				local dd = dx*dx+dy*dy+dz*dz
-				if dd > 2*2 then
-					plr = nil
-				end
-			end
-			
-			if plr then
-				local restock = false
-				if plr.wpn then
-					restock = restock or
-						plr.wpn.ammo_reserve ~= plr.wpn.cfg.ammo_reserve
-				end
-				restock = restock or plr.expl.ammo ~= 4
-				restock = restock or plr.health ~= 100
-				restock = restock or plr.blocks ~= 100
-				
-				restock = restock and plr.alive
-				restock = restock and plr.team == this.team
-				
-				if restock then
-					plr.tent_restock()
-				end
-				
-				if plr.has_intel and plr.team == this.team then
-					plr.intel_capture(sec_current)
-				end
-			end
-		end
-	end
-	
-	function this.render()
-		client.model_render_bone_global(this.mdl_tent, 0,
-			this.x, this.y, this.z,
-			0, 0, 0, 3)
-	end
-	
-	function this.prespawn()
-		this.alive = false
-		this.spawned = false
-		this.visible = false
-	end
-	
-	local function prv_spawn_cont1()
-		this.alive = true
-		this.spawned = true
-		this.visible = true
-	end
-	
-	function this.spawn()
-		local xlen,ylen,zlen
-		xlen,ylen,zlen = common.map_get_dims()
-		
-		while true do
-			this.x = math.floor(math.random()*xlen/4.0)+0.5
-			this.z = math.floor((math.random()*0.5+0.25)*zlen)+0.5
-			if this.team == 1 then this.x = xlen - this.x end
-			this.y = (common.map_pillar_get(this.x, this.z))[1+1]
-			if this.y < ylen-1 then break end
-		end
-		
-		prv_spawn_cont1()
-	end
-	
-	function this.spawn_at(x,y,z)
-		this.x = x
-		this.y = y
-		this.z = z
-		
-		prv_spawn_cont1()
-	end
-	
-	function this.get_pos()
-		return this.x, this.y, this.z
-	end
-	
-	function this.set_pos_recv(x,y,z)
-		this.x = x
-		this.y = y
-		this.z = z
-	end
-	
-	function this.get_flags()
-		local v = 0
-		if this.visible then v = v + 0x01 end
-		return v
-	end
-	
-	function this.set_flags_recv(v)
-		this.visible = (bit_and(v, 0x01) ~= 0)
-	end
-	
-	local _
-	local l = teams[this.team].color_mdl
-	local mbone,mname,mdata
-	if client then
-		this.mdl_tent = client.model_new(1)
-		this.mdl_tent, mbone = client.model_bone_new(this.mdl_tent,1)
-		mname,mdata = common.model_bone_get(mdl_tent, 0)
-		recolor_component(l[1],l[2],l[3],mdata)
-		common.model_bone_set(this.mdl_tent, 0, mname, mdata)
 	end
 	
 	this.prespawn()
