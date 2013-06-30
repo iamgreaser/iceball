@@ -44,6 +44,8 @@
 			"password" : "Password1",
 			"extends" : "moderator",
 			"permissions" : [
+				"permissions",
+				"resetgame",
 				"ban"
 			]
 		}

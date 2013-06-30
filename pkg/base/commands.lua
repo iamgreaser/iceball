@@ -121,7 +121,7 @@ command_register({
 
 command_register({
 	command = "resetscore",
-	permission = "kick", -- TODO: give own permission for this
+	permission = "resetgame",
 	usage = "/resetscore",
 	func = function(plr, plrid, neth, prms, msg)
 		local i
@@ -151,7 +151,7 @@ command_register({
 
 command_register({
 	command = "resetgame",
-	permission = "kick", -- TODO: give own permission for this
+	permission = "resetgame",
 	usage = "/resetgame",
 	func = function(plr, plrid, neth, prms, msg)
 		reset_game_ctf()
@@ -337,6 +337,50 @@ command_register({
 })
 
 command_register({
+	command = "permissions",
+	permission = "permissions",
+	usage = "/permissions <player> [add/remove] <permission>",
+	func = function(plr, plrid, neth, prms, msg)
+		if table.getn(prms) == 3 then
+			prms[1] = tostring(prms[1])
+			if prms[1]:sub(0, 1) == "#" then
+				target = players[tonumber(prms[1]:sub(2))]
+			end
+			for i=1,players.max do
+				if players[i] ~= nil and players[i].name == prms[1] then
+					target = players[i]
+					break
+				end
+			end
+			if not target then
+				net_send(neth, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_error, "Error: Player not found"))
+				return
+			end
+			prms[2] = tostring(prms[2])
+			if prms[2] == "add" or prms[2] == "a" or prms[2] == "+" then
+				add_perm = true
+			elseif prms[2] == "remove" or prms[2] == "rem" or prms[2] == "r" or prms[2] == "-" then
+				add_perm = false
+			else
+				commands["help"].func(plr, plrid, neth, {"permissions"})
+				return
+			end
+			prms[3] = tostring(prms[3])
+			if add_perm then
+				target.add_permission(prms[3])
+			else
+				target.remove_permission(prms[3])
+			end
+		else
+			commands["help"].func(plr, plrid, neth, {"permissions"})
+		end
+	end
+})
+command_register_alias("permissions", "permission")
+command_register_alias("permissions", "perms")
+command_register_alias("permissions", "perm")
+
+command_register({
 	command = "logout",
 	permission = "logout",
 	usage = "/logout",
@@ -350,3 +394,4 @@ command_register({
 		end
 	end
 })
+
