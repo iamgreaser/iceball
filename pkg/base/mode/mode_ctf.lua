@@ -154,7 +154,7 @@ function new_player(...)
 			intel.intel_capture(sec_current)
 			this.has_intel = nil
 			
-			local s = "* "..this.name.." has delivered the "..intel.get_name().."."
+			local s = "* "..this.name.." has captured the "..intel.get_name().."."
 			net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFF800000, s))
 			net_broadcast_team(this.team, common.net_pack("B", PKT_MAP_RCIRC))
 		end
