@@ -6,7 +6,10 @@
 		"default" : {
 			"permissions" : [
 				"me",
+				"build",
 				"kill",
+				"teamkill",
+				"intel",
 				"squad",
 				"logout"
 			]
@@ -16,6 +19,7 @@
 			"permissions" : [
 				"-logout",
 				"-build",
+				"-intel",
 				"-teamkill"
 			]
 		},
@@ -36,7 +40,7 @@
 				"teleport",
 				"gmode",
 				"piano",
-				"intel",
+				"intelcmd",
 				"goto"
 			]
 		},

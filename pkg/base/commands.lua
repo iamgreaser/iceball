@@ -298,7 +298,7 @@ command_register({
 
 command_register({
 	command = "intel",
-	permission = "intel",
+	permission = "intelcmd",
 	usage = "/intel",
 	func = function(plr, plrid, neth, prms, msg)
 		if table.getn(prms) == 0 then

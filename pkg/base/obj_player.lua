@@ -497,6 +497,9 @@ function new_player(settings)
 		local midmsg = " killed "
 		if this.team == enemy.team then
 			midmsg = " teamkilled "
+			if not this.has_permission("teamkill") then
+				return
+			end
 		end
 
 		local r,g,b
@@ -562,6 +565,8 @@ function new_player(settings)
 	end
 
 	function this.intel_pickup(intel)
+		if not this.has_permission("intel") then return false end
+
 		if this.mode ~= PLM_NORMAL or this.has_intel or intel.team == this.team then
 			return false
 		end
