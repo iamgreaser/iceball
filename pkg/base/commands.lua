@@ -305,7 +305,9 @@ command_register({
 			local i
 			for i=1,#miscents do
 				if miscents[i] ~= nil then
-					net_send(neth, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_text, teams[miscents[i].team].name..": "..miscents[i].x..", "..miscents[i].y..", "..miscents[i].z))
+					local tidx = miscents[i].team
+					local tname = (tidx and teams[tidx].name) or "Neutral"
+					net_send(neth, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_text, tname.." "..miscents[i].type..": "..miscents[i].x..", "..miscents[i].y..", "..miscents[i].z))
 				end
 			end
 		else

@@ -24,12 +24,20 @@ function new_intel(settings)
 
 	this.type = "intel"
 	
-	this.team = settings.team or -1
+	this.team = settings.team
 	this.iid = settings.iid
 	this.mspr = mspr_intel
 	this.player = nil
 	
 	this.rotpos = 0
+	
+	function this.get_name()
+		if this.team then
+			return teams[this.team].name .. " intel"
+		else
+			return "intel"
+		end
+	end
 	
 	function this.tick(sec_current, sec_delta)
 		local i
@@ -139,9 +147,9 @@ function new_intel(settings)
 			net_broadcast(nil, common.net_pack("BHhhhB",
 				PKT_ITEM_POS, this.iid, x,y,z, f))
 			net_broadcast(nil, common.net_pack("BHB", PKT_ITEM_CARRIER, this.iid, 0))
-			if plr then
-				plr.score = plr.score + SCORE_INTEL
-				plr.update_score()
+			if cplr then
+				cplr.score = cplr.score + SCORE_INTEL
+				cplr.update_score()
 			end
 		end
 
@@ -179,6 +187,7 @@ function new_intel(settings)
 			this.z = math.floor(math.random()*zlen)+0.5
 			if this.team == 1 then this.x = xlen - this.x end
 			--if this.team == 0 then this.x = xlen - this.x end -- quick test
+			if this.team == nil then this.x = this.x + (xlen - (xlen/4.0))/2 end
 			this.y = (common.map_pillar_get(this.x, this.z))[1+1]
 			if this.y < ylen-1 then break end
 		end
@@ -215,7 +224,9 @@ function new_intel(settings)
 	end
 	
 	local _
-	local l = teams[this.team].color_mdl
+	local l = (this.team and teams[this.team].color_mdl) or {170,170,170}
+	this.color = l
+	this.color_icon = (this.team and teams[this.team].color_chat) or {255,255,255}
 	local mbone,mname,mdata
 	if client then
 		this.mdl_intel = client.model_new(1)

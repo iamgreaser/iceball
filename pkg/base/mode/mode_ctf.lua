@@ -75,7 +75,7 @@ function mode_create_client()
 end
 
 function mode_relay_items(plr, neth)
-	for i=1,4 do
+	for i=1,#miscents do
 		local f,x,y,z
 		x,y,z = miscents[i].get_pos()
 		f = miscents[i].get_flags()
@@ -113,7 +113,7 @@ function new_player(...)
 			intel.intel_drop()
 			this.has_intel = nil
 			
-			local s = "* "..this.name.." has dropped the "..teams[intel.team].name.." intel."
+			local s = "* "..this.name.." has dropped the "..intel.get_name().."."
 			net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFF800000, s))
 		end
 	end
@@ -154,7 +154,7 @@ function new_player(...)
 			intel.intel_capture(sec_current)
 			this.has_intel = nil
 			
-			local s = "* "..this.name.." has captured the "..teams[intel.team].name.." intel."
+			local s = "* "..this.name.." has delivered the "..intel.get_name().."."
 			net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFF800000, s))
 			net_broadcast_team(this.team, common.net_pack("B", PKT_MAP_RCIRC))
 		end
@@ -194,7 +194,7 @@ function new_player(...)
 			f = intel.get_flags()
 			net_broadcast(nil, common.net_pack("BHhhhB", PKT_ITEM_POS, intel.iid, x,y,z,f))
 			net_broadcast(nil, common.net_pack("BHB", PKT_ITEM_CARRIER, intel.iid, this.pid))
-			local s = "* "..this.name.." has picked up the "..teams[intel.team].name.." intel."
+			local s = "* "..this.name.." has picked up the "..intel.get_name().."."
 			net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFF800000, s))
 			this.has_intel = intel
 		end
@@ -229,7 +229,7 @@ function new_tent(...)
 	local this = s_new_tent(...)
 
 	local s_player_in_range = this.player_in_range
-	function this.player_in_range(plr, ...)
+	function this.player_in_range(plr, sec_current, ...)
 		local ret = s_player_in_range(plr, ...)
 
 		if plr.has_intel and plr.team == this.team then
@@ -241,5 +241,4 @@ function new_tent(...)
 
 	return this
 end
-
 

@@ -1511,7 +1511,7 @@ function new_player(settings)
 					if obj.visible then
 						local x,y
 						x,y = obj.x, obj.z
-						local l = teams[obj.team].color_chat
+						local l = obj.color_icon
 						local c = argb_split_to_merged(l[1],l[2],l[3])
 						for i=1,#(obj.mspr),2 do
 							local u,v

@@ -63,12 +63,12 @@ function new_tent(settings)
 			end
 			
 			if plr then
-				this.player_in_range(plr)
+				this.player_in_range(plr, sec_current)
 			end
 		end
 	end
 
-	function this.player_in_range(plr)
+	function this.player_in_range(plr, sec_current)
 		local restock = false
 		if plr.wpn then
 			restock = restock or
@@ -149,7 +149,9 @@ function new_tent(settings)
 	end
 	
 	local _
-	local l = teams[this.team].color_mdl
+	local l = (this.team and teams[this.team].color_mdl) or {170, 170, 170}
+	this.color = l
+	this.color_icon = (this.team and teams[this.team].color_chat) or {255,255,255}
 	local mbone,mname,mdata
 	if client then
 		this.mdl_tent = client.model_new(1)
