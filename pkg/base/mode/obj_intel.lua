@@ -145,7 +145,7 @@ function new_intel(settings)
 			end
 		end
 
-		if teams[cplr.team].score >= TEAM_INTEL_LIMIT then
+		if teams[cplr.team].score >= TEAM_SCORE_LIMIT then
 			mode_reset()
 		else
 			local i

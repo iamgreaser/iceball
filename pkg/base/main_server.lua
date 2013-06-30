@@ -37,6 +37,9 @@ elseif common.time ~= nil then
 end
 
 -- load mod config
+game_mode_file = server_config.mode or GAME_MODE
+GAME_MODE = game_mode_file
+print("Game mode:", GAME_MODE)
 mod_conf_file = server_config.mod_config or "svsave/pub/mods.json"
 mod_data = common.json_load(mod_conf_file)
 
@@ -101,6 +104,8 @@ function server.hook_file(neth, ftype, fname)
 		return map_loaded
 	elseif (ftype == "json") and (fname == "*MODCFG") then
 		return mod_conf_file
+	elseif (ftype == "lua") and (fname == "*GAMEMODE") then
+		return GAME_MODE
 	elseif (ftype == "tga") and (fname == "*MAPIMG") then
 		if map_fname then
 			return map_fname..".tga"

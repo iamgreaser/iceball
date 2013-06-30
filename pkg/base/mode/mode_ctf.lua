@@ -1,3 +1,4 @@
+-- CTF: Accept no substitutes.
 --[[
     This file is part of Ice Lua Components.
 
@@ -47,6 +48,8 @@ function mode_reset()
 end
 
 function mode_create_server()
+	TEAM_SCORE_LIMIT = TEAM_SCORE_LIMIT_CTF
+
 	miscents = {}
 	miscents[#miscents+1] = new_intel({team = 0, iid = #miscents+1})
 	miscents[#miscents+1] = new_tent({team = 0, iid = #miscents+1})
@@ -62,6 +65,8 @@ function mode_create_server()
 end
 
 function mode_create_client()
+	TEAM_SCORE_LIMIT = TEAM_SCORE_LIMIT_CTF
+
 	miscents = {}
 	miscents[#miscents+1] = new_intel({team = 0, iid = #miscents+1})
 	miscents[#miscents+1] = new_tent({team = 0, iid = #miscents+1})
@@ -212,6 +217,25 @@ function new_player(...)
 		if this.has_intel == item then
 			this.has_intel = nil
 		end
+		return ret
+	end
+
+	return this
+end
+
+
+local s_new_tent = new_tent
+function new_tent(...)
+	local this = s_new_tent(...)
+
+	local s_player_in_range = this.player_in_range
+	function this.player_in_range(plr, ...)
+		local ret = s_player_in_range(plr, ...)
+
+		if plr.has_intel and plr.team == this.team then
+			plr.intel_capture(sec_current)
+		end
+
 		return ret
 	end
 

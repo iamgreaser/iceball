@@ -1,6 +1,7 @@
 {
 	"name": "Iceball Server",
 	"motd": "Welcome to Iceball",
+	"mode": "pkg/base/mode/mode_ctf.lua",
 	"mod_config": "svsave/pub/mods.json",
 	"permissions": {
 		"default" : {

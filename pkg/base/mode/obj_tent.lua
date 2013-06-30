@@ -63,26 +63,27 @@ function new_tent(settings)
 			end
 			
 			if plr then
-				local restock = false
-				if plr.wpn then
-					restock = restock or
-						plr.wpn.ammo_reserve ~= plr.wpn.cfg.ammo_reserve
-				end
-				restock = restock or plr.expl.ammo ~= 4
-				restock = restock or plr.health ~= 100
-				restock = restock or plr.blocks ~= 100
-				
-				restock = restock and plr.alive
-				restock = restock and plr.team == this.team
-				
-				if restock then
-					plr.tent_restock()
-				end
-				
-				if plr.has_intel and plr.team == this.team then
-					plr.intel_capture(sec_current)
-				end
+				this.player_in_range(plr)
 			end
+		end
+	end
+
+	function this.player_in_range(plr)
+		local restock = false
+		if plr.wpn then
+			restock = restock or
+				plr.wpn.ammo_reserve ~= plr.wpn.cfg.ammo_reserve
+		end
+
+		restock = restock or plr.expl.ammo ~= 4
+		restock = restock or plr.health ~= 100
+		restock = restock or plr.blocks ~= 100
+		
+		restock = restock and plr.alive
+		restock = restock and plr.team == this.team
+		
+		if restock then
+			plr.tent_restock()
 		end
 	end
 	

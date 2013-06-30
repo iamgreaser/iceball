@@ -1947,7 +1947,7 @@ function new_player(settings)
 					end
 					
 					scoreboard_individuals[k].ctab = table_concat
-					scoreboard_team_points[k].text = teams[k].score .. "-" .. TEAM_INTEL_LIMIT
+					scoreboard_team_points[k].text = teams[k].score .. "-" .. TEAM_SCORE_LIMIT
 					local box = scoreboard_frames[k]
 					local vspacer = scoreboard_vspacers[k]
 					local dim = vspacer.full_dimensions
