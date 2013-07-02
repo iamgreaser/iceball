@@ -21,28 +21,26 @@ int icelua_fn_common_tcp_connect(lua_State *L) {
 	struct addrinfo hints, *res;
 	int ret, sockfd;
 	const char *host;
-	char port_ch[8];
+	char port_ch[18];
 	int port = 0;
 
 	if (lua_isstring(L, 1)) {
 		host = lua_tostring(L, 1);
 	} else {
-		luaL_error(L, "not a string");
-		return 0;
+		return luaL_error(L, "not a string");
 	}
 
 	if (lua_isnumber(L, 2)) {
 		port = lua_tonumber(L, 2);
 	} else {
-		luaL_error(L, "not a number");
-		return 0;
+		return luaL_error(L, "not a number");
 	}
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 
-	itoa(port, port_ch, 10);
+	snprintf(port_ch, 17, "%u", port);
 
 	getaddrinfo(host, port_ch, &hints, &res);
 	sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
@@ -54,12 +52,12 @@ int icelua_fn_common_tcp_connect(lua_State *L) {
 #else
 	if (fcntl(sockfd, F_SETFL, fcntl(sockfd, F_GETFL) | O_NONBLOCK) == -1) {
 #endif
-		luaL_error(L, "Could not set up a nonblocking connection!");
-		return 0;
+		return luaL_error(L, "Could not set up a nonblocking connection!");
 	}
 
 	if (ret < 0) {
-		luaL_error(L, "connect() failed");
+		// API change in 0.1-2: return nil on connection failure
+		//luaL_error(L, "connect() failed");
 		return 0;
 	}
 
@@ -148,7 +146,7 @@ int icelua_fn_common_tcp_send(lua_State *L) {
 #else
 		} else if (err == EWOULDBLOCK || err == EAGAIN) {
 #endif
-			lua_pushnil(L);
+			lua_pushlstring(L, data, length);
 			return 1;
 		}
 	}
@@ -176,3 +174,4 @@ int icelua_fn_common_tcp_close(lua_State *L) {
 	close(sockfd);
 	return 0;
 }
+
