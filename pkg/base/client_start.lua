@@ -409,7 +409,7 @@ function h_tick_main(sec_current, sec_delta)
 	bhealth_prune(sec_current)
 
 	local tickrate = 1/60.
-	local lowest_fps = 15
+	local lowest_fps = 7.5 -- some people have REALLY shit GPUs. might as well lower this requirement.
 	local max_ticksize = 1/lowest_fps
 	
 	if sec_delta > max_ticksize then sec_delta = max_ticksize end
@@ -442,8 +442,8 @@ function h_tick_main(sec_current, sec_delta)
 		nade_prune(sec_current)
 		particles_prune(sec_current)
 		
-		for i=1,#intent do
-			intent[i].tick(moment, tickrate)
+		for i=1,#miscents do
+			miscents[i].tick(moment, tickrate)
 		end				
 		client_tick_accum = client_tick_accum - tickrate
 	end
@@ -511,11 +511,8 @@ function h_tick_init(sec_current, sec_delta)
 	end
 	]]
 	
-	intent[#intent+1] = new_intel({team = 0, iid = #intent+1})
-	intent[#intent+1] = new_tent({team = 0, iid = #intent+1})
-	intent[#intent+1] = new_intel({team = 1, iid = #intent+1})
-	intent[#intent+1] = new_tent({team = 1, iid = #intent+1})
-	
+	mode_create_client()
+
 	chat_add(chat_text, sec_current, "Welcome to Iceball!", 0xFFFF00AA)
 	chat_add(chat_killfeed, sec_current, "If it's broken, fix it yourself.", 0xFFFF00AA)
 	

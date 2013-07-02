@@ -42,6 +42,7 @@ DIR_PKG_WAV = DIR_PKG_WAV or DIR_PKG_ROOT.."/wav"
 DIR_PKG_IT = DIR_PKG_IT or DIR_PKG_ROOT.."/it"
 DIR_PKG_MAP = DIR_PKG_MAP or "pkg/maps"
 DIR_SKIN = DIR_SKIN or "clsave/pub/skin"
+GAME_MODE = "pkg/base/mode/mode_ctf.lua"
 
 function skin_load(ftype, name, bdir, sdir)
 	bdir = bdir or DIR_PKG_ROOT

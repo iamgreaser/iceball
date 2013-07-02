@@ -85,5 +85,6 @@ VERSION_BUGS = {
 {intro=nil, fix=4194304+0, msg="Binary files don't have a type name"},
 {intro=nil, fix=4194304+0, msg="JSON files cannot be remotely sent to clients"},
 {intro=nil, fix=nil, msg="Occasional crash in sackit_module_free on common.mus_free - this is probably a sackit bug."},
+{intro=nil, fix=nil, msg="Sound distance attenuation affected by zoom (workaround implemented)"},
 }
 

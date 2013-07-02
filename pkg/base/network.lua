@@ -237,16 +237,13 @@ network.sys_handle_s2c(PKT_PLR_SPAWN, "Bfffbb", function (neth, cli, plr, sec_cu
 	end
 end)
 network.sys_handle_s2c(PKT_ITEM_POS, "HhhhB", function (neth, cli, plr, sec_current, iid, x,y,z, f, pkt)
-	if intent[iid] then
-		--print("intent",iid,x,y,z,f)
-		if not intent[iid].spawned then
-			intent[iid].spawn_at(x,y,z)
-			--print(intent[iid].spawned, intent[iid].alive, intent[iid].visible)
+	if miscents[iid] then
+		if not miscents[iid].spawned then
+			miscents[iid].spawn_at(x,y,z)
 		else
-			intent[iid].set_pos_recv(x,y,z)
+			miscents[iid].set_pos_recv(x,y,z)
 		end
-		intent[iid].set_flags_recv(f)
-		--print(intent[iid].spawned, intent[iid].alive, intent[iid].visible)
+		miscents[iid].set_flags_recv(f)
 	end
 end)
 network.sys_handle_s2c(PKT_PLR_DAMAGE, "BB", function (neth, cli, plr, sec_current, pid, amt, pkt)
@@ -264,17 +261,17 @@ network.sys_handle_s2c(PKT_PLR_RESTOCK, "B", function (neth, cli, plr, sec_curre
 end)
 network.sys_handle_s2c(PKT_ITEM_CARRIER, "HB", function (neth, cli, plr, sec_current, iid, pid, pkt)
 	local plr = (pid ~= 0 and players[pid]) or nil
-	local item = intent[iid]
+	local item = miscents[iid]
 	--print(">",iid,pid,plr,item)
 	if (pid == 0 or plr) and item then
 		local hplr = item.player
 		if hplr then
-			hplr.has_intel = nil
+			hplr.item_remove(item)
 		end
 		
 		item.player = plr
 		if plr then
-			plr.has_intel = item
+			plr.item_add(item)
 		end
 	end
 end)
@@ -399,6 +396,8 @@ network.sys_handle_c2s(PKT_PLR_ORIENT, "BbbB", nwdec_plrset(function (neth, cli,
 		PKT_PLR_ORIENT, cli.plrid, ya2, xa2, keys))
 end))
 network.sys_handle_c2s(PKT_BLK_ADD, "HHHBBBB", nwdec_plrset(function (neth, cli, plr, sec_current, x,y,z,cb,cg,cr,ct,pkt)
+	if not (plr and plr.has_permission("build")) then return end
+
 	local xlen,ylen,zlen
 	xlen,ylen,zlen = common.map_get_dims()
 	
@@ -420,6 +419,8 @@ network.sys_handle_c2s(PKT_BLK_ADD, "HHHBBBB", nwdec_plrset(function (neth, cli,
 	end
 end))
 network.sys_handle_c2s(PKT_BLK_RM1, "HHH", nwdec_plrset(function (neth, cli, plr, sec_current, x,y,z, pkt)
+	if not (plr and plr.has_permission("build")) then return end
+
 	local xlen,ylen,zlen
 	xlen,ylen,zlen = common.map_get_dims()
 	
@@ -443,6 +444,8 @@ network.sys_handle_c2s(PKT_BLK_RM1, "HHH", nwdec_plrset(function (neth, cli, plr
 	end
 end))
 network.sys_handle_c2s(PKT_BLK_RM3, "HHH", nwdec_plrset(function (neth, cli, plr, sec_current, x,y,z, pkt)
+	if not (plr and plr.has_permission("build")) then return end
+
 	local xlen,ylen,zlen
 	xlen,ylen,zlen = common.map_get_dims()
 	
@@ -564,19 +567,8 @@ end, function (neth, cli, plr, sec_current, tidx, wpn, name, pkt)
 			end
 		end
 		
-		-- relay intels/tents to this player
-		for i=1,4 do
-			local f,x,y,z
-			x,y,z = intent[i].get_pos()
-			f = intent[i].get_flags()
-			net_send(neth, common.net_pack("BHhhhB",
-				PKT_ITEM_POS, i, x, y, z, f))
-			local plr = intent[i].player
-			if plr then
-				net_send(neth, common.net_pack("BHB",
-					PKT_ITEM_CARRIER, i, plr.pid))
-			end
-		end
+		-- relay items to this player
+		mode_relay_items(plr, neth)
 
 		-- relay score to this player
 		for i=0,teams.max do
@@ -603,6 +595,7 @@ end, function (neth, cli, plr, sec_current, tidx, wpn, name, pkt)
 	end
 end))
 network.sys_handle_c2s(PKT_PLR_GUN_HIT, "BB", nwdec_plrset(function (neth, cli, plr, sec_current, tpid, styp)
+	if not (plr and plr.has_permission("kill")) then return end
 	local tplr = players[tpid]
 	if tplr then
 		if plr.tool == TOOL_GUN and plr.wpn and styp >= 1 and styp <= 3 then
@@ -660,10 +653,12 @@ network.sys_handle_c2s(PKT_PLR_GUN_RELOAD, "", nwdec_plrset(function (neth, cli,
 	net_broadcast(neth, common.net_pack("BB", PKT_PLR_GUN_RELOAD, cli.plrid))
 end))
 network.sys_handle_c2s(PKT_BLK_DAMAGE, "HHHH", nwdec_plrset(function (neth, cli, plr, sec_current, x, y, z, amt, pkt)
+	if not (plr and plr.has_permission("build")) then return end
+
 	net_broadcast(nil, common.net_pack("BHHHH", PKT_BLK_DAMAGE, x, y, z, amt))
 	bhealth_damage(x, y, z, amt, plr)
-	
 end))
 network.sys_handle_c2s(PKT_NADE_PIN, "", nwdec_plrset(function (neth, cli, plr, sec_current, pkt)
 	net_broadcast(neth, common.net_pack("BB", PKT_NADE_PIN, cli.plrid))
 end))
+

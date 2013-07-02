@@ -120,6 +120,23 @@ command_register({
 })
 
 command_register({
+	command = "resetscore",
+	permission = "resetgame",
+	usage = "/resetscore",
+	func = function(plr, plrid, neth, prms, msg)
+		local i
+		for i=1,players.max do
+			if players[i] then
+				players[i].score = 0
+				players[i].kills = 0
+				players[i].deaths = 0
+				players[i].update_score()
+			end
+		end
+	end
+})
+
+command_register({
 	command = "me",
 	permission = "me",
 	usage = "/me <action>",
@@ -128,7 +145,16 @@ command_register({
 			net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFFFFFFFF, "* "..plr.name.." "..string.sub(msg,5)))
 		else
 			commands["help"].func(plr, plrid, neth, {"me"})
-		end
+		end 
+	end
+})
+
+command_register({
+	command = "resetgame",
+	permission = "resetgame",
+	usage = "/resetgame",
+	func = function(plr, plrid, neth, prms, msg)
+		mode_reset()
 	end
 })
 
@@ -272,14 +298,16 @@ command_register({
 
 command_register({
 	command = "intel",
-	permission = "intel",
+	permission = "intelcmd",
 	usage = "/intel",
 	func = function(plr, plrid, neth, prms, msg)
 		if table.getn(prms) == 0 then
 			local i
-			for i=1,#intent do
-				if intent[i] ~= nil then
-					net_send(neth, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_text, teams[intent[i].team].name..": "..intent[i].x..", "..intent[i].y..", "..intent[i].z))
+			for i=1,#miscents do
+				if miscents[i] ~= nil then
+					local tidx = miscents[i].team
+					local tname = (tidx and teams[tidx].name) or "Neutral"
+					net_send(neth, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_text, tname.." "..miscents[i].type..": "..miscents[i].x..", "..miscents[i].y..", "..miscents[i].z))
 				end
 			end
 		else
@@ -311,6 +339,50 @@ command_register({
 })
 
 command_register({
+	command = "permissions",
+	permission = "permissions",
+	usage = "/permissions <player> [add/remove] <permission>",
+	func = function(plr, plrid, neth, prms, msg)
+		if table.getn(prms) == 3 then
+			prms[1] = tostring(prms[1])
+			if prms[1]:sub(0, 1) == "#" then
+				target = players[tonumber(prms[1]:sub(2))]
+			end
+			for i=1,players.max do
+				if players[i] ~= nil and players[i].name == prms[1] then
+					target = players[i]
+					break
+				end
+			end
+			if not target then
+				net_send(neth, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_error, "Error: Player not found"))
+				return
+			end
+			prms[2] = tostring(prms[2])
+			if prms[2] == "add" or prms[2] == "a" or prms[2] == "+" then
+				add_perm = true
+			elseif prms[2] == "remove" or prms[2] == "rem" or prms[2] == "r" or prms[2] == "-" then
+				add_perm = false
+			else
+				commands["help"].func(plr, plrid, neth, {"permissions"})
+				return
+			end
+			prms[3] = tostring(prms[3])
+			if add_perm then
+				target.add_permission(prms[3])
+			else
+				target.remove_permission(prms[3])
+			end
+		else
+			commands["help"].func(plr, plrid, neth, {"permissions"})
+		end
+	end
+})
+command_register_alias("permissions", "permission")
+command_register_alias("permissions", "perms")
+command_register_alias("permissions", "perm")
+
+command_register({
 	command = "logout",
 	permission = "logout",
 	usage = "/logout",
@@ -324,3 +396,4 @@ command_register({
 		end
 	end
 })
+

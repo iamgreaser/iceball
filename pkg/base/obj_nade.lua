@@ -99,6 +99,9 @@ function new_nade(settings)
 	end
 	
 	function this.explode_dmg()
+		local hplr = this.pid and players[this.pid]
+		if hplr and not hplr.has_permission("kill") then return end
+
 		local x,y,z
 		local x0,y0,z0
 		x0,y0,z0 = math.floor(this.x)
@@ -108,8 +111,6 @@ function new_nade(settings)
 		local xlen,ylen,zlen
 		xlen,ylen,zlen = common.map_get_dims()
 		
-		local hplr = this.pid and players[this.pid]
-
 		local vpls = nil
 		if MODE_NADE_VPL_ENABLE then
 			vpls = vpl_gen_from_sphere(this.x, this.y, this.z,
@@ -187,6 +188,8 @@ function new_nade(settings)
 				end
 			end
 		end
+
+		if hplr and not hplr.has_permission("build") then return end
 		
 		if map_block_get(x0,y0,z0) ~= nil then
 			if y0 < ylen-2 then

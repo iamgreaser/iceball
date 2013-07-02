@@ -1,12 +1,16 @@
 {
 	"name": "Iceball Server",
 	"motd": "Welcome to Iceball",
+	"mode": "pkg/base/mode/mode_ctf.lua",
 	"mod_config": "svsave/pub/mods.json",
 	"permissions": {
 		"default" : {
 			"permissions" : [
 				"me",
+				"build",
 				"kill",
+				"teamkill",
+				"intel",
 				"squad",
 				"logout"
 			]
@@ -16,6 +20,7 @@
 			"permissions" : [
 				"-logout",
 				"-build",
+				"-intel",
 				"-teamkill"
 			]
 		},
@@ -36,7 +41,7 @@
 				"teleport",
 				"gmode",
 				"piano",
-				"intel",
+				"intelcmd",
 				"goto"
 			]
 		},
@@ -44,6 +49,8 @@
 			"password" : "Password1",
 			"extends" : "moderator",
 			"permissions" : [
+				"permissions",
+				"resetgame",
 				"ban"
 			]
 		}

@@ -37,6 +37,9 @@ elseif common.time ~= nil then
 end
 
 -- load mod config
+game_mode_file = server_config.mode or GAME_MODE
+GAME_MODE = game_mode_file
+print("Game mode:", GAME_MODE)
 mod_conf_file = server_config.mod_config or "svsave/pub/mods.json"
 mod_data = common.json_load(mod_conf_file)
 
@@ -101,6 +104,8 @@ function server.hook_file(neth, ftype, fname)
 		return map_loaded
 	elseif (ftype == "json") and (fname == "*MODCFG") then
 		return mod_conf_file
+	elseif (ftype == "lua") and (fname == "*GAMEMODE") then
+		return GAME_MODE
 	elseif (ftype == "tga") and (fname == "*MAPIMG") then
 		if map_fname then
 			return map_fname..".tga"
@@ -248,8 +253,8 @@ function server.hook_tick(sec_current, sec_delta)
 		end
 		nade_prune(sec_current)
 		
-		for i=1,#intent do
-			intent[i].tick(moment, tickrate)
+		for i=1,#miscents do
+			miscents[i].tick(moment, tickrate)
 		end				
 		server_tick_accum = server_tick_accum - tickrate
 	end
@@ -351,17 +356,7 @@ else
 end
 common.map_set(map_loaded)
 
-intent[#intent+1] = new_intel({team = 0, iid = #intent+1})
-intent[#intent+1] = new_tent({team = 0, iid = #intent+1})
-intent[#intent+1] = new_intel({team = 1, iid = #intent+1})
-intent[#intent+1] = new_tent({team = 1, iid = #intent+1})
-
-do
-	local i
-	for i=1,4 do
-		intent[i].spawn()
-	end
-end
+mode_create_server()
 
 print("pkg/base/main_server.lua: Loading mods...")
 load_mod_list(getfenv(), mod_data.mods, {"load", "load_server"}, server_config, mod_data)

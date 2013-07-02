@@ -36,17 +36,21 @@ LIB_LIST = LIB_LIST or {
 	DIR_PKG_LIB.."/lib_vector.lua",
 	
 	DIR_PKG_LIB.."/obj_player.lua",
-	DIR_PKG_LIB.."/obj_intent.lua",
 	DIR_PKG_LIB.."/obj_nade.lua",
 	DIR_PKG_LIB.."/obj_particle.lua",
+	((server and GAME_MODE) or "*GAMEMODE"),
 }
 
 -- load libs
 local i
 for i=1,#LIB_LIST do
+	print(LIB_LIST[i])
 	local asdf_qwerty = i
 	i = nil
-	dofile(LIB_LIST[asdf_qwerty])
+
+	-- a quick workaround.
+	-- seems the anal-retentive pathname security bug wasn't QUITE fixed.
+	common.fetch_block("lua", LIB_LIST[asdf_qwerty])()
 	i = asdf_qwerty
 end
 i = nil
@@ -204,7 +208,10 @@ explosives_enabled = {}
 explosives_enabled[EXPL_GRENADE] = true
 
 -- teams
-TEAM_INTEL_LIMIT = 10
+TEAM_SCORE_LIMIT_CTF = 10
+TEAM_SCORE_LIMIT_TDM = 1000
+TEAM_SCORE_LIMIT = 0 -- your game mode should set this variable
+
 teams = {
 	max = 1,
 	[0] = {
@@ -271,7 +278,7 @@ end
 
 damage_blk = {}
 players = {max = MODE_PLAYERS_MAX, current = 1}
-intent = {}
+miscents = {}
 nades = {head = 1, tail = 0}
 
 function player_ranking(x, y)
@@ -405,3 +412,4 @@ function bhealth_prune(time)
 	
 	bhealth.time = time
 end
+
