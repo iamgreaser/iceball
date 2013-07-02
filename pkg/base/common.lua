@@ -182,6 +182,7 @@ WPN_LEERIFLE = 2
 
 weapon_models = {}
 
+tpl_gun = loadfile(DIR_PKG_ROOT.."/ent/tpl_gun.lua")()
 weapons = {
 	[WPN_RIFLE] = loadfile(DIR_PKG_ROOT.."/ent/gun_rifle.lua")(),
 	[WPN_LEERIFLE] = loadfile(DIR_PKG_ROOT.."/ent/gun_leerifle.lua")(),
