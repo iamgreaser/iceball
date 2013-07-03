@@ -41,6 +41,7 @@ print("bio desc:", user_config.bio and user_config.bio.description)
 
 -- OK, *NOW* we can load stuff.
 dofile("pkg/base/common.lua")
+dofile("pkg/base/border.lua")
 
 tracers = {head = 1, tail = 0, time = 0}
 
@@ -439,6 +440,9 @@ function h_tick_main(sec_current, sec_delta)
 		for i=particles.head,particles.tail do
 			if particles[i] then particles[i].tick(moment, tickrate) end
 		end
+		for i=1,#borders do
+			borders[i].tick(moment, tickrate)
+		end
 		nade_prune(sec_current)
 		particles_prune(sec_current)
 		
@@ -720,6 +724,22 @@ end
 -- load map
 map_loaded = common.map_load(map_fname, "auto")
 common.map_set(map_loaded)
+borders = nil
+
+do
+	local xlen, ylen, zlen
+	xlen, ylen, zlen = common.map_get_dims()
+	borders = {
+		new_border(-1, 0, 0, 1, 0, 0, 255,0,0),
+		new_border(xlen+1, ylen, zlen, 1, 0, 0, 255,0,0),
+		new_border(0, 0, -1, 0, 0, 1, 255,0,0),
+		new_border(xlen, ylen, zlen+1, 0, 0, 1, 255,0,0),
+		new_border(-1, 0, 0, 1, 0, 0, 255,0,0),
+		new_border(xlen+1, ylen, zlen, 1, 0, 0, 255,0,0),
+		new_border(0, 0, -1, 0, 0, 1, 255,0,0),
+		new_border(xlen, ylen, zlen+1, 0, 0, 1, 255,0,0),
+	}
+end
 
 print(client.map_fog_get())
 --client.map_fog_set(24,0,32,60)
@@ -802,10 +822,6 @@ end
 
 -- hooks in place!
 function client.hook_render()
-	if players and players[players.current] then
-		players[players.current].show_hud()
-	end
-	
 	local i
 	for i=tracers.head,tracers.tail do
 		local tc = tracers[i]
@@ -839,7 +855,14 @@ function client.hook_render()
 	for i=particles.head,particles.tail do
 		if particles[i] then particles[i].render() end
 	end
-	
+
+	for i=1,#borders do
+		borders[i].render()
+	end
+
+	if players and players[players.current] then
+		players[players.current].show_hud()
+	end
 end
 
 client.hook_tick = h_tick_init
