@@ -1037,7 +1037,11 @@ function new_player(settings)
 
 	function this.camera_firstperson(sec_current, sec_delta)
 		-- set camera position
-		client.camera_move_to(this.x, this.y + this.jerkoffs, this.z)
+		if this.alive then
+			client.camera_move_to(this.x, this.y + this.jerkoffs, this.z)
+		else
+			client.camera_move_to(this.dead_x, this.dead_y, this.dead_z)
+		end
 
 		-- calc camera forward direction
 		local sya = math.sin(this.angy)
@@ -1059,17 +1063,31 @@ function new_player(settings)
 		
 		-- offset by eye pos
 		-- slightly cheating here.
-		client.camera_move_global(sya*0.4, 0, cya*0.4)
-		-- move camera back if we're in a wall
-		local dc = 0.5
-		local df = 0.101
-		local dt = trace_map_ray_dist(this.x + sya*(0.4-dc), this.y - fwy*dc, this.z + cya*0.4 - fwz*dc,
-			sya, 0, cya, dc+df, true)
+		if this.alive then
+			client.camera_move_global(sya*0.4, 0, cya*0.4)
 
-		if dt then
-			local offs = dt-dc - df
-			client.camera_move_global(sya*offs, 0, cya*offs)
+			-- move camera back if we're in a wall
+			local dc = 0.5
+			local df = 0.101
+			local dt = trace_map_ray_dist(this.x + sya*(0.4-dc), this.y + this.jerkoffs, this.z + cya*(0.4-dc),
+				sya, 0, cya, dc+df, true)
+
+			if dt then
+				local offs = dt-dc - df
+				client.camera_move_global(sya*offs, 0, cya*offs)
+			end
+		else
+			-- move camera back as far as it can sanely go
+			local dc = 10
+			local df = 0.101
+			local dt = trace_map_ray_dist(this.dead_x , this.dead_y , this.dead_z ,
+				-fwx, -fwy, -fwz, dc, true)
+			dt = dt or dc
+
+			local offs = dt - df
+			client.camera_move_global(-fwx*offs, -fwy*offs, -fwz*offs)
 		end
+
 
 		-- BUG WORKAROUND: adjust wav_cube_size dependent on zoom
 		if client.renderer == "gl" then

@@ -726,21 +726,7 @@ map_loaded = common.map_load(map_fname, "auto")
 common.map_set(map_loaded)
 borders = nil
 
-do
-	local xlen, ylen, zlen
-	xlen, ylen, zlen = common.map_get_dims()
-	borders = {
-		new_border(-1, 0, 0, 1, 0, 0, 255,0,0),
-		new_border(xlen+1, ylen, zlen, 1, 0, 0, 255,0,0),
-		new_border(0, 0, -1, 0, 0, 1, 255,0,0),
-		new_border(xlen, ylen, zlen+1, 0, 0, 1, 255,0,0),
-		new_border(-1, 0, 0, 1, 0, 0, 255,0,0),
-		new_border(xlen+1, ylen, zlen, 1, 0, 0, 255,0,0),
-		new_border(0, 0, -1, 0, 0, 1, 255,0,0),
-		new_border(xlen, ylen, zlen+1, 0, 0, 1, 255,0,0),
-	}
-end
-
+-- set fog
 print(client.map_fog_get())
 --client.map_fog_set(24,0,32,60)
 foglvl = user_config.fog or MODE_DEFAULT_FOG
@@ -753,8 +739,25 @@ end
 client.map_fog_set(192,238,255,foglvl)
 print(client.map_fog_get())
 
+-- set borders
+do
+	local xlen, ylen, zlen
+	xlen, ylen, zlen = common.map_get_dims()
+	local r,g,b
+	r,g,b = client.map_fog_get()
+	borders = {
+		new_border(-1, 0, 0, 1, 0, 0, r,g,b),
+		new_border(xlen+1, ylen, zlen, 1, 0, 0, r,g,b),
+		new_border(0, 0, -1, 0, 0, 1, r,g,b),
+		new_border(xlen, ylen, zlen+1, 0, 0, 1, r,g,b),
+		new_border(-1, 0, 0, 1, 0, 0, r,g,b),
+		new_border(xlen+1, ylen, zlen, 1, 0, 0, r,g,b),
+		new_border(0, 0, -1, 0, 0, 1, r,g,b),
+		new_border(xlen, ylen, zlen+1, 0, 0, 1, r,g,b),
+	}
+end
+
 -- create map overview
--- TODO: update image when map gets mutilated
 do
 	local xlen, ylen, zlen
 	xlen, ylen, zlen = common.map_get_dims()
