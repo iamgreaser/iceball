@@ -165,6 +165,16 @@ return function (plr, cfg)
 	function this.get_model()
 		return this.cfg.model
 	end
+
+	function this.textgen()
+		local col
+		if this.ammo_clip == 0 then
+			col = 0xFFFF3232
+		else
+			col = 0xFFC0C0C0
+		end
+		return col, ""..this.wpn.ammo_clip.."-"..this.wpn.ammo_reserve
+	end
 	
 	function this.render(px, py, pz, ya, xa, ya2)
 		client.model_render_bone_global(this.get_model(), 0,

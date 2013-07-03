@@ -19,19 +19,104 @@ return function (plr)
 	local this = {} this.this = this
 
 	this.plr = plr
-	this.mdl = mdl_block
-	this.mdl_bone = mdl_block_bone
+	this.mdl = nil
+	this.mdl_bone = 0
 	this.gui_y = 0.25
 	this.gui_scale = 0.1
 	this.gui_pick_scale = 2.0
+
+	function this.get_model()
+		return this.mdl or mdl_block
+	end
 	
-	function this.prespawn()
-		this.t_newspade1 = nil
-		this.t_newspade2 = nil
+	local function prv_recolor_block(r,g,b)
+		if not client then return end
+		if not this.mdl then
+			this.mdl, this.mdl_bone = common.model_bone_new(common.model_new(1))
+		end
+		local mname,mdata
+		mname,mdata = common.model_bone_get(mdl_block, mdl_block_bone)
+		recolor_component(r,g,b,mdata)
+		common.model_bone_set(this.mdl, this.mdl_bone, mname, mdata)
 	end
 
+	function this.recolor(r,g,b)
+		prv_recolor_block(r,g,b)
+	end
+
+	prv_recolor_block(0,0,0)
+
+	function this.reset()
+		this.t_place = nil
+		if plr.blk_color then
+			prv_recolor_block(plr.blk_color[1], plr.blk_color[2], plr.blk_color[3])
+		end
+		plr.blocks = 25
+	end
+
+	this.reset()
+
 	function this.free()
+		if this.mdl then common.model_free(this.mdl) this.mdl = nil end
+	end
+
+	function this.restock()
+		plr.blocks = 100
+	end
+
+	function this.click(button, state)
 		--
+	end
+
+	function this.tick(sec_current, sec_delta)
+		local xlen,ylen,zlen
+		xlen,ylen,zlen = common.map_get_dims()
+
+		if plr.tools[plr.tool+1] ~= this then return end
+
+		local sya = math.sin(plr.angy)
+		local cya = math.cos(plr.angy)
+		local sxa = math.sin(plr.angx)
+		local cxa = math.cos(plr.angx)
+
+		if this.t_place and sec_current >= this.t_place then
+			this.t_place = nil
+		end
+		if plr.mode == PLM_SPECTATE then return end
+		if plr.ev_lmb and plr.blx1 then
+			if (not this.t_place) and plr.blocks > 0 then
+				local dist, blx1, bly1, blz1
+				for dist=5,1,-1 do
+					_, blx1, bly1, blz1 = trace_map_ray_dist(plr.x+0.4*sya,plr.y,plr.z+0.4*cya, sya*cxa,sxa,cya*cxa, dist, false)
+					if blx1 >= 0 and blx1 < xlen and bly1 >= 0 and bly1 <= ylen - 3 and blz1 >= 0 and blz1 < zlen and map_is_buildable(blx1, bly1, blz1) then
+						net_send(nil, common.net_pack("BHHHBBBB",
+							PKT_BLK_ADD,
+							blx1, bly1, blz1,
+							plr.blk_color[3],
+							plr.blk_color[2],
+							plr.blk_color[1],
+							1))
+						if plr.mode == PLM_NORMAL then
+							plr.blocks = plr.blocks - 1
+						end
+						this.t_place = sec_current + MODE_DELAY_BLOCK_BUILD
+						plr.t_switch = this.t_place
+						break
+					end
+				end
+			end
+		elseif plr.ev_rmb and plr.blx3 and plr.alive then
+			local ct,cr,cg,cb
+			ct,cr,cg,cb = map_block_pick(plr.blx3, plr.bly3, plr.blz3)
+			if ct ~= nil then
+				plr.blk_color = {cr,cg,cb}
+				this.recolor(cr,cg,cb)
+				net_send(nil, common.net_pack("BBBBB",
+					PKT_PLR_BLK_COLOR, 0x00,
+					plr.blk_color[1],plr.blk_color[2],plr.blk_color[3]))
+			end
+			plr.ev_rmb = false
+		end
 	end
 
 	function this.textgen()
@@ -41,10 +126,61 @@ return function (plr)
 		return col, ""..this.plr.blocks
 	end
 
-	function this.render(px,py,pz,angx,angy)
-		client.model_render_bone_global(this.mdl, this.mdl_bone,
-			px, py, pz,
-			0.0, -angx, angy, 1)
+	function this.render(px,py,pz,ya,xa,ya2)
+		local ays,ayc,axs,axc
+		ays = math.sin(plr.angy)
+		ayc = math.cos(plr.angy)
+		axs = math.sin(plr.angx)
+		axc = math.cos(plr.angx)
+
+		if plr.blx1 and (plr.alive or plr.respawning) and plr.blocks >= 1 then
+			local xlen,ylen,zlen = common.map_get_dims()
+			local err = true
+			local dist
+			local blx1, bly1, blz1
+			for dist=5,1,-1 do
+				_, blx1, bly1, blz1 = trace_map_ray_dist(plr.x+0.4*ays,plr.y,plr.z+0.4*ayc, ays*axc,axs,ayc*axc, dist, false)
+				if blx1 >= 0 and blx1 < xlen and bly1 >= 0 and bly1 <= ylen - 3 and blz1 >= 0 and blz1 < zlen and (map_is_buildable(blx1, bly1, blz1) or MODE_BLOCK_PLACE_IN_AIR) then
+					bname, mdl_data = client.model_bone_get(mdl_cube, mdl_cube_bone)
+					
+					mdl_data_backup = mdl_data
+					
+					for i=1,#mdl_data do
+						if mdl_data[i].r > 4 then
+							mdl_data[i].r = math.max(plr.blk_color[1], 5) --going all the way down to
+							mdl_data[i].g = math.max(plr.blk_color[2], 5) --to 4 breaks it and you'd
+							mdl_data[i].b = math.max(plr.blk_color[3], 5) --have to reload the model
+						end
+					end
+					
+					client.model_bone_set(mdl_cube, mdl_cube_bone, bname, mdl_data)
+					
+					client.model_render_bone_global(mdl_cube, mdl_cube_bone,
+						blx1+0.5, bly1+0.5, blz1+0.5,
+						0.0, 0.0, 0.0, 24.0) --no rotation, 24 roughly equals the cube size
+					err = false
+					break
+				end
+			end
+			if err and not MODE_BLOCK_NO_RED_MARKER then
+				for dist=5,0,-1 do
+					_, blx1, bly1, blz1 = trace_map_ray_dist(plr.x+0.4*ays,plr.y,plr.z+0.4*ayc, ays*axc,axs,ayc*axc, dist, false)
+					if blx1 >= 0 and blx1 < xlen and bly1 >= 0 and bly1 <= ylen - 3 and blz1 >= 0 and blz1 < zlen then
+						client.model_render_bone_global(mdl_Xcube, mdl_Xcube_bone,
+							blx1+0.5, bly1+0.5, blz1+0.5,
+							0.0, 0.0, 0.0, 24.0)
+						break
+					end
+				end
+				--print(plr.blx1.." "..plr.bly1.." "..plr.blz1)
+			end
+		end
+		if plr.blocks > 0 then
+			client.model_render_bone_global(this.mdl, this.mdl_bone,
+				px, py, pz, ya, xa, ya2, 1)
+		end
 	end
+
+	return this
 end
 

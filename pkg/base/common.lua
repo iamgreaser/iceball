@@ -190,6 +190,7 @@ weapons = {
 
 tools = {
 	[TOOL_SPADE] = loadfile(DIR_PKG_ROOT.."/ent/tool_spade.lua")(),
+	[TOOL_BLOCK] = loadfile(DIR_PKG_ROOT.."/ent/tool_block.lua")(),
 }
 
 weapons_enabled = {}

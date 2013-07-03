@@ -115,15 +115,6 @@ function new_player(settings)
 		prv_recolor_team(r,g,b)
 	end
 
-	local function prv_recolor_block(r,g,b)
-		if not client then return end
-		local mname,mdata
-		mname,mdata = common.model_bone_get(mdl_block, mdl_block_bone)
-		recolor_component(r,g,b,mdata)
-		common.model_bone_set(this.mdl_block, mdl_block_bone, mname, mdata)
-	end
-
-	prv_recolor_block(0,0,0)
 	do
 		local c = teams[this.team].color_mdl
 		local r,g,b
@@ -132,7 +123,9 @@ function new_player(settings)
 	end
 
 	function this.block_recolor()
-		prv_recolor_block(this.blk_color[1],this.blk_color[2],this.blk_color[3])
+		if this.tools[2] then
+			this.tools[2].recolor(this.blk_color[1],this.blk_color[2],this.blk_color[3])
+		end
 	end
 
 	function this.input_reset()
@@ -170,6 +163,7 @@ function new_player(settings)
 		
 		this.tools = {}
 		this.tools[#(this.tools)+1] = tools[TOOL_SPADE](this)
+		this.tools[#(this.tools)+1] = tools[TOOL_BLOCK](this)
 		
 		this.t_respawn = nil
 		this.t_switch = nil
@@ -634,30 +628,6 @@ function new_player(settings)
 			end
 		end
 		
-		if this.t_newblock and sec_current >= this.t_newblock then
-			this.t_newblock = nil
-		end
-		
-		if this.t_newspade1 and sec_current >= this.t_newspade1 then
-			this.t_newspade1 = nil
-		end
-		
-		if not this.ev_rmb then
-			this.t_newspade2 = nil
-		end
-		
-		if this.t_newspade2 and sec_current >= this.t_newspade2 and this.blx2 then
-			if this.blx2 >= 0 and this.blx2 < xlen and this.blz2 >= 0 and this.blz2 < zlen then
-			if this.bly2-1 <= ylen-3 then
-				net_send(nil, common.net_pack("BHHH",
-					PKT_BLK_RM3,
-					this.blx2, this.bly2, this.blz2))
-			end
-			end
-			
-			this.t_newspade2 = nil
-		end
-		
 		if client then
 			local moving = ((this.ev_left == not this.ev_right) or (this.ev_forward == not this.ev_back))
 			local sneaking = (this.ev_crouch or this.ev_sneak or this.zooming)
@@ -769,103 +739,11 @@ function new_player(settings)
 		fwx,fwy,fwz = sya*cxa, sxa, cya*cxa
 		
 		if client and this.alive and (not this.t_switch) then
-		if this.recoil_time then
-			this.recoil_amt = (sec_current - this.recoil_time) * math.pow(2, 1 - 10 * (sec_current - this.recoil_time)) * 1.5
-		else
-			this.recoil_amt = 0
-		end
-		if this.ev_lmb and this.mode ~= PLM_SPECTATE then
-			if this.tool == TOOL_BLOCK and this.blx1 then
-				if (not this.t_newblock) and this.blocks > 0 then
-					for dist=5,1,-1 do
-						_, blx1, bly1, blz1 = trace_map_ray_dist(this.x+0.4*sya,this.y,this.z+0.4*cya, sya*cxa,sxa,cya*cxa, dist, false)
-						if blx1 >= 0 and blx1 < xlen and bly1 >= 0 and bly1 <= ylen - 3 and blz1 >= 0 and blz1 < zlen and map_is_buildable(blx1, bly1, blz1) then
-							net_send(nil, common.net_pack("BHHHBBBB",
-								PKT_BLK_ADD,
-								blx1, bly1, blz1,
-								this.blk_color[3],
-								this.blk_color[2],
-								this.blk_color[1],
-								1))
-							if this.mode == PLM_NORMAL then
-								this.blocks = this.blocks - 1
-							end
-							this.t_newblock = sec_current + MODE_DELAY_BLOCK_BUILD
-							this.t_switch = this.t_newblock
-							break
-						end
-					end
-				end
-			elseif this.tool == TOOL_SPADE then
-				if (not this.t_newspade1) then
-				
-				-- see if there's anyone we can kill
-				local d = this.bld2 or 4 -- NOTE: cannot spade through walls anymore. Sorry guys :/
-				local hurt_idx = nil
-				local hurt_part = nil
-				local hurt_part_idx = 0
-				local hurt_dist = d*d
-				local i,j
-				
-				for i=1,players.max do
-					local p = players[i]
-					if p and p ~= this and p.alive and p.team ~= this.team then
-						local dx = p.x-this.x
-						local dy = p.y-this.y+0.1
-						local dz = p.z-this.z
-						
-						for j=1,3 do
-							local dot, dd = isect_line_sphere_delta(dx,dy,dz,fwx,fwy,fwz)
-							if dot and dot < 0.55 and dd < hurt_dist then
-								hurt_idx = i
-								hurt_dist = dd
-								hurt_part_idx = j
-								hurt_part = ({"head","body","legs"})[j]
-								
-								break
-							end
-							dy = dy + 1.0
-						end
-					end
-				end
-				
-				if hurt_idx then
-					if server then
-						players[hurt_idx].spade_damage(
-							hurt_part, 1000, this)
-					else
-						net_send(nil, common.net_pack("BBB"
-							, PKT_PLR_GUN_HIT, hurt_idx, hurt_part_idx))
-					end
-				elseif this.blx2 then
-				if this.blx2 >= 0 and this.blx2 < xlen and this.blz2 >= 0 and this.blz2 < zlen then
-				if this.bly2 <= ylen-3 then
-					net_send(nil, common.net_pack("BHHHH", PKT_BLK_DAMAGE, this.blx2, this.bly2, this.blz2, MODE_BLOCK_DAMAGE_SPADE))
-					this.t_newspade1 = sec_current + MODE_DELAY_SPADE_HIT
-				end
-				end
-				end
-				
-				end
+			if this.recoil_time then
+				this.recoil_amt = (sec_current - this.recoil_time) * math.pow(2, 1 - 10 * (sec_current - this.recoil_time)) * 1.5
+			else
+				this.recoil_amt = 0
 			end
-		elseif this.mode ~= PLM_SPECTATE and this.ev_rmb then
-			if this.tool == TOOL_BLOCK and this.blx3 and this.alive then
-				local ct,cr,cg,cb
-				ct,cr,cg,cb = map_block_pick(this.blx3, this.bly3, this.blz3)
-				if ct ~= nil then
-					this.blk_color = {cr,cg,cb}
-					net_send(nil, common.net_pack("BBBBB",
-						PKT_PLR_BLK_COLOR, 0x00,
-						this.blk_color[1],this.blk_color[2],this.blk_color[3]))
-				end
-				this.ev_rmb = false
-			elseif this.tool == TOOL_SPADE and this.blx2 and this.alive then
-				if (not this.t_newspade2) then
-					this.t_newspade2 = sec_current
-						+ MODE_DELAY_SPADE_DIG
-				end
-			end
-		end
 		end
 		
 		-- move along
@@ -1142,6 +1020,10 @@ function new_player(settings)
 		end
 		
 		-- update items
+		local i
+		for i=1,#this.tools do
+			this.tools[i].tick(sec_current, sec_delta)
+		end
 		if this.wpn then this.wpn.tick(sec_current, sec_delta) end
 		if this.expl then this.expl.tick(sec_current, sec_delta) end
 	end
@@ -1267,16 +1149,11 @@ function new_player(settings)
 		if not this.alive then
 			-- do nothing --
 		elseif this.tool == TOOL_SPADE then
-			client.model_render_bone_global(mdl_spade, mdl_spade_bone,
-				this.x+mdl_x, this.y+this.jerkoffs+mdl_y, this.z+mdl_z,
-				--0.0, -this.angx-math.pi/2*0.90, this.angy, 1)
-				0.0, -this.angx, this.angy, 1)
+			this.tools[1].render(this.x+mdl_x, this.y+this.jerkoffs+mdl_y, this.z+mdl_z,
+				math.pi/2, -this.angx + this.recoil_amt, this.angy)
 		elseif this.tool == TOOL_BLOCK then
-			if this.blocks > 0 then
-				client.model_render_bone_global(this.mdl_block, mdl_block_bone,
-					this.x+mdl_x, this.y+this.jerkoffs+mdl_y, this.z+mdl_z,
-					0.0, -this.angx, this.angy, 1)
-			end
+			this.tools[2].render(this.x+mdl_x, this.y+this.jerkoffs+mdl_y, this.z+mdl_z,
+				math.pi/2, -this.angx + this.recoil_amt, this.angy)
 		elseif this.tool == TOOL_GUN then
 			this.wpn.render(this.x+mdl_x, this.y+this.jerkoffs+mdl_y, this.z+mdl_z,
 				math.pi/2, -this.angx + this.recoil_amt, this.angy)
@@ -1323,9 +1200,9 @@ function new_player(settings)
 		-- tools
 		
 		this.tools_align = scene.display_object{x=root.l, y=root.t, visible=false}
-		local bone_wslot1 = scene.bone{model=mdl_spade, bone=mdl_spade_bone,
+		local bone_wslot1 = scene.bone{model=this.tools[1].get_model(), bone=0,
 			x=0.1*w*5/8}
-		local bone_wslot2 = scene.bone{model=this.mdl_block, bone=this.mdl_block_bone,
+		local bone_wslot2 = scene.bone{model=this.tools[2].get_model(), bone=0,
 			x=0.25*w*5/8}
 		local bone_wslot3 = scene.bone{model=this.wpn.get_model(), bone=0,
 			x=0.4*w*5/8}
@@ -2027,10 +1904,16 @@ function new_player(settings)
 		if this.mode == PLM_SPECTATE then
 			return
 		end
-		if this.tool == TOOL_GUN and this.alive then
-			this.wpn.click(button, state)
-		elseif this.tool == TOOL_EXPL and this.alive then
-			this.expl.click(button, state)
+		if this.alive then
+			if this.tool == TOOL_SPADE then
+				this.tools[1].click(button, state)
+			elseif this.tool == TOOL_BLOCK then
+				this.tools[2].click(button, state)
+			elseif this.tool == TOOL_GUN then
+				this.wpn.click(button, state)
+			elseif this.tool == TOOL_EXPL then
+				this.expl.click(button, state)
+			end
 		end
 		if button == 1 then
 			-- LMB
@@ -2131,6 +2014,7 @@ function new_player(settings)
 						this.blk_color_x = 7
 					end
 					this.blk_color = cpalette[this.blk_color_x+this.blk_color_y*8+1]
+					this.block_recolor()
 					net_send(nil, common.net_pack("BBBBB",
 						PKT_PLR_BLK_COLOR, 0x00,
 						this.blk_color[1],this.blk_color[2],this.blk_color[3]))
@@ -2140,6 +2024,7 @@ function new_player(settings)
 						this.blk_color_x = 0
 					end
 					this.blk_color = cpalette[this.blk_color_x+this.blk_color_y*8+1]
+					this.block_recolor()
 					net_send(nil, common.net_pack("BBBBB",
 						PKT_PLR_BLK_COLOR, 0x00,
 						this.blk_color[1],this.blk_color[2],this.blk_color[3]))
@@ -2149,6 +2034,7 @@ function new_player(settings)
 						this.blk_color_y = 7
 					end
 					this.blk_color = cpalette[this.blk_color_x+this.blk_color_y*8+1]
+					this.block_recolor()
 					net_send(nil, common.net_pack("BBBBB",
 						PKT_PLR_BLK_COLOR, 0x00,
 						this.blk_color[1],this.blk_color[2],this.blk_color[3]))
@@ -2158,6 +2044,7 @@ function new_player(settings)
 						this.blk_color_y = 0
 					end
 					this.blk_color = cpalette[this.blk_color_x+this.blk_color_y*8+1]
+					this.block_recolor()
 					net_send(nil, common.net_pack("BBBBB",
 						PKT_PLR_BLK_COLOR, 0x00,
 						this.blk_color[1],this.blk_color[2],this.blk_color[3]))
@@ -2184,67 +2071,6 @@ function new_player(settings)
 		local i, j
 		w, h = client.screen_get_dims()
 
-		-- TODO: palettise this more nicely
-		prv_recolor_block(this.blk_color[1],this.blk_color[2],this.blk_color[3])
-
-		-- TODO: wireframe cube
-		if this.mode ~= PLM_SPECTATE then
-		if this.tool == TOOL_BLOCK and this.blx1 and (this.alive or this.respawning) and this.blocks >= 1 then
-			local xlen,ylen,zlen = common.map_get_dims()
-			local err = true
-			for dist=5,1,-1 do
-				_, blx1, bly1, blz1 = trace_map_ray_dist(this.x+0.4*ays,this.y,this.z+0.4*ayc, ays*axc,axs,ayc*axc, dist, false)
-				if blx1 >= 0 and blx1 < xlen and bly1 >= 0 and bly1 <= ylen - 3 and blz1 >= 0 and blz1 < zlen and (map_is_buildable(blx1, bly1, blz1) or MODE_BLOCK_PLACE_IN_AIR) then
-					bname, mdl_data = client.model_bone_get(mdl_cube, mdl_cube_bone)
-					
-					mdl_data_backup = mdl_data
-					
-					for i=1,#mdl_data do
-						if mdl_data[i].r > 4 then
-							mdl_data[i].r = math.max(this.blk_color[1], 5) --going all the way down to
-							mdl_data[i].g = math.max(this.blk_color[2], 5) --to 4 breaks it and you'd
-							mdl_data[i].b = math.max(this.blk_color[3], 5) --have to reload the model
-						end
-					end
-					
-					client.model_bone_set(mdl_cube, mdl_cube_bone, bname, mdl_data)
-					
-					client.model_render_bone_global(mdl_cube, mdl_cube_bone,
-						blx1+0.5, bly1+0.5, blz1+0.5,
-						0.0, 0.0, 0.0, 24.0) --no rotation, 24 roughly equals the cube size
-					err = false
-					break
-				end
-			end
-			if err and not MODE_BLOCK_NO_RED_MARKER then
-				for dist=5,0,-1 do
-					_, blx1, bly1, blz1 = trace_map_ray_dist(this.x+0.4*ays,this.y,this.z+0.4*ayc, ays*axc,axs,ayc*axc, dist, false)
-					if blx1 >= 0 and blx1 < xlen and bly1 >= 0 and bly1 <= ylen - 3 and blz1 >= 0 and blz1 < zlen then
-						client.model_render_bone_global(mdl_Xcube, mdl_Xcube_bone,
-							blx1+0.5, bly1+0.5, blz1+0.5,
-							0.0, 0.0, 0.0, 24.0)
-						break
-					end
-				end
-				--print(this.blx1.." "..this.bly1.." "..this.blz1)
-			end
-		elseif this.tool == TOOL_SPADE and this.blx1 and (this.alive or this.respawning) and map_block_get(this.blx2, this.bly2, this.blz2) then
-			client.model_render_bone_global(mdl_test, mdl_test_bone,
-				this.blx1+0.5, this.bly1+0.5, this.blz1+0.5,
-				rotpos*0.01, rotpos*0.004, 0.0, 0.1+0.01*math.sin(rotpos*0.071))
-			client.model_render_bone_global(mdl_test, mdl_test_bone,
-				(this.blx1*2+this.blx2)/3+0.5,
-				(this.bly1*2+this.bly2)/3+0.5,
-				(this.blz1*2+this.blz2)/3+0.5,
-				-rotpos*0.01, -rotpos*0.004, 0.0, 0.1+0.01*math.sin(-rotpos*0.071))
-		end
-		end
-		--[[
-		client.model_render_bone_local(mdl_test, mdl_test_bone,
-			1-0.2, 600/800-0.2, 1.0,
-			rotpos*0.01, rotpos*0.004, 0.0, 0.1)
-		]]
-		
 		if not this.scene then
 			this.create_hud()
 		end
