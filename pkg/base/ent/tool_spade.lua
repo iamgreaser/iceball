@@ -64,6 +64,13 @@ return function (plr)
 
 		if plr.tools[plr.tool+1] ~= this then return end
 
+		local sya = math.sin(this.angy)
+		local cya = math.cos(this.angy)
+		local sxa = math.sin(this.angx)
+		local cxa = math.cos(this.angx)
+		local fwx,fwy,fwz
+		fwx,fwy,fwz = sya*cxa, sxa, cya*cxa
+
 		if this.t_newspade2 == true then
 			this.t_newspade2 = sec_current + 1.0
 		end
