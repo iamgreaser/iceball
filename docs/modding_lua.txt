@@ -554,6 +554,34 @@ server.net_kick(neth, reason) @
 client.hook_kick = fn(reason) @
 	sets a hook called when the player gets kicked
 
+tcpsockfd = common.tcp_connect(hostname, port) @
+	creates a raw TCP socket
+	returns nil on connection failure
+	throws an error in other weird situations
+
+data = common.tcp_recv(tcpsockfd) @
+	receives from a TCP socket
+	returns an empty string if nothing arrived
+	returns false on error, such as disconnection
+
+	WARNING: DO NOT MAKE UP YOUR OWN SOCKFDS!
+	DOING THAT CAN REALLY SCREW UP YOUR CONNECTIONS AND WHATNOT.
+	SAME WARNING APPLIES TO SENDING.
+	
+	DO NOT MIX TCPSOCKFDS UP WITH UDPSOCKFDS. IT DOESN'T WORK.
+
+	THAT MEANS DON'T BE A SMARTARSE - LEAVE STDIN/OUT/ERR ALONE.
+	NOT EVERYONE DOESN'T USE WINDOWS.
+
+remain = common.tcp_send(tcpsockfd, data) @
+	sends data to a TCP socket
+
+	returns the data that wasn't quite sent just yet, which can be an empty string
+	returns false on error, such as disconnection
+
+common.tcp_close(tcpsockfd) @
+	closes a TCP socket
+
 wav = common.wav_load(fname) @
 	loads a sound with filename "fname"
 	remember to free it when you're done

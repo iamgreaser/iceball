@@ -84,6 +84,10 @@ VERSION_BUGS = {
 {intro=nil, fix=53, msg="There are some weird network stability issues"},
 {intro=nil, fix=4194304+0, msg="Binary files don't have a type name"},
 {intro=nil, fix=4194304+0, msg="JSON files cannot be remotely sent to clients"},
+{intro=nil, fix=4194304+1, msg="Arbitrary TCP connections not supported"},
+{intro=4194304+1, fix=4194304+2, msg="This build doesn't actually compile on not-windows because itoa isn't a real function."},
+{intro=4194304+1, fix=4194304+2, msg="Raw TCP connection throws an error on failure"},
+{intro=4194304+1, fix=nil, msg="Raw TCP appears to ignore the whitelist on the client side"},
 {intro=nil, fix=nil, msg="Occasional crash in sackit_module_free on common.mus_free - this is probably a sackit bug."},
 {intro=nil, fix=nil, msg="Sound distance attenuation affected by zoom (workaround implemented)"},
 }
