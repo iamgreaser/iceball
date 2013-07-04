@@ -38,7 +38,6 @@ load_mod_list(getfenv(), mod_data.mods, {"preload", "preload_client"}, client_co
 
 -- if you don't want music, set FILE_MUSIC to "true".
 FILE_MUSIC = FILE_MUSIC or "music.it"
-FILE_MUSIC = true -- temporary, i want to listen to a different song while i debug --GM
 
 print("pkg/base/main_client.lua starting")
 
