@@ -102,6 +102,13 @@ function new_player(...)
 		return ret
 	end
 
+	local s_on_disconnect = this.on_disconnect
+	function this.on_disconnect(...)
+		local ret = s_on_disconnect(...)
+		plr.intel_drop()
+		return ret
+	end
+
 	function this.intel_drop()
 		if server then
 			local intel = this.has_intel

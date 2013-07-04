@@ -44,9 +44,6 @@ function new_player(settings)
 	this.zooming = false
 	this.mode = settings.mode or PLM_NORMAL
 
-	this.mdl_block = common.model_new(1)
-	this.mdl_block = common.model_bone_new(this.mdl_block)
-
 	this.mdl_player = common.model_new(4)
 	this.mdl_player = common.model_bone_new(this.mdl_player)
 	this.mdl_player = common.model_bone_new(this.mdl_player)
@@ -139,7 +136,6 @@ function new_player(settings)
 	this.input_reset()
 
 	function this.free()
-		if this.mdl_block then common.model_free(this.mdl_block) end
 		if this.mdl_player then common.model_free(this.mdl_player) end
 	end
 
@@ -217,6 +213,8 @@ function new_player(settings)
 		
 		this.tool = 2
 		this.tool_last = 0
+
+		this.scene = nil
 	end
 
 	function this.block_recolor()
@@ -426,6 +424,10 @@ function new_player(settings)
 				lifetime = 1
 			})
 		end
+	end
+
+	function this.on_disconnect()
+		-- override me!
 	end
 
 	function this.on_death(kcol, kmsg)
@@ -1603,7 +1605,6 @@ function new_player(settings)
 			y = h - 48}
 		
 		local function ammo_update(options)
-			local tool = this.tool + 1
 			this.ammo_text.color, this.ammo_text.text = this.tools[this.tool+1].textgen()
 			if this.mode == PLM_SPECTATE or not this.alive then
 				this.ammo_text.text = ""

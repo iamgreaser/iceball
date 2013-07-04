@@ -158,7 +158,7 @@ function server.hook_disconnect(neth, server_force, reason)
 	print("Disconnected: player on neth "..ss)
 	
 	if plr then
-		plr.intel_drop()
+		plr.on_disconnect()
 		net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFF800000,
 			"* Player "..plr.name.." disconnected"))
 		net_broadcast(neth, common.net_pack("BB",
