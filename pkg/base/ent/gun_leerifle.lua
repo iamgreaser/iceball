@@ -52,7 +52,7 @@ return function (plr)
 	local s_tick = this.tick
 	function this.tick(sec_current, sec_delta, ...)
 		local ret = s_tick(sec_current, sec_delta, ...)
-		if plr.tool == TOOL_GUN then
+		if plr.tools[plr.tool+1] == this then
 			local swayamt = 0.0002
 			if plr.crouching then swayamt = swayamt * 0.5 end
 			plr.angx = plr.angx + math.sin(sec_current * 2) * swayamt

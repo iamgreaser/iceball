@@ -67,11 +67,14 @@ BTSK_CROUCH  = controls_config.crouch or SDLK_LCTRL
 BTSK_SNEAK   = controls_config.sneak or SDLK_v
 BTSK_RELOAD  = controls_config.reload or SDLK_r
 
-BTSK_TOOL1 = controls_config.tool1 or SDLK_1
-BTSK_TOOL2 = controls_config.tool2 or SDLK_2
-BTSK_TOOL3 = controls_config.tool3 or SDLK_3
-BTSK_TOOL4 = controls_config.tool4 or SDLK_4
-BTSK_TOOL5 = controls_config.tool5 or SDLK_5
+BTSK_TOOLS = {}
+do
+	local i
+	local defvals = {49,50,51,52,53,54,55,56,57,48}
+	for i=1,10 do
+		BTSK_TOOLS[i] = controls_config.tools[i] or controls_config["tool"..i] or defvals[i]
+	end
+end
 BTSK_TOOLLAST = controls_config.toollast or SDLK_q
 
 BTSK_COLORLEFT  = controls_config.colorleft or SDLK_LEFT
@@ -111,12 +114,6 @@ button_map = {
 	sneak={key=BTSK_SNEAK,desc="Sneak"},
 	reload={key=BTSK_RELOAD,desc="Reload"},
 	
-	tool1={key=BTSK_TOOL1,desc="Tool 1"},
-	tool2={key=BTSK_TOOL2,desc="Tool 2"},
-	tool3={key=BTSK_TOOL3,desc="Tool 3"},
-	tool4={key=BTSK_TOOL4,desc="Tool 4"},
-	tool5={key=BTSK_TOOL5,desc="Tool 5"},
-	
 	color_left={key=BTSK_COLORLEFT,desc="Color Left"},
 	color_right={key=BTSK_COLORRIGHT,desc="Color Right"},
 	color_up={key=BTSK_COLORUP,desc="Color Up"},
@@ -136,6 +133,12 @@ button_map = {
 	team={key=BTSK_TEAM,desc="Change Team"},
 	wpn={key=BTSK_WPN,desc="Change Weapon"},
 }
+do
+	local i
+	for i=1,#BTSK_TOOLS do
+		button_map["tool"..i]={key=BTSK_TOOLS[i],desc="Tool "..i}
+	end
+end
 
 -- equivalent - find a button from a keybinding
 key_map = {}

@@ -21,12 +21,23 @@ return function (plr)
 	this.plr = plr
 	this.mdl = mdl_nade
 	this.mdl_bone = mdl_nade_bone
+	this.gui_x = 0.15
 	this.gui_y = 0.25
 	this.gui_scale = 0.1
 	this.gui_pick_scale = 2.0
 	this.t_nadeboom = nil
 	this.t_newnade = nil
 	this.ammo = 2
+
+	function plr.expl_ammo_checkthrow()
+		if this.ammo <= 0 then return false end
+
+		if plr.mode == PLM_NORMAL then
+			this.ammo = this.ammo - 1
+		end
+
+		return true
+	end
 	
 	function this.restock()
 		this.ammo = 4
@@ -78,7 +89,7 @@ return function (plr)
 
 		if client and plr.alive and (not plr.t_switch) then
 		if this.ev_lmb and plr.mode ~= PLM_SPECTATE then
-		if plr.tool == TOOL_EXPL then
+		if plr.tools[plr.tool+1] == this then
 			if (not this.t_newnade) and this.ammo > 0 then
 				if (not this.t_nadeboom) then
 					if plr.mode == PLM_NORMAL then
@@ -92,6 +103,22 @@ return function (plr)
 		end end end
 	end
 	
+	function this.focus()
+		--
+	end
+	
+	function this.unfocus()
+		--
+	end
+
+	function this.need_restock()
+		return this.ammo < 4
+	end
+
+	function this.key(key, state, modif)
+		--
+	end
+
 	function this.click(button, state)
 		if button == 1 then
 			-- LMB
@@ -104,10 +131,13 @@ return function (plr)
 	end
 
 	function this.textgen()
-		local cr,cg,cb
-		cr,cg,cb = this.plr.blk_color[1],this.plr.blk_color[2],this.plr.blk_color[3]
-		local col = (cr*256+cg)*256+cb+0xFF000000
-		return col, ""..this.plr.blocks
+		local col
+		if this.ammo == 0 then
+			col = 0xFFFF3232
+		else
+			col = 0xFFC0C0C0
+		end
+		return col, ""..this.ammo
 	end
 	
 	function this.get_model()

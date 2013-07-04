@@ -19,6 +19,22 @@ return function (plr, cfg)
 	local this = {} this.this = this
 
 	this.cfg = cfg
+
+	this.gui_x = 0.15
+	this.gui_y = 0.25
+	this.gui_scale = 0.2
+	this.gui_pick_scale = 2.0
+
+	function this.free()
+		--
+	end
+
+	function this.get_damage(styp, tplr)
+		local dmg = this.cfg.dmg[({"head","body","legs"})[styp]]
+		local dtype = "killed"
+		if styp == 1 then dtype = "headshot" end
+		return dmg, dtype
+	end
 	
 	function this.restock()
 		this.ammo_clip = this.cfg.ammo_clip
@@ -137,6 +153,29 @@ return function (plr, cfg)
 			this.t_reload = nil
 		end end end
 	end
+
+	function this.focus()
+		--
+	end
+	
+	function this.unfocus()
+		this.firing = false
+		this.reloading = false
+		plr.zooming = false
+		plr.arm_rest_right = 0
+	end
+
+	function this.need_restock()
+		return this.ammo_reserve ~= this.cfg.ammo_reserve
+	end
+
+	function this.key(key, state, modif)
+		if plr.alive and state and key == BTSK_RELOAD then
+			if plr.mode ~= PLM_SPECTATE and plr.alive then
+				this.reload()
+			end
+		end
+	end
 	
 	function this.click(button, state)
 		if button == 1 then
@@ -173,7 +212,7 @@ return function (plr, cfg)
 		else
 			col = 0xFFC0C0C0
 		end
-		return col, ""..this.wpn.ammo_clip.."-"..this.wpn.ammo_reserve
+		return col, ""..this.ammo_clip.."-"..this.ammo_reserve
 	end
 	
 	function this.render(px, py, pz, ya, xa, ya2)
@@ -182,10 +221,15 @@ return function (plr, cfg)
 	end
 	
 	function this.tick(sec_current, sec_delta)
-		if this.reloading then
+		if not plr.alive then
+			this.firing = false
+			this.reloading = false
+			plr.zooming = false
+		elseif this.reloading then
 			if not this.t_reload then
 				this.t_reload = sec_current + this.cfg.time_reload
 			end
+			plr.reload_msg.visible = false
 			
 			if sec_current >= this.t_reload then
 				local adelta = this.cfg.ammo_clip - this.ammo_clip

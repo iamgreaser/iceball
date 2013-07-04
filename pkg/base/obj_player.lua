@@ -122,12 +122,6 @@ function new_player(settings)
 		prv_recolor_team(r,g,b)
 	end
 
-	function this.block_recolor()
-		if this.tools[2] then
-			this.tools[2].recolor(this.blk_color[1],this.blk_color[2],this.blk_color[3])
-		end
-	end
-
 	function this.input_reset()
 		this.ev_forward = false
 		this.ev_back = false
@@ -161,10 +155,6 @@ function new_player(settings)
 		this.arm_rest_right = 0.0
 		this.arm_rest_left = 1.0
 		
-		this.tools = {}
-		this.tools[#(this.tools)+1] = tools[TOOL_SPADE](this)
-		this.tools[#(this.tools)+1] = tools[TOOL_BLOCK](this)
-		
 		this.t_respawn = nil
 		this.t_switch = nil
 		this.t_newblock = nil
@@ -186,7 +176,7 @@ function new_player(settings)
 		this.drunkfx, this.drunkfz = 0, 0
 		
 		this.blk_color = {0x7F,0x7F,0x7F}
-		this.block_recolor()
+		this.blk_color_changed = true
 		this.blk_color_x = 3
 		this.blk_color_y = 0
 		
@@ -198,11 +188,39 @@ function new_player(settings)
 		this.health = 100
 		this.blocks = 25
 		
-		this.expl = explosives[this.explosive](this)
-		this.wpn = weapons[this.weapon](this)
+		function this.expl_ammo_checkthrow() return false end
+
+		this.add_tools()
+	end
+
+	function this.add_tools()
+		local i
+		if this.tools then
+			for i=1,#this.tools do
+				this.tools[i].free()
+			end
+		end
+		this.tools = {}
+		this.tools[#(this.tools)+1] = tools[TOOL_SPADE](this)
+		this.tools[#(this.tools)+1] = tools[TOOL_BLOCK](this)
+		if MODE_ALLGUNS then
+			local i
+			for i=1,#weapons do
+				if weapons_enabled[i] then
+					this.tools[#(this.tools)+1] = weapons[i](this)
+				end
+			end
+		else
+			this.tools[#(this.tools)+1] = weapons[this.weapon](this)
+		end
+		this.tools[#(this.tools)+1] = explosives[this.explosive](this)
 		
 		this.tool = 2
 		this.tool_last = 0
+	end
+
+	function this.block_recolor()
+		this.blk_color_changed = true
 	end
 
 	local function prv_spawn_cont1()
@@ -259,17 +277,14 @@ function new_player(settings)
 	function this.tool_switch(tool)
 		if not this.alive then return end
 		if this.mode == PLM_SPECTATE then return end
+		if tool == this.tool then return end
+		if not this.tools[tool+1] then return end
 
 		this.tool_last = this.tool
 
-		if this.tool == TOOL_GUN then
-			if this.wpn then
-				this.wpn.firing = false
-				this.wpn.reloading = false
-			end
-			this.zooming = false
-			this.arm_rest_right = 0
-		end
+		this.tools[this.tool+1].unfocus()
+		this.tools[tool+1].focus()
+
 		this.t_switch = true
 		if client and this == players[players.current] and this.tool ~= tool then
 			net_send(nil, common.net_pack("BBB"
@@ -285,16 +300,15 @@ function new_player(settings)
 			this.tools_align.static_alarm{name='viz',
 				time=3.0, on_trigger=function() this.tools_align.visible = false end}
 		end
-		
 	end
 
 	function this.tool_switch_next()
-		new_tool = (this.tool + 1) % (TOOL_EXPL + 1) -- Explosives is last weapon
+		new_tool = (this.tool + 1) % #this.tools
 		this.tool_switch(new_tool)
 	end
 
 	function this.tool_switch_prev()
-		new_tool = (this.tool - 1) % (TOOL_EXPL + 1) -- Explosives is last weapon
+		new_tool = (this.tool - 1) % #this.tools
 		this.tool_switch(new_tool)
 	end
 
@@ -384,12 +398,9 @@ function new_player(settings)
 
 	function this.tent_restock()
 		this.health = 100
-		this.blocks = 100
-		if this.expl then
-			this.expl.restock()
-		end
-		if this.wpn then
-			this.wpn.restock()
+		local i
+		for i=1,#this.tools do
+			this.tools[i].restock()
 		end
 		if server then
 			net_broadcast(nil, common.net_pack("BB", PKT_PLR_RESTOCK, this.pid))
@@ -491,43 +502,19 @@ function new_player(settings)
 		this.damage(amt, c, kmsg, this)
 	end
 
-	function this.gun_damage(part, amt, enemy)
+	function this.wpn_damage(part, amt, enemy, dmsg)
 		--print("damage",this.name,part,amt)
 
 		if not server then
 			return
 		end
 
-		local midmsg = " killed "
+		local midmsg = " "..dmsg.." "
 		if this.team == enemy.team then
 			midmsg = " teamkilled "
 			if not this.has_permission("teamkill") then
 				return
 			end
-		end
-
-		local r,g,b
-		r,g,b = 0,0,0
-
-		local l = teams[enemy.team].color_chat
-		r,g,b = l[1],l[2],l[3]
-
-		local c = argb_split_to_merged(r,g,b)
-
-		local kmsg = enemy.name..midmsg..this.name
-		this.damage(amt, c, kmsg, enemy)
-	end
-
-	function this.spade_damage(part, amt, enemy)
-		--print("damage",this.name,part,amt)
-
-		if not server then
-			return
-		end
-
-		local midmsg = " spaded "
-		if this.team == enemy.team then
-			error("THIS SHOULD NEVER HAPPEN WORST PYSPADES BUG EVER")
 		end
 
 		local r,g,b
@@ -585,9 +572,6 @@ function new_player(settings)
 		if (not this.alive) and (not this.t_respawn) then
 			this.t_respawn = sec_current + MODE_RESPAWN_TIME
 			this.input_reset()
-			this.wpn.firing = false
-			this.wpn.reloading = false
-			this.zooming = false
 		end
 
 		if this.t_respawn then
@@ -653,10 +637,6 @@ function new_player(settings)
 				end
 			else
 				this.t_step = nil
-			end
-
-			if this.wpn.reloading then
-				this.reload_msg.visible = false
 			end
 		end
 		
@@ -824,9 +804,11 @@ function new_player(settings)
 		mvz = mvz / mvd
 
 		-- apply tool speedup
-		if this.mode == PLM_NORMAL and (this.tool == TOOL_SPADE or this.tool == TOOL_BLOCK) then
-			mvx = mvx * MODE_PSPEED_SPADE
-			mvz = mvz * MODE_PSPEED_SPADE
+		-- TODO: i REALLY, *REALLY* want to move this one out of here. --GM
+		local msmul = this.tools[this.tool+1].mspeed_mul 
+		if this.mode == PLM_NORMAL and msmul then
+			mvx = mvx * msmul
+			mvz = mvz * msmul
 		end
 
 		-- apply base slowdown
@@ -1166,18 +1148,9 @@ function new_player(settings)
 		local mdl_z = hand_z1+math.cos(rax_right)*ayc*0.8
 		if not this.alive then
 			-- do nothing --
-		elseif this.tool == TOOL_SPADE then
-			this.tools[1].render(this.x+mdl_x, this.y+this.jerkoffs+mdl_y, this.z+mdl_z,
+		elseif this.tools and this.tools[this.tool+1] then
+			this.tools[this.tool+1].render(this.x+mdl_x, this.y+this.jerkoffs+mdl_y, this.z+mdl_z,
 				math.pi/2, -this.angx + this.recoil_amt, this.angy)
-		elseif this.tool == TOOL_BLOCK then
-			this.tools[2].render(this.x+mdl_x, this.y+this.jerkoffs+mdl_y, this.z+mdl_z,
-				math.pi/2, -this.angx + this.recoil_amt, this.angy)
-		elseif this.tool == TOOL_GUN then
-			this.wpn.render(this.x+mdl_x, this.y+this.jerkoffs+mdl_y, this.z+mdl_z,
-				math.pi/2, -this.angx + this.recoil_amt, this.angy)
-		elseif this.tool == TOOL_EXPL then
-			this.expl.render(this.x+mdl_x, this.y+this.jerkoffs+mdl_y, this.z+mdl_z,
-				math.pi/2, -this.angx, this.angy)
 		end
 
 		client.model_render_bone_global(this.mdl_player, mdl_player_arm,
@@ -1218,52 +1191,21 @@ function new_player(settings)
 		-- tools
 		
 		this.tools_align = scene.display_object{x=root.l, y=root.t, visible=false}
-		local bone_wslot1 = scene.bone{model=this.tools[1].get_model(), bone=0,
-			x=0.1*w*5/8}
-		local bone_wslot2 = scene.bone{model=this.tools[2].get_model(), bone=0,
-			x=0.25*w*5/8}
-		local bone_wslot3 = scene.bone{model=this.wpn.get_model(), bone=0,
-			x=0.4*w*5/8}
-		local bone_wslot4 = scene.bone{model=this.expl.get_model(), bone=0,
-			x=0.55*w*5/8}
 		scene.root.add_child(this.tools_align)
-		this.tools_align.add_child(bone_wslot1)
-		this.tools_align.add_child(bone_wslot2)
-		this.tools_align.add_child(bone_wslot3)
-		this.tools_align.add_child(bone_wslot4)
+		local i
+		local xacc = 0
+		local tool_y = {}
+		local tool_scale = {}
+		local tool_pick_scale = {}
+		for i=1,#this.tools do
+			xacc = xacc + this.tools[i].gui_x
+			this.tools_align.add_child(scene.bone{model=this.tools[i].get_model(), bone=0,
+				x=xacc*w*5/8})
+			tool_y[#tool_y+1] = this.tools[i].gui_y
+			tool_scale[#tool_scale+1] = this.tools[i].gui_scale
+			tool_pick_scale[#tool_pick_scale+1] = this.tools[i].gui_pick_scale
+		end
 		
-		local tool_mappings = {TOOL_SPADE,TOOL_BLOCK,TOOL_GUN,TOOL_EXPL}
-		local tool_y = {0.3,0.25,0.25,0.25}
-		local tool_scale = {0.2,0.1,0.2,0.1}
-		local tool_pick_scale = {1.3,2.0,2.0,2.0}
-		local tool_textcolor = {
-			function() return 0xFFC0C0C0 end,
-			function() 
-				local cr,cg,cb
-				cr,cg,cb = this.blk_color[1],this.blk_color[2],this.blk_color[3]
-				return (cr*256+cg)*256+cb+0xFF000000
-			end,
-			function()
-				if this.wpn.ammo_clip == 0 then
-					return 0xFFFF3232
-				else
-					return 0xFFC0C0C0
-				end
-			end,
-			function()
-				if this.expl.ammo == 0 then
-					return 0xFFFF3232
-				else
-					return 0xFFC0C0C0
-				end
-			end,
-		}
-		local tool_textgen = {
-			function() return ""..this.blocks end,
-			function() return ""..this.blocks end,
-			function() return ""..this.wpn.ammo_clip.."-"..this.wpn.ammo_reserve end,
-			function() return ""..this.expl.ammo end
-		}
 		local bounce = 0. -- picked tool bounce
 
 		local function bone_rotate(dT)
@@ -1272,7 +1214,7 @@ function new_player(settings)
 				bone.rot_y = bone.rot_y + dT * 120 * 0.01
 				bone.y = tool_y[k]
 				bone.scale = tool_scale[k]
-				if this.tool == tool_mappings[k] then
+				if this.tool+1 == k then
 					bone.y = bone.y + math.sin(bounce * 120 * 0.01) * 0.02
 					bone.scale = bone.scale * tool_pick_scale[k]
 				end
@@ -1529,8 +1471,8 @@ function new_player(settings)
 				
 					local team
 				
-					if options.key == BTSK_TOOL1 then viz = false; team = 0
-					elseif options.key == BTSK_TOOL2 then viz = false; team = 1
+					if options.key == BTSK_TOOLS[1] then viz = false; team = 0
+					elseif options.key == BTSK_TOOLS[2] then viz = false; team = 1
 					elseif (options.key == BTSK_QUIT or options.key == BTSK_TEAM)
 						then viz = false 
 					end
@@ -1553,8 +1495,8 @@ function new_player(settings)
 				if viz then
 					local wpn
 				
-					if options.key == BTSK_TOOL1 then viz = false; wpn = WPN_RIFLE
-					elseif options.key == BTSK_TOOL2 then viz = false; wpn = WPN_LEERIFLE
+					if options.key == BTSK_TOOLS[1] then viz = false; wpn = WPN_RIFLE
+					elseif options.key == BTSK_TOOLS[2] then viz = false; wpn = WPN_LEERIFLE
 					elseif (options.key == BTSK_QUIT or options.key == BTSK_WPN)
 						then viz = false 
 					end
@@ -1662,8 +1604,7 @@ function new_player(settings)
 		
 		local function ammo_update(options)
 			local tool = this.tool + 1
-			this.ammo_text.color = tool_textcolor[tool]()
-			this.ammo_text.text = tool_textgen[tool]()
+			this.ammo_text.color, this.ammo_text.text = this.tools[this.tool+1].textgen()
 			if this.mode == PLM_SPECTATE or not this.alive then
 				this.ammo_text.text = ""
 			end
@@ -1923,15 +1864,7 @@ function new_player(settings)
 			return
 		end
 		if this.alive then
-			if this.tool == TOOL_SPADE then
-				this.tools[1].click(button, state)
-			elseif this.tool == TOOL_BLOCK then
-				this.tools[2].click(button, state)
-			elseif this.tool == TOOL_GUN then
-				this.wpn.click(button, state)
-			elseif this.tool == TOOL_EXPL then
-				this.expl.click(button, state)
-			end
+			this.tools[this.tool+1].click(button, state)
 		end
 		if button == 1 then
 			-- LMB
@@ -1992,30 +1925,17 @@ function new_player(settings)
 			this.ev_sneak = state
 		elseif key == BTSK_SCORES then
 			show_scores = state
-		elseif state then
-			if key == BTSK_DEBUG then
-				debug_enabled = not debug_enabled
-			elseif key == SDLK_F10 then
-				local s = "clsave/"..common.base_dir.."/vol/lastsav.icemap"
-				print(s)
-				--client.map_load(s)
-				client.map_save(map_loaded, s, "icemap")
-				chat_add(chat_text, sec_last, "Map saved to "..s, 0xFFC00000)
-			elseif not this.menus_visible() then
-				if key == BTSK_RELOAD then
-					if this.mode ~= PLM_SPECTATE and this.alive and this.wpn and this.tool == TOOL_GUN then
-						this.wpn.reload()
-					end
-				elseif key == BTSK_TOOL1 then
-					this.tool_switch(TOOL_SPADE)
-				elseif key == BTSK_TOOL2 then
-					this.tool_switch(TOOL_BLOCK)
-				elseif key == BTSK_TOOL3 then
-					this.tool_switch(TOOL_GUN)
-				elseif key == BTSK_TOOL4 then
-					this.tool_switch(TOOL_EXPL)
-				elseif key == BTSK_TOOL5 then
-					-- TODO
+		elseif state and not this.menus_visible() then
+			this.tools[this.tool+1].key(key, state, modif)
+			if state then
+				if key == BTSK_DEBUG then
+					debug_enabled = not debug_enabled
+				elseif key == SDLK_F10 then
+					local s = "clsave/"..common.base_dir.."/vol/lastsav.icemap"
+					print(s)
+					--client.map_load(s)
+					client.map_save(map_loaded, s, "icemap")
+					chat_add(chat_text, sec_last, "Map saved to "..s, 0xFFC00000)
 				elseif key == BTSK_TOOLLAST then
 					this.tool_switch(this.tool_last)
 				elseif key == BTSK_CHAT then
@@ -2026,46 +1946,13 @@ function new_player(settings)
 					this.focus_typing("Team: ", "")
 				elseif key == BTSK_SQUADCHAT then
 					this.focus_typing("Squad: ", "")
-				elseif this.alive and key == BTSK_COLORLEFT then
-					this.blk_color_x = this.blk_color_x - 1
-					if this.blk_color_x < 0 then
-						this.blk_color_x = 7
+				else
+					local i
+					for i=1,#BTSK_TOOLS do
+						if key == BTSK_TOOLS[i] then
+							this.tool_switch(i-1)
+						end
 					end
-					this.blk_color = cpalette[this.blk_color_x+this.blk_color_y*8+1]
-					this.block_recolor()
-					net_send(nil, common.net_pack("BBBBB",
-						PKT_PLR_BLK_COLOR, 0x00,
-						this.blk_color[1],this.blk_color[2],this.blk_color[3]))
-				elseif this.alive and key == BTSK_COLORRIGHT then
-					this.blk_color_x = this.blk_color_x + 1
-					if this.blk_color_x > 7 then
-						this.blk_color_x = 0
-					end
-					this.blk_color = cpalette[this.blk_color_x+this.blk_color_y*8+1]
-					this.block_recolor()
-					net_send(nil, common.net_pack("BBBBB",
-						PKT_PLR_BLK_COLOR, 0x00,
-						this.blk_color[1],this.blk_color[2],this.blk_color[3]))
-				elseif this.alive and key == BTSK_COLORUP then
-					this.blk_color_y = this.blk_color_y - 1
-					if this.blk_color_y < 0 then
-						this.blk_color_y = 7
-					end
-					this.blk_color = cpalette[this.blk_color_x+this.blk_color_y*8+1]
-					this.block_recolor()
-					net_send(nil, common.net_pack("BBBBB",
-						PKT_PLR_BLK_COLOR, 0x00,
-						this.blk_color[1],this.blk_color[2],this.blk_color[3]))
-				elseif this.alive and key == BTSK_COLORDOWN then
-					this.blk_color_y = this.blk_color_y + 1
-					if this.blk_color_y > 7 then
-						this.blk_color_y = 0
-					end
-					this.blk_color = cpalette[this.blk_color_x+this.blk_color_y*8+1]
-					this.block_recolor()
-					net_send(nil, common.net_pack("BBBBB",
-						PKT_PLR_BLK_COLOR, 0x00,
-						this.blk_color[1],this.blk_color[2],this.blk_color[3]))
 				end
 			end
 		end

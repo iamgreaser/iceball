@@ -21,9 +21,12 @@ return function (plr)
 	this.plr = plr
 	this.mdl = nil
 	this.mdl_bone = 0
+	this.gui_x = 0.15
 	this.gui_y = 0.25
 	this.gui_scale = 0.1
 	this.gui_pick_scale = 2.0
+
+	this.mspeed_mul = MODE_PSPEED_SPADE
 
 	function this.get_model()
 		return this.mdl or mdl_block
@@ -40,7 +43,11 @@ return function (plr)
 		common.model_bone_set(this.mdl, this.mdl_bone, mname, mdata)
 	end
 
-	function this.recolor(r,g,b)
+	function this.recolor()
+		local r,g,b
+		r = plr.blk_color[1]
+		g = plr.blk_color[2]
+		b = plr.blk_color[3]
 		prv_recolor_block(r,g,b)
 	end
 
@@ -64,6 +71,64 @@ return function (plr)
 		plr.blocks = 100
 	end
 
+	function this.focus()
+		--
+	end
+	
+	function this.unfocus()
+		--
+	end
+
+	function this.need_restock()
+		return false
+	end
+
+	function this.key(key, state, modif)
+		if plr.alive and state then
+			if key == BTSK_COLORLEFT then
+				plr.blk_color_x = plr.blk_color_x - 1
+				if plr.blk_color_x < 0 then
+					plr.blk_color_x = 7
+				end
+				plr.blk_color = cpalette[plr.blk_color_x+plr.blk_color_y*8+1]
+				this.recolor()
+				net_send(nil, common.net_pack("BBBBB",
+					PKT_PLR_BLK_COLOR, 0x00,
+					plr.blk_color[1],plr.blk_color[2],plr.blk_color[3]))
+			elseif key == BTSK_COLORRIGHT then
+				plr.blk_color_x = plr.blk_color_x + 1
+				if plr.blk_color_x > 7 then
+					plr.blk_color_x = 0
+				end
+				plr.blk_color = cpalette[plr.blk_color_x+plr.blk_color_y*8+1]
+				this.recolor()
+				net_send(nil, common.net_pack("BBBBB",
+					PKT_PLR_BLK_COLOR, 0x00,
+					plr.blk_color[1],plr.blk_color[2],plr.blk_color[3]))
+			elseif key == BTSK_COLORUP then
+				plr.blk_color_y = plr.blk_color_y - 1
+				if plr.blk_color_y < 0 then
+					plr.blk_color_y = 7
+				end
+				plr.blk_color = cpalette[plr.blk_color_x+plr.blk_color_y*8+1]
+				this.recolor()
+				net_send(nil, common.net_pack("BBBBB",
+					PKT_PLR_BLK_COLOR, 0x00,
+					plr.blk_color[1],plr.blk_color[2],plr.blk_color[3]))
+			elseif key == BTSK_COLORDOWN then
+				plr.blk_color_y = plr.blk_color_y + 1
+				if plr.blk_color_y > 7 then
+					plr.blk_color_y = 0
+				end
+				plr.blk_color = cpalette[plr.blk_color_x+plr.blk_color_y*8+1]
+				this.recolor()
+				net_send(nil, common.net_pack("BBBBB",
+					PKT_PLR_BLK_COLOR, 0x00,
+					plr.blk_color[1],plr.blk_color[2],plr.blk_color[3]))
+			end
+		end
+	end
+	
 	function this.click(button, state)
 		--
 	end
@@ -71,6 +136,11 @@ return function (plr)
 	function this.tick(sec_current, sec_delta)
 		local xlen,ylen,zlen
 		xlen,ylen,zlen = common.map_get_dims()
+
+		if plr.blk_color_changed then
+			plr.blk_color_changed = false
+			this.recolor()
+		end
 
 		if plr.tools[plr.tool+1] ~= this then return end
 
@@ -110,7 +180,7 @@ return function (plr)
 			ct,cr,cg,cb = map_block_pick(plr.blx3, plr.bly3, plr.blz3)
 			if ct ~= nil then
 				plr.blk_color = {cr,cg,cb}
-				this.recolor(cr,cg,cb)
+				this.recolor()
 				net_send(nil, common.net_pack("BBBBB",
 					PKT_PLR_BLK_COLOR, 0x00,
 					plr.blk_color[1],plr.blk_color[2],plr.blk_color[3]))

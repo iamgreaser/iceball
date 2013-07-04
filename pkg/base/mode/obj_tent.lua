@@ -70,12 +70,10 @@ function new_tent(settings)
 
 	function this.player_in_range(plr, sec_current)
 		local restock = false
-		if plr.wpn then
-			restock = restock or
-				plr.wpn.ammo_reserve ~= plr.wpn.cfg.ammo_reserve
+		local i
+		for i=1,#plr.tools do
+			restock = restock or plr.tools[i].need_restock()
 		end
-
-		restock = restock or plr.expl.ammo ~= 4
 		restock = restock or plr.health ~= 100
 		restock = restock or plr.blocks ~= 100
 		

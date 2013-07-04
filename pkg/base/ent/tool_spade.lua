@@ -21,9 +21,18 @@ return function (plr)
 	this.plr = plr
 	this.mdl = mdl_spade
 	this.mdl_bone = mdl_spade_bone
+	this.gui_x = 0.1
 	this.gui_y = 0.3
 	this.gui_scale = 0.2
 	this.gui_pick_scale = 1.3
+
+	this.mspeed_mul = MODE_PSPEED_SPADE
+
+	function this.get_damage(styp, tplr)
+		if tplr.team == plr.team then return 0, "ERROR" end
+		local dmg = 1000
+		return dmg, "spaded"
+	end
 
 	function this.get_model()
 		return this.mdl
@@ -44,6 +53,22 @@ return function (plr)
 		--
 	end
 
+	function this.focus()
+		--
+	end
+	
+	function this.unfocus()
+		--
+	end
+
+	function this.need_restock()
+		return false
+	end
+
+	function this.key(key, state, modif)
+		--
+	end
+	
 	function this.click(button, state)
 		if button == 1 then
 			if state then

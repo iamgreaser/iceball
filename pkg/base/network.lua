@@ -601,14 +601,15 @@ network.sys_handle_c2s(PKT_PLR_GUN_HIT, "BB", nwdec_plrset(function (neth, cli, 
 	if not (plr and plr.has_permission("kill")) then return end
 	local tplr = players[tpid]
 	if tplr then
-		if plr.tool == TOOL_GUN and plr.wpn and styp >= 1 and styp <= 3 then
-			local dmg = plr.wpn.cfg.dmg[({"head","body","legs"})[styp]]
-			--print("dmg",dmg,tplr.wpn.cfg.dmg)
-			if dmg then
-				tplr.gun_damage(styp, dmg, plr)
+		if styp >= 1 and styp <= 3 then
+			local tool = plr.tools[plr.tool+1]
+			if tool.get_damage then
+				local dmg, dtype
+				dmg, dtype = tool.get_damage(styp, tplr)
+				if dmg then
+					tplr.wpn_damage(styp, dmg, plr, dtype)
+				end
 			end
-		elseif plr.tool == TOOL_SPADE then
-			tplr.spade_damage(0, 1000, plr)
 		end
 	end
 	
@@ -632,10 +633,7 @@ network.sys_handle_c2s(PKT_PLR_BLK_COLOR, "BBBB", nwdec_plrset(function (neth, c
 	end
 end))
 network.sys_handle_c2s(PKT_NADE_THROW, "hhhhhhH", nwdec_plrset(function (neth, cli, plr, sec_current, x, y, z, vx, vy, vz, fuse, pkt)
-	if plr.expl.ammo > 0 then
-		if plr.mode == PLM_NORMAL then
-			plr.expl.ammo = plr.expl.ammo - 1
-		end
+	if plr.expl_ammo_checkthrow() then
 		local n = new_nade({
 			x = x/32,
 			y = y/32,
