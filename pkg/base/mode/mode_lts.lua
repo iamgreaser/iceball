@@ -23,6 +23,10 @@ local t_start = nil
 local t_end = nil
 local t_start_rem = nil
 
+local lts_borders = nil
+
+local t_border = nil
+
 PKT_LTS_SET_TIMER = network.sys_alloc_packet()
 network.sys_handle_s2c(PKT_LTS_SET_TIMER, "h", function (neth, cli, plr, sec_current, time, pkt)
 	if time < 0 then
@@ -30,6 +34,7 @@ network.sys_handle_s2c(PKT_LTS_SET_TIMER, "h", function (neth, cli, plr, sec_cur
 	else
 		t_start_rem = time
 	end
+	t_border = nil
 end)
 
 local function winning_team()
@@ -99,6 +104,23 @@ end
 
 function mode_create_client()
 	TEAM_SCORE_LIMIT = TEAM_SCORE_LIMIT_CTF
+
+	if not lts_borders then
+		local r,g,b
+		r,g,b = 255,64,64
+		xlen, ylen, zlen = common.map_get_dims()
+		lts_borders = {
+			new_border(-1, -1, -1, 1, 0, 0, r,g,b),
+			new_border(xlen+1, ylen+1, zlen+1, 1, 0, 0, r,g,b),
+			new_border(-1, -1, -1, 0, 0, 1, r,g,b),
+			new_border(xlen+1, ylen+1, zlen+1, 0, 0, 1, r,g,b),
+		}
+
+		local i
+		for i=1,#lts_borders do
+			borders[#borders+1] = lts_borders[i]
+		end
+	end
 end
 
 function mode_relay_items(plr, neth)
@@ -212,6 +234,41 @@ function new_player(...)
 				if t_start_rem ~= oldrem then
 					net_broadcast(nil, common.net_pack("Bh",
 						PKT_LTS_SET_TIMER, t_start_rem))
+				end
+			end
+			t_border = t_end
+		end
+		if client then
+			-- also a total hack
+			if (not t_border) and t_start_rem then 
+				t_border = sec_current + t_start_rem
+			end
+		end
+		if t_border then
+			local xlen, ylen, zlen
+			xlen, ylen, zlen = common.map_get_dims()
+			local xmin,zmin
+			local xmax,zmax
+			local xmid,zmid
+			local timeleft = t_border - sec_current
+			local lenoffs = 16 + ((server and 4) or 0)
+			local xoffs = lenoffs + 1.5/MODE_LTS_ROUNDTIME*xlen/2*timeleft
+			local zoffs = lenoffs + 1.5/MODE_LTS_ROUNDTIME*zlen/2*timeleft
+			xmid,zmid = xlen/2,zlen/2
+			xmin,zmin = xmid-xoffs, zmid-zoffs
+			xmax,zmax = xmid+xoffs, zmid+zoffs
+			if server and this.alive then
+				if this.x < xmin or this.z < zmin or this.x > xmax or this.z > zmax then
+					this.set_health_damage(0, 0xFF800000, this.name.." got a bit bordered", nil)
+				end
+			end
+			if client then
+				local i
+				for i=1,#lts_borders,2 do
+					local bmin = lts_borders[i]
+					local bmax = lts_borders[i+1]
+					bmin.x, bmin.z = xmin, zmin
+					bmax.x, bmax.z = xmax, zmax
 				end
 			end
 		end
