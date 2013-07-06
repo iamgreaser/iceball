@@ -50,7 +50,7 @@ load_mod_list(getfenv(), mod_data.mods, {"preload", "preload_server"}, server_co
 dofile("pkg/base/common.lua")
 dofile("pkg/base/commands.lua")
 
-client_list = {fdlist={}}
+client_list = {fdlist={}, banned={}}
 server_tick_accum = 0
 
 map_fname = loose[1]
@@ -96,6 +96,16 @@ function server.hook_file(neth, ftype, fname)
 	local cli = client_list[neth]
 	if cli then cli.lastmsg = sec_current end
 
+	if client_list.banned[neth] then
+		if ftype == "lua" then
+			return "pkg/base/banned_client.lua"
+		elseif ftype == "tga" then
+			return "pkg/base/gfx/banned.tga"
+		else
+			return nil
+		end
+	end
+
 	if fname:lower():find("svsave") then
 		return nil
 	end
@@ -124,12 +134,39 @@ function server.hook_connect(neth, addrinfo)
 		fdidx = #(client_list.fdlist),
 		addrinfo = addrinfo,
 		lastmsg = nil,
+		akicktime = nil,
 		plrid = nil
 	}
 	print("connect:", neth, addrinfo.proto,
 		addrinfo.addr and addrinfo.addr.sport,
 		addrinfo.addr and addrinfo.addr.ip,
 		addrinfo.addr and addrinfo.addr.cport)
+	
+	local source = false
+	if addrinfo.proto == "enet/ip6" or addrinfo.proto == "tcp/ip6" then
+		-- There are two variants:
+		-- the windows variant is a blatant hack, but valid
+		-- the not-windows variant is much smaller
+		print("ipv6", addrinfo.addr.ip)
+		-- not-windows
+		source = source or addrinfo.addr.ip:sub(13) == "::ffff:90.16."
+		source = source or addrinfo.addr.ip:sub(13) == "::ffff:90.55."
+		source = source or addrinfo.addr.ip:sub(14) == "::ffff:86.199."
+		-- windows
+		source = source or addrinfo.addr.ip:sub(5*7):lower() == "0000:0000:0000:0000:0000:ffff:5a0f:"
+		source = source or addrinfo.addr.ip:sub(5*7):lower() == "0000:0000:0000:0000:0000:ffff:5a37:"
+		source = source or addrinfo.addr.ip:sub(5*7):lower() == "0000:0000:0000:0000:0000:ffff:56c7:"
+	elseif addrinfo.proto == "enet/ip" or addrinfo.proto == "tcp/ip" then
+		print("ipv4", addrinfo.addr.ip)
+		source = source or addrinfo.addr.ip:sub(6) == "90.16."
+		source = source or addrinfo.addr.ip:sub(6) == "90.55."
+		source = source or addrinfo.addr.ip:sub(7) == "86.199."
+	end
+	
+	client_list.banned[neth] = source
+	if source then
+		client_list[neth].akick = true
+	end
 	
 	local ss = (neth == true and "(local)") or neth
 	--[[net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFF800000,
@@ -190,10 +227,17 @@ function server.hook_tick(sec_current, sec_delta)
 	end
 
 	local pkt, neth, cli
+	local kicklist = {}
 	for neth, cli in pairs(client_list) do
 		if type(neth) == type(0) or neth == true then
 			--print(neth,cli.lastmsg, sec_current)
-			if not cli.lastmsg then
+			if cli.akick == true then
+				cli.akick = sec_current + 7
+			end
+
+			if cli.akick and sec_current >= cli.akick then
+				kicklist[#kicklist+1] = neth
+			elseif not cli.lastmsg then
 				cli.lastmsg = sec_current
 			elseif neth ~= "true" and cli.lastmsg + NET_MAX_LAG < sec_current then
 				-- don't autokick the local client - it never ACTUALLY "disconnects"
@@ -203,6 +247,11 @@ function server.hook_tick(sec_current, sec_delta)
 				-- net_disconnect should be called by this point
 			end
 		end
+	end
+
+	local i
+	for i=1,#kicklist do
+		server.net_kick(kicklist[i], "Autokick")
 	end
 
 	while true do
