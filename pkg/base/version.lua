@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,1,0,0,4},
-	num=4194304+4,
-	str="0.1-4",
+	cmp={0,1,0,0,5},
+	num=4194304+5,
+	str="0.1-5",
 }
 
 VERSION_BUGS = {
@@ -92,5 +92,6 @@ VERSION_BUGS = {
 {intro=nil, fix=nil, msg="Sound distance attenuation affected by zoom (workaround implemented)"},
 {intro=nil, fix=4194304+3, msg="[OpenGL] Frustum culling not supported"},
 {intro=nil, fix=4194304+4, msg="[OpenGL] Ambient occlusion on sides not rendered equally"},
+{intro=4194304+4, fix=4194304+5, msg="[OpenGL] Ambient occlusion on sides rendered very unequally on very rare GPUs such as the Intel 3000HD"},
 }
 

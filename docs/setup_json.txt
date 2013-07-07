@@ -61,6 +61,10 @@ clsave/config.json:
 		Set this to "false" if the artifacts are digging your head in,
 		or if it somehow makes rendering *slower*.
 
+		"gl_flip_quads" changes the order in which quads are assembled.
+		Enable this if you have smooth lighting enabled and it looks like you have dark squares
+		at each of the corners.
+
 		"gl_vbo" enables vertex buffer objects (default: true)
 		May fail on older computers. Enable for a faster FPS.
 		It is recommended you disable these on old Intel integrated GPUs.

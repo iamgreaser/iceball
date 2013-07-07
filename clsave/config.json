@@ -31,6 +31,7 @@
 		"gl_chunks_tesselated_per_frame": 4,
 		"gl_shaders": true,
 		"gl_frustum_cull": true,
+		"gl_flip_quads": false,
 		"gl_vbo": true
 	},
 	
