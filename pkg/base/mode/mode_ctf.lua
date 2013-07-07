@@ -105,7 +105,7 @@ function new_player(...)
 	local s_on_disconnect = this.on_disconnect
 	function this.on_disconnect(...)
 		local ret = s_on_disconnect(...)
-		plr.intel_drop()
+		this.intel_drop()
 		return ret
 	end
 
