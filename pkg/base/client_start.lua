@@ -727,7 +727,7 @@ end
 -- load map
 map_loaded = common.map_load(map_fname, "auto")
 common.map_set(map_loaded)
-borders = nil
+borders = {}
 
 -- set fog
 print(client.map_fog_get())
@@ -748,16 +748,18 @@ do
 	xlen, ylen, zlen = common.map_get_dims()
 	local r,g,b
 	r,g,b = client.map_fog_get()
-	borders = {
-		new_border(-1, 0, 0, 1, 0, 0, r,g,b),
-		new_border(xlen+1, ylen, zlen, 1, 0, 0, r,g,b),
-		new_border(0, 0, -1, 0, 0, 1, r,g,b),
-		new_border(xlen, ylen, zlen+1, 0, 0, 1, r,g,b),
-		new_border(-1, 0, 0, 1, 0, 0, r,g,b),
-		new_border(xlen+1, ylen, zlen, 1, 0, 0, r,g,b),
-		new_border(0, 0, -1, 0, 0, 1, r,g,b),
-		new_border(xlen, ylen, zlen+1, 0, 0, 1, r,g,b),
-	}
+	if MODE_BORDER_SHOW then
+		borders = {
+			new_border(-1, 0, 0, 1, 0, 0, r,g,b),
+			new_border(xlen+1, ylen, zlen, 1, 0, 0, r,g,b),
+			new_border(0, 0, -1, 0, 0, 1, r,g,b),
+			new_border(xlen, ylen, zlen+1, 0, 0, 1, r,g,b),
+			new_border(-1, 0, 0, 1, 0, 0, r,g,b),
+			new_border(xlen+1, ylen, zlen, 1, 0, 0, r,g,b),
+			new_border(0, 0, -1, 0, 0, 1, r,g,b),
+			new_border(xlen, ylen, zlen+1, 0, 0, 1, r,g,b),
+		}
+	end
 end
 
 -- create map overview
