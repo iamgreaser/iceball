@@ -160,7 +160,7 @@ function new_nade(settings)
 							end
 						end
 					end
-					print(dmg_acc)
+					--print(dmg_acc)
 					dmg_acc = math.floor(dmg_acc + 0.8)
 					if dmg_acc >= 1 then
 						plr.explosive_damage(dmg_acc, hplr)

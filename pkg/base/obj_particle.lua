@@ -63,6 +63,13 @@ function new_particle(settings)
 		adamp = settings.adamp or 0.5,
 		bdamp = settings.bdamp or 1,
 		model = settings.model or nil,
+		free_model = settings.free_model or false,
+		ry = settings.ry or 0,
+		rx = settings.rx or 0,
+		ry2 = settings.ry2 or 0,
+		vry = settings.vry or 0,
+		vrx = settings.vrx or 0,
+		vry2 = settings.vry2 or 0,
 		noclip = settings.noclip
 	}
 	this.this = this
@@ -132,6 +139,10 @@ function new_particle(settings)
 			end
 		end
 
+		this.ry = this.ry + sec_delta*this.vry
+		this.rx = this.rx + sec_delta*this.vrx
+		this.ry2 = this.ry2 + sec_delta*this.vry2
+
 		local lerp = 1 - this.trem/this.step
 		this.x = this.x1*lerp+this.x0*(1-lerp)
 		this.y = this.y1*lerp+this.y0*(1-lerp)
@@ -141,7 +152,10 @@ function new_particle(settings)
 		if this.lifetime <= 0 then
 			if not this.model then
 				common.model_free(mdl_particle)
+			elseif this.free_model then
+				common.model_free(this.model)
 			end
+			this.model = nil
 			this.dead = true
 		end
 	end
@@ -159,7 +173,7 @@ function new_particle(settings)
 		client.model_render_bone_global(
 			mdl_particle, mdl_particle_bone,
 			this.x, this.y, this.z,
-			0.0, 0.0, 0.0,
+			this.ry, this.rx, this.ry2,
 			msize
 		)
 	end

@@ -327,14 +327,46 @@ function map_chkdisbrk(x,y,z)
 		local tx,ty,tz
 		local nl = nukeq[i]
 		if #nl > 0 then brokestuff = true end
+		local lpmf = {}
+		local pmfx, pmfy, pmfz = nil, nil, nil
 		for j=1,#nl do
 			local c = nl[j]
 			tx,ty,tz = c[1],c[2],c[3]
-			if not ptag[map_hashcoord2(tx,tz)] then
-				ptag[map_hashcoord2(tx,tz)] = true
+			local hc2 = map_hashcoord2(tx,tz)
+			local cl = pmap[hc2][ty+1]
+			if cl and cl ~= true then
+				if not pmfx then
+					pmfx, pmfy, pmfz = tx, ty, tz
+				end
+				local r,g,b
+				r,g,b = cl[2], cl[3], cl[4]
+				if #lpmf < 4000 then
+					lpmf[#lpmf+1] = {
+						radius=16,
+						x = (tx - pmfx)*32,
+						y = (ty - pmfy)*32,
+						z = (tz - pmfz)*32,
+						r = r, g = g, b = b,
+					}
+				end
+			end
+			if not ptag[hc2] then
+				ptag[hc2] = true
 				ptaglist[#ptaglist+1] = {tx,tz}
 			end
-			pmap[map_hashcoord2(tx,tz)][ty+1] = nil
+			pmap[hc2][ty+1] = nil
+		end
+		if #lpmf > 0 then
+			local mdl = common.model_new(1)
+			mdl = common.model_bone_new(mdl, #lpmf)
+			common.model_bone_set(mdl, 0, "fall", lpmf)
+			particles_add(new_particle({
+				x = pmfx + 0.5, y = pmfy + 0.5, z = pmfz + 0.5,
+				model = mdl, free_model = true,
+				noclip = true,
+				vry = math.random()*2-1, vrx = 0.4, vry2 = math.random()*2-1,
+				size = 8,
+			}))
 		end
 	end
 	

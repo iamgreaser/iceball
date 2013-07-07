@@ -30,6 +30,7 @@
 		"gl_chunk_size": 16,
 		"gl_chunks_tesselated_per_frame": 4,
 		"gl_shaders": true,
+		"gl_frustum_cull": true,
 		"gl_vbo": true
 	},
 	
