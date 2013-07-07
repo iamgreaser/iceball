@@ -310,38 +310,88 @@ void render_shift_visible_chunks(map_t *map, int camera_chunk_coordinate_x, int 
 
 }
 
-void render_map_visible_chunks_draw(map_t *map)
+void render_map_visible_chunks_draw(map_t *map, float fx, float fy, float fz, float cx, float cy, float cz)
 {
 	int x, z;
 
 	if(map == NULL || map->visible_chunks_arr == NULL)
 		return;
 	
+	float normfy = fy / sqrtf(fx*fx + fy*fy + fz*fz);
+	float emax = 0.7f * sqrtf(1.0 - normfy*normfy);
+
 	for (x = 0; x < (int) map->visible_chunks_len; x++)
 	{
 		for (z = 0; z < (int) map->visible_chunks_len; z++)
 		{
-			if (map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)].vbo_arr_len > 0)
+			map_chunk_t *chunk = &(map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)]);
+			if (chunk->vbo_arr_len > 0)
 			{
-				glPushMatrix();
-				if (map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)].vbo == 0)
+				if(gl_frustum_cull)
 				{
-					glVertexPointer(3, GL_FLOAT, sizeof(float)*6, map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)].vbo_arr);
-					glColorPointer(3, GL_FLOAT, sizeof(float)*6, map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)].vbo_arr+3);
+					// calculate first corner
+					float px00 = chunk->cx*gl_chunk_size - cx;
+					float pz00 = chunk->cz*gl_chunk_size - cz;
+
+					// calculate subsequent corners
+					float px01 = px00 + gl_chunk_size;
+					float pz01 = pz00;
+					float px10 = px00;
+					float pz10 = pz00 + gl_chunk_size;
+					float px11 = px01;
+					float pz11 = pz01 + gl_chunk_size;
+
+					//printf("%f %f -> %f %f\n", px00, pz00, px11, pz11);
+
+					// get lengths of corners
+					float d00 = sqrtf(px00 * px00 + pz00 * pz00);
+					float d10 = sqrtf(px10 * px10 + pz10 * pz10);
+					float d01 = sqrtf(px01 * px01 + pz01 * pz01);
+					float d11 = sqrtf(px11 * px11 + pz11 * pz11);
+
+					// normalise corners
+					px00 /= d00; pz00 /= d00;
+					px10 /= d10; pz10 /= d10;
+					px01 /= d01; pz01 /= d01;
+					px11 /= d11; pz11 /= d11;
+
+					// get normalised 2D forward vector
+					float f2d = sqrtf(fx*fx + fz*fz);
+					float f2x = fx/f2d;
+					float f2z = fz/f2d;
+					
+					// get dot products against forward vector
+					float e00 = px00 * f2x + pz00 * f2z;
+					float e10 = px10 * f2x + pz10 * f2z;
+					float e01 = px01 * f2x + pz01 * f2z;
+					float e11 = px11 * f2x + pz11 * f2z;
+
+					// frustum cull provided chunk isn't TOO close
+					if(d00/2 >= gl_chunk_size && d01/2 >= gl_chunk_size && d10/2 >= gl_chunk_size && d11/2 >= gl_chunk_size)
+						if(e00 < emax && e01 < emax && e10 < emax && e11 < emax)
+							continue;
+				}
+
+				// select pointers
+				if (chunk->vbo == 0)
+				{
+					glVertexPointer(3, GL_FLOAT, sizeof(float)*6, chunk->vbo_arr);
+					glColorPointer(3, GL_FLOAT, sizeof(float)*6, chunk->vbo_arr+3);
 				} else {
-					glBindBuffer(GL_ARRAY_BUFFER, map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)].vbo);
+					glBindBuffer(GL_ARRAY_BUFFER, chunk->vbo);
 					glVertexPointer(3, GL_FLOAT, sizeof(float)*6, (void *)(0));
 					glColorPointer(3, GL_FLOAT, sizeof(float)*6, (void *)(0 + sizeof(float)*3));
 				}
 
+				// draw
 				glEnableClientState(GL_VERTEX_ARRAY);
 				glEnableClientState(GL_COLOR_ARRAY);
-				glDrawArrays(GL_QUADS, 0, map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)].vbo_arr_len);
+				glDrawArrays(GL_QUADS, 0, chunk->vbo_arr_len);
 				glDisableClientState(GL_VERTEX_ARRAY);
 				glDisableClientState(GL_COLOR_ARRAY);
-				glPopMatrix();
 
-				if (map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)].vbo != 0)
+				// unbind buffer
+				if (chunk->vbo != 0)
 					glBindBuffer(GL_ARRAY_BUFFER, 0);
 			}
 		}
@@ -940,7 +990,7 @@ void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t
 	if(map == NULL)
 		return;
 	
-	render_map_visible_chunks_draw(map);
+	render_map_visible_chunks_draw(map, cfx, cfy, cfz, cx, cy, cz);
 }
 
 void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_t *cam_base,

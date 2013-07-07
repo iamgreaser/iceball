@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,1,0,0,0},
-	num=4194304,
-	str="0.1",
+	cmp={0,1,0,0,3},
+	num=4194304+3,
+	str="0.1-3",
 }
 
 VERSION_BUGS = {
@@ -90,5 +90,6 @@ VERSION_BUGS = {
 {intro=4194304+1, fix=nil, msg="Raw TCP appears to ignore the whitelist on the client side"},
 {intro=nil, fix=nil, msg="Occasional crash in sackit_module_free on common.mus_free - this is probably a sackit bug."},
 {intro=nil, fix=nil, msg="Sound distance attenuation affected by zoom (workaround implemented)"},
+{intro=nil, fix=4194304+3, msg="[OpenGL] Frustum culling not supported"},
 }
 

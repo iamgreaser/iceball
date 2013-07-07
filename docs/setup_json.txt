@@ -57,9 +57,14 @@ clsave/config.json:
 		If you are having issues, you can turn these off.
 		NOTE: not supported yet - this will be ignored.
 
+		"gl_frustum_cull" enables 2D-space frustum culling for chunks (default: true)
+		Set this to "false" if the artifacts are digging your head in,
+		or if it somehow makes rendering *slower*.
+
 		"gl_vbo" enables vertex buffer objects (default: true)
 		May fail on older computers. Enable for a faster FPS.
-		It is recommended you disable these on Intel integrated GPUs.
+		It is recommended you disable these on old Intel integrated GPUs.
+		More modern ones, such as the Sandy/Ivy Bridge series, will benefit from this.
 
 	"audio" section:
 		"freq" is the master audio sampling frequency in Hz, as usual.

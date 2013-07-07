@@ -35,6 +35,7 @@ int gl_chunk_size = 16;
 int gl_visible_chunks = 49;
 int gl_chunks_tesselated_per_frame = 2;
 int gl_use_vbo = 1;
+int gl_frustum_cull = 1;
 
 int force_redraw = 1;
 

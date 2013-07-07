@@ -1,2 +1,3 @@
 @echo off
-iceball-gl -c play.iceballga.me 20737
+iceball-gl -c incest.dashie.fuckingwin.com 20737
+
