@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,1,0,0,3},
-	num=4194304+3,
-	str="0.1-3",
+	cmp={0,1,0,0,4},
+	num=4194304+4,
+	str="0.1-4",
 }
 
 VERSION_BUGS = {
@@ -91,5 +91,6 @@ VERSION_BUGS = {
 {intro=nil, fix=nil, msg="Occasional crash in sackit_module_free on common.mus_free - this is probably a sackit bug."},
 {intro=nil, fix=nil, msg="Sound distance attenuation affected by zoom (workaround implemented)"},
 {intro=nil, fix=4194304+3, msg="[OpenGL] Frustum culling not supported"},
+{intro=nil, fix=4194304+4, msg="[OpenGL] Ambient occlusion on sides not rendered equally"},
 }
 

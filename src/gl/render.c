@@ -778,34 +778,71 @@ void render_gl_cube_map(map_t *map, map_chunk_t *chunk, float x, float y, float 
 				average_light_vertex4 = 0.0f;
 			}
 
-			/* Quad 1 */
-			/* vertex 1 */
-			cr = r*s1; cg = g*s1, cb = b*s1;
-			cr = render_darken_color(cr, average_light_vertex1);
-			cg = render_darken_color(cg, average_light_vertex1);
-			cb = render_darken_color(cb, average_light_vertex1);
-			ARR_ADD(x,y,z);
+			/* Check if the quad needs to be rotated (fix for ambient occlusion on sides) */
+			if (average_light_vertex1 + average_light_vertex3 > average_light_vertex2 + average_light_vertex4)
+			{
+				/* Quad 1 rotated */
+				
+				/* vertex 2 */
+				cr = r*s1; cg = g*s1, cb = b*s1;
+				cr = render_darken_color(cr, average_light_vertex2);
+				cg = render_darken_color(cg, average_light_vertex2);
+				cb = render_darken_color(cb, average_light_vertex2);
+				ARR_ADD(x+rad*ua,y+rad*ub,z+rad*uc);
 
-			/* vertex 2 */
-			cr = r*s1; cg = g*s1, cb = b*s1;
-			cr = render_darken_color(cr, average_light_vertex2);
-			cg = render_darken_color(cg, average_light_vertex2);
-			cb = render_darken_color(cb, average_light_vertex2);
-			ARR_ADD(x+rad*ua,y+rad*ub,z+rad*uc);
+				/* vertex 3 */
+				cr = r*s1; cg = g*s1, cb = b*s1;
+				cr = render_darken_color(cr, average_light_vertex3);
+				cg = render_darken_color(cg, average_light_vertex3);
+				cb = render_darken_color(cb, average_light_vertex3);
+				ARR_ADD(x+rad*(ua+va),y+rad*(ub+vb),z+rad*(uc+vc));
 
-			/* vertex 3 */
-			cr = r*s1; cg = g*s1, cb = b*s1;
-			cr = render_darken_color(cr, average_light_vertex3);
-			cg = render_darken_color(cg, average_light_vertex3);
-			cb = render_darken_color(cb, average_light_vertex3);
-			ARR_ADD(x+rad*(ua+va),y+rad*(ub+vb),z+rad*(uc+vc));
+				/* vertex 4 */
+				cr = r*s1; cg = g*s1, cb = b*s1;
+				cr = render_darken_color(cr, average_light_vertex4);
+				cg = render_darken_color(cg, average_light_vertex4);
+				cb = render_darken_color(cb, average_light_vertex4);
+				ARR_ADD(x+rad*va,y+rad*vb,z+rad*vc);
 
-			/* vertex 4 */
-			cr = r*s1; cg = g*s1, cb = b*s1;
-			cr = render_darken_color(cr, average_light_vertex4);
-			cg = render_darken_color(cg, average_light_vertex4);
-			cb = render_darken_color(cb, average_light_vertex4);
-			ARR_ADD(x+rad*va,y+rad*vb,z+rad*vc);
+				/* vertex 1 */
+				cr = r*s1; cg = g*s1, cb = b*s1;
+				cr = render_darken_color(cr, average_light_vertex1);
+				cg = render_darken_color(cg, average_light_vertex1);
+				cb = render_darken_color(cb, average_light_vertex1);
+				ARR_ADD(x,y,z);
+
+			} else {
+				/* Quad 1 normal */
+
+				/* vertex 1 */
+				cr = r*s1; cg = g*s1, cb = b*s1;
+				cr = render_darken_color(cr, average_light_vertex1);
+				cg = render_darken_color(cg, average_light_vertex1);
+				cb = render_darken_color(cb, average_light_vertex1);
+				ARR_ADD(x,y,z);
+
+				/* vertex 2 */
+				cr = r*s1; cg = g*s1, cb = b*s1;
+				cr = render_darken_color(cr, average_light_vertex2);
+				cg = render_darken_color(cg, average_light_vertex2);
+				cb = render_darken_color(cb, average_light_vertex2);
+				ARR_ADD(x+rad*ua,y+rad*ub,z+rad*uc);
+
+				/* vertex 3 */
+				cr = r*s1; cg = g*s1, cb = b*s1;
+				cr = render_darken_color(cr, average_light_vertex3);
+				cg = render_darken_color(cg, average_light_vertex3);
+				cb = render_darken_color(cb, average_light_vertex3);
+				ARR_ADD(x+rad*(ua+va),y+rad*(ub+vb),z+rad*(uc+vc));
+
+				/* vertex 4 */
+				cr = r*s1; cg = g*s1, cb = b*s1;
+				cr = render_darken_color(cr, average_light_vertex4);
+				cg = render_darken_color(cg, average_light_vertex4);
+				cb = render_darken_color(cb, average_light_vertex4);
+				ARR_ADD(x+rad*va,y+rad*vb,z+rad*vc);
+
+			}
 		}
 
 		/* check visibility of the face (is face exposed to air ?) */
@@ -852,35 +889,71 @@ void render_gl_cube_map(map_t *map, map_chunk_t *chunk, float x, float y, float 
 				average_light_vertex4 = 0.0f;
 			}
 
+			/* Check if the quad needs to be rotated (fix for ambient occlusion on sides) */
+			if (average_light_vertex1 + average_light_vertex3 > average_light_vertex2 + average_light_vertex4)
+			{
+				/* Quad 2 rotated */
+				
+				/* vertex 2 */
+				cr = r*s2; cg = g*s2, cb = b*s2;
+				cr = render_darken_color(cr, average_light_vertex2);
+				cg = render_darken_color(cg, average_light_vertex2);
+				cb = render_darken_color(cb, average_light_vertex2);
+				ARR_ADD(x+rad*(1-va),y+rad*(1-vb),z+rad*(1-vc));
 
-			/* Quad 2 */
-			/* vertex 1 */
-			cr = r*s2; cg = g*s2, cb = b*s2;
-			cr = render_darken_color(cr, average_light_vertex1);
-			cg = render_darken_color(cg, average_light_vertex1);
-			cb = render_darken_color(cb, average_light_vertex1);
-			ARR_ADD(x+rad,y+rad,z+rad);
+				/* vertex 3 */
+				cr = r*s2; cg = g*s2, cb = b*s2;
+				cr = render_darken_color(cr, average_light_vertex3);
+				cg = render_darken_color(cg, average_light_vertex3);
+				cb = render_darken_color(cb, average_light_vertex3);
+				ARR_ADD(x+rad*(1-ua-va),y+rad*(1-ub-vb),z+rad*(1-uc-vc));
 
-			/* vertex 2 */
-			cr = r*s2; cg = g*s2, cb = b*s2;
-			cr = render_darken_color(cr, average_light_vertex2);
-			cg = render_darken_color(cg, average_light_vertex2);
-			cb = render_darken_color(cb, average_light_vertex2);
-			ARR_ADD(x+rad*(1-va),y+rad*(1-vb),z+rad*(1-vc));
-		
-			/* vertex 3 */
-			cr = r*s2; cg = g*s2, cb = b*s2;
-			cr = render_darken_color(cr, average_light_vertex3);
-			cg = render_darken_color(cg, average_light_vertex3);
-			cb = render_darken_color(cb, average_light_vertex3);
-			ARR_ADD(x+rad*(1-ua-va),y+rad*(1-ub-vb),z+rad*(1-uc-vc));
+				/* vertex 4 */
+				cr = r*s2; cg = g*s2, cb = b*s2;
+				cr = render_darken_color(cr, average_light_vertex4);
+				cg = render_darken_color(cg, average_light_vertex4);
+				cb = render_darken_color(cb, average_light_vertex4);
+				ARR_ADD(x+rad*(1-ua),y+rad*(1-ub),z+rad*(1-uc));
 
-			/* vertex 4 */
-			cr = r*s2; cg = g*s2, cb = b*s2;
-			cr = render_darken_color(cr, average_light_vertex4);
-			cg = render_darken_color(cg, average_light_vertex4);
-			cb = render_darken_color(cb, average_light_vertex4);
-			ARR_ADD(x+rad*(1-ua),y+rad*(1-ub),z+rad*(1-uc));
+				/* vertex 1 */
+				cr = r*s2; cg = g*s2, cb = b*s2;
+				cr = render_darken_color(cr, average_light_vertex1);
+				cg = render_darken_color(cg, average_light_vertex1);
+				cb = render_darken_color(cb, average_light_vertex1);
+				ARR_ADD(x+rad,y+rad,z+rad);
+
+			} else {
+				/* Quad 2 normal */
+
+				/* vertex 1 */
+				cr = r*s2; cg = g*s2, cb = b*s2;
+				cr = render_darken_color(cr, average_light_vertex1);
+				cg = render_darken_color(cg, average_light_vertex1);
+				cb = render_darken_color(cb, average_light_vertex1);
+				ARR_ADD(x+rad,y+rad,z+rad);
+
+				/* vertex 2 */
+				cr = r*s2; cg = g*s2, cb = b*s2;
+				cr = render_darken_color(cr, average_light_vertex2);
+				cg = render_darken_color(cg, average_light_vertex2);
+				cb = render_darken_color(cb, average_light_vertex2);
+				ARR_ADD(x+rad*(1-va),y+rad*(1-vb),z+rad*(1-vc));
+
+				/* vertex 3 */
+				cr = r*s2; cg = g*s2, cb = b*s2;
+				cr = render_darken_color(cr, average_light_vertex3);
+				cg = render_darken_color(cg, average_light_vertex3);
+				cb = render_darken_color(cb, average_light_vertex3);
+				ARR_ADD(x+rad*(1-ua-va),y+rad*(1-ub-vb),z+rad*(1-uc-vc));
+
+				/* vertex 4 */
+				cr = r*s2; cg = g*s2, cb = b*s2;
+				cr = render_darken_color(cr, average_light_vertex4);
+				cg = render_darken_color(cg, average_light_vertex4);
+				cb = render_darken_color(cb, average_light_vertex4);
+				ARR_ADD(x+rad*(1-ua),y+rad*(1-ub),z+rad*(1-uc));
+
+			}
 		}
 #undef ARR_ADD
 	}
