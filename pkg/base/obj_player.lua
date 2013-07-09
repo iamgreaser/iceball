@@ -1611,14 +1611,14 @@ function new_player(settings)
 			end
 		end
 		
-		this.typing_type = scene.textfield{
+		this.typing_type = this.typing_type or scene.textfield{
 			text="",
 			color=0xFFFFFFFF,
 			align_x = 0,
 			align_y = 0,
 			x = 0,
 			y = 0}
-		this.typing_text = scene.textfield{
+		this.typing_text = this.typing_text or scene.textfield{
 			text="",
 			color=0xFFFFFFFF,
 			align_x = 0,
@@ -1626,10 +1626,12 @@ function new_player(settings)
 			x = 0,
 			y = 0,
 			take_input = true}
-		this.typing_layout = scene.hspacer{x=4, y=h - 80, spread = 0, align_x=0, align_y=0}
-		this.typing_layout.add_child(this.typing_type)
-		this.typing_layout.add_child(this.typing_text)
-		this.typing_layout.visible = false
+		if not this.typing_layout then
+			this.typing_layout = scene.hspacer{x=4, y=h - 80, spread = 0, align_x=0, align_y=0}
+			this.typing_layout.add_child(this.typing_type)
+			this.typing_layout.add_child(this.typing_text)
+			this.typing_layout.visible = false
+		end
 		
 		function this.typing_text.done_typing(options)
 			this.typing_layout.visible = false
