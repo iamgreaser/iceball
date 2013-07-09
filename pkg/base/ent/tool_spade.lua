@@ -162,7 +162,8 @@ return function (plr)
 				elseif plr.blx2 then
 					if plr.blx2 >= 0 and plr.blx2 < xlen and plr.blz2 >= 0 and plr.blz2 < zlen then
 						if plr.bly2 <= ylen-3 then
-							net_send(nil, common.net_pack("BHHHH", PKT_BLK_DAMAGE, plr.blx2, plr.bly2, plr.blz2, MODE_BLOCK_DAMAGE_SPADE))
+							net_send(nil, common.net_pack("BHHHH", PKT_BLK_DAMAGE, plr.blx2, plr.bly2, plr.blz2,
+								(plr.mode == PLM_BUILD and 1000) or MODE_BLOCK_DAMAGE_SPADE))
 							this.t_newspade1 = sec_current + MODE_DELAY_SPADE_HIT
 						end
 					end

@@ -17,7 +17,7 @@
 
 PLM_NORMAL = 1
 PLM_SPECTATE = 2
-PLM_EDITOR = 3
+PLM_BUILD = 3
 
 if client then
 	mdl_player = skin_load("pmf", "player.pmf", DIR_PKG_PMF)
@@ -210,6 +210,10 @@ function new_player(settings)
 			this.tools[#(this.tools)+1] = weapons[this.weapon](this)
 		end
 		this.tools[#(this.tools)+1] = explosives[this.explosive](this)
+
+		if this.mode == PLM_BUILD then
+			this.tools[#(this.tools)+1] = tools[TOOL_MARKER](this)
+		end
 		
 		this.tool = 2
 		this.tool_last = 0
@@ -991,7 +995,7 @@ function new_player(settings)
 			td,
 			this.blx1, this.bly1, this.blz1,
 			this.blx2, this.bly2, this.blz2
-			= trace_map_ray_dist(camx,camy,camz, fwx,fwy,fwz, 5, false)
+			= trace_map_ray_dist(camx,camy,camz, fwx,fwy,fwz, (this.mode == PLM_BUILD and 40) or 5, false)
 						
 
 			this.bld1 = td

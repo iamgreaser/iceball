@@ -126,6 +126,7 @@ do
 		"BLK_DAMAGE",
 		"PIANO",
 		"NADE_PIN",
+		"BUILD_BOX",
 	}
 	local i,p
 	for i,p in pairs(pktlist) do
@@ -179,8 +180,11 @@ network.sys_handle_s2c(PKT_PLR_ADD, "Bbbbhhhzz", function (neth, cli, plr, sec_c
 		-- TODO: update wpn/name
 		players[pid].squad = (squad ~= "" and squad) or nil
 		players[pid].name = name
-		players[pid].team = tidx
-		players[pid].mode = mode
+		players[pid].team = tidx 
+		if players[pid].mode ~= mode then
+			players[pid].mode = mode
+			players[pid].add_tools()
+		end
 		players[pid].recolor_team()
 		if players[pid].weapon ~= wpn then
 			players[pid].weapon = wpn
@@ -662,4 +666,49 @@ end))
 network.sys_handle_c2s(PKT_NADE_PIN, "", nwdec_plrset(function (neth, cli, plr, sec_current, pkt)
 	net_broadcast(neth, common.net_pack("BB", PKT_NADE_PIN, cli.plrid))
 end))
+
+network.sys_handle_common(PKT_BUILD_BOX, "BHHHHHHBBBB", function (neth, cli, plr, sec_current, 
+		typ, x1, y1, z1, x2, y2, z2, cr, cg, cb, ct, pkt)
+	if server then
+		print(server, client)
+		net_broadcast(nil, common.net_pack("BBHHHHHHBBBB", PKT_BUILD_BOX,
+			typ, x1, y1, z1, x2, y2, z2, cr, cg, cb, ct))
+	end
+	-- TODO: make optimised versions of these!
+	local x,y,z
+	if x1 > x2 then x1, x2 = x2, x1 end
+	if y1 > y2 then y1, y2 = y2, y1 end
+	if z1 > z2 then z1, z2 = z2, z1 end
+
+	local f = nil
+	if typ == 0 then
+		-- type 0: solid
+		f = function (x,y,z) return true end
+	elseif typ == 1 then
+		-- type 1: hollow
+		f = function (x,y,z) return x==x1 or x==x2 or y==y1 or y==y2 or z==z1 or z==z2 end
+	elseif typ == 2 then
+		-- type 2: walls
+		f = function (x,y,z) return x==x1 or x==x2 or z==z1 or z==z2 end
+	elseif typ == 3 then
+		-- type 3: frame
+		f = function (x,y,z)
+			local xp = (x==x1 or x==x2)
+			local yp = (y==y1 or y==y2)
+			local zp = (z==z1 or z==z2)
+
+			return (xp and (yp or zp)) or (yp and zp)
+		end
+	end
+
+	if f then
+		for x=x1,x2 do for z=z1,z2 do
+			for y=y1,y2 do
+				if f(x,y,z) then
+					map_block_set(x,y,z,ct,cr,cg,cb)
+				end
+			end
+		end end
+	end
+end)
 

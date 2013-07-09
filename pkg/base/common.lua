@@ -147,6 +147,7 @@ TOOL_SPADE = 0
 TOOL_BLOCK = 1
 TOOL_GUN = 2
 TOOL_EXPL = 3
+TOOL_MARKER = 4
 
 -- sounds
 if client then
@@ -194,6 +195,7 @@ weapons = {
 tools = {
 	[TOOL_SPADE] = loadfile(DIR_PKG_ROOT.."/ent/tool_spade.lua")(),
 	[TOOL_BLOCK] = loadfile(DIR_PKG_ROOT.."/ent/tool_block.lua")(),
+	[TOOL_MARKER] = loadfile(DIR_PKG_ROOT.."/ent/tool_marker.lua")(),
 }
 
 weapons_enabled = {}

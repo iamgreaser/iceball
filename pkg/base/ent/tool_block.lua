@@ -156,7 +156,8 @@ return function (plr)
 		if plr.ev_lmb and plr.blx1 then
 			if (not this.t_place) and plr.blocks > 0 then
 				local dist, blx1, bly1, blz1
-				for dist=5,1,-1 do
+				local mblk = (plr.mode == PLM_BUILD and 40) or 5
+				for dist=mblk,1,-1 do
 					_, blx1, bly1, blz1 = trace_map_ray_dist(plr.x+0.4*sya,plr.y,plr.z+0.4*cya, sya*cxa,sxa,cya*cxa, dist, false)
 					if blx1 >= 0 and blx1 < xlen and bly1 >= 0 and bly1 <= ylen - 3 and blz1 >= 0 and blz1 < zlen and map_is_buildable(blx1, bly1, blz1) then
 						net_send(nil, common.net_pack("BHHHBBBB",
@@ -208,7 +209,8 @@ return function (plr)
 			local err = true
 			local dist
 			local blx1, bly1, blz1
-			for dist=5,1,-1 do
+			local mblk = (plr.mode == PLM_BUILD and 40) or 5
+			for dist=mblk,1,-1 do
 				_, blx1, bly1, blz1 = trace_map_ray_dist(plr.x+0.4*ays,plr.y,plr.z+0.4*ayc, ays*axc,axs,ayc*axc, dist, false)
 				if blx1 >= 0 and blx1 < xlen and bly1 >= 0 and bly1 <= ylen - 3 and blz1 >= 0 and blz1 < zlen and (map_is_buildable(blx1, bly1, blz1) or MODE_BLOCK_PLACE_IN_AIR) then
 					bname, mdl_data = client.model_bone_get(mdl_cube, mdl_cube_bone)
@@ -233,7 +235,7 @@ return function (plr)
 				end
 			end
 			if err and not MODE_BLOCK_NO_RED_MARKER then
-				for dist=5,0,-1 do
+				for dist=mblk,0,-1 do
 					_, blx1, bly1, blz1 = trace_map_ray_dist(plr.x+0.4*ays,plr.y,plr.z+0.4*ayc, ays*axc,axs,ayc*axc, dist, false)
 					if blx1 >= 0 and blx1 < xlen and bly1 >= 0 and bly1 <= ylen - 3 and blz1 >= 0 and blz1 < zlen then
 						client.model_render_bone_global(mdl_Xcube, mdl_Xcube_bone,
