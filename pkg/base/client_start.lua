@@ -72,7 +72,7 @@ do
 	local i
 	local defvals = {49,50,51,52,53,54,55,56,57,48}
 	for i=1,10 do
-		BTSK_TOOLS[i] = controls_config.tools[i] or controls_config["tool"..i] or defvals[i]
+		BTSK_TOOLS[i] = (controls_config.tools and controls_config.tools[i]) or controls_config["tool"..i] or defvals[i]
 	end
 end
 BTSK_TOOLLAST = controls_config.toollast or SDLK_q
