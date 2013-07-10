@@ -572,14 +572,7 @@ function new_player(settings)
 		end	
 	end
 
-	function this.tick(sec_current, sec_delta)
-		local xlen,ylen,zlen
-		xlen,ylen,zlen = common.map_get_dims()
-		
-		if not this.spawned then
-			return
-		end
-
+	function this.tick_respawn(sec_current, sec_delta)
 		if (not this.alive) and (not this.t_respawn) then
 			this.t_respawn = sec_current + MODE_RESPAWN_TIME
 			this.input_reset()
@@ -602,55 +595,9 @@ function new_player(settings)
 		if not this.alive then
 			this.input_reset()
 		end
-		
-		local inwater = (this.y > ylen-3)
+	end
 
-		if this.t_switch == true then
-			this.t_switch = sec_current + MODE_DELAY_TOOL_CHANGE
-		end
-
-		if this.t_rcirc and sec_current >= this.t_rcirc then
-			this.t_rcirc = nil
-		end
-
-		if this.alive and this.t_switch then
-			if sec_current > this.t_switch then
-				this.t_switch = nil
-				this.arm_rest_right = 0
-			else
-				local delta = this.t_switch-sec_current
-				this.arm_rest_right = math.max(0.0,delta/0.2)
-			end
-		end
-		
-		if client then
-			local moving = ((this.ev_left == not this.ev_right) or (this.ev_forward == not this.ev_back))
-			local sneaking = (this.ev_crouch or this.ev_sneak or this.zooming)
-			
-			if moving and not sneaking then
-				if not this.t_step then
-					this.t_step = sec_current + 0.5
-				end
-				if this.t_step < sec_current then
-					local freq_mod = (inwater and 0.25) or 1.0
-					local tdiff = 0.01
-					if this.grounded then
-						client.wav_play_global(wav_steps[
-							math.floor(math.random()*#wav_steps)+1],
-								this.x, this.y, this.z,
-								1.0, freq_mod)
-						tdiff = 0.5
-					end
-					this.t_step = this.t_step + tdiff
-					if this.t_step < sec_current then
-						this.t_step = sec_current + tdiff
-					end
-				end
-			else
-				this.t_step = nil
-			end
-		end
-		
+	function this.tick_rotate(sec_current, sec_delta)
 		-- calc X delta angle
 		local nax = this.angx + this.dangx
 		if nax > math.pi*0.49 then
@@ -661,7 +608,7 @@ function new_player(settings)
 		this.dangx = (nax - this.angx)
 		
 		-- apply delta angles
-		if (this.mode ~= PLM_NORMAL or MODE_DRUNKCAM_LOCALTURN) and this.dangy ~= 0 then
+		if (this.mode == PLM_SPECTATE or MODE_DRUNKCAM_LOCALTURN) and this.dangy ~= 0 then
 			this.angx = this.angx + this.dangx
 			
 			local fx,fy,fz -- forward
@@ -714,29 +661,9 @@ function new_player(settings)
 		end
 		this.dangx = 0
 		this.dangy = 0
-		
-		if this.zooming then
-			this.zoom = 3.0
-		else
-			this.zoom = 1.0
-		end
+	end
 
-		-- set camera direction
-		local sya = math.sin(this.angy)
-		local cya = math.cos(this.angy)
-		local sxa = math.sin(this.angx)
-		local cxa = math.cos(this.angx)
-		local fwx,fwy,fwz
-		fwx,fwy,fwz = sya*cxa, sxa, cya*cxa
-		
-		if client and this.alive and (not this.t_switch) then
-			if this.recoil_time then
-				this.recoil_amt = (sec_current - this.recoil_time) * math.pow(2, 1 - 10 * (sec_current - this.recoil_time)) * 1.5
-			else
-				this.recoil_amt = 0
-			end
-		end
-		
+	function this.calc_motion_local(sec_current, sec_delta)
 		-- move along
 		local mvx = 0.0
 		local mvy = 0.0
@@ -753,35 +680,6 @@ function new_player(settings)
 		end
 		if this.ev_right then
 			mvx = mvx - 1.0
-		end
-
-		if this.t_piano then
-			if this.t_piano == true then
-				this.t_piano = sec_current + 0.5
-			end
-
-			this.t_piano_delta = this.t_piano - sec_current
-			if this.t_piano and this.t_piano < sec_current then
-				this.t_piano = nil
-				if server then
-					local l = teams[this.team].color_chat
-					local r,g,b
-					r,g,b = l[1], l[2], l[3]
-					local c = argb_split_to_merged(r,g,b)
-					this.set_health_damage(0, c, this.name.." displeased the gods", this)
-				end
-				if client then
-					client.wav_play_global(wav_kapiano, this.x, this.y, this.z, 3.0)
-					this.t_piano2 = sec_current + 5
-				end
-			end
-		end
-
-		if this.t_piano2 then
-			this.t_piano2_delta = this.t_piano2 - sec_current
-			if this.t_piano2 < sec_current then
-				this.t_piano2 = nil
-			end
 		end
 
 		if this.mode == PLM_NORMAL then
@@ -851,9 +749,10 @@ function new_player(settings)
 			end
 		end
 
-		-- apply rotation
-		mvx, mvz = mvx*cya+mvz*sya, mvz*cya-mvx*sya
+		return mvx, mvy, mvz, mvchange
+	end
 
+	function this.calc_motion_global(sec_current, sec_delta, mvx, mvy, mvz, mvchange)
 		this.vx = this.vx + (mvx - this.vx)*(1.0-math.exp(-sec_delta*mvchange))
 		this.vz = this.vz + (mvz - this.vz)*(1.0-math.exp(-sec_delta*mvchange))
 		if this.mode == PLM_NORMAL then
@@ -861,15 +760,10 @@ function new_player(settings)
 		else
 			this.vy = this.vy + (mvy - this.vy)*(1.0-math.exp(-sec_delta*mvchange))
 		end
-
-		local ox, oy, oz
-		local nx, ny, nz
-		local tx1,ty1,tz1
-		ox, oy, oz = this.x, this.y, this.z
-		this.x, this.y, this.z = this.x + this.vx*sec_delta, this.y + this.vy*sec_delta, this.z + this.vz*sec_delta
-		nx, ny, nz = this.x, this.y, this.z
 		this.jerkoffs = this.jerkoffs * math.exp(-sec_delta*15.0)
+	end
 
+	function this.calc_motion_trace(sec_current, sec_delta, ox, oy, oz, nx, ny, nz)
 		local by1, by2
 		by1, by2 = -0.3, 2.5
 		if this.crouching then
@@ -969,8 +863,7 @@ function new_player(settings)
 			this.drunkx = this.drunkx + (xdiff - this.drunkx)*(1.0-math.exp(-10.0*sec_delta))
 			this.drunkz = this.drunkz + (zdiff - this.drunkz)*(1.0-math.exp(-10.0*sec_delta))
 		end
-		this.x, this.y, this.z = tx1, ty1, tz1
-		
+
 		local fgrounded = not box_is_clear(
 			tx1-0.39, ty1+by2, tz1-0.39,
 			tx1+0.39, ty1+by2+0.1, tz1+0.39)
@@ -979,13 +872,147 @@ function new_player(settings)
 		
 		local wasgrounded = this.grounded
 		this.grounded = (MODE_AIRJUMP and this.grounded) or fgrounded
-		
+
 		if this.alive and this.vy > 0 and fgrounded then
 			this.vy = 0
 			if client and not wasgrounded then
 				client.wav_play_global(wav_jump_down, this.x, this.y, this.z)
 			end
 		end
+		
+		return tx1, ty1, tz1
+	end
+
+	function this.tick(sec_current, sec_delta)
+		local xlen,ylen,zlen
+		xlen,ylen,zlen = common.map_get_dims()
+		
+		if not this.spawned then
+			return
+		end
+
+		this.tick_respawn(sec_current, sec_delta)
+		
+		local inwater = (this.y > ylen-3)
+
+		if this.t_switch == true then
+			this.t_switch = sec_current + MODE_DELAY_TOOL_CHANGE
+		end
+
+		if this.t_rcirc and sec_current >= this.t_rcirc then
+			this.t_rcirc = nil
+		end
+
+		if this.alive and this.t_switch then
+			if sec_current > this.t_switch then
+				this.t_switch = nil
+				this.arm_rest_right = 0
+			else
+				local delta = this.t_switch-sec_current
+				this.arm_rest_right = math.max(0.0,delta/0.2)
+			end
+		end
+		
+		if client then
+			local moving = ((this.ev_left == not this.ev_right) or (this.ev_forward == not this.ev_back))
+			local sneaking = (this.ev_crouch or this.ev_sneak or this.zooming)
+			
+			if moving and not sneaking then
+				if not this.t_step then
+					this.t_step = sec_current + 0.5
+				end
+				if this.t_step < sec_current then
+					local freq_mod = (inwater and 0.25) or 1.0
+					local tdiff = 0.01
+					if this.grounded then
+						client.wav_play_global(wav_steps[
+							math.floor(math.random()*#wav_steps)+1],
+								this.x, this.y, this.z,
+								1.0, freq_mod)
+						tdiff = 0.5
+					end
+					this.t_step = this.t_step + tdiff
+					if this.t_step < sec_current then
+						this.t_step = sec_current + tdiff
+					end
+				end
+			else
+				this.t_step = nil
+			end
+		end
+
+		this.tick_rotate(sec_current, sec_delta)
+		
+		if this.zooming then
+			this.zoom = 3.0
+		else
+			this.zoom = 1.0
+		end
+
+		-- possibly drop a piano
+		if this.t_piano then
+			if this.t_piano == true then
+				this.t_piano = sec_current + 0.5
+			end
+
+			this.t_piano_delta = this.t_piano - sec_current
+			if this.t_piano and this.t_piano < sec_current then
+				this.t_piano = nil
+				if server then
+					local l = teams[this.team].color_chat
+					local r,g,b
+					r,g,b = l[1], l[2], l[3]
+					local c = argb_split_to_merged(r,g,b)
+					this.set_health_damage(0, c, this.name.." displeased the gods", this)
+				end
+				if client then
+					client.wav_play_global(wav_kapiano, this.x, this.y, this.z, 3.0)
+					this.t_piano2 = sec_current + 5
+				end
+			end
+		end
+
+		if this.t_piano2 then
+			this.t_piano2_delta = this.t_piano2 - sec_current
+			if this.t_piano2 < sec_current then
+				this.t_piano2 = nil
+			end
+		end
+
+		-- set camera direction
+		local sya = math.sin(this.angy)
+		local cya = math.cos(this.angy)
+		local sxa = math.sin(this.angx)
+		local cxa = math.cos(this.angx)
+		local fwx,fwy,fwz
+		fwx,fwy,fwz = sya*cxa, sxa, cya*cxa
+		
+		if client and this.alive and (not this.t_switch) then
+			if this.recoil_time then
+				this.recoil_amt = (sec_current - this.recoil_time) * math.pow(2, 1 - 10 * (sec_current - this.recoil_time)) * 1.5
+			else
+				this.recoil_amt = 0
+			end
+		end
+
+		-- apply local motion
+		local mvx, mvy, mvz, mvchange = this.calc_motion_local(sec_current, sec_delta)
+		
+		-- apply rotation
+		mvx, mvz = mvx*cya+mvz*sya, mvz*cya-mvx*sya
+
+		-- apply global motion
+		this.calc_motion_global(sec_current, sec_delta, mvx, mvy, mvz, mvchange)
+
+		-- trace to next position
+		local ox, oy, oz
+		local nx, ny, nz
+		local tx1,ty1,tz1
+		ox, oy, oz = this.x, this.y, this.z
+		nx, ny, nz = this.x + this.vx*sec_delta, this.y + this.vy*sec_delta, this.z + this.vz*sec_delta
+		local wasgrounded = this.grounded
+		tx1, ty1, tz1 = this.calc_motion_trace(sec_current, sec_delta, ox, oy, oz, nx, ny, nz)
+		this.x, this.y, this.z = tx1, ty1, tz1
 		
 		-- trace for stuff
 		do
@@ -1002,7 +1029,6 @@ function new_player(settings)
 			this.blx2, this.bly2, this.blz2
 			= trace_map_ray_dist(camx,camy,camz, fwx,fwy,fwz, (this.mode == PLM_BUILD and 40) or 5, false)
 						
-
 			this.bld1 = td
 			this.bld2 = td
 			
