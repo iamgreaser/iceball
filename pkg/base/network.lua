@@ -670,11 +670,9 @@ end))
 network.sys_handle_common(PKT_BUILD_BOX, "BHHHHHHBBBB", function (neth, cli, plr, sec_current, 
 		typ, x1, y1, z1, x2, y2, z2, cr, cg, cb, ct, pkt)
 	if server then
-		print(server, client)
 		net_broadcast(nil, common.net_pack("BBHHHHHHBBBB", PKT_BUILD_BOX,
 			typ, x1, y1, z1, x2, y2, z2, cr, cg, cb, ct))
 	end
-	-- TODO: make optimised versions of these!
 	local x,y,z
 	if x1 > x2 then x1, x2 = x2, x1 end
 	if y1 > y2 then y1, y2 = y2, y1 end
@@ -702,6 +700,7 @@ network.sys_handle_common(PKT_BUILD_BOX, "BHHHHHHBBBB", function (neth, cli, plr
 	end
 
 	if f then
+		map_cache_start()
 		for x=x1,x2 do for z=z1,z2 do
 			for y=y1,y2 do
 				if f(x,y,z) then
@@ -709,6 +708,7 @@ network.sys_handle_common(PKT_BUILD_BOX, "BHHHHHHBBBB", function (neth, cli, plr
 				end
 			end
 		end end
+		map_cache_end()
 	end
 end)
 

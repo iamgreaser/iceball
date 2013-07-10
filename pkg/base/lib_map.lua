@@ -15,6 +15,9 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
+local map_cache = nil
+local map_cache_aerate = nil
+
 -- returns a list consisting of {t,r,g,b} tuplets
 function map_pillar_raw_unpack(tpack)
 	local xlen,ylen,zlen 
@@ -72,6 +75,15 @@ function map_pillar_raw_unpack(tpack)
 end
 
 function map_pillar_raw_get(x,z)
+	if map_cache then
+		local o = map_hashcoord2(x,z)
+		map_cache[o] = map_cache[o] or {
+			x = x,
+			z = z,
+			l = map_pillar_raw_unpack(common.map_pillar_get(x,z)),
+		}
+		return map_cache[o].l
+	end
 	return map_pillar_raw_unpack(common.map_pillar_get(x,z))
 end
 
@@ -139,6 +151,15 @@ function map_pillar_raw_pack(t)
 end
 
 function map_pillar_raw_set(x,z,t)
+	if map_cache then
+		map_cache[map_hashcoord2(x,z)] = {
+			x = x,
+			z = z,
+			l = t,
+		}
+		return
+	end
+
 	local tpack = map_pillar_raw_pack(t)
 	
 	common.map_pillar_set(x,z,tpack)
@@ -154,6 +175,27 @@ function map_pillar_raw_set(x,z,t)
 	end
 end
 
+function map_cache_start()
+	map_cache = map_cache or {}
+	map_cache_aerate = map_cache_aerate or {}
+end
+
+function map_cache_end()
+	local _, m
+
+	local old_map_cache_aerate = map_cache_aerate
+	map_cache_aerate = nil
+	for _, m in pairs(old_map_cache_aerate or {}) do
+		map_pillar_aerate(m.x, m.z)
+	end
+
+	local old_map_cache = map_cache
+	map_cache = nil
+	for _, m in pairs(old_map_cache or {}) do
+		map_pillar_raw_set(m.x, m.z, m.l)
+	end
+end
+
 function map_block_aerate(x,y,z)
 	return ({
 		1,
@@ -164,6 +206,10 @@ function map_block_aerate(x,y,z)
 end
 
 function map_pillar_aerate(x,z)
+	if map_cache_aerate then
+		map_cache_aerate[map_hashcoord2(x,z)] = {x = x, z = z}
+		return
+	end
 	local xlen,ylen,zlen 
 	xlen,ylen,zlen = common.map_get_dims()
 	local t = map_pillar_raw_get(x,z)

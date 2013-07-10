@@ -197,6 +197,13 @@ function new_player(settings)
 			end
 		end
 		this.tools = {}
+		this.add_tools_list()
+
+		-- TODO: clean up scene properly
+		this.scene = nil
+	end
+
+	function this.add_tools_list()
 		this.tools[#(this.tools)+1] = tools[TOOL_SPADE](this)
 		this.tools[#(this.tools)+1] = tools[TOOL_BLOCK](this)
 		if MODE_ALLGUNS then
@@ -217,8 +224,6 @@ function new_player(settings)
 		
 		this.tool = 2
 		this.tool_last = 0
-
-		this.scene = nil
 	end
 
 	function this.block_recolor()
@@ -1402,6 +1407,7 @@ function new_player(settings)
 		}
 		
 		local function net_graph_update(delta_time)
+			this.net_graph.visible = (this.mode ~= PLM_SPECTATE)
 			-- the incoming dT is clamped, therefore we use delta_last instead
 			table.insert(dt_samples, delta_last)
 			dt_max = math.max(delta_last, dt_max)
