@@ -667,10 +667,10 @@ network.sys_handle_c2s(PKT_NADE_PIN, "", nwdec_plrset(function (neth, cli, plr, 
 	net_broadcast(neth, common.net_pack("BB", PKT_NADE_PIN, cli.plrid))
 end))
 
-network.sys_handle_common(PKT_BUILD_BOX, "BHHHHHHBBBB", function (neth, cli, plr, sec_current, 
+network.sys_handle_common(PKT_BUILD_BOX, "BhhhhhhBBBB", function (neth, cli, plr, sec_current, 
 		typ, x1, y1, z1, x2, y2, z2, cr, cg, cb, ct, pkt)
 	if server then
-		net_broadcast(nil, common.net_pack("BBHHHHHHBBBB", PKT_BUILD_BOX,
+		net_broadcast(nil, common.net_pack("BBhhhhhhBBBB", PKT_BUILD_BOX,
 			typ, x1, y1, z1, x2, y2, z2, cr, cg, cb, ct))
 	end
 	local x,y,z
