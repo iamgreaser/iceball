@@ -17,7 +17,12 @@
 
 #include "common.h"
 
-const GLfloat mtx_baseproj[16] = {
+int lwidth = 0;
+int lheight = 0;
+float znear = 0.05f;
+float zfar = 20.0f;
+
+GLfloat mtx_baseproj[16] = {
 	-1, 0, 0, 0,
 	 0,-1, 0, 0,
 	 0, 0, 1, 1,
@@ -317,8 +322,20 @@ void render_map_visible_chunks_draw(map_t *map, float fx, float fy, float fz, fl
 	if(map == NULL || map->visible_chunks_arr == NULL)
 		return;
 	
-	float normfy = fy / sqrtf(fx*fx + fy*fy + fz*fz);
-	float emax = 0.7f * sqrtf(1.0 - normfy*normfy);
+	// get normalised 3D forward vector
+	float f3d = sqrtf(fx*fx + fy*fy + fz*fz);
+	float f3x = fx/f3d;
+	float f3y = fy/f3d;
+	float f3z = fz/f3d;
+
+	int cdraw = 0, cskip = 0;
+
+	// calculate appropriate Y
+	float ydist = (fy < 0.0
+		? cy*fy
+		: (map->ylen-cy)*fy);
+	
+	float emax = 1.0f / sqrtf(3.0f);
 
 	for (x = 0; x < (int) map->visible_chunks_len; x++)
 	{
@@ -327,49 +344,90 @@ void render_map_visible_chunks_draw(map_t *map, float fx, float fy, float fz, fl
 			map_chunk_t *chunk = &(map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)]);
 			if (chunk->vbo_arr_len > 0)
 			{
+				cdraw++;
 				if(gl_frustum_cull)
+				if(cx < chunk->cx*gl_chunk_size
+					|| cz < chunk->cz*gl_chunk_size
+					|| cx > (chunk->cx+1)*gl_chunk_size
+					|| cz > (chunk->cz+1)*gl_chunk_size)
 				{
 					// calculate first corner
-					float px00 = chunk->cx*gl_chunk_size - cx;
-					float pz00 = chunk->cz*gl_chunk_size - cz;
+					float px000 = chunk->cx*gl_chunk_size - cx;
+					float pz000 = chunk->cz*gl_chunk_size - cz;
 
 					// calculate subsequent corners
-					float px01 = px00 + gl_chunk_size;
-					float pz01 = pz00;
-					float px10 = px00;
-					float pz10 = pz00 + gl_chunk_size;
-					float px11 = px01;
-					float pz11 = pz01 + gl_chunk_size;
+					float px010 = px000 + gl_chunk_size;
+					float pz010 = pz000;
+					float px100 = px000;
+					float pz100 = pz000 + gl_chunk_size;
+					float px110 = px010;
+					float pz110 = pz010 + gl_chunk_size;
+
+					// calculate Y coordinates for corners
+					float py000 = ydist;
+					float py010 = ydist;
+					float py100 = ydist;
+					float py110 = ydist;
+
+					/*
+					float px001 = px000;
+					float py001 = py000 + map->ylen;
+					float pz001 = pz000;
+					float px101 = px100;
+					float py101 = py100 + map->ylen;
+					float pz101 = pz100;
+					float px011 = px010;
+					float py011 = py010 + map->ylen;
+					float pz011 = pz010;
+					float px111 = px110;
+					float py111 = py110 + map->ylen;
+					float pz111 = pz110;
+					*/
 
 					//printf("%f %f -> %f %f\n", px00, pz00, px11, pz11);
 
 					// get lengths of corners
-					float d00 = sqrtf(px00 * px00 + pz00 * pz00);
-					float d10 = sqrtf(px10 * px10 + pz10 * pz10);
-					float d01 = sqrtf(px01 * px01 + pz01 * pz01);
-					float d11 = sqrtf(px11 * px11 + pz11 * pz11);
+					float d000 = sqrtf(px000 * px000 + py000 * py000 + pz000 * pz000);
+					float d100 = sqrtf(px100 * px100 + py000 * py000 + pz100 * pz100);
+					float d010 = sqrtf(px010 * px010 + py000 * py000 + pz010 * pz010);
+					float d110 = sqrtf(px110 * px110 + py000 * py000 + pz110 * pz110);
+					/*
+					float d001 = sqrtf(px001 * px001 + py001 * py001 + pz001 * pz001);
+					float d101 = sqrtf(px101 * px101 + py001 * py001 + pz101 * pz101);
+					float d011 = sqrtf(px011 * px011 + py001 * py001 + pz011 * pz011);
+					float d111 = sqrtf(px111 * px111 + py001 * py001 + pz111 * pz111);
+					*/
 
 					// normalise corners
-					px00 /= d00; pz00 /= d00;
-					px10 /= d10; pz10 /= d10;
-					px01 /= d01; pz01 /= d01;
-					px11 /= d11; pz11 /= d11;
+					px000 /= d000; py000 /= d000; pz000 /= d000;
+					px100 /= d100; py100 /= d100; pz100 /= d100;
+					px010 /= d010; py010 /= d010; pz010 /= d010;
+					px110 /= d110; py110 /= d110; pz110 /= d110;
+					/*
+					px001 /= d001; py001 /= d001; pz001 /= d001;
+					px101 /= d101; py101 /= d101; pz101 /= d101;
+					px011 /= d011; py011 /= d011; pz011 /= d011;
+					px111 /= d111; py111 /= d111; pz111 /= d111;
+					*/
 
-					// get normalised 2D forward vector
-					float f2d = sqrtf(fx*fx + fz*fz);
-					float f2x = fx/f2d;
-					float f2z = fz/f2d;
-					
 					// get dot products against forward vector
-					float e00 = px00 * f2x + pz00 * f2z;
-					float e10 = px10 * f2x + pz10 * f2z;
-					float e01 = px01 * f2x + pz01 * f2z;
-					float e11 = px11 * f2x + pz11 * f2z;
+					float e000 = px000 * f3x + py000 * f3y + pz000 * f3z;
+					float e100 = px100 * f3x + py100 * f3y + pz100 * f3z;
+					float e010 = px010 * f3x + py010 * f3y + pz010 * f3z;
+					float e110 = px110 * f3x + py110 * f3y + pz110 * f3z;
+					/*
+					float e001 = px001 * f3x + py001 * f3y + pz001 * f3z;
+					float e101 = px101 * f3x + py101 * f3y + pz101 * f3z;
+					float e011 = px011 * f3x + py011 * f3y + pz011 * f3z;
+					float e111 = px111 * f3x + py111 * f3y + pz111 * f3z;
+					*/
 
-					// frustum cull provided chunk isn't TOO close
-					if(d00/2 >= gl_chunk_size && d01/2 >= gl_chunk_size && d10/2 >= gl_chunk_size && d11/2 >= gl_chunk_size)
-						if(e00 < emax && e01 < emax && e10 < emax && e11 < emax)
-							continue;
+					// frustum cull
+					if(e000 < emax && e010 < emax && e100 < emax && e110 < emax)
+					{
+						cskip++;
+						continue;
+					}
 				}
 
 				// select pointers
@@ -395,7 +453,8 @@ void render_map_visible_chunks_draw(map_t *map, float fx, float fy, float fz, fl
 					glBindBuffer(GL_ARRAY_BUFFER, 0);
 			}
 		}
-	}	
+	}
+	//printf("draw: %i/%i (%.2f%%)\n", (cdraw-cskip), cdraw, 100.0f*((float)(cdraw-cskip))/((float)cdraw));
 }
 
 int render_map_visible_chunks_count_dirty(map_t *map)
@@ -1036,13 +1095,15 @@ void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t
 	float cfd2 = cfx*cfx+cfy*cfy+cfz*cfz;
 	cfd2 = 1.0f/cfd2;
 
+	float cdist = fog_distance/sqrtf(2.0f*cfd2);
+	zfar = cdist;
+	render_init(lwidth, lheight);
 	glClearColor(fog[0], fog[1], fog[2], 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_FOG);
 	glFogi(GL_FOG_MODE, GL_LINEAR);
-	float cdist = fog_distance/sqrtf(2.0f*cfd2);
 	glFogf(GL_FOG_START, cdist/2.0f);
 	glFogf(GL_FOG_END, cdist);
 	glFogfv(GL_FOG_COLOR, fog);
@@ -1139,6 +1200,9 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 int render_init(int width, int height)
 {
 	glMatrixMode(GL_PROJECTION);
+	mtx_baseproj[10] = (zfar + znear)/(zfar - znear);
+	mtx_baseproj[14] = -(2.0f * zfar * znear)/(zfar - znear);
+	mtx_baseproj[11] = 1;
 	glLoadMatrixf(mtx_baseproj);
 	if(width > height)
 		glScalef(1.0f,((float)width)/((float)height),1.0f);
@@ -1146,6 +1210,9 @@ int render_init(int width, int height)
 		glScalef(((float)height)/((float)width),1.0f,1.0f);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
+
+	lwidth = width;
+	lheight = height;
 	
 	// probably something.
 	return 0;
