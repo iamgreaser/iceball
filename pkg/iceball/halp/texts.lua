@@ -150,6 +150,10 @@ File format specifications:
 $cFFFF5555  docs/format_icemap.txt
 $cFFFF5555  docs/format_pmf.txt
 
+Editor usage:
+$cFFFF5555  docs/editor_map.txt
+$cFFFF5555  docs/editor_pmf.txt
+
 $-
 $cFF000000Kurukuru tokei no hari
 $cFF000000  Guruguru atama mawaru
