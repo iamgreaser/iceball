@@ -346,10 +346,10 @@ void render_map_visible_chunks_draw(map_t *map, float fx, float fy, float fz, fl
 			{
 				cdraw++;
 				if(gl_frustum_cull)
-				if(cx < chunk->cx*gl_chunk_size
-					|| cz < chunk->cz*gl_chunk_size
-					|| cx > (chunk->cx+1)*gl_chunk_size
-					|| cz > (chunk->cz+1)*gl_chunk_size)
+				if(cx < (chunk->cx-1)*gl_chunk_size
+					|| cz < (chunk->cz-1)*gl_chunk_size
+					|| cx > (chunk->cx+2)*gl_chunk_size
+					|| cz > (chunk->cz+2)*gl_chunk_size)
 				{
 					// calculate first corner
 					float px000 = chunk->cx*gl_chunk_size - cx;

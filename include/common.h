@@ -19,7 +19,7 @@
 #define VERSION_X 1
 #define VERSION_Y 0
 #define VERSION_A 0
-#define VERSION_Z 6
+#define VERSION_Z 7
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!
