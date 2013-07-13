@@ -17,7 +17,7 @@
 ]]
 
 MODE_LTS_STARTTIME = MODE_LTS_STARTTIME or 5
-MODE_LTS_ROUNDTIME = MODE_LTS_ROUNDTIME or 300
+MODE_LTS_ROUNDTIME = MODE_LTS_ROUNDTIME or 90 -- 90 works well for small games on 256x256 maps
 
 local t_start = nil
 local t_end = nil

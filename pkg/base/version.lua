@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,1,0,0,6},
-	num=4194304+6,
-	str="0.1-6",
+	cmp={0,1,0,0,8},
+	num=4194304+8,
+	str="0.1-8",
 }
 
 VERSION_BUGS = {
@@ -93,7 +93,8 @@ VERSION_BUGS = {
 {intro=nil, fix=4194304+3, msg="[OpenGL] Frustum culling not supported"},
 {intro=nil, fix=4194304+4, msg="[OpenGL] Ambient occlusion on sides not rendered equally"},
 {intro=4194304+4, fix=4194304+5, msg="[OpenGL] Ambient occlusion on sides rendered very unequally on very rare GPUs such as the Intel 3000HD"},
-{intro=4194304+3, fix=4194304+6, msg="[OpenGL] Frustum culling improved in later versions"},
+{intro=4194304+3, fix=4194304+7, msg="[OpenGL] Frustum culling improved in later versions"},
 {intro=4194304+3, fix=nil, msg="[OpenGL] Frustum culling still screws up on occasion"},
+{intro=nil, fix=4194304+8, msg="Occasional crash when music is stopped"},
 }
 

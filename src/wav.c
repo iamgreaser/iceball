@@ -55,17 +55,19 @@ void wav_fn_mixer_s16he_stereo(void *buf, int len)
 	}
 	
 	// do the sackity thing
-	if(icesackit_pb != NULL)
+	// TODO: handle freeing correctly
+	sackit_playback_t *sackit = icesackit_pb;
+	if(sackit != NULL)
 	{
 		int16_t *v = (int16_t *)buf;
-		int16_t *u = (int16_t *)icesackit_pb->buf;
+		int16_t *u = (int16_t *)sackit->buf;
 		j = 0;
 		while(j < len)
 		{
 			if(icesackit_bufoffs == 4096)
 			{
 				icesackit_bufoffs = 0;
-				sackit_playback_update(icesackit_pb);
+				sackit_playback_update(sackit);
 			}
 			int sirem = 4096 - icesackit_bufoffs;
 			if(sirem > len)
