@@ -85,6 +85,13 @@ clsave/config.json:
 		crapflooding your Iceball install.
 		Best to leave this set to "true" until we get better security.
 
+		"raw_whitelist" lists pairs of addresses/ports that can be opened/accessed.
+		Each port number allows both the TCP *AND* UDP port at that number to be accessed.
+		Each address pair is a 2-entry list.
+
+		The addresses MUST be EXACTLY the same as requested,
+		e.g. voxelauth.com and www.voxelauth.com are NOT the same IP.
+
 clsave/pub/user.json:
 	"name" should be set to something other than null;
 	otherwise, the game will give you a really demeaning name.

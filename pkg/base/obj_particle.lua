@@ -94,10 +94,12 @@ function new_particle(settings)
 		local db = math.sqrt(this.vx*this.vx+this.vy*this.vy+this.vz*this.vz)
 		--print("a",this.x0,this.y0,this.z0,this.vx,this.vy,this.vz)
 		--print("db",db)
-		d,x1,y1,z1,x2,y2,z2 = trace_map_ray_dist(
-			this.x0,this.y0,this.z0,
-			this.vx/db,this.vy/db,this.vz/db,
-			db)
+		if not this.noclip then
+			d,x1,y1,z1,x2,y2,z2 = trace_map_ray_dist(
+				this.x0,this.y0,this.z0,
+				this.vx/db,this.vy/db,this.vz/db,
+				db)
+		end
 		
 		local df = 1.0
 		if d and not this.noclip then

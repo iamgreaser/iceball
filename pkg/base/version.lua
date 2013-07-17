@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,1,0,0,8},
-	num=4194304+8,
-	str="0.1-8",
+	cmp={0,1,0,0,9},
+	num=4194304+9,
+	str="0.1-9",
 }
 
 VERSION_BUGS = {
@@ -87,7 +87,7 @@ VERSION_BUGS = {
 {intro=nil, fix=4194304+1, msg="Arbitrary TCP connections not supported"},
 {intro=4194304+1, fix=4194304+2, msg="This build doesn't actually compile on not-windows because itoa isn't a real function."},
 {intro=4194304+1, fix=4194304+2, msg="Raw TCP connection throws an error on failure"},
-{intro=4194304+1, fix=nil, msg="Raw TCP appears to ignore the whitelist on the client side"},
+{intro=4194304+1, fix=4194304+9, msg="Raw TCP appears to ignore the whitelist on the client side"},
 {intro=nil, fix=nil, msg="Occasional crash in sackit_module_free on common.mus_free - this is probably a sackit bug."},
 {intro=nil, fix=nil, msg="Sound distance attenuation affected by zoom (workaround implemented)"},
 {intro=nil, fix=4194304+3, msg="[OpenGL] Frustum culling not supported"},
@@ -96,5 +96,6 @@ VERSION_BUGS = {
 {intro=4194304+3, fix=4194304+7, msg="[OpenGL] Frustum culling improved in later versions"},
 {intro=4194304+3, fix=nil, msg="[OpenGL] Frustum culling still screws up on occasion"},
 {intro=nil, fix=4194304+8, msg="Occasional crash when music is stopped"},
+{intro=4194304+1, fix=4194304+9, msg="Raw TCP still throws a lua error if it can't connect"},
 }
 

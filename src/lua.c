@@ -25,7 +25,28 @@ struct icelua_entry {
 lua_State *lstate_client = NULL;
 lua_State *lstate_server = NULL;
 
+struct icelua_whitelist {
+	char *addr;
+	int port;
+};
+
+struct icelua_whitelist *raw_whitelist = NULL; int raw_whitelist_len = 0;
+
 int bin_storage_allowed = 0;
+
+int whitelist_validate(const char *name, int port)
+{
+	if(name == NULL || port == 0 || port == -1)
+		return 0;
+	
+	int i;
+
+	for(i = 0; i < raw_whitelist_len; i++)
+		if(!strcmp(raw_whitelist[i].addr, name) && (raw_whitelist[i].port == -1 || port == raw_whitelist[i].port))
+			return 1;
+
+	return 0;
+}
 
 // helper functions
 int icelua_assert_stack(lua_State *L, int smin, int smax)
@@ -442,6 +463,61 @@ int icelua_init(void)
 			v = lua_toboolean(Lc, -1);
 			if(!lua_isnil(Lc, -1)) bin_storage_allowed = v;
 			lua_pop(Lc, 1);
+
+			{
+				if(lua_istable(Lc, -1))
+					lua_getfield(Lc, -1, "raw_whitelist");
+				else
+					lua_newtable(Lc);
+
+				// allocate whitelist
+				raw_whitelist_len = lua_objlen(Lc, -1);
+				raw_whitelist = malloc(sizeof(struct icelua_whitelist)*raw_whitelist_len);
+
+				// read each entry
+				for(i = 0; i < raw_whitelist_len; i++)
+				{
+					printf("entry %i/%i\n", i+1, raw_whitelist_len);
+					// get entry
+					lua_pushinteger(Lc, i+1);
+					lua_gettable(Lc, -2);
+
+					if(lua_istable(Lc, -1))
+					{
+						// check entries
+						lua_pushinteger(Lc, 1);
+						lua_gettable(Lc, -2);
+						lua_pushinteger(Lc, 2);
+						lua_gettable(Lc, -3);
+
+						// check entries
+						if(lua_isstring(Lc, -2) && lua_isnumber(Lc, -1))
+						{
+							raw_whitelist[i].addr = strdup(lua_tostring(Lc, -2));
+							raw_whitelist[i].port = lua_tointeger(Lc, -1);
+							printf("Whitelist entry %i/%i: \"%s\" port %i \n", i+1, raw_whitelist_len,
+								raw_whitelist[i].addr, raw_whitelist[i].port);
+						} else {
+							// mark as invalid
+							fprintf(stderr, "invalid entry %i/%i in whitelist!\n", i+1, raw_whitelist_len);
+							raw_whitelist[i].addr = NULL;
+						}
+
+						// pop entries
+						lua_pop(Lc, 2);
+					} else {
+						// mark as invalid
+						fprintf(stderr, "invalid entry %i/%i in whitelist!\n", i+1, raw_whitelist_len);
+						raw_whitelist[i].addr = NULL;
+					}
+
+					// pop entry
+					lua_pop(Lc, 1);
+				}
+
+				// drop table
+				lua_pop(Lc, 1);
+			}
 			
 			// drop table
 			lua_pop(Lc, 1);

@@ -15,6 +15,8 @@
     along with Iceball.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+int whitelist_validate(const char *name, int port);
+
 int icelua_fn_common_tcp_connect(lua_State *L) {
 	int top = icelua_assert_stack(L, 2, 2);
 	
@@ -36,6 +38,9 @@ int icelua_fn_common_tcp_connect(lua_State *L) {
 		return luaL_error(L, "not a number");
 	}
 
+	if(L == lstate_client && !whitelist_validate(host, port))
+		return luaL_error(L, "address/port not on whitelist!");
+
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
@@ -46,6 +51,8 @@ int icelua_fn_common_tcp_connect(lua_State *L) {
 	sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 
 	ret = connect(sockfd, res->ai_addr, res->ai_addrlen);
+	if(ret == -1)
+		return 0;
 #ifdef WIN32
 	int yes = 1;
 	if (ioctlsocket(sockfd, FIONBIO, (u_long *)&yes) == -1) {
