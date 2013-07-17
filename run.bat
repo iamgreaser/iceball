@@ -9,6 +9,8 @@ ECHO 3. Lighting test
 ECHO 4. Snow weather test
 ECHO 5. Map editor
 ECHO 6. PMF editor
+ECHO 7. Tutorial
+ECHO 8. PMF Editor Tutorial
 ECHO -------------------------------------
 ECHO 0. Exit
 ECHO -------------------------------------
@@ -24,6 +26,8 @@ IF /I '%INPUT%'=='3' GOTO LightingTest
 IF /I '%INPUT%'=='4' GOTO SnowTest
 IF /I '%INPUT%'=='5' GOTO MapEditor
 IF /I '%INPUT%'=='6' GOTO PMFEditor
+IF /I '%INPUT%'=='7' GOTO Tutorial
+IF /I '%INPUT%'=='8' GOTO PMFEditorTutorial
 IF /I '%INPUT%'=='0' EXIT
 
 ECHO Invalid option
@@ -69,6 +73,20 @@ GOTO Menu
 :PMFEditor
 ECHO Starting PMF editor...
 iceball.exe -s 0 pkg/iceball/pmfedit
+ECHO.
+cls
+GOTO Menu
+
+:Tutorial
+ECHO Starting tutorial...
+iceball.exe -s 0 pkg/iceball/halp
+ECHO.
+cls
+GOTO Menu
+
+:PMFEditorTutorial
+ECHO Starting tutorial...
+iceball.exe -s 0 pkg/iceball/pmfedithalp
 ECHO.
 cls
 GOTO Menu
