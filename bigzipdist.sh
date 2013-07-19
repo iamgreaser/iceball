@@ -1,6 +1,6 @@
 #!/bin/sh
 
-export ZIPNAME=nubdist/iceball-0.1.zip
+export ZIPNAME=nubdist/iceball-0.1.1.zip
 
 #zip -r $ZIPNAME *.dll *.exe *.txt *.bat docs/ \
 #	pkg/base/*.lua \
@@ -28,5 +28,7 @@ zip -r $ZIPNAME *.dll *.exe *.txt opencmd.bat connect-*.bat docs/ \
 	src/ include/ Makefile* CMakeLists.txt main.make \
 	clsave/pub/controls.json \
 	xlibinc/dummy winlibs/dummy \
+	tools/icemap2vxl.py tools/kv62pmf.py \
+	\
 	-x pkg/base/srcwav16/ pkg/base/kv6/ pkg/base/glsl/
 
