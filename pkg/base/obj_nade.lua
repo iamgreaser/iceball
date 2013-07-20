@@ -224,7 +224,7 @@ function new_nade(settings)
 					end
 				end
 				for blk,dmg in pairs(dmg_blks) do
-					bhealth_damage(blk[1],blk[2],blk[3], dmg, players[this.pid])
+					bhealth_damage(blk[1],blk[2],blk[3], dmg)
 					net_broadcast(nil, common.net_pack("BHHHH", PKT_BLK_DAMAGE, blk[1],blk[2],blk[3], dmg))
 				end
 			end

@@ -349,7 +349,7 @@ function bhealth_damage(x,y,z,amt,plr)
 		if map_block_break(x,y,z) then
 			net_broadcast(nil, common.net_pack("BHHH",
 				PKT_BLK_RM1, x, y, z))
-			if plr.tool == TOOL_SPADE then
+			if plr and plr.tool == TOOL_SPADE then
 				local oblocks = plr.blocks
 				oblocks = oblocks + 1
 				if oblocks > 100 then
