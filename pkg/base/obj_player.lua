@@ -2160,7 +2160,7 @@ function new_player(settings)
 					local rad = MODE_NADE_VPL_MAX_RANGE - v.d
 					l[#l+1] = {
 						x = v.x*8, y = v.y*8, z = v.z*8,
-						r=math.max(1, rad*255/MODE_NADE_VPL_MAX_RANGE), g =16, b = 16,
+						r=math.min(255, math.max(1, rad*255/MODE_NADE_VPL_MAX_RANGE)), g =16, b = 16,
 						radius=1,
 					}
 				end
