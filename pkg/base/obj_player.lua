@@ -1079,6 +1079,8 @@ function new_player(settings)
         	                end
         	                this.crosshair.x = w/2 + ang_dist(this.cam_angy, this.angy) * 400 * this.zoom
 	                        this.crosshair.y = h/2 - ang_dist(this.cam_angx, this.angx) * 400 * this.zoom
+				this.crosshairhit.x = this.crosshair.x
+				this.crosshairhit.y = this.crosshair.y
 			end
 		else
 			client.camera_move_to(this.dead_x, this.dead_y, this.dead_z)
