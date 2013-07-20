@@ -128,7 +128,7 @@ MODE_DELAY_NADE_THROW = 0.5
 MODE_BLOCK_HEALTH = 100
 MODE_BLOCK_DAMAGE_SPADE = 34
 MODE_BLOCK_DAMAGE_RIFLE = 34
-MODE_BLOCK_REGEN_TIME = 15.0
+MODE_BLOCK_REGEN_TIME = 30.0
 MODE_BLOCK_PLACE_IN_AIR = false --TODO: make this a server config variable, maybe godmode?
 MODE_BLOCK_NO_RED_MARKER = false
 
@@ -396,23 +396,24 @@ end
 
 function bhealth_prune(time)
 	--print("prune", bhealth.head, bhealth.tail)
-	while bhealth.head <= bhealth.tail do
+	if bhealth.head <= bhealth.tail then
 		local bhi = bhealth[bhealth.head]
-		if time < bhi.time then break end
-		bhealth[bhealth.head] = nil
-		
-		--print("bhi", bhi.x,bhi.y,bhi.z,bhi.time,time)
-		
-		local map = bhealth.map
-		local bh = map[bhi.x] and map[bhi.x][bhi.y] and map[bhi.x][bhi.y][bhi.z]
-		
-		if bh and bh.qidx == bhealth.head then
-			map_block_paint(bh.x,bh.y,bh.z,
-				bh.c[1],bh.c[2],bh.c[3],bh.c[4])
-			bhealth.map[bh.x][bh.y][bh.z] = nil
+		if time >= bhi.time then
+			bhealth[bhealth.head] = nil
+			
+			--print("bhi", bhi.x,bhi.y,bhi.z,bhi.time,time)
+			
+			local map = bhealth.map
+			local bh = map[bhi.x] and map[bhi.x][bhi.y] and map[bhi.x][bhi.y][bhi.z]
+			
+			if bh and bh.qidx == bhealth.head then
+				map_block_paint(bh.x,bh.y,bh.z,
+					bh.c[1],bh.c[2],bh.c[3],bh.c[4])
+				bhealth.map[bh.x][bh.y][bh.z] = nil
+			end
+			
+			bhealth.head = bhealth.head + 1
 		end
-		
-		bhealth.head = bhealth.head + 1
 	end
 	
 	if bhealth.head > bhealth.tail then
