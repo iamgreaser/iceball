@@ -598,7 +598,7 @@ function h_key(sym, state, modif, uni)
 	-- disconnected ai
 	
 	if not players[players.current] then
-		if state and key == SDLK_ESCAPE then
+		if state and key == BTSK_QUIT then
 			client.hook_tick = nil
 		end
 
@@ -886,6 +886,11 @@ function client.hook_kick(reason)
 		client.mouse_lock_set(false)
 		client.mouse_visible_set(true)
 		return 0.01
+	end
+	function client.hook_key(sym, state, modif, uni)
+		if state and key == BTSK_QUIT then
+			client.hook_tick = nil
+		end
 	end
 	local old_render = client.hook_render
 	local new_render = nil
