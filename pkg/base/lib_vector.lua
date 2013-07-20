@@ -461,6 +461,7 @@ function vpl_gen_from_sphere(ssx, ssy, ssz, maxcount, maxdist, maxtries)
 				vpls[#vpls + 1] = {
 					x = px, y = py, z = pz,
 					vx = nx, vy = ny, vz = nz,
+					cx = ncx, cy = ncy, cz = ncz,
 					d = pd + dist, s = ns,
 					c = pc
 				}

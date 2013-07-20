@@ -208,6 +208,26 @@ function new_nade(settings)
 			end
 			end
 			end
+			if MODE_NADE_VPL_ENABLE then
+				local dmg_blks = {}
+				for j=1,#vpls do
+					local v = vpls[j]
+					local x = v.cx --math.floor(v.x+0.5)
+					local y = v.cy --math.floor(v.y+0.5)
+					local z = v.cz --math.floor(v.z+0.5)
+					local blk = {x,y,z}
+					if y and y < ylen-2 then
+						if not dmg_blks[blk] then
+							dmg_blks[blk] = 0
+						end
+						dmg_blks[blk] = dmg_blks[blk] + MODE_NADE_VPL_BLK_DAMAGE
+					end
+				end
+				for blk,dmg in pairs(dmg_blks) do
+					bhealth_damage(blk[1],blk[2],blk[3], dmg, players[this.pid])
+					net_broadcast(nil, common.net_pack("BHHHH", PKT_BLK_DAMAGE, blk[1],blk[2],blk[3], dmg))
+				end
+			end
 		end
 		
 		
