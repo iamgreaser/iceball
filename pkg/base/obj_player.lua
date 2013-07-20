@@ -1053,20 +1053,51 @@ function new_player(settings)
 			net_broadcast(nil, common.net_pack("BB", PKT_PIANO, this.pid))
 		end
 	end
-
+	
+        this.cam_angx = 0
+        this.cam_angy = 0
+	
 	function this.camera_firstperson(sec_current, sec_delta)
 		-- set camera position
 		if this.alive then
 			client.camera_move_to(this.x, this.y + this.jerkoffs, this.z)
+			if MODE_FREEAIM then
+                	        local function ang_dist(a, b)
+        	                        return math.atan2(math.sin(a-b), math.cos(a-b))
+	                        end
+                        	if ang_dist(this.cam_angy, this.angy) > math.pi / 16 then
+                	                this.cam_angy = this.angy + math.pi / 16
+        	                end
+	                        if ang_dist(this.cam_angx, this.angx) > math.pi / 16 then
+                                	this.cam_angx = this.angx + math.pi / 16
+                        	end
+                	        if ang_dist(this.cam_angy, this.angy) < -math.pi / 16 then
+        	                        this.cam_angy = this.angy - math.pi / 16
+	                        end
+                        	if ang_dist(this.cam_angx, this.angx) < -math.pi / 16 then
+                	                this.cam_angx = this.angx - math.pi / 16
+        	                end
+        	                this.crosshair.x = w/2 + ang_dist(this.cam_angy, this.angy) * 400 * this.zoom
+	                        this.crosshair.y = h/2 - ang_dist(this.cam_angx, this.angx) * 400 * this.zoom
+			end
 		else
 			client.camera_move_to(this.dead_x, this.dead_y, this.dead_z)
 		end
-
+		
+		local angy, angx
+		if MODE_FREEAIM then
+			angy = this.cam_angy
+			angx = this.cam_angx
+		else
+			angy = this.angy
+			angx = this.angx
+		end
+		
 		-- calc camera forward direction
-		local sya = math.sin(this.angy)
-		local cya = math.cos(this.angy)
-		local sxa = math.sin(this.angx)
-		local cxa = math.cos(this.angx)
+		local sya = math.sin(angy)
+		local cya = math.cos(angy)
+		local sxa = math.sin(angx)
+		local cxa = math.cos(angx)
 		local fwx,fwy,fwz
 		fwx,fwy,fwz = sya*cxa, sxa, cya*cxa
 		
