@@ -1,0 +1,92 @@
+Heartbeat server protocol
+
+Main heartbeat server:
+	play.iceballga.me port 27790
+	(port is for UDP *and* TCP)
+
+Iceball only supports IPv4 UDP ports at the time of writing, sorry.
+
+Feel free to host your own heartbeat server, though!
+
+Note, S = heartbeat server, C = heartbeat client (AKA iceball server).
+
+You should always confirm you have received a packet from the heartbeat server.
+To do this correctly, send packets every 3 seconds until you get a response.
+If you get no response after 60 seconds, give up.
+You might want to retry after 180 seconds.
+
+The heartbeat server will terminate your session after 120 seconds of inactivity.
+
+Iceball servers interface the heartbeat server using this UDP protocol...
+
+0x01 hbversion.u16 port.u16 addr.z:
+	C->S Request ID (conf 0x02)
+	
+	This should be the first thing you send to the heartbeat server.
+
+	At the time of writing, hbversion should be 1.
+
+0x02 id.u32 port.u16 addr.z:
+	S->C Here Is Your ID
+
+	Every time you receive this packet, CHANGE YOUR ID.
+
+0x03 id.u32 field.u8 name.z:
+	C->S Set String Field (conf 0x03)
+	S->C This Is Your String Field
+
+	Valid string fields are:
+		0x01: server name
+		0x02: server mode
+
+0x04 id.u32 field.u8 data.s32:
+	C->S Set Integer Field (conf 0x04)
+	S->C This Is Your Integer Field
+
+	Valid integer fields are:
+		0x01: player count
+		0x02: max players
+
+0x05 id.u32:
+	C->S Hello Me Not Dead
+
+	Every 30 seconds, send 5 of these at 1 second intervals.
+
+0x06:
+	S->C I'll Need To See Your ID
+
+	If you send any packets and you don't have an active session
+	(either you didn't initiate one or the server terminated your session),
+	you'll get this. Apply for a new ID.
+
+0x07 version.u16:
+	S->C Version Mismatch
+
+	You are using the wrong version of the heartbeat protocol.
+	This should give you the correct version.
+
+OK, so that's the UDP side of the master server.
+The TCP side is a minimal HTTP server with two interfaces:
+
+/:
+	An HTML page following a template.
+/style.css:
+	
+/master.json:
+	The raw serverlist info in JSON format.
+	Here's the expected format!
+
+	{
+		"version": int,
+		"servers": [
+			{
+				"name": str,
+				"address": str,
+				"port": int,
+				"basedir": str,
+				"players_current": int,
+				"players_max": int,
+			}
+		]
+	}
+

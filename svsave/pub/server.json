@@ -3,6 +3,10 @@
 	"motd": "Welcome to Iceball",
 	"mode": "pkg/base/mode/mode_ctf.lua",
 	"mod_config": "svsave/pub/mods.json",
+	"heartbeat_send": false,
+	"heartbeat": [
+		["play.iceballga.me", 27790]
+	],
 	"permissions": {
 		"default" : {
 			"permissions" : [
