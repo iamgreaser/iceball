@@ -51,6 +51,7 @@ int icelua_fn_common_tcp_connect(lua_State *L) {
 	sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 
 	ret = connect(sockfd, res->ai_addr, res->ai_addrlen);
+	freeaddrinfo(res);
 	if(ret == -1)
 		return 0;
 #ifdef WIN32

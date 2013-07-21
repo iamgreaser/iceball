@@ -21,6 +21,21 @@ if common.version.num < 4227072 then
 	-- but I *do* want the server to stay up to date.
 end
 
+-- UDP port test.
+if false then
+	local sk = common.udp_open()
+	print("sk:", sk)
+	m = common.udp_sendto(sk, "Hello World!", "127.0.0.1", 9999)
+	print("M:", m)
+	local ctime = common.time()
+	while common.time() <= ctime do end
+	local m2, h, p
+	m2, h, p = common.udp_recvfrom(sk)
+	print("recv:", m2, h, p)
+	common.udp_sendto(sk, "pang", h, p)
+	common.udp_close(sk)
+end
+
 dofile("pkg/base/preconf.lua")
 dofile("pkg/base/lib_util.lua")
 

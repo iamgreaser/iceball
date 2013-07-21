@@ -100,5 +100,7 @@ VERSION_BUGS = {
 {intro=4194304+3, fix=nil, msg="[OpenGL] Frustum culling still screws up on occasion"},
 {intro=nil, fix=4194304+8, msg="Occasional crash when music is stopped"},
 {intro=4194304+1, fix=4194304+9, msg="Raw TCP still throws a lua error if it can't connect"},
+{intro=nil, fix=4227072+1, msg="Arbitrary UDP connections not supported"},
+{intro=4227072+1, fix=nil, msg="Raw UDP support might be a bit flaky - if you find bugs, please tell us!"},
 }
 

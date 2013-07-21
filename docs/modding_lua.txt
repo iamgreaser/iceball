@@ -582,6 +582,25 @@ remain = common.tcp_send(tcpsockfd, data) @
 common.tcp_close(tcpsockfd) @
 	closes a TCP socket
 
+udpsockfd = common.udp_open() @
+	creates a raw UDP socket
+	returns nil on socket creation failure
+	throws an error in other weird situations
+
+data, host, port = common.udp_recvfrom(udpsockfd) @
+	receives from a UDP socket
+	returns an empty string + nils if nothing arrived
+	returns false on error, such as disconnection
+
+remain = common.udp_sendto(udpsockfd, data, host, port) @
+	sends data to a host using a UDP socket
+
+	returns the data that wasn't quite sent just yet, which can be an empty string
+	returns false on error, such as disconnection
+
+common.udp_close(udpsockfd) @
+	closes a UDP socket
+
 wav = common.wav_load(fname) @
 	loads a sound with filename "fname"
 	remember to free it when you're done

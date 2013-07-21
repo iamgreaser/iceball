@@ -87,8 +87,9 @@ int icelua_force_get_integer(lua_State *L, int table, char *name)
 #include "lua_model.h"
 #include "lua_net.h"
 #include "lua_tcp.h"
-#include "lua_wav.h"
+#include "lua_udp.h"
 #include "lua_util.h"
+#include "lua_wav.h"
 
 // common functions
 
@@ -172,6 +173,10 @@ struct icelua_entry icelua_common[] = {
 	{icelua_fn_common_tcp_send, "tcp_send"},
 	{icelua_fn_common_tcp_recv, "tcp_recv"},
 	{icelua_fn_common_tcp_close, "tcp_close"},
+	{icelua_fn_common_udp_open, "udp_open"},
+	{icelua_fn_common_udp_sendto, "udp_sendto"},
+	{icelua_fn_common_udp_recvfrom, "udp_recvfrom"},
+	{icelua_fn_common_udp_close, "udp_close"},
 	{icelua_fn_common_wav_load, "wav_load"},
 	{icelua_fn_common_wav_free, "wav_free"},
 	{icelua_fn_common_mus_load_it, "mus_load_it"},
