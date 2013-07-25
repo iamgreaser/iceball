@@ -19,7 +19,7 @@
 #define VERSION_X 1
 #define VERSION_Y 1
 #define VERSION_A 0
-#define VERSION_Z 1
+#define VERSION_Z 2
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!
@@ -27,7 +27,7 @@
 
 #define MODEL_BONE_MAX  256
 #define MODEL_POINT_MAX 4096
-#define PACKET_LEN_MAX 1280
+#define PACKET_LEN_MAX 2560
 #define PATH_LEN_MAX 128
 
 // i wouldn't go near this limit if i were you...

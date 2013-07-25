@@ -28,7 +28,7 @@
 		"smoothlighting": true,
 		"gl_expand_textures": true,
 		"gl_chunk_size": 32,
-		"gl_chunks_tesselated_per_frame": 1,
+		"gl_chunks_tesselated_per_frame": 4,
 		"gl_shaders": true,
 		"gl_frustum_cull": true,
 		"gl_flip_quads": true,

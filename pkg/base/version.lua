@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,1,1,0,1},
-	num=4227072+1,
-	str="0.1.1-1",
+	cmp={0,1,1,0,2},
+	num=4227072+2,
+	str="0.1.1-2",
 }
 
 -- 0.1: 4194304
@@ -93,14 +93,15 @@ VERSION_BUGS = {
 {intro=4194304+1, fix=4194304+9, msg="Raw TCP appears to ignore the whitelist on the client side"},
 {intro=nil, fix=nil, msg="Occasional crash in sackit_module_free on common.mus_free - this is probably a sackit bug."},
 {intro=nil, fix=nil, msg="Sound distance attenuation affected by zoom (workaround implemented)"},
-{intro=nil, fix=4194304+3, msg="[OpenGL] Frustum culling not supported"},
-{intro=nil, fix=4194304+4, msg="[OpenGL] Ambient occlusion on sides not rendered equally"},
-{intro=4194304+4, fix=4194304+5, msg="[OpenGL] Ambient occlusion on sides rendered very unequally on very rare GPUs such as the Intel 3000HD"},
-{intro=4194304+3, fix=4194304+7, msg="[OpenGL] Frustum culling improved in later versions"},
-{intro=4194304+3, fix=nil, msg="[OpenGL] Frustum culling still screws up on occasion"},
+{renderer="gl", intro=nil, fix=4194304+3, msg="[OpenGL] Frustum culling not supported"},
+{renderer="gl", intro=nil, fix=4194304+4, msg="[OpenGL] Ambient occlusion on sides not rendered equally"},
+{renderer="gl", intro=4194304+4, fix=4194304+5, msg="[OpenGL] Ambient occlusion on sides rendered very unequally on very rare GPUs such as the Intel HD 3000"},
+{renderer="gl", intro=4194304+3, fix=4194304+7, msg="[OpenGL] Frustum culling improved in later versions"},
+{renderer="gl", intro=4194304+3, fix=nil, msg="[OpenGL] Frustum culling still screws up on occasion"},
 {intro=nil, fix=4194304+8, msg="Occasional crash when music is stopped"},
 {intro=4194304+1, fix=4194304+9, msg="Raw TCP still throws a lua error if it can't connect"},
 {intro=nil, fix=4227072+1, msg="Arbitrary UDP connections not supported"},
 {intro=4227072+1, fix=nil, msg="Raw UDP support might be a bit flaky - if you find bugs, please tell us!"},
+{renderer="gl", intro=nil, fix=4227072+2, msg="[OpenGL] Breaking blocks around the edges does not update the chunks properly"},
 }
 
