@@ -155,7 +155,7 @@ int icelua_fn_common_net_pack(lua_State *L)
 				*(s++) = (xint>>24) & 0xFF;
 				break;
 			case 'd':
-				xdouble = lua_tointeger(L, p++);
+				xdouble = lua_tonumber(L, p++);
 				xint = ((int *)(float *)&xdouble)[0];
 				*(s++) = xint & 0xFF;
 				*(s++) = (xint>>8) & 0xFF;
