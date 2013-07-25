@@ -45,6 +45,7 @@ return function (plr, cfg)
 		this.t_fire = nil
 		this.t_reload = nil
 		this.reloading = false
+		this.sway = this.cfg.sway or 0
 		this.restock()
 	end
 	
@@ -268,6 +269,14 @@ return function (plr, cfg)
 		
 		if this.t_fire and this.t_fire < sec_current then
 			this.t_fire = nil
+		end
+		
+		if plr.alive then
+			local swayamt = this.sway
+			if plr.crouching then swayamt = swayamt * 0.5 end
+			if plr.zooming then swayamt = swayamt * 0.25 end
+			plr.angx = plr.angx + math.sin(sec_current * 2) * swayamt
+			plr.angy = plr.angy + math.sin(sec_current * 2.5) * swayamt
 		end
 	end
 

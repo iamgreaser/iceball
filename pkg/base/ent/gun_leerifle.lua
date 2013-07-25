@@ -34,6 +34,7 @@ return function (plr)
 		
 		recoil_x = 0.001,
 		recoil_y = -0.2,
+		sway = 0.0002,
 
 		model = weapon_models[WPN_LEERIFLE],
 		
@@ -46,18 +47,6 @@ return function (plr)
 	function this.prv_fire(...)
 		local ret = s_prv_fire(...)
 		plr.zooming = false
-		return ret
-	end
-	
-	local s_tick = this.tick
-	function this.tick(sec_current, sec_delta, ...)
-		local ret = s_tick(sec_current, sec_delta, ...)
-		if plr.tools[plr.tool+1] == this then
-			local swayamt = 0.0002
-			if plr.crouching then swayamt = swayamt * 0.5 end
-			plr.angx = plr.angx + math.sin(sec_current * 2) * swayamt
-			plr.angy = plr.angy + math.sin(sec_current * 2.5) * swayamt
-		end
 		return ret
 	end
 	
