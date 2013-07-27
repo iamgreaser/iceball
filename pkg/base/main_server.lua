@@ -136,8 +136,10 @@ function server.hook_file(neth, ftype, fname)
 	elseif (ftype == "tga") and (fname == "*MAPIMG") then
 		if map_fname then
 			return map_fname..".tga"
+		elseif server_settings.gen then
+			return server_settings.gen..".tga"
 		else
-			return nil
+			return "pkg/maps/gen_classic.lua.tga" --by default it will load gen_classic anyway
 		end
 	end
 	
