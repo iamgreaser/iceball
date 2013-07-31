@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,1,1,0,3},
-	num=4227072+3,
-	str="0.1.1-3",
+	cmp={0,1,1,0,5},
+	num=4227072+5,
+	str="0.1.1-5",
 }
 
 -- 0.1: 4194304
@@ -104,5 +104,7 @@ VERSION_BUGS = {
 {intro=4227072+1, fix=nil, msg="Raw UDP support might be a bit flaky - if you find bugs, please tell us!"},
 {renderer="gl", intro=nil, fix=4227072+2, msg="[OpenGL] Breaking blocks around the edges does not update the chunks properly"},
 {intro=nil, fix=4227072+3, msg="common.net_pack() reads an integer before it converts it to floating point"},
+{intro=nil, fix=4227072+5, msg="Image scaling not supported"},
+{renderer="softgm", intro=4227072+5, fix=nil, msg="[softgm] Image scaling not supported"},
 }
 
