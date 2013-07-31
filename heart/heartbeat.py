@@ -217,6 +217,12 @@ class HTTPClient:
 				return
 		except socket.timeout:
 			pass
+		except socket.error:
+			try:
+				self.sockfd.close()
+			except Exception:
+				pass
+			self.sockfd = None
 	
 	def get_msgs(self, ct):
 		if self.sockfd == None:
@@ -235,6 +241,12 @@ class HTTPClient:
 			self.collect(ct)
 		except socket.timeout:
 			pass
+		except socket.error:
+			try:
+				self.sockfd.close()
+			except Exception:
+				pass
+			self.sockfd = None
 
 class HReactor:
 	def __init__(self):
