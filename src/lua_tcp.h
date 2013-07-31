@@ -15,6 +15,8 @@
     along with Iceball.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <unistd.h> //fixes some warning, some POSIX shit ~Dany0
+
 int whitelist_validate(const char *name, int port);
 
 int icelua_fn_common_tcp_connect(lua_State *L) {

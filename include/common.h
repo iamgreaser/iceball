@@ -545,7 +545,7 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 	model_bone_t *bone, int islocal,
 	float px, float py, float pz, float ry, float rx, float ry2, float scale);
 void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
-	img_t *src, int dx, int dy, int bw, int bh, int sx, int sy, uint32_t color);
+	img_t *src, int dx, int dy, int bw, int bh, int sx, int sy, uint32_t color, float scalex, float scaley);
 int render_init(int width, int height);
 void render_deinit(void);
 #ifdef USE_OPENGL

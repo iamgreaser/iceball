@@ -18,8 +18,16 @@
 #include "common.h"
 
 void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
-	img_t *src, int dx, int dy, int bw, int bh, int sx, int sy, uint32_t color)
+	img_t *src, int dx, int dy, int bw, int bh, int sx, int sy, uint32_t color, float scalex, float scaley)
 {
+	if (scalex == 0 || scaley == 0)
+	{
+		return;
+	}
+	if (scalex != 1 && scaley != 1)
+	{
+		//TODO: at least some sort of scaling
+	}
 	int x,y;
 	
 	// clip blit width/height

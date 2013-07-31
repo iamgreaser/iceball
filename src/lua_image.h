@@ -21,8 +21,9 @@ void expandtex_gl(int *iw, int *ih);
 // client functions
 int icelua_fn_client_img_blit(lua_State *L)
 {
-	int top = icelua_assert_stack(L, 3, 8);
+	int top = icelua_assert_stack(L, 3, 10);
 	int dx, dy, bw, bh, sx, sy;
+	float scalex, scaley;
 	uint32_t color;
 	
 	img_t *img = (img_t*)lua_touserdata(L, 1);
@@ -36,12 +37,14 @@ int icelua_fn_client_img_blit(lua_State *L)
 	sx = (top < 6 ? 0 : lua_tointeger(L, 6));
 	sy = (top < 7 ? 0 : lua_tointeger(L, 7));
 	color = (top < 8 ? 0xFFFFFFFF : (uint32_t)lua_tointeger(L, 8));
+	scalex = (top < 9 ? 1 : lua_tointeger(L, 9));
+	scaley = (top < 10 ? 1 : lua_tointeger(L, 10));
 	
 #ifdef DEDI
 	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
 #else
 	render_blit_img((uint32_t*)screen->pixels, screen->w, screen->h, screen->pitch/4,
-		img, dx, dy, bw, bh, sx, sy, color);
+		img, dx, dy, bw, bh, sx, sy, color, scalex, scaley);
 #endif
 	
 	return 0;
@@ -73,7 +76,7 @@ int icelua_fn_client_img_blit_to(lua_State *L)
 #else
 	render_blit_img(dest->pixels, dest->head.width, dest->head.height, 
 		dest->head.width,
-		source, dx, dy, bw, bh, sx, sy, color);
+		source, dx, dy, bw, bh, sx, sy, color, 1, 1);
 #endif
 
 #ifdef USE_OPENGL

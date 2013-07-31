@@ -76,14 +76,11 @@ do
 			return 0.001
 		end
 		
-		function client.hook_render()
-			local sw,sh
-			sw,sh = client.screen_get_dims()
-			
+		function client.hook_render()			
 			local i, s
 			
 			s = menu_current.title
-			font_mini.print(math.floor((sw-6*#s)/2), math.floor(sh/2-12),
+			font_mini.print(math.floor((screen_width-6*#s)/2), math.floor(screen_height/2-12),
 				0xFF000000, s)
 			
 			for i=1,#menu_current do
@@ -92,7 +89,7 @@ do
 					s = "> "..s.." <"
 				end
 				
-				font_mini.print(math.floor((sw-6*#s)/2), math.floor(sh/2+(i-1)*6),
+				font_mini.print(math.floor((screen_width-6*#s)/2), math.floor(screen_height/2+(i-1)*6),
 					0xFF000000, s)
 			end
 		end

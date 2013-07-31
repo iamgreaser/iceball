@@ -442,12 +442,14 @@ common.img_free(img) @
 width, height = common.img_get_dims(img) @
 	gets the image's dimensions
 
-client.img_blit(img, dx, dy, width = iwidth, height = iheight, sx = 0, sy = 0, color = 0xFFFFFFFF) @
+client.img_blit(img, dx, dy, width = iwidth, height = iheight, sx = 0, sy = 0, color = 0xFFFFFFFF, float scalex, float scaley) @
 	blits an image onto screen position dx, dy
 	
 	"color" indicates a base 0xAARRGGBB colour to use
 	
 	this is clipped to fit!
+
+	use scalex/scaley to rescale image to your likeness
 
 client.img_blit_to(target, img, dx, dy, width = iwidth, height = iheight, sx = 0, sy = 0, color = 0xFFFFFFFF) @
 	blits an image onto another image at position dx, dy

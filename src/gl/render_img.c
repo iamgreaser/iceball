@@ -48,8 +48,13 @@ void render_blit_img_toimg(uint32_t *pixels, int width, int height, int pitch,
 	img_t *src, int dx, int dy, int bw, int bh, int sx, int sy, uint32_t color);
 
 void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
-	img_t *src, int dx, int dy, int bw, int bh, int sx, int sy, uint32_t color)
+	img_t *src, int dx, int dy, int bw, int bh, int sx, int sy, uint32_t color, float scalex, float scaley)
 {
+	if (scalex == 0 || scaley == 0)
+	{
+		return;
+	}
+	
 	if(pixels != screen->pixels)
 	{
 		expandtex_gl(&width, &height);
@@ -85,6 +90,7 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glLoadIdentity();
+	glScalef(scalex, scaley, 0);
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 	glLoadIdentity();
@@ -108,7 +114,7 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 		glTexCoord2f(sx2, sy2); glVertex3f(dx2, dy2, 1.0f);
 		glTexCoord2f(sx2, sy1); glVertex3f(dx2, dy1, 1.0f);
 	glEnd();
-
+	
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
 	glMatrixMode(GL_MODELVIEW);
