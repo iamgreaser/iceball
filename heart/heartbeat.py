@@ -16,7 +16,7 @@
 # along with Iceball.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import heapq, socket, struct, sys, time
+import heapq, json, socket, struct, sys, time
 
 CONN_PORT = int(sys.argv[1])
 
@@ -128,7 +128,9 @@ class HTTPClient:
 
 	def get_file_json(self):
 		l = self.server.get_ib_fields()
-		return "text/plain", "{\"version\": " + str(HB_VERSION) + ", \"servers\": " + str(l) + "}\r\n"
+		return "text/plain", json.dumps({
+			"version": HB_VERSION,
+			"servers": l}) 
 
 	def push_bad_http(self, ver):
 		self.wbuf = ver + " 400 Bad Request\r\n\r\n"
