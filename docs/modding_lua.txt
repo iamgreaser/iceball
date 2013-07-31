@@ -412,6 +412,9 @@ client.model_render_bone_local(pmf, boneidx, px, py, pz, ry, rx, ry2, scale) @
 width, height = client.screen_get_dims() @
 	gets the dimensions of the screen
 
+screen_width, screen_height
+	global vars set in main_client.lua and thus available in any client mod
+
 img, width, height = common.img_load(fname) @
 	loads an image with filename "fname"
 	remember to free it when you're done
