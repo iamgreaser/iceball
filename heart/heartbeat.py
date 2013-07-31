@@ -172,6 +172,12 @@ class HTTPClient:
 			self.parse_http_data(data)
 	
 	def push_buf(self, ct):
+		if self.sockfd == None:
+			return
+
+		if self.wbuf == None:
+			return
+
 		try:
 			bsent = self.sockfd.send(self.wbuf)
 			if bsent == 0:
