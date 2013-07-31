@@ -57,6 +57,24 @@ def stripnul(s):
 	idx = s.find("\x00")
 	return (s if idx == -1 else s[:idx])
 
+def replace_char_all(s, f, t):
+	v = ord(f)
+	s = s.replace(f, t)
+	s = s.replace(chr(0xC0 | ((v>>6)&3)) + chr(0x80 | (v&63)), t)
+	s = s.replace(chr(0xE0) + chr(0x80 | ((v>>6)&3)) + chr(0x80 | (v&63)), t)
+	s = s.replace(chr(0xF0) + chr(0x80) + chr(0x80 | ((v>>6)&3)) + chr(0x80 | (v&63)), t)
+	s = s.replace(chr(0xF8) + chr(0x80) + chr(0x80) + chr(0x80 | ((v>>6)&3)) + chr(0x80 | (v&63)), t)
+	s = s.replace(chr(0xFC) + chr(0x80) + chr(0x80) + chr(0x80) + chr(0x80 | ((v>>6)&3)) + chr(0x80 | (v&63)), t)
+	# TODO: handle the 6-bit and 8-bit variants and whatnot
+	return s
+
+def sanestr(s):
+	s = str(s)
+	s = replace_char_all(s, "&", "&amp;")
+	s = replace_char_all(s, "<", "&lt;")
+	s = replace_char_all(s, ">", "&gt;")
+	return s
+
 class HTTPClient:
 	def __init__(self, ct, reactor, server, sockfd):
 		self.reactor = reactor
@@ -95,13 +113,13 @@ class HTTPClient:
 		s += "</thead>\n"
 		for d in l:
 			s += "<tr>"
-			s += "<td>" + str(d["address"]) + "</td>"
-			s += "<td>" + str(d["port"]) + "</td>"
-			s += "<td>" + str(d["name"]) + "</td>"
-			s += "<td>" + str(d["version"]) + "</td>"
-			s += "<td>" + str(d["players_current"]) + " / " + str(d["players_max"]) + "</td>"
-			s += "<td>" + str(d["mode"]) + "</td>"
-			s += "<td>" + str(d["map"]) + "</td>"
+			s += "<td>" + sanestr(d["address"]) + "</td>"
+			s += "<td>" + sanestr(d["port"]) + "</td>"
+			s += "<td>" + sanestr(d["name"]) + "</td>"
+			s += "<td>" + sanestr(d["version"]) + "</td>"
+			s += "<td>" + sanestr(d["players_current"]) + " / " + sanestr(d["players_max"]) + "</td>"
+			s += "<td>" + sanestr(d["mode"]) + "</td>"
+			s += "<td>" + sanestr(d["map"]) + "</td>"
 			s += "</tr>\n"
 		s += "</table>\n"
 		s += "</div>\n"
