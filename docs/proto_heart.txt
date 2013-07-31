@@ -4,74 +4,74 @@ Main heartbeat server:
 	play.iceballga.me port 27790
 	(port is for UDP *and* TCP)
 
+Iceball clients should connect to:
+	play.iceballga.me port 27795
+	[ NOT IMPLEMENTED ]
+
 Iceball only supports IPv4 UDP ports at the time of writing, sorry.
 
 Feel free to host your own heartbeat server, though!
 
 Note, S = heartbeat server, C = heartbeat client (AKA iceball server).
 
-You should always confirm you have received a packet from the heartbeat server.
-To do this correctly, send packets every 3 seconds until you get a response.
-If you get no response after 60 seconds, give up.
-You might want to retry after 180 seconds.
-
 The heartbeat server will terminate your session after 120 seconds of inactivity.
+
+ALL PROTOCOLS ARE LITTLE ENDIAN WHERE APPROPRIATE, GUYS!
 
 Iceball servers interface the heartbeat server using this UDP protocol...
 
-0x01 hbversion.u16 port.u16 addr.z:
-	C->S Request ID (conf 0x02)
-	
-	This should be the first thing you send to the heartbeat server.
+"1CEB" hbversion.u16 ibversion.u32 port.u16 players_current.u16 players_max.u16 name.z[30] mode.z[10] map.z[30]
+	I->H
+	Announce a server.
 
-	At the time of writing, hbversion should be 1.
+	Note, remember to send a burst of 5 of these
+	with a second in between each packet,
+	and do this every 40 seconds
 
-0x02 id.u32 port.u16 addr.z:
-	S->C Here Is Your ID
+	(that is, a gap of 36 seconds between the last of a burst
+	and the first of the next).
 
-	Every time you receive this packet, CHANGE YOUR ID.
+	Note, the strings are terminated with a NUL (char 0)
+	unless they hit their string limit,
+	in which case there is no NUL. BE WARY OF THIS.
 
-0x03 id.u32 field.u8 name.z:
-	C->S Set String Field (conf 0x03)
-	S->C This Is Your String Field
+"MSOK"
+	H->I
 
-	Valid string fields are:
-		0x01: server name
-		0x02: server mode
+	Your packet was accepted.
 
-0x04 id.u32 field.u8 data.s32:
-	C->S Set Integer Field (conf 0x04)
-	S->C This Is Your Integer Field
+	If your server gets this message, you can stop sending your burst.
 
-	Valid integer fields are:
-		0x01: player count
-		0x02: max players
+"BADV" hbversion.u16 ibversion.u32
+	H->I
 
-0x05 id.u32:
-	C->S Hello Me Not Dead
+	Your version of Iceball and/or the heartbeat protocol are too old and/or new.
+	Here's the version we expect.
 
-	Every 30 seconds, send 5 of these at 1 second intervals.
+	If your server gets this message, give up.
 
-0x06:
-	S->C I'll Need To See Your ID
+	Alternatively, if you support the given heartbeat version, try falling back to it.
 
-	If you send any packets and you don't have an active session
-	(either you didn't initiate one or the server terminated your session),
-	you'll get this. Apply for a new ID.
+"BADF"
+	H->I
 
-0x07 version.u16:
-	S->C Version Mismatch
+	The packet you sent was complete horseshit and you should feel bad for writing such bad code.
 
-	You are using the wrong version of the heartbeat protocol.
-	This should give you the correct version.
+	If your server gets this message, crash in shame, because your code is seriously broken.
+	Or alternatively just don't send any more data to the server.
+
+	But crashing with an error is a much better idea.
 
 OK, so that's the UDP side of the master server.
-The TCP side is a minimal HTTP server with two interfaces:
+
+The TCP side is a minimal HTTP server at the same port with these interfaces:
+[ INCOMPLETE IMPLEMENTATION THAT DOESN'T ACTUALLY WORK ]
 
 /:
+/index.html:
 	An HTML page following a template.
 /style.css:
-	
+	A stylesheet you can provide.
 /master.json:
 	The raw serverlist info in JSON format.
 	Here's the expected format!
@@ -80,12 +80,14 @@ The TCP side is a minimal HTTP server with two interfaces:
 		"version": int,
 		"servers": [
 			{
-				"name": str,
 				"address": str,
 				"port": int,
-				"basedir": str,
 				"players_current": int,
 				"players_max": int,
+				"name": str,
+				"mode": str,
+				"map": str,
+				"version": str
 			}
 		]
 	}

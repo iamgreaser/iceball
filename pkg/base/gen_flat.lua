@@ -36,6 +36,6 @@ do
 		end
 	end
 	print("gen finished")
-	return ret
+	return ret, "flat("..mx..","..mz..","..my..")"
 end
 

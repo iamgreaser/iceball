@@ -583,6 +583,11 @@ int icelua_init(void)
 		
 		icelua_pushversion(lstate_server, "common");
 		icelua_pushversion(lstate_server, "server");
+
+		lua_getglobal(lstate_server, "server");
+		lua_pushinteger(lstate_server, net_port);
+		lua_setfield(lstate_server, -2, "port");
+		lua_pop(lstate_server, 1);
 	}
 	
 	if(lstate_client != NULL)

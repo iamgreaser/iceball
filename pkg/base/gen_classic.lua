@@ -137,6 +137,6 @@ do
 
 	common.map_set(lmap)
 	print("gen finished")
-	return ret	
+	return ret, "classic("..mw..","..mh..")"
 end
 

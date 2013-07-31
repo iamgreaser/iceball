@@ -55,6 +55,11 @@ common.base_dir @
 	writing to this string will *not* change the base dir,
 	so *don't write to it* or else you'll just screw up your own code!
 
+server.port @
+	port we are bound to
+
+	there is NO alias to common here! if you want it, do it manually.
+
 common.version = {cmp={w,x,y,a,z},num,str="w.x.ya-z"} @
 	current engine version
 	

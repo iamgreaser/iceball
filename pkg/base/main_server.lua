@@ -66,6 +66,7 @@ load_mod_list(getfenv(), mod_data.mods, {"preload", "preload_server"}, server_co
 
 dofile("pkg/base/common.lua")
 dofile("pkg/base/commands.lua")
+dofile("pkg/base/lib_heartbeat.lua")
 
 client_list = {fdlist={}, banned={}}
 server_tick_accum = 0
@@ -161,6 +162,9 @@ function server.hook_connect(neth, addrinfo)
 		addrinfo.addr and addrinfo.addr.ip,
 		addrinfo.addr and addrinfo.addr.cport)
 	
+	-- workaround for pre-0.1.1-4 versions
+	server.port = server.port or (addrinfo.addr and addrinfo.addr.sport)
+	
 	local source = false
 	if addrinfo.proto == "enet/ip6" or addrinfo.proto == "tcp/ip6" then
 		-- There are two variants:
@@ -228,6 +232,8 @@ end
 
 lflush = nil
 function server.hook_tick(sec_current, sec_delta)
+	heartbeat_update(sec_current, sec_delta)
+
 	--print("tick",sec_current,sec_delta)
 	--[[
 	local xlen,ylen,zlen
@@ -416,17 +422,38 @@ end
 
 -- load map
 if server_settings.gen then
-	map_loaded = loadfile(server_settings.gen)(loose, server_toggles, server_settings)
+	map_loaded, map_name = loadfile(server_settings.gen)(loose, server_toggles, server_settings)
 elseif map_fname then
 	map_loaded = common.map_load(map_fname, "auto")
+	map_name = map_fname
+	while map_name do
+		local p = map_name:find("/", 1, true)
+		if not p then break end
+		map_name = map_name:sub(p+1)
+	end
 else
-	map_loaded = loadfile("pkg/base/gen_classic.lua")(loose, server_toggles, server_settings)
+	map_loaded, map_name = loadfile("pkg/base/gen_classic.lua")(loose, server_toggles, server_settings)
 end
+
+if not map_name then
+	map_name = "<?>"
+end
+
+game_hb_mode = game_mode_file
+while true do
+	local p = game_hb_mode:find("/", 1, true)
+	if not p then break end
+	game_hb_mode = game_hb_mode:sub(p+1)
+end
+
 common.map_set(map_loaded)
 
 mode_create_server()
 
 print("pkg/base/main_server.lua: Loading mods...")
 load_mod_list(getfenv(), mod_data.mods, {"load", "load_server"}, server_config, mod_data)
+
+print("Starting heartbeat server...")
+heartbeat_init()
 print("pkg/base/main_server.lua loaded.")
 
