@@ -81,8 +81,9 @@ class HTTPClient:
 		s += "<title>Iceball Server List</title>\n"
 		s += "<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\">\n"
 		s += "</head>\n<body>\n"
+		s += "<div id=\"wrapper\">\n"
 		s += "<h1>Iceball Server List</h1>\n"
-		s += "<table border=\"1\">\n"
+		s += "<table>\n"
 		s += "<thead>"
 		s += "<th>Address</th>"
 		s += "<th>Port</th>"
@@ -103,6 +104,7 @@ class HTTPClient:
 			s += "<td>" + str(d["map"]) + "</td>"
 			s += "</tr>\n"
 		s += "</table>\n"
+		s += "</div>\n"
 		s += "</body>\n</html>\n"
 		return "text/html", s.replace("\n","\r\n")
 
