@@ -280,16 +280,14 @@ function new_player(...)
 	function this.create_hud(...)
 		local ret = s_create_hud(...)
 
-		local w, h
-		w, h = client.screen_get_dims()
 		this.round_start_text = scene.textfield{
 			font=font_digits,
 			text="", 
 			color=0xFFFFA1A1,
 			align_x=0.5, 
 			align_y=0, 
-			x = w/2,
-			y = h-96}
+			x = screen_width/2,
+			y = screen_height-96}
 
 		local function round_start_update(options)
 			if t_start_rem then

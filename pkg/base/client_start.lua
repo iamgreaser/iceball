@@ -542,8 +542,7 @@ local function push_keypress(key, state, modif, sym)
 	end
 end
 
-local w, h = client.screen_get_dims()
-stored_pointer = {x=w/4, y=h*3/4} -- default to around the lower-left, where the text box is
+stored_pointer = {x=screen_width/4, y=screen_height*3/4} -- default to around the lower-left, where the text box is
 
 function enter_typing_state()
 	mouse_released = true
@@ -563,8 +562,7 @@ function discard_typing_state(widget)
 	if client.mouse_warp ~= nil then
 		stored_pointer.x = mouse_xy.x
 		stored_pointer.y = mouse_xy.y
-		local w, h = client.screen_get_dims()
-		client.mouse_warp(w/2, h/2)
+		client.mouse_warp(screen_width/2, screen_height/2)
 		mouse_skip = 2
 	end
 end

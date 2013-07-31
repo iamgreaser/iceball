@@ -131,7 +131,7 @@ function new_player(...)
 		local scene = this.scene
 
 		local bone_intel = scene.bone{model=mdl_intel, bone=mdl_intel_bone,
-			x=w*0.1,y=h*0.5,scale=0.18,visible=false}
+			x=screen_width*0.1,y=screen_height*0.5,scale=0.18,visible=false}
 		scene.root.add_child(bone_intel)
 		
 		local function bone_rotate(dT)

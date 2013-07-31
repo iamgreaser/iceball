@@ -36,6 +36,9 @@ mod_data = common.json_load("*MODCFG")
 dofile("pkg/base/lib_mods.lua")
 load_mod_list(getfenv(), mod_data.mods, {"preload", "preload_client"}, client_config, mod_data)
 
+--might wanna reset these on a new instance/game/change of resolution
+screen_width, screen_height = client.screen_get_dims()
+
 -- if you don't want music, set FILE_MUSIC to "true".
 FILE_MUSIC = FILE_MUSIC or "music.it"
 
@@ -140,12 +143,11 @@ do
 	function load_screen_fetch(ftype, fname)
 		if string.sub(fname, 1,6) == "clsave" then return client.fetch_block(ftype, fname) end
 		if widgets ~= nil then
-			w, h = client.screen_get_dims()
 			scene = gui_create_scene(w, h)
-			loading_img = scene.image{img=img_loading, x=w/2, y=h/2}
+			loading_img = scene.image{img=img_loading, x=screen_width/2, y=screen_height/2}
 			scene.root.add_child(loading_img)
 			if img_map then
-				map_img = scene.image{img=img_map, x=-w/2, y=h/2}
+				map_img = scene.image{img=img_map, x=-screen_width/2, y=screen_height/2}
 				scene.root.add_child(map_img)
 			end
 		end
@@ -202,13 +204,11 @@ do
 			end
 			
 			local i
-			local sw,sh
-			sw,sh = client.screen_get_dims()
 			local koffs = math.max(#fnlist-10,1)
 			for i=koffs,#fnlist do
 				font_mini.print(2, 2+(i-koffs)*8, 0xFFFFFFFF, "LOAD: "..fnlist[i])
 			end
-			font_mini.print(2, sh-10, 0xFFFFFFFF, loadstr)
+			font_mini.print(2, screen_height-10, 0xFFFFFFFF, loadstr)
 			
 			font_mini.print(2, 2+(12)*8, 0xFFFFFFFF, "Version: "..cver.str.." - renderer: "..(client.renderer or "<unknown>"))
 			local l = string.split(vernotes,"\n")
@@ -244,9 +244,9 @@ do
 				if fnlist[#fnlist] == "*MAP" then
 					rgb = 85 + amount * 170.0
 					client.map_fog_set(rgb, rgb, rgb, 127.5)
-					loading_img.x = w/2 + amount * w
+					loading_img.x = screen_width/2 + amount * screen_width
 					if map_img then
-						map_img.x = -w/2 + amount * w
+						map_img.x = -screen_width/2 + amount * screen_width
 					end
 				end
 				

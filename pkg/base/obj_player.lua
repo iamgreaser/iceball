@@ -1252,7 +1252,7 @@ function new_player(settings)
 		FIXME: share 1 instance across all players? (This makes ticking trickier)
 	]]
 	function this.create_hud()
-		local scene = gui_create_scene(client.screen_get_dims())
+		local scene = gui_create_scene(screen_width, screen_height)
 		this.scene = scene
 		local root = scene.root
 		local w = root.width
@@ -2044,10 +2044,7 @@ function new_player(settings)
 
 		--font_mini.print(64,8,0xFFFFFFFF,mouse_prettyprint())
 		
-		local w, h
 		local i, j
-		w, h = client.screen_get_dims()
-
 		if not this.scene then
 			this.create_hud()
 		end
@@ -2090,8 +2087,8 @@ function new_player(settings)
 							/(fogd*fogd));
 						if fatt > 1.0 then fatt = 1.0 end
 						if fatt < 0.25 then fatt = 0.25 end
-						px = w/2-w/2*dx*this.zoom/dz
-						py = h/2+w/2*dy*this.zoom/dz
+						px = screen_width/2-screen_width/2*dx*this.zoom/dz
+						py = screen_height/2+screen_width/2*dy*this.zoom/dz
 						local c
 						if plr.squad and plr.squad == this.squad then
 							client.img_blit(img_chevron, px - 4, py - 20)
