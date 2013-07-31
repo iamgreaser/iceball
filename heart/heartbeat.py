@@ -77,7 +77,10 @@ class HTTPClient:
 
 	def get_file_index(self):
 		l = self.server.get_ib_fields()
-		s = "<html>\n<head>\n<title>Iceball Server List</title>\n</head>\n<body>\n"
+		s = "<html>\n<head>\n"
+		s += "<title>Iceball Server List</title>\n"
+		s += "<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\">\n"
+		s += "</head>\n<body>\n"
 		s += "<h1>Iceball Server List</h1>\n"
 		s += "<table border=\"1\">\n"
 		s += "<thead>"
@@ -117,8 +120,11 @@ class HTTPClient:
 		if fname == "/" or fname == "/index.html":
 			return self.get_file_index()
 		elif fname == "/style.css":
-			# TODO!
-			return None, None
+			try:
+				with open("style.css") as f:
+					return "text/css", f.read()
+			except IOError:
+				return None, None
 		elif fname == "/master.json":
 			return self.get_file_json()
 		else:

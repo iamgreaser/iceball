@@ -1,0 +1,22 @@
+table {
+	font-family: verdana,arial,sans-serif;
+	font-size:14px;
+	color:#333333;
+	border-width: 1px;
+	border-color: #666666;
+	border-collapse: collapse;
+}
+
+table td, table th {
+	padding: 10px;
+	border-style: solid;
+	border-color: #666666;
+}
+
+table th {
+	background-color: #DDDDDD;
+}
+
+table td {
+	background-color: #FFFFFF;
+}
