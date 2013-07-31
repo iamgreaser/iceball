@@ -45,7 +45,8 @@ void expandtex_gl(int *iw, int *ih)
 }
 
 void render_blit_img_toimg(uint32_t *pixels, int width, int height, int pitch,
-	img_t *src, int dx, int dy, int bw, int bh, int sx, int sy, uint32_t color);
+	img_t *src, int dx, int dy, int bw, int bh, int sx, int sy, uint32_t color,
+	float scalex, float scaley);
 
 void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 	img_t *src, int dx, int dy, int bw, int bh, int sx, int sy, uint32_t color, float scalex, float scaley)
@@ -59,7 +60,7 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 	{
 		expandtex_gl(&width, &height);
 		pitch = width;
-		return render_blit_img_toimg(pixels,width,height,pitch,src,dx,dy,bw,bh,sx,sy,color);
+		return render_blit_img_toimg(pixels,width,height,pitch,src,dx,dy,bw,bh,sx,sy,color,scalex,scaley);
 	}
 
 	int iw, ih;
@@ -125,7 +126,8 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 }
 
 void render_blit_img_toimg(uint32_t *pixels, int width, int height, int pitch,
-	img_t *src, int dx, int dy, int bw, int bh, int sx, int sy, uint32_t color)
+	img_t *src, int dx, int dy, int bw, int bh, int sx, int sy, uint32_t color,
+	float scalex, float scaley)
 {
 	int x,y;
 	

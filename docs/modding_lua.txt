@@ -442,7 +442,7 @@ common.img_free(img) @
 width, height = common.img_get_dims(img) @
 	gets the image's dimensions
 
-client.img_blit(img, dx, dy, width = iwidth, height = iheight, sx = 0, sy = 0, color = 0xFFFFFFFF, float scalex, float scaley) @
+client.img_blit(img, dx, dy, width = iwidth, height = iheight, sx = 0, sy = 0, color = 0xFFFFFFFF, scalex = 1.0, scaley = 1.0) @
 	blits an image onto screen position dx, dy
 	
 	"color" indicates a base 0xAARRGGBB colour to use

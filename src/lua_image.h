@@ -37,8 +37,8 @@ int icelua_fn_client_img_blit(lua_State *L)
 	sx = (top < 6 ? 0 : lua_tointeger(L, 6));
 	sy = (top < 7 ? 0 : lua_tointeger(L, 7));
 	color = (top < 8 ? 0xFFFFFFFF : (uint32_t)lua_tointeger(L, 8));
-	scalex = (top < 9 ? 1 : lua_tointeger(L, 9));
-	scaley = (top < 10 ? 1 : lua_tointeger(L, 10));
+	scalex = (top < 9 ? 1 : lua_tonumber(L, 9));
+	scaley = (top < 10 ? 1 : lua_tonumber(L, 10));
 	
 #ifdef DEDI
 	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
@@ -54,6 +54,7 @@ int icelua_fn_client_img_blit_to(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 4, 9);
 	int dx, dy, bw, bh, sx, sy;
+	float scalex, scaley;
 	uint32_t color;
 	
 	img_t *dest = (img_t*)lua_touserdata(L, 1);
@@ -70,6 +71,8 @@ int icelua_fn_client_img_blit_to(lua_State *L)
 	sx = (top < 7 ? 0 : lua_tointeger(L, 7));
 	sy = (top < 8 ? 0 : lua_tointeger(L, 8));
 	color = (top < 9 ? 0xFFFFFFFF : (uint32_t)lua_tointeger(L, 9));
+	scalex = (top < 10 ? 1 : lua_tonumber(L, 10));
+	scaley = (top < 11 ? 1 : lua_tonumber(L, 11));
 	
 #ifdef DEDI
 	return luaL_error(L, "lm: why the hell is this being called in the dedi version?");
