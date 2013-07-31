@@ -445,6 +445,15 @@ while true do
 	if not p then break end
 	game_hb_mode = game_hb_mode:sub(p+1)
 end
+if game_hb_mode:sub(1,5) == "mode_" then
+	game_hb_mode = game_hb_mode:sub(6)
+end
+do
+	local k = game_hb_mode:len()-4
+	if game_hb_mode:sub(k+1) == ".lua" then
+		game_hb_mode = game_hb_mode:sub(1,k)
+	end
+end
 
 common.map_set(map_loaded)
 

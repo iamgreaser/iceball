@@ -58,24 +58,139 @@ def stripnul(s):
 	return (s if idx == -1 else s[:idx])
 
 class HTTPClient:
-	def __init__(self, reactor, server, sockfd):
+	def __init__(self, ct, reactor, server, sockfd):
 		self.reactor = reactor
 		self.server = server
 		self.sockfd = sockfd
 		self.buf = ""
-	
+		self.wbuf = None
+		self.reactor.push(ct, self.update)
+
 	def is_dead(self, ct):
 		return self.sockfd == None
-	
-	def update(self, ct):
+
+	def update(self, et, ct):
 		self.get_msgs(ct)
+		self.push_buf(ct)
+		if self.sockfd:
+			self.reactor.push(ct + 0.1, self.update)
+
+	def get_file_index(self):
+		l = self.server.get_ib_fields()
+		s = "<html>\n<head>\n<title>Iceball Server List</title>\n</head>\n<body>\n"
+		s += "<h1>Iceball Server List</h1>\n"
+		s += "<table border=\"1\">\n"
+		s += "<thead>"
+		s += "<th>Address</th>"
+		s += "<th>Port</th>"
+		s += "<th>Name</th>"
+		s += "<th>Version</th>"
+		s += "<th>Players</th>"
+		s += "<th>Mode</th>"
+		s += "<th>Map</th>"
+		s += "</thead>\n"
+		for d in l:
+			s += "<tr>"
+			s += "<td>" + str(d["address"]) + "</td>"
+			s += "<td>" + str(d["port"]) + "</td>"
+			s += "<td>" + str(d["name"]) + "</td>"
+			s += "<td>" + str(d["version"]) + "</td>"
+			s += "<td>" + str(d["players_current"]) + " / " + str(d["players_max"]) + "</td>"
+			s += "<td>" + str(d["mode"]) + "</td>"
+			s += "<td>" + str(d["map"]) + "</td>"
+			s += "</tr>\n"
+		s += "</table>\n"
+		s += "</body>\n</html>\n"
+		return "text/html", s.replace("\n","\r\n")
+
+	def get_file_json(self):
+		l = self.server.get_ib_fields()
+		return "text/plain", "{\"version\": " + str(HB_VERSION) + ", \"servers\": " + str(l) + "}\r\n"
+
+	def push_bad_http(self, ver):
+		self.wbuf = ver + " 400 Bad Request\r\n\r\n"
+
+	def push_not_found(self, ver):
+		self.wbuf = ver + " 404 Not Found\r\n\r\n"
+
+	def get_file(self, fname):
+		if fname == "/" or fname == "/index.html":
+			return self.get_file_index()
+		elif fname == "/style.css":
+			# TODO!
+			return None, None
+		elif fname == "/master.json":
+			return self.get_file_json()
+		else:
+			return None, None
+
+	def push_data(self, ver, mime, data, head=False):
+		if data == None:
+			self.push_not_found(ver)
+			return
+
+		self.wbuf = ver + " 200 OK\r\n"
+		self.wbuf += "Content-Type: " + mime + "\r\n"
+		self.wbuf += "Length: " + str(len(data)) + "\r\n"
+		self.wbuf += "\r\n"
+
+		if not head:
+			self.wbuf += data
+	
+	def parse_http_data(self, data):
+		l = data.split("\r\n")
+		hdr, l = l[0], l[1:]
+
+		self.buf = None
+
+		hl = hdr.split(" ")
+		if len(hl) == 2:
+			hl.append("HTTP/0.9")
+		if len(hl) != 3:
+			if len(hl) < 3:
+				self.push_bad_http("HTTP/1.1")
+			else:
+				self.push_bad_http(hl[2])
+			return
+
+		typ = hl[0]
+		if typ == "GET":
+			mime, data = self.get_file(hl[1])
+			self.push_data(hl[2], mime, data)
+		elif typ == "HEAD":
+			mime, data = self.get_file(hl[1])
+			self.push_data(hl[2], mime, data, head=True)
+		else:
+			self.push_bad_http(hl[2])
 	
 	def collect(self, ct):
-		# TODO!
-		pass
+		if self.buf == None:
+			return
+
+		if "\r\n\r\n" in self.buf:
+			data, _, self.buf = self.buf.partition("\r\n\r\n")
+			self.parse_http_data(data)
+	
+	def push_buf(self, ct):
+		try:
+			bsent = self.sockfd.send(self.wbuf)
+			if bsent == 0:
+				self.sockfd.close()
+				self.sockfd = None
+				return
+			self.wbuf = self.wbuf[bsent:]
+			if len(self.wbuf) == 0:
+				self.sockfd.close()
+				self.sockfd = None
+				return
+		except socket.timeout:
+			pass
 	
 	def get_msgs(self, ct):
-		if not self.sockfd:
+		if self.sockfd == None:
+			return
+
+		if self.buf == None:
 			return
 
 		try:
@@ -123,13 +238,14 @@ class HServer:
 		self.port = port
 		self.reactor = reactor
 		self.clients = {}
-		self.http_clients = {}
+		self.http_clients = set([])
 		self.bans = set([]) # TODO: use a proper banlist
 		
 		self.http_sockfd = socket.socket(af, socket.SOCK_STREAM)
 		self.http_sockfd.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		self.http_sockfd.bind(("", self.port))
-		self.http_sockfd.settimeout(0)
+		self.http_sockfd.settimeout(0.001)
+		self.http_sockfd.listen(2)
 
 		self.sockfd = socket.socket(af, socket.SOCK_DGRAM)
 		self.sockfd.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -139,7 +255,8 @@ class HServer:
 	
 	def update(self, et, ct):
 		self.get_hb_packets(ct)
-		self.update_http_clients(ct)
+		self.create_http_clients(ct)
+		self.kill_dead_http_clients(ct)
 		self.kill_old_clients(ct)
 		self.reactor.push(ct+0.05, self.update)
 
@@ -153,9 +270,26 @@ class HServer:
 		except socket.timeout:
 			pass
 
-	def update_http_clients(self, ct):
+	def create_http_clients(self, ct):
+		try:
+			nsock, (addr, port) = self.http_sockfd.accept()
+			self.http_clients.add(HTTPClient(ct, self.reactor, self, nsock))
+		except socket.timeout:
+			pass
+	
+	def kill_dead_http_clients(self, ct):
+		# TODO: use a priority queue for the clients
+		# that'd mean we'd get this running in O(1) time instead of O(n)
+
+		kill = []
+
 		for v in self.http_clients:
-			v.update(ct)
+			if v.is_dead(ct):
+				kill.append(v)
+
+		for v in kill:
+			self.http_clients.remove(v)
+				
 
 	def kill_old_clients(self, ct):
 		# TODO: use a priority queue for the clients

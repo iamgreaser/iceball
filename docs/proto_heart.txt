@@ -65,13 +65,13 @@ Iceball servers interface the heartbeat server using this UDP protocol...
 OK, so that's the UDP side of the master server.
 
 The TCP side is a minimal HTTP server at the same port with these interfaces:
-[ INCOMPLETE IMPLEMENTATION THAT DOESN'T ACTUALLY WORK ]
 
 /:
 /index.html:
 	An HTML page following a template.
 /style.css:
 	A stylesheet you can provide.
+	[ NOT IMPLEMENTED ]
 /master.json:
 	The raw serverlist info in JSON format.
 	Here's the expected format!
