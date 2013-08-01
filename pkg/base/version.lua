@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,1,1,0,8},
-	num=4227072+8,
-	str="0.1.1-8",
+	cmp={0,1,1,0,9},
+	num=4227072+9,
+	str="0.1.1-9",
 }
 
 -- 0.1: 4194304
@@ -109,5 +109,6 @@ VERSION_BUGS = {
 {intro=4227072+5, fix=4227072+6, msg="Image scaling accidentally only supported integers for scale parameters"},
 {intro=4227072+5, fix=4227072+7, msg="Incompatible semantics for image scaling"},
 {intro=nil, fix=4227072+8, msg="iceball:// URL scheme not supported"},
+{intro=4227072+8, fix=4227072+9, msg="[Windows] iceball:// handler doesn't set current directory correctly"},
 }
 

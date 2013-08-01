@@ -614,6 +614,31 @@ int main_dbghelper(int argc, char *argv[])
 	main_argc = argc;
 	main_argv = argv;
 
+#ifdef WIN32
+	// necessary for the server list to work, apparently
+	{
+		char cwd[2048] = "";
+		GetModuleFileName(NULL, cwd, 2047);
+		char *v = cwd + strlen(cwd) - 1;
+		while(v >= cwd)
+		{
+			if(*v == '\\')
+			{
+				*(v+1) = '\x00';
+				break;
+			}
+			v--;
+		}
+		printf("path: [%s]\n", cwd);
+
+		if(_chdir(cwd) != 0)
+		{
+			MessageBox(NULL, "Failed to change directory.", "Iceball", MB_ICONSTOP);
+			return 1;
+		}
+	}
+#endif
+
 #ifdef DEDI
 	if(argc <= 1)
 		return print_usage(argv[0]);
