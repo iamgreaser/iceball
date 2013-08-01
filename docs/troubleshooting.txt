@@ -45,6 +45,11 @@ Someone else can elaborate here if necessary.
 *** How do I change my name? ***
 Did you read the built-in tutorial? It mentioned a file. What was it called?
 
+*** When I click on iceball:// URLs it doesn't open iceball! ***
+Windows users: I'm not giving you any hints other than open your bloody eyes.
+
+Other users: You'll need to work this one out yourself, sorry.
+
 *** Anything else? ***
 Join us on IRC: #iceball @ irc.quacknet.org (NOT quaKEnet!).
 This really should be on a wiki somewhere.

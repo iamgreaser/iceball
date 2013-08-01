@@ -11,6 +11,9 @@ The tutorial files are located in pkg/iceball/halp/.
 If you can't run the tutorial, or you can't read the text on it,
 read docs/troubleshooting.txt.
 
+WE HAVE A SERVER LIST:
+  http://play.iceballga.me:27790
+
  ------------------------------------------------------------------------------
 
 LICENSING NOTES:
