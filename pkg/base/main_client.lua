@@ -160,7 +160,7 @@ do
 			return scriptcache[cname]
 		end
 		
-		client.wav_play_local(wav_buld, 0, 0, 0, 1.0, wav_buld_frq)
+		client.wav_play_local(wav_buld, 0, 0, 0, 0.3, wav_buld_frq)
 		wav_buld_frq = wav_buld_frq * wav_buld_inc
 		
 		fnlist[#fnlist+1] = fname
