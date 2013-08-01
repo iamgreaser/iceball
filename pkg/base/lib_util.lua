@@ -101,12 +101,15 @@ function string.trim(s, sep)
 	return string.triml(string.trimr(s, sep), sep)
 end
 
-function parse_commandline_options(options)
-	local user_toggles = {} -- toggle options (key is name, value is position)
-	local user_settings = {} -- key-value pairs
-	local loose = {} -- loose strings, filenames, etc.
+function parse_commandline_options(options, nocheckdash, na, nb, nc)
+	local loose = na or {} -- loose strings, filenames, etc.
+	local user_toggles = nb or {} -- toggle options (key is name, value is position)
+	local user_settings = nc or {} -- key-value pairs
 
 	for k, v in pairs(options) do
+		if nocheckdash then
+			v = "-" .. v
+		end
 		local setting_pair = string.split(v, "=")
 		local first = string.byte(v,1)
 		if first==string.byte('-') then -- we are toggling an option or setting a value
@@ -115,6 +118,17 @@ function parse_commandline_options(options)
 				print(string.triml(setting_pair[1], '-'),"trimmed")
 			else
 				user_toggles[string.triml(v, '-')]=k
+			end
+		elseif first == string.byte('/') then -- optional extra arg on URI
+			-- look for a ? thing
+			local npair = string.split(v:sub(2), "?")
+			if npair[1] ~= "" then
+				user_settings[" "] = npair[1]
+			end
+			if npair[2] then
+				-- TODO: URI-decode
+				local nopts = string.split(npair[2], "&")
+				parse_commandline_options(nopts, true, loose, user_toggles, user_settings)
 			end
 		else -- add to the loose values
 			loose[#loose+1] = v

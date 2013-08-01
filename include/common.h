@@ -19,7 +19,7 @@
 #define VERSION_X 1
 #define VERSION_Y 1
 #define VERSION_A 0
-#define VERSION_Z 7
+#define VERSION_Z 8
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!
@@ -467,6 +467,7 @@ extern int force_redraw;
 
 extern int net_port;
 extern char *net_addr;
+extern char net_addr_xbuf[];
 extern int boot_mode;
 extern char *mod_basedir;
 

@@ -115,7 +115,7 @@ class HTTPClient:
 			s += "<tr>"
 			s += "<td>" + sanestr(d["address"]) + "</td>"
 			s += "<td>" + sanestr(d["port"]) + "</td>"
-			s += "<td>" + sanestr(d["name"]) + "</td>"
+			s += "<td>" + "<a href=\"iceball://" + sanestr(d["address"]) + ":" + sanestr(d["port"]) + "\">" + sanestr(d["name"]) + "</a>" + "</td>"
 			s += "<td>" + sanestr(d["version"]) + "</td>"
 			s += "<td>" + sanestr(d["players_current"]) + " / " + sanestr(d["players_max"]) + "</td>"
 			s += "<td>" + sanestr(d["mode"]) + "</td>"

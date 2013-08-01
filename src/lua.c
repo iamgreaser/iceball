@@ -289,6 +289,11 @@ int icelua_initfetch(void)
 	printf("Client loaded! Initialising...\n");
 	for(i = 0; i < argct; i++)
 		lua_pushstring(lstate_client, main_argv[i+main_largstart]);
+	if((boot_mode & 1) && net_addr_xbuf[1] != '\x00')
+	{
+		lua_pushstring(lstate_client, net_addr_xbuf);
+		argct++;
+	}
 	if(lua_pcall(lstate_client, argct, 0, 0) != 0)
 	{
 		printf("ERROR running client Lua: %s\n", lua_tostring(lstate_client, -1));

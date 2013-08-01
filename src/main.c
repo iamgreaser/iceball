@@ -46,6 +46,8 @@ int boot_mode = 0;
 
 char *mod_basedir = NULL;
 char *net_addr;
+char net_addr_buf[1024];
+char net_addr_xbuf[1024];
 int net_port;
 
 int main_argc;
@@ -564,8 +566,10 @@ int print_usage(char *rname)
 	fprintf(stderr, "usage:\n"
 #ifndef DEDI
 			"\tfor clients:\n"
-			"\t\t%s -c address port {clargs} <-- connect via ENet protocol (UDP)\n"
-			"\t\t%s -C address port {clargs} <-- connect via TCP protocol\n"
+			"\t\t%s -c iceball://address:port {clargs} <-,_ connect via ENet protocol (UDP)\n"
+			"\t\t%s -c address port {clargs}           <-'\n"
+			"\t\t%s -C iceball://address:port {clargs} <-,_ connect via TCP protocol\n"
+			"\t\t%s -C address port {clargs}           <-'\n"
 			"\tfor servers (quick-start, not recommended for anything serious!):\n"
 			"\t\t%s -s port mod {args}\n"
 #endif
@@ -590,7 +594,7 @@ int print_usage(char *rname)
 #endif
 			"\targs:     arguments to send to the server Lua script\n"
 #ifndef DEDI
-			,rname,rname,rname
+			,rname,rname,rname,rname,rname
 #endif
 			,rname,rname);
 	
@@ -630,25 +634,45 @@ int main_dbghelper(int argc, char *argv[])
 	if((!strcmp(argv[1], "-h")) || (!strcmp(argv[1], "/?")) || (!strcmp(argv[1], "-?")) || (!strcmp(argv[1], "--help"))) {
 		return print_usage(argv[0]);
 	} else if(!strcmp(argv[1], "-c")) {
-		if(argc <= 3)
+		if(argc <= 2 || (argc <= 3 && memcmp(argv[2], "iceball://", 10)))
 			return print_usage(argv[0]);
 		
-		net_addr = argv[2];
-		net_port = atoi(argv[3]);
+		net_port = 20737;
+		main_largstart = 3;
+		net_addr = net_addr_buf;
+		net_addr_xbuf[0] = '/';
+		net_addr_xbuf[1] = '\x00';
+		if(sscanf(argv[2], "iceball://%[^:]:%i/%s", net_addr, &net_port, &net_addr_xbuf[1]) < 1)
+		{
+			if(argc <= 3)
+				return print_usage(argv[0]);
+			net_addr = argv[2];
+			net_port = atoi(argv[3]);
+			main_largstart = 4;
+		}
 		printf("Connecting to \"%s\" port %i (ENet mode)\n", net_addr, net_port);
 		mod_basedir = NULL;
-		main_largstart = 4;
 		
 		boot_mode = 1 | 16;
 	} else if(!strcmp(argv[1], "-C")) {
-		if(argc <= 3)
+		if(argc <= 2 || (argc <= 3 && memcmp(argv[2], "iceball://", 10)))
 			return print_usage(argv[0]);
 		
-		net_addr = argv[2];
-		net_port = atoi(argv[3]);
+		net_port = 20737;
+		main_largstart = 3;
+		net_addr = net_addr_buf;
+		net_addr_xbuf[0] = '/';
+		net_addr_xbuf[1] = '\x00';
+		if(sscanf(argv[2], "iceball://%[^:]:%i/%s", net_addr, &net_port, &net_addr_xbuf[1]) < 1)
+		{
+			if(argc <= 3)
+				return print_usage(argv[0]);
+			net_addr = argv[2];
+			net_port = atoi(argv[3]);
+			main_largstart = 4;
+		}
 		printf("Connecting to \"%s\" port %i (TCP mode)\n", net_addr, net_port);
 		mod_basedir = NULL;
-		main_largstart = 4;
 		
 		boot_mode = 1;
 		//return 101;
