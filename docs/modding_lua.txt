@@ -449,14 +449,18 @@ client.img_blit(img, dx, dy, width = iwidth, height = iheight, sx = 0, sy = 0, c
 	
 	this is clipped to fit!
 
-	use scalex/scaley to rescale image to your likeness
+	use scalex/scaley to rescale source width/height to your likeness
+	(sw = dw/scalex; sh = dh/scaley)
 
-client.img_blit_to(target, img, dx, dy, width = iwidth, height = iheight, sx = 0, sy = 0, color = 0xFFFFFFFF) @
+client.img_blit_to(target, img, dx, dy, width = iwidth, height = iheight, sx = 0, sy = 0, color = 0xFFFFFFFF, scalex = 1.0, scaley = 1.0) @
 	blits an image onto another image at position dx, dy
 	
 	"color" indicates a base 0xAARRGGBB colour to use
 	
 	this is clipped to fit!
+
+	use scalex/scaley to rescale source width/height to your likeness
+	(sw = dw/scalex; sh = dh/scaley)
 
 client.img_fill(img, color) @
 	fills an image with a solid colour

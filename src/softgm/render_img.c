@@ -20,7 +20,7 @@
 void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 	img_t *src, int dx, int dy, int bw, int bh, int sx, int sy, uint32_t color, float scalex, float scaley)
 {
-	if (scalex == 0 || scaley == 0)
+	if (scalex <= 0.000001f || scaley <= 0.000001f)
 	{
 		return;
 	}
@@ -29,22 +29,25 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 		//TODO: at least some sort of scaling
 	}
 	int x,y;
+	int iscalex, iscaley;
+	iscalex = 0x10000/scalex;
+	iscaley = 0x10000/scaley;
 	
 	// clip blit width/height
-	if(bw > src->head.width-sx)
-		bw = src->head.width-sx;
-	if(bh > src->head.height-sy)
-		bh = src->head.height-sy;
+	if(bw/scalex > src->head.width-sx)
+		bw = (src->head.width-sx)*scalex;
+	if(bh/scaley > src->head.height-sy)
+		bh = (src->head.height-sy)*scaley;
 	if(sx < 0)
 	{
-		bw -= -sx;
-		dx += -sx;
+		bw -= -sx*scalex;
+		dx += -sx*scalex;
 		sx = 0;
 	}
 	if(sy < 0)
 	{
-		bh -= -sy;
-		dy += -sy;
+		bh -= -sy*scaley;
+		dy += -sy*scaley;
 		sy = 0;
 	}
 	
@@ -57,14 +60,14 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 	// top-left clip
 	if(dx < 0)
 	{
-		sx += -dx;
-		bw -= -dx;
+		sx += -dx/scalex;
+		bw -= -dx/scalex;
 		dx = 0;
 	}
 	if(dy < 0)
 	{
-		sy += -dy;
-		bh -= -dy;
+		sy += -dy/scaley;
+		bh -= -dy/scaley;
 		dy = 0;
 	}
 	
@@ -82,8 +85,12 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 	uint32_t *ps = src->pixels;
 	ps = &ps[sx+sy*src->head.width];
 	uint32_t *pd = &(pixels[dx+dy*pitch]);
-	int spitch = src->head.width - bw;
+	//int spitch = src->head.width - bw;
+	int spitch = src->head.width;
 	int dpitch = pitch - bw;
+
+	int xctr, yctr;
+	yctr = 0x8000;
 	
 	//printf("[%i %i] [%i %i] %016llX %016llX %i %i %08X\n"
 	//	, bw, bh, dx, dy, (long long)ps, (long long)pd, dpitch, spitch, color);
@@ -114,12 +121,15 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 			for(x = 0; x < bw; x += 8)
 				_mm_prefetch(pd+x, _MM_HINT_T0);
 			
+			xctr = 0x8000;
+
 			// do the left part first
 			// TODO: look for a mask instruction
 			for(x = 0; x < bw; x++)
 			{
-				uint32_t s = *(ps++);
+				uint32_t s = ps[xctr>>16];
 				uint32_t d = *pd;
+				xctr += iscalex;
 				
 				// apply base color
 				// DANGER! BRACKETITIS!
@@ -158,10 +168,19 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 			// NOTE: i don't have AVX2 so don't expect an AVX2 version.
 			for(; x < bw-4; x+=4)
 			{
-				uint32_t s = *ps;
-				uint32_t d = *pd;
-				
-				__m128i xmm_src = _mm_loadu_si128((__m128i *)ps);
+				int nxctr = xctr + iscalex*3;
+				__m128i xmm_src;
+				if((nxctr>>16)-(xctr>>16) == 3)
+				{
+					xmm_src = _mm_loadu_si128((__m128i *)&ps[xctr>>16]);
+				} else {
+					xmm_src = _mm_set_epi32(
+						ps[xctr>>16],
+						ps[(xctr+iscalex)>>16],
+						ps[(xctr+2*iscalex)>>16],
+						ps[(xctr+3*iscalex)>>16]);
+				}
+				xctr += iscalex<<2;
 				__m128i xmm_dst = _mm_load_si128((__m128i *)pd);
 				
 				// unpack
@@ -247,15 +266,15 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 				__m128i xmm_combo = _mm_packus_epi16(xmm_combo0, xmm_combo1);
 				_mm_store_si128((__m128i *)pd, xmm_combo);
 				
-				ps += 4;
 				pd += 4;
 			}
 			
 			// finish off with the right part
 			for(; x < bw; x++)
 			{
-				uint32_t s = *(ps++);
+				uint32_t s = ps[xctr>>16];
 				uint32_t d = *pd;
+				xctr += iscalex;
 				
 				// apply base color
 				// DANGER! BRACKETITIS!
@@ -288,17 +307,22 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 				*(pd++) = va + vb;
 			}
 			
-			ps += spitch;
+			yctr += iscaley;
+			ps += spitch*(yctr>>16);
+			yctr &= 0xFFFF;
 			pd += dpitch;
 		}
 	} else {
 		// now blit!
 		for(y = 0; y < bh; y++)
 		{
+			xctr = 0x8000;
+
 			for(x = 0; x < bw; x++)
 			{
-				uint32_t s = *(ps++);
+				uint32_t s = ps[xctr>>16];
 				uint32_t d = *pd;
+				xctr += iscalex;
 				
 				// apply base color
 				// DANGER! BRACKETITIS!
@@ -333,88 +357,23 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 				*(pd++) = vv;
 			}
 			
-			ps += spitch;
+			yctr += iscaley;
+			ps += spitch*(yctr>>16);
+			yctr &= 0xFFFF;
 			pd += dpitch;
 		}
 	}
 #else
-#ifdef THISVERSIONISABITSLoWSODONTUSEIT__MMX__
-	// TODO: pack this better
-	// TODO: MAKE THIS FASTER it's slower than the reference implementation
-	const __m64 mmconst_0 = _mm_setzero_si64();
-	const __m64 mmconst_256 = _mm_set1_pi16(256);
-	const __m64 mmconst_roundcolor = _mm_set_pi16(8,8,8,8);
-	const __m64 mmconst_incalpha = _mm_set_pi16(127,0x7FFF,0x7FFF,0x7FFF);
-	
-	// set base color
-	__m64 mm_bcol = _mm_unpacklo_pi8(_mm_cvtsi32_si64(color),mmconst_0);
-	
 	// now blit!
 	for(y = 0; y < bh; y++)
 	{
-#ifdef __SSE__
-		// strip mine
-		for(x = 0; x < bw; x += 8)
-			_mm_prefetch(ps+x, _MM_HINT_T0);
-		for(x = 0; x < bw; x += 8)
-			_mm_prefetch(pd+x, _MM_HINT_T0);
-#endif
-		
+		xctr = 0;
+
 		for(x = 0; x < bw; x++)
 		{
-			uint32_t s = *(ps++);
+			uint32_t s = ps[xctr>>16];
 			uint32_t d = *pd;
-			
-			__m64 mm_src = _mm_cvtsi32_si64(s);
-			__m64 mm_dst = _mm_cvtsi32_si64(d);
-			
-			// unpack
-			mm_src = _mm_unpacklo_pi8(mm_src,mmconst_0);
-			mm_dst = _mm_unpacklo_pi8(mm_dst,mmconst_0);
-			
-			// apply base color
-			mm_src = _mm_mulhi_pi16(
-				_mm_add_pi16(_mm_slli_pi16(mm_src,  4), mmconst_roundcolor),
-				_mm_add_pi16(_mm_slli_pi16(mm_bcol, 4), mmconst_roundcolor));
-			
-			// increase alpha a bit
-			mm_src = _mm_sub_pi16(mm_src,
-				_mm_cmpgt_pi16(mm_src,mmconst_incalpha));
-			
-			// get src alpha
-			__m64 mm_src_alpha = mm_src;
-			mm_src_alpha = _mm_unpackhi_pi16(mm_src_alpha,mm_src_alpha);
-			mm_src_alpha = _mm_unpackhi_pi16(mm_src_alpha,mm_src_alpha);
-			
-			// get inverse alpha
-			__m64 mm_ialpha = _mm_sub_pi16(mmconst_256,mm_src_alpha);
-			
-			// ALPHA BLAND
-			mm_src_alpha = _mm_slli_pi16(mm_src_alpha, 4);
-			mm_ialpha = _mm_slli_pi16(mm_ialpha, 4);
-			mm_src = _mm_slli_pi16(mm_src, 4);
-			mm_dst = _mm_slli_pi16(mm_dst, 4);
-			
-			__m64 mm_combo = _mm_add_pi16(
-				_mm_mulhi_pi16(mm_src_alpha, mm_src),
-				_mm_mulhi_pi16(mm_ialpha, mm_dst));
-			
-			// pack back!
-			mm_combo = _mm_packs_pu16(mm_combo, mm_combo);
-			*(pd++) = _mm_cvtsi64_si32(mm_combo);
-		}
-		
-		ps += spitch;
-		pd += dpitch;
-	}
-#else
-	// now blit!
-	for(y = 0; y < bh; y++)
-	{
-		for(x = 0; x < bw; x++)
-		{
-			uint32_t s = *(ps++);
-			uint32_t d = *pd;
+			xctr += iscalex;
 			
 			// apply base color
 			// DANGER! BRACKETITIS!
@@ -449,9 +408,10 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 			*(pd++) = vv;
 		}
 		
-		ps += spitch;
+		yctr += iscaley;
+		ps += spitch*(yctr>>16);
+		yctr &= 0xFFFF;
 		pd += dpitch;
 	}
-#endif
 #endif
 }

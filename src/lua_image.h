@@ -52,7 +52,7 @@ int icelua_fn_client_img_blit(lua_State *L)
 
 int icelua_fn_client_img_blit_to(lua_State *L)
 {
-	int top = icelua_assert_stack(L, 4, 9);
+	int top = icelua_assert_stack(L, 4, 11);
 	int dx, dy, bw, bh, sx, sy;
 	float scalex, scaley;
 	uint32_t color;
@@ -79,7 +79,7 @@ int icelua_fn_client_img_blit_to(lua_State *L)
 #else
 	render_blit_img(dest->pixels, dest->head.width, dest->head.height, 
 		dest->head.width,
-		source, dx, dy, bw, bh, sx, sy, color, 1, 1);
+		source, dx, dy, bw, bh, sx, sy, color, scalex, scaley);
 #endif
 
 #ifdef USE_OPENGL

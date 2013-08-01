@@ -105,7 +105,8 @@ VERSION_BUGS = {
 {renderer="gl", intro=nil, fix=4227072+2, msg="[OpenGL] Breaking blocks around the edges does not update the chunks properly"},
 {intro=nil, fix=4227072+3, msg="common.net_pack() reads an integer before it converts it to floating point"},
 {intro=nil, fix=4227072+5, msg="Image scaling not supported"},
+{renderer="softgm", intro=4227072+5, fix=4227072+7, msg="[softgm] Image scaling not supported"},
 {intro=4227072+5, fix=4227072+6, msg="Image scaling accidentally only supported integers for scale parameters"},
-{renderer="softgm", intro=4227072+5, fix=nil, msg="[softgm] Image scaling not supported"},
+{intro=4227072+5, fix=4227072+7, msg="Incompatible semantics for image scaling"},
 }
 
