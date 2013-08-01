@@ -15,7 +15,7 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
-HB_VERSION = 1
+HB_VERSION = 2
 
 heartbeat_sockfd = nil
 heartbeat_t_nextmsg = nil
@@ -69,9 +69,9 @@ function heartbeat_update(sec_current, sec_delta)
 			break
 		elseif msg == false then
 			error("UDP socket used to connect to master servers broke horribly. What the hell?!")
-		elseif msg == "MSOK" then
-			-- we're ignoring MSOK messages for now,
-			-- until we can track ALL master/heartbeat servers properly
+		elseif msg:len() >= 4 and msg:sub(1,4) == "MSOK" then
+			-- send handshake
+			common.udp_sendto(heartbeat_sockfd, "HSHK" .. msg:sub(5), host, port)
 		elseif msg == "BADF" then
 			error("heartbeat server \""..host.."\" port "..port.." reports bad packet format - FIX ME OR REMOVE THIS SERVER")
 		elseif msg:len() >= 4 and msg:sub(1,4) == "BADV" then

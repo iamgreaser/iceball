@@ -16,7 +16,7 @@
 # along with Iceball.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import heapq, json, socket, struct, sys, time
+import errno, heapq, json, random, socket, struct, sys, time
 
 CONN_PORT = int(sys.argv[1])
 
@@ -44,7 +44,7 @@ def calc_ib_version(w,x,y,a,z):
 		)<<10) + z
 
 HB_LIFETIME = 120
-HB_VERSION = 1
+HB_VERSION = 2
 IB_VERSION_CMP = (0,1,1,0,0)
 IB_VERSION = calc_ib_version(*IB_VERSION_CMP)
 
@@ -82,6 +82,7 @@ class HTTPClient:
 		self.sockfd = sockfd
 		self.buf = ""
 		self.wbuf = None
+		self.sockfd.setblocking(False)
 		self.reactor.push(ct, self.update)
 
 	def is_dead(self, ct):
@@ -219,12 +220,14 @@ class HTTPClient:
 				return
 		except socket.timeout:
 			pass
-		except socket.error:
-			try:
-				self.sockfd.close()
-			except Exception:
-				pass
-			self.sockfd = None
+		except socket.error, e:
+			if e.errno != errno.EAGAIN:
+				print "error send:", e
+				try:
+					self.sockfd.close()
+				except Exception:
+					pass
+				self.sockfd = None
 	
 	def get_msgs(self, ct):
 		if self.sockfd == None:
@@ -243,12 +246,14 @@ class HTTPClient:
 			self.collect(ct)
 		except socket.timeout:
 			pass
-		except socket.error:
-			try:
-				self.sockfd.close()
-			except Exception:
-				pass
-			self.sockfd = None
+		except socket.error, e:
+			if e.errno != errno.EAGAIN:
+				print "error recv:", e
+				try:
+					self.sockfd.close()
+				except Exception:
+					pass
+				self.sockfd = None
 
 class HReactor:
 	def __init__(self):
@@ -290,7 +295,7 @@ class HServer:
 		self.http_sockfd = socket.socket(af, socket.SOCK_STREAM)
 		self.http_sockfd.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		self.http_sockfd.bind(("", self.port))
-		self.http_sockfd.settimeout(0.001)
+		self.http_sockfd.setblocking(False)
 		self.http_sockfd.listen(2)
 
 		self.sockfd = socket.socket(af, socket.SOCK_DGRAM)
@@ -322,6 +327,10 @@ class HServer:
 			self.http_clients.add(HTTPClient(ct, self.reactor, self, nsock))
 		except socket.timeout:
 			pass
+		except socket.error, e:
+			if e.errno != errno.EAGAIN:
+				print "error accept:", e
+
 	
 	def kill_dead_http_clients(self, ct):
 		# TODO: use a priority queue for the clients
@@ -383,6 +392,8 @@ class HClient:
 		self.addr = addr
 		self.port = port
 		self.ibdata = None
+		self.ibdata_queued = None
+		self.ibdata_cookie = None
 		self.not_dead(ct)
 	
 	def get_fields(self):
@@ -433,10 +444,16 @@ class HClient:
 
 				d["version"] = ib_version_str(ibver)
 
-				self.ibdata = d
+				self.ibdata_queued = d
+				self.ibdata_cookie = struct.pack("<I", random.randint(0,0xFFFFFFFF))
 				self.not_dead(ct)
-				self.send("MSOK")
+				self.send("MSOK" + self.ibdata_cookie)
 				print "MSOK", d
+		elif typ == "HSHK":
+			#print "HSHK", repr(msg)
+			if msg == self.ibdata_cookie:
+				print "HSHK - pushing", (self.addr, self.port)
+				self.ibdata = self.ibdata_queued
 
 hb_reactor = HReactor()
 hb_server = HServer(hb_reactor.get_time(), hb_reactor, socket.AF_INET, CONN_PORT)

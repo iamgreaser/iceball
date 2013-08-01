@@ -35,12 +35,21 @@ Iceball servers interface the heartbeat server using this UDP protocol...
 	unless they hit their string limit,
 	in which case there is no NUL. BE WARY OF THIS.
 
-"MSOK"
+"MSOK" cookie[]
 	H->I
 
 	Your packet was accepted.
 
-	If your server gets this message, you can stop sending your burst.
+	If your server gets this message, send a "HSHK" with the same cookie you received.
+
+	cookie can be any length.
+
+"HSHK" cookie[]
+	I->H
+
+	Handshake.
+
+	Only once the heartbeat server receives this will your server be listed.
 
 "BADV" hbversion.u16 ibversion.u32
 	H->I
