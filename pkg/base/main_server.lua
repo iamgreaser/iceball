@@ -15,10 +15,8 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
-if common.version.num < 4227072 then
-	error("You need Iceball version 0.1.1 or later to run this code.")
-	-- I know 0.1 can run it at the time of 0.1.1's release,
-	-- but I *do* want the server to stay up to date.
+if common.version.num < 4259840 then
+	error("You need Iceball version 0.1.2 or later to run this code.")
 end
 
 -- UDP port test.

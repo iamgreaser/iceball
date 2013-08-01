@@ -1,6 +1,6 @@
 #!/bin/sh
 
-export ZIPNAME=nubdist/iceball-0.1.1.zip
+export ZIPNAME=nubdist/iceball-0.1.2.zip
 
 #zip -r $ZIPNAME *.dll *.exe *.txt *.bat docs/ \
 #	pkg/base/*.lua \
@@ -13,7 +13,7 @@ export ZIPNAME=nubdist/iceball-0.1.1.zip
 #	dlcache/info.txt clsave/info.txt svsave/info.txt \
 #	clsave/config.json clsave/pub/user.json
 
-zip -r $ZIPNAME *.dll *.exe *.txt opencmd.bat connect-*.bat docs/ \
+zip -r $ZIPNAME *.dll *.exe *.txt opencmd.bat docs/ \
 	pmfedit.bat mapedit.bat \
 	dlcache/info.txt clsave/info.txt \
 	clsave/config.json clsave/pub/user.json \
@@ -21,8 +21,10 @@ zip -r $ZIPNAME *.dll *.exe *.txt opencmd.bat connect-*.bat docs/ \
 	clsave/vol/dummy clsave/base/vol/dummy \
 	pkg/iceball/halp/ \
 	pkg/base/ pkg/maps/mesa.vxl pkg/maps/mesa.vxl.tga \
+	pkg/maps/gen_classic.lua.tga \
 	pkg/iceball/snowtest/ pkg/iceball/hack_console/ \
 	pkg/iceball/pmfedit/ pkg/iceball/mapedit/ \
+	pkg/iceball/sprinting/ pkg/iceball/deucenamegen/ \
 	svsave/info.txt \
 	svsave/pub/server.json svsave/pub/mods.json svsave/base/vol/dummy svsave/vol/dummy \
 	src/ include/ Makefile* CMakeLists.txt main.make \

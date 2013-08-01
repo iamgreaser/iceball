@@ -15,8 +15,8 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
-if common.version.num < 4194304 then
-	error("You need Iceball version 0.1 or later to connect to this server.")
+if common.version.num < 4259840 then
+	error("You need Iceball version 0.1.2 or later to connect to this server.")
 end
 
 function client.hook_kick(reason)

@@ -178,7 +178,7 @@ void wav_fn_mixer_s16he_stereo(void *buf, int len)
 			
 			int16_t d = data[offs];
 			int32_t v0 = (int32_t)(*v) + (int32_t)(vol[0]*d+0.5f);
-			int32_t v1 = (int32_t)(*v) + (int32_t)(vol[1]*d+0.5f);
+			int32_t v1 = (int32_t)(*(v+1)) + (int32_t)(vol[1]*d+0.5f);
 			if(v0 >  0x7FFF) v0 =  0x7FFF;
 			if(v0 < -0x7FFF) v0 = -0x7FFF;
 			if(v1 >  0x7FFF) v1 =  0x7FFF;

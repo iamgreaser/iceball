@@ -103,7 +103,7 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 	// Assembly/Compiler Coding Rule 76. (M impact, H generality) Align data to
 	// 32-byte boundary when possible. Prefer store alignment over load alignment.
 	
-	if(bw >= 16)
+	if(bw >= 16 && scalex == 1.0f)
 	{
 		const __m128i xmmconst_0 = _mm_setzero_si128();
 		const __m128i xmmconst_256 = _mm_set1_epi16(256);
@@ -121,15 +121,13 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 			for(x = 0; x < bw; x += 8)
 				_mm_prefetch(pd+x, _MM_HINT_T0);
 			
-			xctr = 0x8000;
-
 			// do the left part first
 			// TODO: look for a mask instruction
+			uint32_t *fs = ps;
 			for(x = 0; x < bw; x++)
 			{
-				uint32_t s = ps[xctr>>16];
+				uint32_t s = *(fs++);
 				uint32_t d = *pd;
-				xctr += iscalex;
 				
 				// apply base color
 				// DANGER! BRACKETITIS!
@@ -168,19 +166,8 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 			// NOTE: i don't have AVX2 so don't expect an AVX2 version.
 			for(; x < bw-4; x+=4)
 			{
-				int nxctr = xctr + iscalex*3;
-				__m128i xmm_src;
-				if((nxctr>>16)-(xctr>>16) == 3)
-				{
-					xmm_src = _mm_loadu_si128((__m128i *)&ps[xctr>>16]);
-				} else {
-					xmm_src = _mm_set_epi32(
-						ps[xctr>>16],
-						ps[(xctr+iscalex)>>16],
-						ps[(xctr+2*iscalex)>>16],
-						ps[(xctr+3*iscalex)>>16]);
-				}
-				xctr += iscalex<<2;
+				__m128i xmm_src = _mm_loadu_si128((__m128i *)fs);
+				fs += 4;
 				__m128i xmm_dst = _mm_load_si128((__m128i *)pd);
 				
 				// unpack
@@ -272,9 +259,8 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 			// finish off with the right part
 			for(; x < bw; x++)
 			{
-				uint32_t s = ps[xctr>>16];
+				uint32_t s = *(fs++);
 				uint32_t d = *pd;
-				xctr += iscalex;
 				
 				// apply base color
 				// DANGER! BRACKETITIS!
