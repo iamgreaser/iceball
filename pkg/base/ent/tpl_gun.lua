@@ -271,7 +271,7 @@ return function (plr, cfg)
 			this.t_fire = nil
 		end
 		
-		if plr.alive then
+		if plr.alive and plr.tool == TOOL_GUN then
 			local swayamt = this.sway
 			if plr.crouching then swayamt = swayamt * 0.5 end
 			if plr.zooming then swayamt = swayamt * 0.25 end
