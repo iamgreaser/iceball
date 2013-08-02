@@ -1077,8 +1077,8 @@ function new_player(settings)
                         	if ang_dist(this.cam_angx, this.angx) < -math.pi / 16 then
                 	                this.cam_angx = this.angx - math.pi / 16
         	                end
-        	                this.crosshair.x = w/2 + ang_dist(this.cam_angy, this.angy) * 400 * this.zoom
-	                        this.crosshair.y = h/2 - ang_dist(this.cam_angx, this.angx) * 400 * this.zoom
+        	                this.crosshair.x = screen_width/2 + ang_dist(this.cam_angy, this.angy) * 400 * this.zoom
+	                        this.crosshair.y = screen_height/2 - ang_dist(this.cam_angx, this.angx) * 400 * this.zoom
 				this.crosshairhit.x = this.crosshair.x
 				this.crosshairhit.y = this.crosshair.y
 			end
