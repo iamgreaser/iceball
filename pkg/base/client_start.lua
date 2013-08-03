@@ -150,18 +150,21 @@ end
 keys = {}
 
 -- a list of arbitrary data with a "camera" that can render sublists.
-function scroll_list(data, cam_start, cam_height)
+function scroll_list(data, cam_start, cam_height, scrollbackable)
 	
 	local this = {list={},cam={
 		start=cam_start or 1,
-		height=cam_height-1 or 0}}
+		height=cam_height-1 or 0},
+		scrollback = false,
+		scrollbackable = scrollbackable,
+		head = 1}
 	
 	-- return a subset of the list table based on the camera position and height
 	function this.render(cam)
 		cam = cam or this.cam
 		local result = {}
 		local i
-		for i=cam.start, cam.start+cam.height do
+		for i=cam.start, math.min(#this.list, cam.start+cam.height) do
 			table.insert(result, this.list[i])
 		end
 		return result
@@ -170,8 +173,8 @@ function scroll_list(data, cam_start, cam_height)
 	return this	
 end
 
-chat_killfeed = scroll_list({}, 0, 10)
-chat_text = scroll_list({}, 0, 6)
+chat_killfeed = scroll_list({}, 0, 10, false)
+chat_text = scroll_list({}, 0, 10, true)
 
 NET_MOVE_DELAY = 0.5
 NET_ORIENT_DELAY = 0.1
@@ -219,13 +222,20 @@ end
 function chat_prune(scrollist, mtime)
 	-- prune lines over the stored limit
 	-- prune lines that are old
-	while #scrollist.list > 0 and 
-		(scrollist.list[1].mtime <= mtime - MODE_CHAT_LINGER or
-		#scrollist.list > MODE_CHAT_MAX) do
-		table.remove(scrollist.list, 1)
+	while scrollist.head <= #scrollist.list and 
+		(scrollist.list[scrollist.head].mtime <= mtime - MODE_CHAT_LINGER or
+		#scrollist.list - (scrollist.head-1) > MODE_CHAT_MAX) do
+		if scrollist.scrollbackable then
+			scrollist.head = scrollist.head + 1
+		else
+			table.remove(scrollist.list, scrollist.head)
+		end
 	end
 	
-	scrollist.cam.start = #scrollist.list - scrollist.cam.height	
+	if not scrollist.scrollback then
+		scrollist.cam.start = math.max(math.max(scrollist.cam.start, scrollist.head)
+			, #scrollist.list - scrollist.cam.height)
+	end
 end
 
 -- create map sprites
@@ -545,6 +555,8 @@ end
 stored_pointer = {x=screen_width/4, y=screen_height*3/4} -- default to around the lower-left, where the text box is
 
 function enter_typing_state()
+	chat_text.scrollback = true
+	chat_text.cam.start = math.max(1, #chat_text.list - chat_text.cam.height)
 	mouse_released = true
 	client.mouse_lock_set(false)
 	client.mouse_visible_set(true)
@@ -556,6 +568,7 @@ end
 function discard_typing_state(widget)
 	gui_focus = nil
 	if widget.clear_keyrepeat then widget.clear_keyrepeat() end
+	chat_text.scrollback = false
 	mouse_released = false
 	client.mouse_lock_set(true)
 	client.mouse_visible_set(false)
