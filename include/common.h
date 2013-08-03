@@ -64,7 +64,9 @@ typedef unsigned __int64	uint64_t;
 #pragma warning( disable: 4200 4244 4996)
 #endif
 
+#ifndef CLANG
 #include <omp.h>
+#endif
 
 #include <string.h>
 #include <stdlib.h>
