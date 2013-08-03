@@ -43,7 +43,9 @@
 #ifndef _MSC_VER
 #define PACK_START
 #define PACK_END
+#ifndef APPLE
 #include <immintrin.h>
+#endif
 #include <stdint.h>
 #else
 #define __attribute__(x)
@@ -61,6 +63,7 @@ typedef unsigned __int64	uint64_t;
 #define _USE_MATH_DEFINES	//M_PI and whatnot from math.h
 #pragma warning( disable: 4200 4244 4996)
 #endif
+
 #include <omp.h>
 
 #include <string.h>
@@ -156,6 +159,13 @@ enum
 
 // if this flag is set, free when finished sending
 #define UDF_TEMPSEND 0x8000
+
+// hack for apple computers running ancient GCCs
+#ifdef APPLE
+#undef __SSE__
+#undef __SSE2__
+#undef _SSE_
+#endif
 
 #ifdef __SSE__
 __attribute__((aligned(16)))
