@@ -1,7 +1,7 @@
 # I personally don't care if you steal this makefile. --GM
 
 CC = clang
-CFLAGS = -pg -O2 -fno-strict-aliasing -g `sdl-config --cflags` -Wall -Wextra \
+CFLAGS = -pg -O3 -fno-strict-aliasing -g `sdl-config --cflags` -Wall -Wextra \
 	-Wno-unused-variable -Wno-unused-parameter \
 	$(CFLAGS_EXTRA) \
 	-DUSE_OPENGL -DAPPLE -DCLANG \

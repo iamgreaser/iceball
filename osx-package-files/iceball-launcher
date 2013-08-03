@@ -1,0 +1,3 @@
+#!/bin/bash
+cd "${0%/*}"
+./iceball-gl -s 0 pkg/base pkg/maps/mesa.vxl

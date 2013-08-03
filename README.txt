@@ -40,6 +40,7 @@ BUILDING REQUIREMENTS:
 - a C compiler that isn't crap (read: not MSVC++)
   - specifically, GCC
   - MinGW is a port of GCC for Windows: http://mingw.org/
+  - OS X users: clang is highly recommended
   - if you use something else we might consider compatibility with it
   - learn_more has managed to get this to build with MSVC++ so uh, that could work too.
 - SDL 1.2 (not 1.3) - http://libsdl.org/
@@ -53,6 +54,13 @@ BUILDING REQUIREMENTS:
 
 On Windows, read Makefile.mingw for some instructions.
 On other OSes, some files for sackit and ENet need to be in xlibinc.
+
+OS X readme:
+- install Homebrew and XCode Command-Line Tools
+- brew install lua, enet, SDL, glew
+- compile sackit from git and copy .a and .so files to /usr/local/lib and sackit.h to /usr/local/include
+- make -f Makefile.glosx-clang (recommended, Makefile.glosx uses GCC, Makefile.osx uses the broken software renderer)
+- to package into a .app, use ./package-osx.sh (brew install dylibbundler first)
 
 MSVC readme (wip):
 - create a folder 'winlibs' in the iceball dir
