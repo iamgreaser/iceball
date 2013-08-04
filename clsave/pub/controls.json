@@ -29,6 +29,8 @@
 	"chat": 116,
 	"teamchat": 121,
 	"squadchat": 117,
+	"chatup": 280,
+	"chatdn": 281,
 	"scores": 9,
 	"quit": 27,
 	"map": 109,

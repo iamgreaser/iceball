@@ -66,6 +66,8 @@ BTSK_JUMP    = controls_config.jump or SDLK_SPACE
 BTSK_CROUCH  = controls_config.crouch or SDLK_LCTRL
 BTSK_SNEAK   = controls_config.sneak or SDLK_v
 BTSK_RELOAD  = controls_config.reload or SDLK_r
+BTSK_CHATUP  = controls_config.chatup or SDLK_PAGEUP
+BTSK_CHATDN  = controls_config.chatdn or SDLK_PAGEDOWN
 
 BTSK_TOOLS = {}
 do
@@ -623,6 +625,15 @@ function h_key(sym, state, modif, uni)
 		client.mouse_lock_set(false)
 		client.mouse_visible_set(true)
 		gui_focus.on_key(key, state, modif)
+		if state and chat_text.scrollback then
+			if key == BTSK_CHATUP then
+				chat_text.cam.start = math.max(1, chat_text.cam.start - math.floor(chat_text.cam.height/2+0.5))
+			elseif key == BTSK_CHATDN then
+				chat_text.cam.start = math.max(1, math.min(
+					chat_text.cam.start + math.floor(chat_text.cam.height/2+0.5),
+					#chat_text.list - chat_text.cam.height))
+			end
+		end
 		return
 	end
 	
