@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,1,2,0,0},
-	num=4259840,
-	str="0.1.2",
+	cmp={0,1,2,0,1},
+	num=4259840+1,
+	str="0.1.2-1",
 }
 
 -- 0.1: 4194304
@@ -112,5 +112,6 @@ VERSION_BUGS = {
 {intro=nil, fix=4227072+8, msg="iceball:// URL scheme not supported"},
 {intro=4227072+8, fix=4227072+9, msg="[Windows] iceball:// handler doesn't set current directory correctly"},
 {intro=nil, fix=4259840, msg="Sound broken wrt stereo (only the last sound played is in stereo; the rest uses the left for both channels)"},
+{renderer="softgm", intro=nil, fix=4259840, msg="[OSX][softgm] Colours are incorrect (32-bit endian swap)"},
 }
 

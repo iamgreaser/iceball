@@ -269,7 +269,54 @@ int update_client_cont1(void)
 #ifdef USE_OPENGL
 	SDL_GL_SwapBuffers();
 #else
+#ifdef SCREEN_BSWAP_32_ENDIAN
+	{
+		int zx,zy;
+		uint8_t *pa = screen->pixels;
+		for(zy = 0; zy < screen->h; zy++)
+		{
+			uint8_t *pb = pa;
+			for(zx = 0; zx < screen->w; zx++)
+			{
+				uint8_t t;
+				t = pb[3];
+				pb[3] = pb[0];
+				pb[0] = t;
+				t = pb[1];
+				pb[1] = pb[2];
+				pb[2] = t;
+				pb += 4;
+			}
+
+			pa += screen->pitch;
+		}
+	}
+#endif
 	SDL_Flip(screen);
+#ifdef SCREEN_BSWAP_32_ENDIAN
+	{
+		int zx,zy;
+		uint8_t *pa = screen->pixels;
+		for(zy = 0; zy < screen->h; zy++)
+		{
+			uint8_t *pb = pa;
+			for(zx = 0; zx < screen->w; zx++)
+			{
+				uint8_t t;
+				t = pb[3];
+				pb[3] = pb[0];
+				pb[0] = t;
+				t = pb[1];
+				pb[1] = pb[2];
+				pb[2] = t;
+				pb += 4;
+			}
+
+			pa += screen->pitch;
+		}
+	}
+#endif
+
 #endif
 	
 	int msec_wait = 10*(int)(sec_wait*100.0f+0.5f);

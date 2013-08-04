@@ -19,7 +19,7 @@
 #define VERSION_X 1
 #define VERSION_Y 2
 #define VERSION_A 0
-#define VERSION_Z 0
+#define VERSION_Z 1
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!
@@ -167,6 +167,11 @@ enum
 #undef __SSE__
 #undef __SSE2__
 #undef _SSE_
+#endif
+
+// hack for softgm so the colours look right
+#ifdef APPLE
+#define SCREEN_BSWAP_32_ENDIAN
 #endif
 
 #ifdef __SSE__
