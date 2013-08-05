@@ -166,6 +166,7 @@ obj = common.fetch_start(ftype, fname)
 	- "vxl": map (vxl) - CANNOT SAVE IN THIS FORMAT.
 	- "pmf": pmf model
 	- "tga": tga image
+	- "png": png image - CANNOT SAVE IN THIS FORMAT (yet).
 	- "json": json data
 	- "wav": wav sound
 	- "it": it music module
@@ -415,10 +416,13 @@ width, height = client.screen_get_dims() @
 screen_width, screen_height
 	global vars set in main_client.lua and thus available in any client mod
 
-img, width, height = common.img_load(fname) @
+img, width, height = common.img_load(fname, fmt = "tga") @
 	loads an image with filename "fname"
 	remember to free it when you're done
 	as this is only a light userdata
+
+	format is either "tga" or "png"
+	use "auto" to autodetect [ NOT SUPPORTED YET ]
 	
 	if this fails, img, width, height will all be nil
 

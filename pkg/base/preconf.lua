@@ -19,7 +19,7 @@
 MODE_NUB_KICKONJOIN = false
 
 -- skins allowed 
-SKIN_ENABLE_SRC = {"pmf", "tga", "wav", "it"}
+SKIN_ENABLE_SRC = {"pmf", "tga", "png", "wav", "it"}
 SKIN_ENABLE = {}
 do
 	local i

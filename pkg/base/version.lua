@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,1,2,0,1},
-	num=4259840+1,
-	str="0.1.2-1",
+	cmp={0,1,2,0,2},
+	num=4259840+2,
+	str="0.1.2-2",
 }
 
 -- 0.1: 4194304
@@ -57,14 +57,14 @@ VERSION_BUGS = {
 {intro=nil, fix=30, msg="clsave/config.json not supported"},
 {intro=30, fix=31, msg="broke dedicated server build... again"},
 {intro=nil, fix=32, msg=".it module music not supported"},
-{intro=32, fix=nil, msg=".it module music might have stability issues. If it crashes, please tell us :)"},
+--{intro=32, fix=nil, msg=".it module music might have stability issues. If it crashes, please tell us :)"},
 {intro=nil, fix=34, msg="Server must be manually seeded"},
 {intro=33, fix=34, msg="A few compilation warnings that shouldn't be there"},
 {renderer="gl", intro=22, fix=35, msg="[OpenGL] Smooth lighting not supported"},
 {renderer="gl", intro=35, fix=nil, msg="[OpenGL] Smooth lighting of PMF models not supported"},
 {renderer="softgm", intro=37, fix=39, msg="[softgm] Preliminary smooth lighting (WIP)"},
 {renderer="gl", intro=22, fix=38, msg="[OpenGL] Rendering tends to stutter on some cards"},
-{renderer="gl", intro=38, fix=nil, msg="[OpenGL] Preliminary stutter-reduced rendering (WIP)"},
+{renderer="gl", intro=38, fix=4227072+2, msg="[OpenGL] Preliminary stutter-reduced rendering (WIP)"},
 {renderer="gl", intro=22, fix=40, msg="[OpenGL] Chunks rendering options not supported in game engine config file"},
 {renderer="gl", intro=22, fix=41, msg="[OpenGL] option to disable VBOs not available"},
 {renderer="gl", intro=22, fix=42, msg="[OpenGL] lack of support for cards w/o non-power-of-2 texture support"},
@@ -92,7 +92,7 @@ VERSION_BUGS = {
 {intro=4194304+1, fix=4194304+2, msg="This build doesn't actually compile on not-windows because itoa isn't a real function."},
 {intro=4194304+1, fix=4194304+2, msg="Raw TCP connection throws an error on failure"},
 {intro=4194304+1, fix=4194304+9, msg="Raw TCP appears to ignore the whitelist on the client side"},
-{intro=nil, fix=nil, msg="Occasional crash in sackit_module_free on common.mus_free - this is probably a sackit bug."},
+{intro=nil, fix=nil, msg="Occasional crash in sackit_module_free on common.mus_free"},
 {intro=nil, fix=nil, msg="Sound distance attenuation affected by zoom (workaround implemented)"},
 {renderer="gl", intro=nil, fix=4194304+3, msg="[OpenGL] Frustum culling not supported"},
 {renderer="gl", intro=nil, fix=4194304+4, msg="[OpenGL] Ambient occlusion on sides not rendered equally"},
@@ -102,7 +102,7 @@ VERSION_BUGS = {
 {intro=nil, fix=4194304+8, msg="Occasional crash when music is stopped"},
 {intro=4194304+1, fix=4194304+9, msg="Raw TCP still throws a lua error if it can't connect"},
 {intro=nil, fix=4227072+1, msg="Arbitrary UDP connections not supported"},
-{intro=4227072+1, fix=nil, msg="Raw UDP support might be a bit flaky - if you find bugs, please tell us!"},
+--{intro=4227072+1, fix=nil, msg="Raw UDP support might be a bit flaky - if you find bugs, please tell us!"},
 {renderer="gl", intro=nil, fix=4227072+2, msg="[OpenGL] Breaking blocks around the edges does not update the chunks properly"},
 {intro=nil, fix=4227072+3, msg="common.net_pack() reads an integer before it converts it to floating point"},
 {intro=nil, fix=4227072+5, msg="Image scaling not supported"},
@@ -112,6 +112,8 @@ VERSION_BUGS = {
 {intro=nil, fix=4227072+8, msg="iceball:// URL scheme not supported"},
 {intro=4227072+8, fix=4227072+9, msg="[Windows] iceball:// handler doesn't set current directory correctly"},
 {intro=nil, fix=4259840, msg="Sound broken wrt stereo (only the last sound played is in stereo; the rest uses the left for both channels)"},
-{renderer="softgm", intro=nil, fix=4259840, msg="[OSX][softgm] Colours are incorrect (32-bit endian swap)"},
+{renderer="softgm", intro=nil, fix=4259840+1, msg="[OSX][softgm] Colours are incorrect (32-bit endian swap)"},
+{intro=nil, fix=4259840+2, msg="PNG not supported"},
+{intro=4259840+2, fix=nil, msg="Preliminary PNG support - more support to come when we can be bothered (RGB/RGBA only for now)"},
 }
 

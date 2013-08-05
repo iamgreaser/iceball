@@ -71,7 +71,9 @@ Base encapsulation:
 				1001 = wav audio
 				1010 = .it music module
 				1011 = raw binary data
-				11xx = * RESERVED *
+				1100 = png image
+				1101 = * RESERVED *
+				111x = * RESERVED *
 		
 		if the server is still sending a file, FATAL ERROR
 	0x31 clen.u32 ulen.u32:

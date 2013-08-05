@@ -500,6 +500,8 @@ const char *net_aux_gettype_str(int ftype)
 			return "json";
 		case UD_BIN:
 			return "bin";
+		case UD_IMG_PNG:
+			return "png";
 	}
 	
 	return NULL;

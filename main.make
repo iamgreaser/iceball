@@ -15,6 +15,7 @@ OBJS = \
 	$(OBJDIR)/dsp.o \
 	$(OBJDIR)/map.o $(OBJDIR)/model.o \
 	$(OBJDIR)/img.o $(OBJDIR)/$(RENDERER)/render.o $(OBJDIR)/$(RENDERER)/render_img.o \
+	$(OBJDIR)/png.o \
 	$(OBJDIR)/lua.o $(OBJDIR)/network.o \
 	$(OBJDIR)/path.o $(OBJDIR)/json.o \
 	$(OBJDIR)/wav.o

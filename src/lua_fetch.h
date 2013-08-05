@@ -41,6 +41,8 @@ int icelua_fnaux_fetch_gettype(lua_State *L, const char *ftype)
 		return UD_MUS_IT;
 	else if(!strcmp(ftype, "bin"))
 		return UD_BIN;
+	else if(!strcmp(ftype, "png"))
+		return UD_IMG_PNG;
 	else if(!strcmp(ftype, "log")) {
 		// TODO!
 		return luaL_error(L, "format not supported yet!");
@@ -86,6 +88,13 @@ int icelua_fnaux_fetch_immediate(lua_State *L, const char *ftype, const char *fn
 		return 1;
 	} else if(!strcmp(ftype, "tga")) {
 		img_t *img = img_load_tga(fname);
+		if(img == NULL)
+			return 0;
+		
+		lua_pushlightuserdata(L, img);
+		return 1;
+	} else if(!strcmp(ftype, "png")) {
+		img_t *img = img_load_png(fname);
 		if(img == NULL)
 			return 0;
 		
@@ -276,6 +285,21 @@ int icelua_fn_common_fetch_poll(lua_State *L)
 			
 			case UD_IMG_TGA: {
 				img_t *img = img_parse_tga(
+					to_client_local.cfetch_ulen,
+					to_client_local.cfetch_ubuf);
+				
+				if(img == NULL)
+				{
+					ret = 0;
+					break;
+				}
+				
+				lua_pushlightuserdata(L, img);
+				ret = 1;
+			} break;
+
+			case UD_IMG_PNG: {
+				img_t *img = img_parse_png(
 					to_client_local.cfetch_ulen,
 					to_client_local.cfetch_ubuf);
 				

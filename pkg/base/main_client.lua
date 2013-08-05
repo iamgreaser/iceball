@@ -133,6 +133,14 @@ function argspew_gen(arr, idx)
 end
 
 dofile("pkg/base/lib_gui.lua")
+
+-- 0.1.2-2 introduces PNG support
+if common.version.num < 4259840+2 then
+	img_loading = img_loading or skin_load("tga", "loading_default-64c.tga", DIR_PKG_GFX)
+else
+	img_loading = img_loading or skin_load("png", "loading_default.png", DIR_PKG_GFX)
+end
+
 img_map = img_map or common.img_load("*MAPIMG")
 
 do

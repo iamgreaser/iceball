@@ -19,7 +19,7 @@
 #define VERSION_X 1
 #define VERSION_Y 2
 #define VERSION_A 0
-#define VERSION_Z 1
+#define VERSION_Z 2
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!
@@ -151,6 +151,7 @@ enum
 	UD_WAV,
 	UD_MUS_IT,
 	UD_BIN,
+	UD_IMG_PNG,
 	
 	UD_MAX_SUPPORTED,
 	
@@ -572,6 +573,10 @@ void render_map_mark_chunks_as_dirty(map_t *map, int pillar_x, int pillar_z);
 void render_free_visible_chunks(map_t *map);
 int render_map_visible_chunks_count_dirty(map_t *map);
 #endif
+
+// png.c
+img_t *img_parse_png(int len, const char *data);
+img_t *img_load_png(const char *fname);
 
 // vecmath.c
 vec4f_t mtx_apply_vec(matrix_t *mtx, vec4f_t *vec);

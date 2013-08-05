@@ -23,7 +23,6 @@ dofile("pkg/base/lib_util.lua")
 img_font_numbers = skin_load("tga", "font-numbers.tga", DIR_PKG_GFX)
 img_font_mini = skin_load("tga", "font-mini.tga", DIR_PKG_GFX)
 img_font_large = skin_load("tga", "font-large.tga", DIR_PKG_GFX)
-img_loading = img_loading or skin_load("tga", "loading_default-64c.tga", DIR_PKG_GFX)
 img_tiles_roundrect = skin_load("tga", "roundrect.tga", DIR_PKG_GFX)
 
 --[[

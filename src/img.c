@@ -88,7 +88,14 @@ img_t *img_parse_tga(int len, const char *data)
 #endif
 	//printf("TEX: %i %i\n", iw, ih);
 	img_t *img = (img_t*)malloc(sizeof(img_t)+4*iw*ih);
-	// TODO: check if NULL
+	if(img == NULL)
+	{
+		// this is very much fatal. if we don't crash now, it'll crash later anyway.
+		fprintf(stderr, "img_parse_tga: *** COULD NOT ALLOCATE IMAGE! CHECK IF YOU HAVE ENOUGH RAM! ***\n");
+		fflush(stderr);
+		fflush(stdout);
+		abort();
+	}
 	img->head = head;
 	img->udtype = UD_IMG;
 #ifdef USE_OPENGL
@@ -172,3 +179,4 @@ img_t *img_load_tga(const char *fname)
 	free(buf);
 	return ret;
 }
+

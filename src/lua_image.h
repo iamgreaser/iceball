@@ -92,16 +92,23 @@ int icelua_fn_client_img_blit_to(lua_State *L)
 // common functions
 int icelua_fn_common_img_load(lua_State *L)
 {
-	int top = icelua_assert_stack(L, 1, 1);
+	int top = icelua_assert_stack(L, 1, 2);
 	
 	const char *fname = lua_tostring(L, 1);
 	if(fname == NULL)
 		return luaL_error(L, "filename must be a string");
+
+	const char *fmt = (top < 2 ? "tga" : lua_tostring(L, 2));
+	if(fmt == NULL)
+		return luaL_error(L, "format must be a string");
+	
+	if(strcmp(fmt, "tga") && strcmp(fmt, "png")) // && strcmp(fmt, "auto"))
+		return luaL_error(L, "invalid format for img_load");
 	
 	lua_getglobal(L, "common");
 	lua_getfield(L, -1, "fetch_block");
 	lua_remove(L, -2);
-	lua_pushstring(L, "tga");
+	lua_pushstring(L, fmt);
 	lua_pushvalue(L, 1);
 	lua_call(L, 2, 1);
 	
