@@ -37,6 +37,11 @@ clsave/config.json:
 		shadows between cubes.
 		Disable for a faster FPS.
 
+		"gl_quality" sets the overall quality of OpenGL draw calls (default 1).
+		A value of "0", sets the quality to fastest.
+		A value of "1", sets the quality to nicest.
+		Set it to "0" to draw things faster on older systems.
+
 		"gl_expand_textures" expands textures to powers of 2 in OpenGL mode
 		This is for backwards-compatibility with old graphics cards.
 		Disable this unless all the text is white or something.

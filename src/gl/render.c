@@ -1224,6 +1224,27 @@ int render_init(int width, int height)
 
 	lwidth = width;
 	lheight = height;
+
+	if (gl_quality > 0)
+	{
+		/* set highest quality */
+		glShadeModel(GL_SMOOTH);
+		glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+		glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+		glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
+		glHint(GL_POINT_SMOOTH_HINT, GL_NICEST);
+		glHint(GL_TEXTURE_COMPRESSION_HINT, GL_NICEST);
+		glHint(GL_FOG_HINT, GL_NICEST);
+	} else {
+		/* set lowest quality */
+		glShadeModel(GL_FLAT);
+		glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
+		glHint(GL_LINE_SMOOTH_HINT, GL_FASTEST);
+		glHint(GL_POLYGON_SMOOTH_HINT, GL_FASTEST);
+		glHint(GL_POINT_SMOOTH_HINT, GL_FASTEST);
+		glHint(GL_TEXTURE_COMPRESSION_HINT, GL_FASTEST);
+		glHint(GL_FOG_HINT, GL_FASTEST);
+	}
 	
 	// probably something.
 	return 0;

@@ -26,6 +26,7 @@
 
 		"antialiasinglevel": 0,
 		"smoothlighting": true,
+		"gl_quality": 1,
 		"gl_expand_textures": true,
 		"gl_chunk_size": 32,
 		"gl_chunks_tesselated_per_frame": 4,
