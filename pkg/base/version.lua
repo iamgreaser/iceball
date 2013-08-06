@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,1,2,0,3},
-	num=4259840+3,
-	str="0.1.2-3",
+	cmp={0,1,2,0,4},
+	num=4259840+4,
+	str="0.1.2-4",
 }
 
 -- 0.1: 4194304
@@ -114,7 +114,9 @@ VERSION_BUGS = {
 {intro=nil, fix=4259840, msg="Sound broken wrt stereo (only the last sound played is in stereo; the rest uses the left for both channels)"},
 {renderer="softgm", intro=nil, fix=4259840+1, msg="[OSX][softgm] Colours are incorrect (32-bit endian swap)"},
 {intro=nil, fix=4259840+2, msg="PNG not supported"},
-{intro=4259840+2, fix=nil, msg="Preliminary PNG support - more support to come when we can be bothered (RGB/RGBA only for now)"},
+{intro=4259840+2, fix=nil, msg="Preliminary PNG support - more support to come when we can be bothered"},
+{intro=4259840+2, fix=4259840+4, msg="PNG reader lacks support for greyscale/indexed images"},
+{intro=4259840+2, fix=4259840+4, msg="PNG reader lacks support for tRNS-block transparency"},
 {intro=4259840+3, fix=nil, msg="[OpenGL] option to set render quality"},
 }
 

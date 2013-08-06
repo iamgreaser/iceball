@@ -150,21 +150,18 @@ img_t *img_parse_png(int len, const char *data)
 		return NULL;
 	}
 
+	// TODO: implement 1,2,4bpc for modes 0 (greyscale) and 3 (indexed)
+	//if(((ihdr.ctyp != 3 && ihdr.ctyp != 0) || (ihdr.bpc != 1 && ihdr.bpc != 2 && ihdr.bpc != 4)) && ihdr.bpc != 8)
 	if(ihdr.bpc != 8)
 	{
-		fprintf(stderr, "img_parse_png: only 8-bits-per-component images currently supported\n");
+		//fprintf(stderr, "img_parse_png: given bits-per-component not supported (16bpc unsupported at the moment)\n");
+		fprintf(stderr, "img_parse_png: given bits-per-component not supported (only 8bpc supported at the moment)\n");
 		return NULL;
 	}
 
 	if(ihdr.ctyp != 0 && ihdr.ctyp != 2 && ihdr.ctyp != 3 && ihdr.ctyp != 4 && ihdr.ctyp != 6)
 	{
 		fprintf(stderr, "img_parse_png: colour type not supported");
-		return NULL;
-	}
-
-	if(ihdr.ctyp != 2 && ihdr.ctyp != 6)
-	{
-		fprintf(stderr, "img_parse_png: given colour type not supported yet!");
 		return NULL;
 	}
 
@@ -186,6 +183,11 @@ img_t *img_parse_png(int len, const char *data)
 		return NULL;
 	}
 	
+	uint8_t pal[256*3];
+	uint8_t trns[256];
+	int pal_len = 0;
+	int trns_len = 0;
+
 	char *cbuf = NULL;
 	size_t cbuf_len = 0;
 	for(;;)
@@ -216,6 +218,40 @@ img_t *img_parse_png(int len, const char *data)
 			cbuf_len += clen;
 		} else if(!memcmp("IEND", tag, 4)) {
 			break;
+		} else if(!memcmp("PLTE", tag, 4)) {
+			if(ihdr.ctyp != 3)
+			{
+				// probably best not to spam this stuff.
+				//fprintf(stderr, "img_parse_png: PLTE tag for non-indexed image ignored\n");
+			} else if((clen % 3) != 0 || clen > (3<<ihdr.bpc) || clen > 256*3) {
+				fprintf(stderr, "img_parse_png: invalid PLTE length\n");
+				if(cbuf != NULL)
+					free(cbuf);
+				return NULL;
+			} else {
+				pal_len = clen / 3;
+				memcpy(pal, data+8, clen);
+			}
+		} else if(!memcmp("tRNS", tag, 4)) {
+			// we might as well be better than Internet Explorer
+			int explen = -1;
+			if(ihdr.ctyp == 0)
+				explen = 2;
+			else if(ihdr.ctyp == 2)
+				explen = 6;
+			else if(ihdr.ctyp == 3)
+				explen = pal_len;
+
+			if(explen == -1)
+			{
+				fprintf(stderr, "img_parse_png: warning: tRNS not expected for this image type!\n");
+			} else if((ihdr.ctyp == 3 ? clen > explen : explen != clen)) {
+				fprintf(stderr, "img_parse_png: warning: tRNS chunk length incorrect; ignored\n");
+			} else {
+				memset(trns+clen, 0xFF, 256-clen);
+				memcpy(trns, data+8, clen);
+				trns_len = clen;
+			}
 		} else if(!(tag[0]&0x20)) {
 			fprintf(stderr, "img_parse_png: unexpected compulsory tag %c%c%c%c\n"
 				, tag[0], tag[1], tag[2], tag[3]);
@@ -384,6 +420,21 @@ img_t *img_parse_png(int len, const char *data)
 
 		switch(ihdr.ctyp)
 		{
+			case 0:
+				// Greyscale
+				for(x = 0; x < iwidth; x++)
+				{
+					dst[0] = src[0];
+					dst[1] = src[0];
+					dst[2] = src[0];
+					dst[3] = (trns_len == 0
+						|| trns[0] != src[0]
+							? 0xFF : 0x00);
+					src += 1;
+					dst += 4;
+				}
+				break;
+
 			case 2:
 				// RGB
 				for(x = 0; x < iwidth; x++)
@@ -391,11 +442,42 @@ img_t *img_parse_png(int len, const char *data)
 					dst[0] = src[2];
 					dst[1] = src[1];
 					dst[2] = src[0];
-					dst[3] = 0xFF; // TODO: tRNS block
+					dst[3] = (trns_len == 0
+						|| trns[0] != src[0]
+						|| trns[2] != src[1]
+						|| trns[4] != src[2]
+							? 0xFF : 0x00);
 					src += 3;
 					dst += 4;
 				}
 				break;
+
+			case 3:
+				// Indexed colour
+				for(x = 0; x < iwidth; x++)
+				{
+					dst[0] = pal[src[0]*3+2];
+					dst[1] = pal[src[0]*3+1];
+					dst[2] = pal[src[0]*3+0];
+					dst[3] = (trns_len == 0 ? 0xFF : trns[src[0]]);
+					src += 1;
+					dst += 4;
+				}
+				break;
+
+			case 4:
+				// Greyscale + Alpha
+				for(x = 0; x < iwidth; x++)
+				{
+					dst[0] = src[0];
+					dst[1] = src[0];
+					dst[2] = src[0];
+					dst[3] = src[1];
+					src += 2;
+					dst += 4;
+				}
+				break;
+
 			case 6:
 				// RGBA
 				for(x = 0; x < iwidth; x++)

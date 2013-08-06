@@ -135,10 +135,12 @@ end
 dofile("pkg/base/lib_gui.lua")
 
 -- 0.1.2-2 introduces PNG support
-if common.version.num < 4259840+2 then
+-- 0.1.2-4 introduces support for indexed+greyscale images and tRNS-block (magic colour + palette alpha) transparency
+-- there's no reason to make them load the full RGB image when they don't support the indexed one.
+if common.version.num < 4259840+4 then
 	img_loading = img_loading or skin_load("tga", "loading_default-64c.tga", DIR_PKG_GFX)
 else
-	img_loading = img_loading or skin_load("png", "loading_default.png", DIR_PKG_GFX)
+	img_loading = img_loading or skin_load("png", "loading_default-256c.png", DIR_PKG_GFX)
 end
 
 img_map = img_map or common.img_load("*MAPIMG")
