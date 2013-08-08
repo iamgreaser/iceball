@@ -17,6 +17,8 @@
 
 print("Starting map editor...")
 
+screen_width, screen_height = client.screen_get_dims()
+
 map_loaded = nil
 fname = nil
 do
