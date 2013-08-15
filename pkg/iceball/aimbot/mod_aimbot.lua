@@ -287,8 +287,8 @@ local function make_aimbot_gun(plr, cfg)
 		local hurt_part = ({"head","body","legs"})[hurt_part_idx]
 		
 		if server then
-			--players[hurt_idx].wpn_damage(
-			--	hurt_part, this.cfg.dmg[hurt_part], plr, "shot")
+			players[hurt_idx].wpn_damage(
+				hurt_part, this.cfg.dmg[hurt_part], plr, "shot")
 		else
 			--net_send(nil, common.net_pack("BBB"
 			--	, PKT_PLR_GUN_HIT, hurt_idx, hurt_part_idx))
