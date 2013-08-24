@@ -80,7 +80,6 @@ The TCP side is a minimal HTTP server at the same port with these interfaces:
 	An HTML page following a template.
 /style.css:
 	A stylesheet you can provide.
-	[ NOT IMPLEMENTED ]
 /master.json:
 	The raw serverlist info in JSON format.
 	Here's the expected format!
