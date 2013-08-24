@@ -1,39 +1,13 @@
-#wrapper {
-	height: 100%;
+.content {
 	width: 800px;
 	margin: 0 auto;
-	background-color:#FDFDFD;
-	padding: 0 10px;
-	box-shadow: 0 0 5 1 #000000;
 }
-
 body {
-	margin: 0;
-	padding: 0;
 	font-family: verdana,arial,sans-serif;
-	background-color:#BBBBBB;
 }
-
 table {
-	width: 800px;
-	font-size:14px;
-	color:#333333;
-	border-width: 1px;
-	border-color: #666666;
-	border-collapse: collapse;
+  font-size: 14px;
 }
-
-table td, table th {
-	padding: 10px;
-	border-style: solid;
-	border-color: #666666;
-	border-width: 1px;
-}
-
 table th {
-	background-color: #D0D0D0;
-}
-
-table td {
-	background-color: #F0F0F0;
+    font-size: 16px;
 }
