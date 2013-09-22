@@ -41,7 +41,7 @@
 		"bufsize": 2048,
 		
 		"volume": 1.0
-	}
+	},
 
 	"security" : {
 		"bin_storage_allowed": true,
