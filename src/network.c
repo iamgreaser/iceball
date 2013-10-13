@@ -222,9 +222,10 @@ int net_packet_push_lua_enet(int len, const char *data, int neth, packet_t **hea
 
 	if(cli == NULL)
 	{
-		fprintf(stderr, "PANIC: NULL client in packet pusher (lua_enet)!\n");
-		fflush(stderr);
-		abort();
+		fprintf(stderr, "Note: NULL client in packet pusher, ignoring\n");
+		return 0;
+		//fflush(stderr);
+		//abort();
 	}
 
 	int poffs = (len >= 64 ? 3 : 1);
