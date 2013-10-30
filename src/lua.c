@@ -165,6 +165,7 @@ struct icelua_entry icelua_common[] = {
 	{icelua_fn_common_img_get_dims, "img_get_dims"},
 	{icelua_fn_common_json_parse, "json_parse"},
 	{icelua_fn_common_json_load, "json_load"},
+	{icelua_fn_common_json_write, "json_write"},
 	{icelua_fn_common_net_pack, "net_pack"},
 	{icelua_fn_common_net_unpack, "net_unpack"},
 	{icelua_fn_common_net_send, "net_send"},

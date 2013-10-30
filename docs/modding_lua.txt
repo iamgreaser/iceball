@@ -483,30 +483,25 @@ tab = common.json_load(fname) @
 	
 	returns nil on error
 
-str = common.json_pack(tab)
-	takes a table and spits out valid JSON
-	(aside from encoding details)
+common.json_write(fname, value) @
+	takes a value and saves it to a file as JSON
+	makes the most sense if value is a table
 	
 	the following types are supported:
 	- numbers
 	- strings
 	- true, false, nil
-	- tables with only string keys
-	- tables with only numeric keys from 1 through #
+	- tables
+	- arrays
 	
 	and therefore the following types are NOT supported:
 	- functions/closures of ANY sort (C or Lua)
-	- tables with mixed hash/numeric keys
 	- userdata (light or otherwise)
+	- tables with a metatable (the metatable will be stripped)
 	
 	and i think that's about it for types really
 	
-	returns nil on error
-	
-success = common.json_save(fname, tab)
-	takes a table and saves it to a file as JSON
-	
-	returns true on success, false on error
+	to tell the difference between tables and arrays it checks for the existence of the key "1"
 
 str = common.net_pack(fmt, ...) @
 	packs data into a string

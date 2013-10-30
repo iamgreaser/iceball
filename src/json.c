@@ -16,7 +16,6 @@
 */
 
 // TODO: finish this!
-// TODO: write a JSON writer!
 
 // syntax is as per the stuff down the right hand side of http://json.org/
 // and is reproduced purely for reference
@@ -28,7 +27,7 @@
 
 // one exception to strict JSON conformance:
 // this DOES allow the last element of an array or object to have a trailing comma.
-// the JSON writer (TODO!), however, will not abuse that feature of this parser.
+// the JSON writer, however, does not abuse that feature of this parser.
 // furthermore, the parser WILL warn you if you do this.
 
 #include "common.h"
@@ -527,3 +526,217 @@ int json_load(lua_State *L, const char *fname)
 	return ret;
 }
 
+// JSON writing
+
+int json_write_value(lua_State *L, FILE *fp);
+
+/*
+	snprintf out %f number
+	write out
+*/
+// would lua_tostring work?
+int json_write_number(lua_State *L, FILE *fp)
+{
+	const char* buf = lua_pushfstring(L, "%f", lua_tonumber(L, -1));
+	fwrite(buf, lua_objlen(L, -1), 1, fp);
+	lua_pop(L, 2);
+	return 0;
+}
+
+/*
+	write """
+	for each char in string {
+		if char is "
+			write "\""
+		if char is \
+			write "\\"
+		if char is /
+			write "\/"
+		if char is backspace
+			write "\b"
+		if char is formfeed
+			write "\f"
+		if char is newline
+			write "\n"
+		if char is carriage return
+			write "\r"
+		if char is tab
+			write "\t"
+		if char is not printable
+			write "\u####"
+		else
+			write char
+	}
+	write """
+*/
+int json_write_string(lua_State *L, FILE *fp)
+{
+	unsigned int len;
+	const char* c = lua_tolstring(L, -1, &len);
+	fwrite("\"", 1, 1, fp);
+	for(; len > 0; --len)
+	{
+		if(*c == '"')
+			fwrite("\\\"", 2, 1, fp);
+		else if(*c == '\\')
+			fwrite("\\\\", 2, 1, fp);
+		else if(*c == '/')
+			fwrite("\\/", 2, 1, fp);
+		else if(*c == '\b')
+			fwrite("\\b", 2, 1, fp);
+		else if(*c == '\f')
+			fwrite("\\f", 2, 1, fp);
+		else if(*c == '\n')
+			fwrite("\\n", 2, 1, fp);
+		else if(*c == '\r')
+			fwrite("\\r", 2, 1, fp);
+		else if(*c == '\t')
+			fwrite("\\t", 2, 1, fp);
+		else if(!isprint(*c))
+		{
+			char* buf = (char*) malloc(6);
+			sprintf(buf, "\\u%4.4X", *((unsigned char*) c));
+			fwrite(buf, 6, 1, fp);
+		}
+		else
+			fputc(*c, fp);
+		c++;
+	}
+	fwrite("\"", 1, 1, fp);
+	lua_pop(L, 1);
+	return 0;
+}
+
+/*
+	write "{"
+	pushnil
+	if lua_next {
+		json_write_value(stack(-2))
+		write ":"
+		json_write_value(stack(-1))
+		pop
+		while lua_next {
+			write ","
+			json_write_value(stack(-2))
+			write ":"
+			json_write_value(stack(-1))
+			pop
+		}
+	}
+	write "}"
+*/
+int json_write_table(lua_State *L, FILE *fp)
+{
+	fwrite("{\r\n", 3, 1, fp);
+	lua_pushnil(L);
+	if (lua_next(L, -2))
+	{
+		lua_pushvalue(L, -2);
+		json_write_value(L, fp);
+		fwrite(": ", 2, 1, fp);
+		json_write_value(L, fp);
+		while (lua_next(L, -2))
+		{
+			lua_pushvalue(L, -2);
+			fwrite(",\r\n", 3, 1, fp);
+			json_write_value(L, fp);
+			fwrite(": ", 2, 1, fp);
+			json_write_value(L, fp);
+		}
+		fwrite("\r\n", 2, 1, fp);
+	}
+	fwrite("}", 1, 1, fp);
+	lua_pop(L, 1);
+	return 0;
+}
+
+/*
+	write "["
+	pushnil
+	if lua_next {
+		json_write_value(stack(-1))
+		pop
+		while lua_next {
+			write ","
+			json_write_value(stack(-1))
+			pop
+		}
+	}
+	write "]"
+*/
+int json_write_array(lua_State *L, FILE *fp)
+{
+	fwrite("[", 1, 1, fp);
+	lua_pushnil(L);
+	if (lua_next(L, -2))
+	{
+		json_write_value(L, fp);
+		while (lua_next(L, -2))
+		{
+			fwrite(", ", 2, 1, fp);
+			json_write_value(L, fp);
+		}
+	}
+	fwrite("]", 1, 1, fp);
+	lua_pop(L, 1);
+	return 0;
+}
+
+/*
+	if isboolean && value write "true"
+	if isboolean && !value write "false"
+	if isnil write "null"
+	if istable json_write_table
+	if isarray json_write_array
+	if isnumber json_write_number
+	if isstring json_write_string
+	error
+*/
+int json_write_value(lua_State *L, FILE *fp)
+{
+	if (lua_isboolean(L, -1))
+	{
+		if (lua_toboolean(L, -1))
+			fwrite("true", 4, 1, fp);
+		else
+			fwrite("false", 5, 1, fp);
+		lua_pop(L, 1);
+	}
+	else if (lua_isnil(L, -1))
+	{
+		fwrite("null", 4, 1, fp);
+		lua_pop(L, 1);
+	}
+	else if (lua_istable(L, -1))
+	{
+		lua_pushnumber(L, 1);
+		lua_gettable(L, -2);
+		if (lua_isnil(L, -1))
+		{
+			lua_pop(L, 1);
+			json_write_table(L, fp);
+		}
+		else
+		{
+			lua_pop(L, 1);
+			json_write_array(L, fp);
+		}
+	}
+	else if (lua_isnumber(L, -1))
+		json_write_number(L, fp);
+	else if (lua_isstring(L, -1))
+		json_write_string(L, fp);
+	else
+		return luaL_error(L, "json_write_value: invalid type");
+	return 0;
+}
+
+int json_write(lua_State *L, char *fname)
+{
+	FILE *fp = fopen(fname, "w");
+	if(fp == NULL)
+		return luaL_error(L, "json_write: file not opened");
+	int ret = json_write_value(L, fp);
+	fclose(fp);
+	return ret;
+}

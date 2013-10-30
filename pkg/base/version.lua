@@ -16,9 +16,9 @@
 ]]
 
 VERSION_ENGINE = {
-	cmp={0,1,2,0,4},
-	num=4259840+4,
-	str="0.1.2-4",
+	cmp={0,1,2,0,6},
+	num=4259840+6,
+	str="0.1.2-6",
 }
 
 -- 0.1: 4194304
@@ -118,5 +118,6 @@ VERSION_BUGS = {
 {intro=4259840+2, fix=4259840+4, msg="PNG reader lacks support for greyscale/indexed images"},
 {intro=4259840+2, fix=4259840+4, msg="PNG reader lacks support for tRNS-block transparency"},
 {intro=4259840+3, fix=nil, msg="[OpenGL] option to set render quality"},
+{intro=nil, fix=4259840+6, msg="JSON writing not supported"}
 }
 

@@ -47,3 +47,19 @@ int icelua_fn_common_json_load(lua_State *L)
 	
 	return 1;
 }
+
+int icelua_fn_common_json_write(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 2, 2);
+	const char *fname = lua_tostring(L, 1);
+	lua_remove(L, 1);
+	
+	if(fname == NULL)
+		return luaL_error(L, "json_write: filename not a string");
+	if(!(boot_mode & 2) && !path_type_client_writable(path_get_type(fname)))
+		return luaL_error(L, "json_write: file not writable!");
+	
+	json_write(L, fname);
+	
+	return 0;
+}
