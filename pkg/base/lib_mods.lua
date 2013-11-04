@@ -76,7 +76,7 @@ function load_mod(env, path, stages, ...)
 				print("- Loading file "..fname)
 				local f = loadfile(fname)
 				if not f then
-					error("Script failed to load: "..f)
+					error("Script failed to load: "..fname)
 					return false
 				end
 				farr[#farr+1] = {fname, f}

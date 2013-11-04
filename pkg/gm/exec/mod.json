@@ -1,0 +1,5 @@
+{
+	"load_client": ["client.lua"],
+	"load_server": ["server.lua"]
+}
+
