@@ -19,7 +19,7 @@
 #define VERSION_X 1
 #define VERSION_Y 2
 #define VERSION_A 0
-#define VERSION_Z 6
+#define VERSION_Z 7
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!
@@ -73,6 +73,7 @@ typedef unsigned __int64	uint64_t;
 #include <stdio.h>
 #include <errno.h>
 #include <time.h>
+#include <ctype.h>
 
 #ifndef WIN32
 #include <sys/time.h>
@@ -455,6 +456,7 @@ img_t *img_load_tga(const char *fname);
 // json.c
 int json_parse(lua_State *L, const char *p);
 int json_load(lua_State *L, const char *fname);
+int json_write(lua_State *L, const char *fname);
 
 // lua.c
 extern lua_State *lstate_client;

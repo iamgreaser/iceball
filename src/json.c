@@ -154,6 +154,7 @@ int json_parse_string(lua_State *L, const char **p)
 					free(sbuf);
 					return 1;
 			}
+			(*p)++;
 		} else if(**p == '\0') {
 			fprintf(stderr, "%i: unexpected NUL\n", json_line_count);
 			free(sbuf);
@@ -572,7 +573,7 @@ int json_write_number(lua_State *L, FILE *fp)
 int json_write_string(lua_State *L, FILE *fp)
 {
 	unsigned int len;
-	const char* c = lua_tolstring(L, -1, &len);
+	const char* c = lua_tolstring(L, -1, (size_t *)&len);
 	fwrite("\"", 1, 1, fp);
 	for(; len > 0; --len)
 	{
@@ -580,8 +581,6 @@ int json_write_string(lua_State *L, FILE *fp)
 			fwrite("\\\"", 2, 1, fp);
 		else if(*c == '\\')
 			fwrite("\\\\", 2, 1, fp);
-		else if(*c == '/')
-			fwrite("\\/", 2, 1, fp);
 		else if(*c == '\b')
 			fwrite("\\b", 2, 1, fp);
 		else if(*c == '\f')
@@ -731,7 +730,7 @@ int json_write_value(lua_State *L, FILE *fp)
 	return 0;
 }
 
-int json_write(lua_State *L, char *fname)
+int json_write(lua_State *L, const char *fname)
 {
 	FILE *fp = fopen(fname, "w");
 	if(fp == NULL)

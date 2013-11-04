@@ -276,11 +276,20 @@ function fastload_analyse_client()
 	print("Cache analysed.")
 
 	local cstr = ""
+	local clist = {}
 	for k,v in pairs(state.cache) do
 		cstr = cstr .. " " .. k
+		clist[1+#clist] = k
 	end
 	print("Cached files:"..cstr)
 
-	print("TODO: dump this list somewhere")
+	common.json_write("svsave/vol/fastload.json", {
+		files = clist,
+	})
+
+	local clcmp = common.json_load("svsave/vol/fastload.json")
+	print(clcmp.files[1])
+
+	print("Filenames dumped to svsave/vol/fastload.json")
 end
 
