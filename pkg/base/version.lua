@@ -15,6 +15,10 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
+-- Dear melchips: Please don't use this list to tell people what's NOW SUPPORTED in a version.
+-- Use it to tell people what's BROKEN or POTENTIALLY broken.
+-- Thanks. --GM
+
 VERSION_ENGINE = {
 	cmp={0,1,2,0,6},
 	num=4259840+6,
@@ -117,7 +121,8 @@ VERSION_BUGS = {
 {intro=4259840+2, fix=nil, msg="Preliminary PNG support - more support to come when we can be bothered"},
 {intro=4259840+2, fix=4259840+4, msg="PNG reader lacks support for greyscale/indexed images"},
 {intro=4259840+2, fix=4259840+4, msg="PNG reader lacks support for tRNS-block transparency"},
-{intro=4259840+3, fix=nil, msg="[OpenGL] option to set render quality"},
-{intro=nil, fix=4259840+6, msg="JSON writing not supported"}
+{intro=nil, fix=4259840+3, msg="[OpenGL] Low-quality mode not supported"},
+{intro=nil, fix=4259840+5, msg="Server stability is a bit crap (this bug fixed in 0.1.2-5)"},
+{intro=nil, fix=4259840+6, msg="JSON writing not supported"},
 }
 

@@ -19,6 +19,8 @@ if common.version.num < 4259840 then
 	error("You need Iceball version 0.1.2 or later to run this code.")
 end
 
+dofile("pkg/base/lib_fastload.lua")
+
 -- UDP port test.
 if false then
 	local sk = common.udp_open()
@@ -459,6 +461,11 @@ mode_create_server()
 
 print("pkg/base/main_server.lua: Loading mods...")
 load_mod_list(getfenv(), mod_data.mods, {"load", "load_server"}, server_config, mod_data)
+
+if server_toggles.flcache then
+	print("pkg/base/main_server.lua: Analysing fastload...")
+	fastload_analyse_client()
+end
 
 print("Starting heartbeat server...")
 heartbeat_init()
