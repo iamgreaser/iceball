@@ -293,3 +293,83 @@ function fastload_analyse_client()
 	print("Filenames dumped to svsave/vol/fastload.json")
 end
 
+function fastload_pack_client()
+	local r1, r2
+	r1, r2 = pcall(function ()
+		return common.json_load("svsave/vol/fastload.json")
+	end)
+
+	if not r1 then
+		print("Error loading fastload names: "..r2)
+		print("Run the server with the -flcache flag to generate svsave/vol/fastload.json")
+		return string.char(0)
+	end
+
+	print("Generating fastload pack")
+
+	local dat = ""
+	
+	local k,v
+
+	for k,v in pairs(r2.files) do
+		local r1, r2
+		r1, r2 = pcall(function ()
+			local pivot = v:find(":", 1, true)
+			local fmt = v:sub(1, pivot-1)
+			local fname = v:sub(pivot+1)
+			print("load:", fmt, fname)
+
+			local body = common.fetch_block("bin", fname)
+			if body == nil then error("fetch_block returned nil") end
+
+			dat = dat .. string.char(#v) .. v
+
+			dat = dat .. string.char(math.floor(((#body) / (2^0)) % 256))
+			dat = dat .. string.char(math.floor(((#body) / (2^8)) % 256))
+			dat = dat .. string.char(math.floor(((#body) / (2^16)) % 256))
+			dat = dat .. string.char(math.floor(((#body) / (2^24)) % 256))
+			dat = dat .. body
+		end)
+
+		if not r1 then
+			print("ERROR: Fastload failed to pack file \"" .. v .. "\"! (Is the cache outdated?)")
+		end
+	end
+
+	dat = dat .. string.char(0)
+	print(string.format("fastload data size: %i bytes", #dat))
+	common.bin_save("svsave/vol/fldata.bin", dat)
+end
+
+local fldata_int = nil
+function fastload_fetch()
+	local body = common.bin_load("*FASTLOAD")
+	fldata_int = {}
+
+	local i = 1
+	while body:byte(i) ~= 0 do
+		local len = body:byte(i)
+		i = i + 1
+		local fnp = body:sub(i, i+len-1)
+		i = i + len
+		local dlen = (body:byte(i+0) * (2^0)
+			+ body:byte(i+1) * (2^8)
+			+ body:byte(i+2) * (2^16)
+			+ body:byte(i+3) * (2^24))
+		i = i + 4
+		local dat = body:sub(i, i+dlen-1)
+		i = i + dlen
+		print("fastload data: fnpair", len, fnp, #fnp, dlen, #dat)
+		common.bin_save("clsave/vol/fastload.tmp", dat)
+		local pivot = fnp:find(":", 1, true)
+		local fmt = fnp:sub(1, pivot-1)
+		fldata_int[fnp] = common.fetch_block(fmt, "clsave/vol/fastload.tmp")
+	end
+end
+
+function fastload_check(fmt, fname)
+	if fldata_int == nil then return nil end
+	local pname = fmt..":"..fname
+	return fldata_int[pname]
+end
+

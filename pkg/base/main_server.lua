@@ -130,6 +130,8 @@ function server.hook_file(neth, ftype, fname)
 	
 	if (ftype == "icemap" or ftype == "map") and (fname == "*MAP") then
 		return map_loaded
+	elseif (ftype == "bin") and (fname == "*FASTLOAD") then
+		return "svsave/vol/fldata.bin"
 	elseif (ftype == "json") and (fname == "*MODCFG") then
 		return mod_conf_file
 	elseif (ftype == "lua") and (fname == "*GAMEMODE") then
@@ -466,6 +468,9 @@ if server_toggles.flcache then
 	print("pkg/base/main_server.lua: Analysing fastload...")
 	fastload_analyse_client()
 end
+
+print("pkg/base/main_server.lua: Creating fastload pack...")
+fastload_pack_client()
 
 print("Starting heartbeat server...")
 heartbeat_init()

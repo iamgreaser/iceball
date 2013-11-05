@@ -30,6 +30,7 @@ function client.hook_kick(reason)
 end
 
 dofile("pkg/base/preconf.lua")
+dofile("pkg/base/lib_fastload.lua")
 
 -- load mod JSON files
 mod_data = common.json_load("*MODCFG")
@@ -168,6 +169,12 @@ do
 		if cacheable and scriptcache[cname] then
 			fnlist[#fnlist+1] = fname.." [CACHED]"
 			return scriptcache[cname]
+		end
+
+		local fl = fastload_check(ftype, fname)
+		if fl ~= nil then
+			fnlist[#fnlist+1] = fname.." [FASTLOAD]"
+			return fl
 		end
 		
 		client.wav_play_local(wav_buld, 0, 0, 0, 0.3, wav_buld_frq)
@@ -308,6 +315,7 @@ function client.hook_tick()
 			chn_mus = client.wav_play_local(wav_mus)
 		end
 	end
+	fastload_fetch()
 	loadfile("pkg/"..common.base_dir.."/client_start.lua")(argspew_gen(argarr, 1))
 	if wav_mus then
 		if chn_mus and client.wav_chn_exists(chn_mus) then
