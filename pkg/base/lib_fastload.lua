@@ -303,6 +303,10 @@ function fastload_pack_client()
 		print("Error loading fastload names: "..r2)
 		print("Run the server with the -flcache flag to generate svsave/vol/fastload.json")
 		return string.char(0)
+	elseif not r2 then
+		print("Error loading fastload names - file not found")
+		print("Run the server with the -flcache flag to generate svsave/vol/fastload.json")
+		return string.char(0)
 	end
 
 	print("Generating fastload pack")
@@ -344,6 +348,10 @@ end
 local fldata_int = nil
 function fastload_fetch()
 	local body = common.bin_load("*FASTLOAD")
+	if body == nil then
+		print("ERROR: Server does not provide fastload. Loading more slowly now!")
+		return
+	end
 	fldata_int = {}
 
 	local i = 1
