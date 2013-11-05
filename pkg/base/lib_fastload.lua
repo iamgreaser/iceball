@@ -371,7 +371,14 @@ function fastload_fetch()
 		common.bin_save("clsave/vol/fastload.tmp", dat)
 		local pivot = fnp:find(":", 1, true)
 		local fmt = fnp:sub(1, pivot-1)
-		fldata_int[fnp] = common.fetch_block(fmt, "clsave/vol/fastload.tmp")
+		local r1,r2
+		r1,r2 = pcall(function ()
+			fldata_int[fnp] = common.fetch_block(fmt, "clsave/vol/fastload.tmp")
+		end)
+
+		if not r1 then
+			print("ERROR: failed to preload \"" ..fnp.. "\": ".. r2)
+		end
 	end
 end
 
