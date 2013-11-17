@@ -148,11 +148,12 @@ int icelua_fn_common_udp_sendto(lua_State *L) {
 
 	snprintf(port_ch, 17, "%u", port);
 
-	getaddrinfo(host, port_ch, &hints, &res);
-
-	length = lua_strlen(L, 2);
-	sent = (res == NULL ? 0 : sendto(sockfd, data, length, 0, res->ai_addr, res->ai_addrlen));
-	if(res != NULL) freeaddrinfo(res);
+	if(getaddrinfo(host, port_ch, &hints, &res) == 0)
+	{
+		length = lua_strlen(L, 2);
+		sent = (res == NULL ? 0 : sendto(sockfd, data, length, 0, res->ai_addr, res->ai_addrlen));
+		if(res != NULL) freeaddrinfo(res);
+	}
 
 	if (sent <= 0) {
 #ifdef WIN32

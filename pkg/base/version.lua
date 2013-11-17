@@ -20,9 +20,9 @@
 -- Thanks. --GM
 
 VERSION_ENGINE = {
-	cmp={0,1,2,0,8},
-	num=4259840+8,
-	str="0.1.2-8",
+	cmp={0,1,2,0,9},
+	num=4259840+9,
+	str="0.1.2-9",
 }
 
 -- 0.1: 4194304
@@ -125,6 +125,6 @@ VERSION_BUGS = {
 {intro=nil, fix=4259840+5, msg="Server stability is a bit crap (this bug fixed in 0.1.2-5)"},
 {intro=nil, fix=4259840+6, msg="JSON writing not supported"},
 {intro=nil, fix=4259840+7, msg="General JSON support is broken"},
-{intro=nil, fix=4259840+8, msg="UDP sending can crash if DNS lookup fails"},
+{intro=nil, fix=4259840+9, msg="UDP sending can crash if DNS lookup fails"},
 }
 
