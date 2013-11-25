@@ -38,7 +38,7 @@
 	
 	"audio" : {
 		"freq": 44100,
-		"bufsize": 2048,
+		"bufsize": 512,
 		
 		"volume": 1.0
 	},
