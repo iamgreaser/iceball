@@ -26,9 +26,12 @@ int icelua_fn_client_img_blit(lua_State *L)
 	float scalex, scaley;
 	uint32_t color;
 	
-	img_t *img = (img_t*)lua_touserdata(L, 1);
-	if(img == NULL || img->udtype != UD_IMG)
+	if(lua_islightuserdata(L, 1) || !lua_isuserdata(L, 1))
 		return luaL_error(L, "not an image");
+	img_t **img_ud = (img_t**)lua_touserdata(L, 1);
+	if(img_ud == NULL || (*img_ud)->udtype != UD_IMG)
+		return luaL_error(L, "not an image");
+	img_t *img = *img_ud;
 	
 	dx = lua_tointeger(L, 2);
 	dy = lua_tointeger(L, 3);
@@ -57,12 +60,18 @@ int icelua_fn_client_img_blit_to(lua_State *L)
 	float scalex, scaley;
 	uint32_t color;
 	
-	img_t *dest = (img_t*)lua_touserdata(L, 1);
-	if(dest == NULL || dest->udtype != UD_IMG)
+	if(lua_islightuserdata(L, 1) || !lua_isuserdata(L, 1))
 		return luaL_error(L, "not an image");
-	img_t *source = (img_t*)lua_touserdata(L, 2);
-	if(source == NULL || source->udtype != UD_IMG)
+	if(lua_islightuserdata(L, 2) || !lua_isuserdata(L, 2))
 		return luaL_error(L, "not an image");
+	img_t **dest_ud = (img_t**)lua_touserdata(L, 1);
+	if(dest_ud == NULL || (*dest_ud)->udtype != UD_IMG)
+		return luaL_error(L, "not an image");
+	img_t **source_ud = (img_t**)lua_touserdata(L, 2);
+	if(source_ud == NULL || (*source_ud)->udtype != UD_IMG)
+		return luaL_error(L, "not an image");
+	img_t *dest = *dest_ud;
+	img_t *source = *source_ud;
 	
 	dx = lua_tointeger(L, 3);
 	dy = lua_tointeger(L, 4);
@@ -112,9 +121,10 @@ int icelua_fn_common_img_load(lua_State *L)
 	lua_pushvalue(L, 1);
 	lua_call(L, 2, 1);
 	
-	img_t *img = (img_t*)lua_touserdata(L, -1);
-	if(img == NULL)
+	img_t **img_ud = (img_t**)lua_touserdata(L, -1);
+	if(img_ud == NULL)
 		return 0;
+	img_t *img = *img_ud;
 	
 	lua_pushinteger(L, img->head.width);
 	lua_pushinteger(L, img->head.height);
@@ -165,7 +175,8 @@ int icelua_fn_common_img_new(lua_State *L)
 	img->tex_dirty = 1;
 #endif
 	
-	lua_pushlightuserdata(L, img);
+	*(img_t **)lua_newuserdata(L, sizeof(void *)) = img;
+	img_gc_set(L);
 	return 1;
 }
 
@@ -173,9 +184,12 @@ int icelua_fn_common_img_pixel_set(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 4, 4);
 	
-	img_t *img = (img_t*)lua_touserdata(L, 1);
-	if(img == NULL || img->udtype != UD_IMG)
+	if(lua_islightuserdata(L, 1) || !lua_isuserdata(L, 1))
 		return luaL_error(L, "not an image");
+	img_t **img_ud = (img_t**)lua_touserdata(L, 1);
+	if(img_ud == NULL || (*img_ud)->udtype != UD_IMG)
+		return luaL_error(L, "not an image");
+	img_t *img = *img_ud;
 	int x = lua_tointeger(L, 2);
 	int y = lua_tointeger(L, 3);
 	uint32_t color = lua_tointeger(L, 4);
@@ -203,9 +217,12 @@ int icelua_fn_common_img_fill(lua_State *L)
 	
 	int top = icelua_assert_stack(L, 2, 2);
 	
-	img_t *img = (img_t*)lua_touserdata(L, 1);
-	if(img == NULL || img->udtype != UD_IMG)
+	if(lua_islightuserdata(L, 1) || !lua_isuserdata(L, 1))
 		return luaL_error(L, "not an image");
+	img_t **img_ud = (img_t**)lua_touserdata(L, 1);
+	if(img_ud == NULL || (*img_ud)->udtype != UD_IMG)
+		return luaL_error(L, "not an image");
+	img_t *img = *img_ud;
 	uint32_t color = lua_tointeger(L, 2);
 	
 	int iw = img->head.width;
@@ -227,16 +244,17 @@ int icelua_fn_common_img_free(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 1, 1);
 	
-	img_t *img = (img_t*)lua_touserdata(L, 1);
-	if(img == NULL || img->udtype != UD_IMG)
+	if(lua_islightuserdata(L, 1) || !lua_isuserdata(L, 1))
 		return luaL_error(L, "not an image");
+	img_t **img_ud = (img_t**)lua_touserdata(L, 1);
+	if(img_ud == NULL || (*img_ud)->udtype != UD_IMG)
+		return luaL_error(L, "not an image");
+	img_t *img = *img_ud;
 	
-#ifdef USE_OPENGL
-	if(img->tex != 0)
-		glDeleteTextures(1, &(img->tex));
-#endif
-	
+#ifdef ALLOW_EXPLICIT_FREE
 	img_free(img);
+	*img_ud = NULL;
+#endif
 	
 	return 0;
 }
@@ -245,9 +263,12 @@ int icelua_fn_common_img_get_dims(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 1, 1);
 	
-	img_t *img = (img_t*)lua_touserdata(L, 1);
-	if(img == NULL || img->udtype != UD_IMG)
+	if(lua_islightuserdata(L, 1) || !lua_isuserdata(L, 1))
 		return luaL_error(L, "not an image");
+	img_t **img_ud = (img_t**)lua_touserdata(L, 1);
+	if(img_ud == NULL || (*img_ud)->udtype != UD_IMG)
+		return luaL_error(L, "not an image");
+	img_t *img = *img_ud;
 	
 	lua_pushinteger(L, img->head.width);
 	lua_pushinteger(L, img->head.height);

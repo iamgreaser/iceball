@@ -27,8 +27,8 @@ int icelua_fn_common_model_new(lua_State *L)
 	
 	model_t *pmf = model_new(bonemax);
 	
-	// TODO: add this to a clean-up linked list or something
-	lua_pushlightuserdata(L, pmf);
+	*(model_t **)lua_newuserdata(L, sizeof(void *)) = pmf;
+	model_gc_set(L);
 	return 1;
 }
 
@@ -53,7 +53,9 @@ int icelua_fn_common_model_save_pmf(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 2, 2);
 	
-	model_t *pmf = (model_t*)lua_touserdata(L, 1);
+	if(lua_islightuserdata(L, 1) || !lua_isuserdata(L, 1))
+		return luaL_error(L, "not a model");
+	model_t *pmf = *(model_t**)lua_touserdata(L, 1);
 	if(pmf == NULL)
 		return luaL_error(L, "not a model");
 	const char *fname = lua_tostring(L, 2);
@@ -79,11 +81,17 @@ int icelua_fn_common_model_free(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 1, 1);
 	
-	model_t *pmf = (model_t*)lua_touserdata(L, 1);
+	if(lua_islightuserdata(L, 1) || !lua_isuserdata(L, 1))
+		return luaL_error(L, "not a model");
+	model_t **pmf_ud = (model_t**)lua_touserdata(L, 1);
+	model_t *pmf = *pmf_ud;
 	if(pmf == NULL || pmf->udtype != UD_PMF)
 		return luaL_error(L, "not a model");
 	
+#ifdef ALLOW_EXPLICIT_FREE
 	model_free(pmf);
+	*pmf_ud = NULL;
+#endif
 	
 	return 0;
 }
@@ -92,7 +100,9 @@ int icelua_fn_common_model_len(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 1, 1);
 	
-	model_t *pmf = (model_t*)lua_touserdata(L, 1);
+	if(lua_islightuserdata(L, 1) || !lua_isuserdata(L, 1))
+		return luaL_error(L, "not a model");
+	model_t *pmf = *(model_t**)lua_touserdata(L, 1);
 	if(pmf == NULL || pmf->udtype != UD_PMF)
 		return luaL_error(L, "not a model");
 	
@@ -107,7 +117,10 @@ int icelua_fn_common_model_bone_new(lua_State *L)
 	int top = icelua_assert_stack(L, 1, 2);
 	int ptmax = 20;
 	
-	model_t *pmf = (model_t*)lua_touserdata(L, 1);
+	if(lua_islightuserdata(L, 1) || !lua_isuserdata(L, 1))
+		return luaL_error(L, "not a model");
+	model_t **pmf_ud = (model_t**)lua_touserdata(L, 1);
+	model_t *pmf = *pmf_ud;
 	if(pmf == NULL || pmf->udtype != UD_PMF)
 		return luaL_error(L, "not a model");
 	
@@ -126,12 +139,13 @@ int icelua_fn_common_model_bone_new(lua_State *L)
 			csize = tsize;
 		
 		pmf = model_extend(pmf, csize);
+		*pmf_ud = pmf;
 	}
 	
 	// now add it
 	model_bone_t *bone = model_bone_new(pmf, ptmax);
 	
-	lua_pushlightuserdata(L, pmf);
+	lua_pushvalue(L, 1);
 	lua_pushinteger(L, bone->parent_idx);
 	return 2;
 }
@@ -141,7 +155,9 @@ int icelua_fn_common_model_bone_free(lua_State *L)
 	int top = icelua_assert_stack(L, 1, 2);
 	int boneidx;
 	
-	model_t *pmf = (model_t*)lua_touserdata(L, 1);
+	if(lua_islightuserdata(L, 1) || !lua_isuserdata(L, 1))
+		return luaL_error(L, "not a model");
+	model_t *pmf = *(model_t**)lua_touserdata(L, 1);
 	if(pmf == NULL || pmf->udtype != UD_PMF)
 		return luaL_error(L, "not a model");
 	
@@ -159,7 +175,9 @@ int icelua_fn_common_model_bone_get(lua_State *L)
 	int i;
 	int top = icelua_assert_stack(L, 2, 2);
 	
-	model_t *pmf = (model_t*)lua_touserdata(L, 1);
+	if(lua_islightuserdata(L, 1) || !lua_isuserdata(L, 1))
+		return luaL_error(L, "not a model");
+	model_t *pmf = *(model_t**)lua_touserdata(L, 1);
 	if(pmf == NULL || pmf->udtype != UD_PMF)
 		return luaL_error(L, "not a model");
 	
@@ -208,7 +226,9 @@ int icelua_fn_common_model_bone_set(lua_State *L)
 	int i;
 	int top = icelua_assert_stack(L, 4, 4);
 	
-	model_t *pmf = (model_t*)lua_touserdata(L, 1);
+	if(lua_islightuserdata(L, 1) || !lua_isuserdata(L, 1))
+		return luaL_error(L, "not a model");
+	model_t *pmf = *(model_t**)lua_touserdata(L, 1);
 	if(pmf == NULL || pmf->udtype != UD_PMF)
 		return luaL_error(L, "not a model");
 	
@@ -306,7 +326,9 @@ int icelua_fn_common_model_bone_find(lua_State *L)
 	int i;
 	int top = icelua_assert_stack(L, 2, 2);
 	
-	model_t *pmf = (model_t*)lua_touserdata(L, 1);
+	if(lua_islightuserdata(L, 1) || !lua_isuserdata(L, 1))
+		return luaL_error(L, "not a model");
+	model_t *pmf = *(model_t**)lua_touserdata(L, 1);
 	if(pmf == NULL || pmf->udtype != UD_PMF)
 		return luaL_error(L, "not a model");
 	
@@ -337,7 +359,9 @@ int icelua_fn_client_model_render_bone_global(lua_State *L)
 	float ry, rx, ry2;
 	float scale;
 	
-	model_t *pmf = (model_t*)lua_touserdata(L, 1);
+	if(lua_islightuserdata(L, 1) || !lua_isuserdata(L, 1))
+		return luaL_error(L, "not a model");
+	model_t *pmf = *(model_t**)lua_touserdata(L, 1);
 	if(pmf == NULL || pmf->udtype != UD_PMF)
 		return luaL_error(L, "not a model");
 	
@@ -373,7 +397,9 @@ int icelua_fn_client_model_render_bone_local(lua_State *L)
 	float ry, rx, ry2;
 	float scale;
 	
-	model_t *pmf = (model_t*)lua_touserdata(L, 1);
+	if(lua_islightuserdata(L, 1) || !lua_isuserdata(L, 1))
+		return luaL_error(L, "not a model");
+	model_t *pmf = *(model_t**)lua_touserdata(L, 1);
 	if(pmf == NULL || pmf->udtype != UD_PMF)
 		return luaL_error(L, "not a model");
 	

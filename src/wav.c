@@ -415,6 +415,29 @@ void wav_kill(wav_t *wav)
 	}
 }
 
+int wav_gc_lua(lua_State *L)
+{
+	wav_t **wav_ud = (wav_t **)lua_touserdata(L, 1);
+	wav_t *wav = *wav_ud;
+	if(wav != NULL)
+	{
+#ifdef ALLOW_EXPLICIT_FREE
+		printf("Freeing wav @ %p\n", wav);
+#endif
+		wav_kill(wav);
+	}
+
+	return 0;
+}
+
+void wav_gc_set(lua_State *L)
+{
+	lua_newtable(L);
+	lua_pushcfunction(L, wav_gc_lua);
+	lua_setfield(L, -2, "__gc");
+	lua_setmetatable(L, -2);
+}
+
 #ifndef DEDI
 int wav_init(void)
 {

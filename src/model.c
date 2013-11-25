@@ -47,6 +47,29 @@ void model_free(model_t *pmf)
 	free(pmf);
 }
 
+int model_gc_lua(lua_State *L)
+{
+	model_t **pmf_ud = (model_t **)lua_touserdata(L, 1);
+	model_t *pmf = *pmf_ud;
+	if(pmf != NULL)
+	{
+#ifdef ALLOW_EXPLICIT_FREE
+		printf("Freeing pmf @ %p\n", pmf);
+#endif
+		model_free(pmf);
+	}
+
+	return 0;
+}
+
+void model_gc_set(lua_State *L)
+{
+	lua_newtable(L);
+	lua_pushcfunction(L, model_gc_lua);
+	lua_setfield(L, -2, "__gc");
+	lua_setmetatable(L, -2);
+}
+
 model_bone_t *model_bone_new(model_t *pmf, int ptmax)
 {
 	model_bone_t *bone = (model_bone_t*)malloc(sizeof(model_bone_t)+sizeof(model_point_t)*ptmax);

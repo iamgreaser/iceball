@@ -42,7 +42,35 @@ uint32_t img_convert_color_to_32(uint32_t v, int bits)
 
 void img_free(img_t *img)
 {
+#ifdef USE_OPENGL
+	if(img->tex != 0)
+		glDeleteTextures(1, &(img->tex));
+#endif
+	
 	free(img);
+}
+
+int img_gc_lua(lua_State *L)
+{
+	img_t **img_ud = (img_t **)lua_touserdata(L, 1);
+	img_t *img = *img_ud;
+	if(img != NULL)
+	{
+#ifdef ALLOW_EXPLICIT_FREE
+		printf("Freeing img @ %p\n", img);
+#endif
+		img_free(img);
+	}
+
+	return 0;
+}
+
+void img_gc_set(lua_State *L)
+{
+	lua_newtable(L);
+	lua_pushcfunction(L, img_gc_lua);
+	lua_setfield(L, -2, "__gc");
+	lua_setmetatable(L, -2);
 }
 
 img_t *img_parse_tga(int len, const char *data)

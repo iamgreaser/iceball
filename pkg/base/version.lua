@@ -20,9 +20,9 @@
 -- Thanks. --GM
 
 VERSION_ENGINE = {
-	cmp={0,1,2,0,9},
-	num=4259840+9,
-	str="0.1.2-9",
+	cmp={0,1,2,0,10},
+	num=4259840+10,
+	str="0.1.2-10",
 }
 
 -- 0.1: 4194304
@@ -126,5 +126,7 @@ VERSION_BUGS = {
 {intro=nil, fix=4259840+6, msg="JSON writing not supported"},
 {intro=nil, fix=4259840+7, msg="General JSON support is broken"},
 {intro=nil, fix=4259840+9, msg="UDP sending can crash if DNS lookup fails"},
+{intro=nil, fix=4259840+10, msg="Garbage collection not supported"},
+{intro=4259840+10, fix=nil, msg="Garbage collection incomplete (only pmf/img/wav supported)"},
 }
 

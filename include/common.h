@@ -19,7 +19,7 @@
 #define VERSION_X 1
 #define VERSION_Y 2
 #define VERSION_A 0
-#define VERSION_Z 9
+#define VERSION_Z 10
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!
@@ -37,6 +37,9 @@
 #define WAV_BUFSIZE 2048
 // MUST BE A POWER OF TWO
 #define WAV_CHN_COUNT 128
+
+// WARNING: This will eventually be disabled in 0.1.3.
+#define ALLOW_EXPLICIT_FREE
 
 //define RENDER_FACE_COUNT 2
 
@@ -450,6 +453,7 @@ float equal_power_right(float pan);
 
 // img.c
 void img_free(img_t *img);
+void img_gc_set(lua_State *L);
 img_t *img_parse_tga(int len, const char *data);
 img_t *img_load_tga(const char *fname);
 
@@ -518,6 +522,7 @@ void model_bone_free(model_bone_t *bone);
 model_t *model_new(int bonemax);
 model_t *model_extend(model_t *pmf, int bonemax);
 void model_free(model_t *pmf);
+void model_gc_set(lua_State *L);
 model_t *model_parse_pmf(int len, const char *data);
 model_t *model_load_pmf(const char *fname);
 int model_save_pmf(model_t *pmf, const char *fname);
@@ -594,6 +599,7 @@ extern float icesackit_vol;
 wav_t *wav_parse(char *buf, int len);
 wav_t *wav_load(const char *fname);
 void wav_kill(wav_t *wav);
+void wav_gc_set(lua_State *L);
 #ifndef DEDI
 extern int wav_mfreq;
 extern int wav_bufsize;
@@ -605,3 +611,4 @@ void wav_chn_kill(wavchn_t *chn);
 int wav_init(void);
 void wav_deinit(void);
 #endif
+

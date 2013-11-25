@@ -84,28 +84,32 @@ int icelua_fnaux_fetch_immediate(lua_State *L, const char *ftype, const char *fn
 		if(pmf == NULL)
 			return 0;
 		
-		lua_pushlightuserdata(L, pmf);
+		*(model_t **)lua_newuserdata(L, sizeof(void *)) = pmf;
+		model_gc_set(L);
 		return 1;
 	} else if(!strcmp(ftype, "tga")) {
 		img_t *img = img_load_tga(fname);
 		if(img == NULL)
 			return 0;
 		
-		lua_pushlightuserdata(L, img);
+		*(img_t **)lua_newuserdata(L, sizeof(void *)) = img;
+		img_gc_set(L);
 		return 1;
 	} else if(!strcmp(ftype, "png")) {
 		img_t *img = img_load_png(fname);
 		if(img == NULL)
 			return 0;
 		
-		lua_pushlightuserdata(L, img);
+		*(img_t **)lua_newuserdata(L, sizeof(void *)) = img;
+		img_gc_set(L);
 		return 1;
 	} else if(!strcmp(ftype, "wav")) {
 		wav_t *wav = wav_load(fname);
 		if(wav == NULL)
 			return 0;
 		
-		lua_pushlightuserdata(L, wav);
+		*(wav_t **)lua_newuserdata(L, sizeof(void *)) = wav;
+		wav_gc_set(L);
 		return 1;
 	} else if(!strcmp(ftype, "it")) {
 		it_module_t *mus = sackit_module_load(fname);
@@ -279,7 +283,8 @@ int icelua_fn_common_fetch_poll(lua_State *L)
 					break;
 				}
 				
-				lua_pushlightuserdata(L, pmf);
+				*(model_t **)lua_newuserdata(L, sizeof(void *)) = pmf;
+				model_gc_set(L);
 				ret = 1;
 			} break;
 			
@@ -294,7 +299,8 @@ int icelua_fn_common_fetch_poll(lua_State *L)
 					break;
 				}
 				
-				lua_pushlightuserdata(L, img);
+				*(img_t **)lua_newuserdata(L, sizeof(void *)) = img;
+				img_gc_set(L);
 				ret = 1;
 			} break;
 
@@ -309,7 +315,8 @@ int icelua_fn_common_fetch_poll(lua_State *L)
 					break;
 				}
 				
-				lua_pushlightuserdata(L, img);
+				*(img_t **)lua_newuserdata(L, sizeof(void *)) = img;
+				img_gc_set(L);
 				ret = 1;
 			} break;
 			
@@ -324,7 +331,8 @@ int icelua_fn_common_fetch_poll(lua_State *L)
 					break;
 				}
 				
-				lua_pushlightuserdata(L, wav);
+				*(wav_t **)lua_newuserdata(L, sizeof(void *)) = wav;
+				wav_gc_set(L);
 				ret = 1;
 			} break;
 
