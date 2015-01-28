@@ -5,7 +5,7 @@
 	"mod_config": "svsave/pub/mods.json",
 	"heartbeat_send": false,
 	"heartbeat": [
-		["play.iceballga.me", 27790]
+		["play.iceball.rakiru.com", 27790]
 	],
 	"permissions": {
 		"default" : {

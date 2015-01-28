@@ -23,6 +23,7 @@ map_t *svmap = NULL;
 
 #ifndef DEDI
 SDL_Surface *screen = NULL;
+char mk_app_title[128] = "iceball";
 #endif
 int screen_width = 800;
 int screen_height = 600;
@@ -30,13 +31,16 @@ int screen_cubeshift = 0;
 int screen_fullscreen = 0;
 int screen_antialiasing_level = 0;
 int screen_smooth_lighting = 0;
+int mk_compat_mode = 1;
 int gl_expand_textures = 0;
 int gl_chunk_size = 16;
 int gl_visible_chunks = 49;
 int gl_chunks_tesselated_per_frame = 2;
 int gl_use_vbo = 1;
 int gl_quality = 1;
+int gl_vsync = 1;
 int gl_frustum_cull = 1;
+int gl_occlusion_cull = 1;
 int gl_flip_quads = 0;
 
 int force_redraw = 1;
@@ -53,6 +57,8 @@ int net_port;
 
 int main_argc;
 char **main_argv;
+char *main_argv0;
+char *main_oldcwd;
 int main_largstart = -1;
 
 #ifndef DEDI
@@ -72,27 +78,30 @@ int error_perror(char *msg)
 #ifndef DEDI
 int platform_init(void)
 {
-	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_NOPARACHUTE))
+	//if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_NOPARACHUTE))
+	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE))
 		return error_sdl("SDL_Init");
 	SDL_EnableUNICODE(1);
-	
+
 #ifndef WIN32
 	signal(SIGPIPE, SIG_IGN);
 	signal(SIGINT, SIG_DFL);
 #endif
-	
+
 	return 0;
 }
 
 int video_init(void)
 {
 	SDL_WM_SetCaption("iceball",NULL);
-	
-#ifdef USE_OPENGL
+
 	SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+
+	if(!gl_vsync)
+		SDL_GL_SetAttribute(SDL_GL_SWAP_CONTROL, 0);
 
 	if (screen_antialiasing_level > 0)
 	{
@@ -110,17 +119,13 @@ int video_init(void)
 	}
 	if(!GL_ARB_texture_non_power_of_two)
 	{
-		fprintf(stderr, "ERROR: GL_ARB_texture_non_power_of_two not supported by your GPU. Either get a better GPU, or use the software renderer.\n");
+		fprintf(stderr, "ERROR: GL_ARB_texture_non_power_of_two not supported by your GPU. Get a better GPU.\n");
 		return 1;
 	}
-#else
-	screen = SDL_SetVideoMode(screen_width, screen_height, 32, 0
-		| (screen_fullscreen ? SDL_FULLSCREEN : 0));
-#endif
-	
+
 	if(screen == NULL)
 		return error_sdl("SDL_SetVideoMode");
-	
+
 	return 0;
 }
 
@@ -164,12 +169,12 @@ int64_t platform_get_time_usec(void)
 #else
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
-	
+
 	int64_t usec = tv.tv_usec;
 	int64_t sec = tv.tv_sec;
 	sec = (int64_t)(((int64_t)sec)*((int64_t)1000000));
 	usec += sec;
-	
+
 	return usec;
 #endif
 }
@@ -191,36 +196,34 @@ int64_t usec_basetime;
 int update_client_contpre1(void)
 {
 	int quitflag = 0;
-	
+
 	// update FPS counter
 	frame_now = platform_get_time_usec();
 	fps++;
-	
+
 	if(frame_now - frame_prev > (int64_t)1000000)
 	{
-		char buf[64]; // topo how the hell did this not crash at 16 --GM
-		sprintf(buf, "iceball | FPS: %d", fps);
+		char buf[128+32]; // topo how the hell did this not crash at 16 --GM
+		sprintf(buf, "%s | FPS: %d", mk_app_title, fps);
 		SDL_WM_SetCaption(buf, NULL);
 		fps = 0;
 		frame_prev = platform_get_time_usec();
 	}
-	
+
 	return quitflag;
 }
 
 int update_client_cont1(void)
 {
 	int quitflag = 0;
-	
+
 	// skip while still loading
 	if(mod_basedir == NULL || (boot_mode & 8))
 		return 0;
 
-#ifdef USE_OPENGL
 	if (render_map_visible_chunks_count_dirty(clmap) > 0)
 		force_redraw = 1;
-#endif
-	
+
 	// redraw scene if necessary
 	if(force_redraw
 		|| fabsf(tcam.mpx-ompx) > 0.001f
@@ -237,12 +240,12 @@ int update_client_cont1(void)
 		ompz = tcam.mpz;
 		force_redraw = 0;
 	}
-	
+
 #ifdef RENDER_FACE_COUNT
 	if(render_face_remain > 0)
 		render_vxl_redraw(&tcam, clmap);
 #endif
-	
+
 	//printf("%.2f",);
 	// draw scene to cubemap
 	SDL_LockSurface(screen);
@@ -251,7 +254,7 @@ int update_client_cont1(void)
 	render_cubemap((uint32_t*)screen->pixels,
 		screen->w, screen->h, screen->pitch/4,
 		&tcam, clmap);
-	
+
 	// apply Lua HUD / model stuff
 	lua_getglobal(lstate_client, "client");
 	lua_getfield(lstate_client, -1, "hook_render");
@@ -265,68 +268,18 @@ int update_client_cont1(void)
 			return 1;
 		}
 	}
-	
+
 	SDL_UnlockSurface(screen);
-#ifdef USE_OPENGL
 	SDL_GL_SwapBuffers();
-#else
-#ifdef SCREEN_BSWAP_32_ENDIAN
-	{
-		int zx,zy;
-		uint8_t *pa = screen->pixels;
-		for(zy = 0; zy < screen->h; zy++)
-		{
-			uint8_t *pb = pa;
-			for(zx = 0; zx < screen->w; zx++)
-			{
-				uint8_t t;
-				t = pb[3];
-				pb[3] = pb[0];
-				pb[0] = t;
-				t = pb[1];
-				pb[1] = pb[2];
-				pb[2] = t;
-				pb += 4;
-			}
-
-			pa += screen->pitch;
-		}
-	}
-#endif
 	SDL_Flip(screen);
-#ifdef SCREEN_BSWAP_32_ENDIAN
-	{
-		int zx,zy;
-		uint8_t *pa = screen->pixels;
-		for(zy = 0; zy < screen->h; zy++)
-		{
-			uint8_t *pb = pa;
-			for(zx = 0; zx < screen->w; zx++)
-			{
-				uint8_t t;
-				t = pb[3];
-				pb[3] = pb[0];
-				pb[0] = t;
-				t = pb[1];
-				pb[1] = pb[2];
-				pb[2] = t;
-				pb += 4;
-			}
 
-			pa += screen->pitch;
-		}
-	}
-#endif
-
-#endif
-	
 	int msec_wait = 10*(int)(sec_wait*100.0f+0.5f);
 	if(msec_wait > 0)
 	{
 		sec_wait -= msec_wait;
 		SDL_Delay(msec_wait);
 	}
-	
+
 	SDL_Event ev;
 	while(SDL_PollEvent(&ev))
 	switch(ev.type)
@@ -347,12 +300,12 @@ int update_client_cont1(void)
 				char ch = ev.key.keysym.sym;
 				if ((ev.key.keysym.unicode & 0xFF80) == 0)
 					ch = ev.key.keysym.unicode & 0x1FF;
-				
+
 				lua_pushinteger(lstate_client, ev.key.keysym.sym);
 				lua_pushboolean(lstate_client, (ev.type == SDL_KEYDOWN));
 				lua_pushinteger(lstate_client, (int)(ev.key.keysym.mod));
 				lua_pushinteger(lstate_client, ch);
-				
+
 				if(lua_pcall(lstate_client, 4, 0, 0) != 0)
 				{
 					printf("Lua Client Error (key): %s\n", lua_tostring(lstate_client, -1));
@@ -436,24 +389,24 @@ int update_client_cont1(void)
 		default:
 			break;
 	}
-	
+
 	return quitflag;
 }
 
 int update_client(void)
 {
 	int quitflag = update_client_contpre1();
-	
+
 	if(mod_basedir == NULL)
 	{
 		// do nothing
 	} else if(boot_mode & 8) {
 		printf("boot mode flag 8!\n");
 		//abort();
-		
+
 		if(icelua_initfetch())
 			return 1;
-		
+
 		boot_mode &= ~8;
 	} else {
 		lua_getglobal(lstate_client, "client");
@@ -464,7 +417,7 @@ int update_client(void)
 			lua_pop(lstate_client, 1);
 			return 1;
 		}
-		
+
 		lua_pushnumber(lstate_client, sec_curtime);
 		lua_pushnumber(lstate_client, sec_curtime - sec_lasttime);
 		if(lua_pcall(lstate_client, 2, 1, 0) != 0)
@@ -477,7 +430,7 @@ int update_client(void)
 			sec_wait += lua_tonumber(lstate_client, -1);
 		lua_pop(lstate_client, 1);
 	}
-	
+
 	quitflag = quitflag || update_client_cont1();
 	return quitflag;
 }
@@ -487,7 +440,7 @@ int update_server(void)
 {
 	// TODO: respect time returned
 	int quitflag = 0;
-	
+
 	lua_getglobal(lstate_server, "server");
 	lua_getfield(lstate_server, -1, "hook_tick");
 	lua_remove(lstate_server, -2);
@@ -496,7 +449,7 @@ int update_server(void)
 		lua_pop(lstate_server, 1);
 		return 1;
 	}
-	
+
 	lua_pushnumber(lstate_server, sec_curtime);
 	lua_pushnumber(lstate_server, sec_curtime - sec_lasttime);
 	if(lua_pcall(lstate_server, 2, 1, 0) != 0)
@@ -505,7 +458,7 @@ int update_server(void)
 		lua_pop(lstate_server, 1);
 		return 1;
 	}
-	
+
 #ifndef WIN32
 	if(!(boot_mode & 1))
 	{
@@ -523,7 +476,7 @@ int update_server(void)
 	}
 #endif
 	lua_pop(lstate_server, 1);
-	
+
 	return 0;
 }
 
@@ -535,15 +488,15 @@ int run_game_cont1(void)
 	if(boot_mode & 2)
 		quitflag = quitflag || update_server();
 	net_flush();
-	
+
 	// update time
 	sec_lasttime = sec_curtime;
 	int64_t usec_curtime = platform_get_time_usec() - usec_basetime;
 	sec_curtime = ((double)usec_curtime)/1000000.0;
-	
+
 	// update client/server
 	quitflag = quitflag || update_client_contpre1();
-	
+
 	return quitflag;
 }
 
@@ -553,12 +506,12 @@ int run_game_cont2(void)
 	if(boot_mode & 2)
 		quitflag = quitflag || update_server();
 	net_flush();
-	
+
 	// update time
 	sec_lasttime = sec_curtime;
 	int64_t usec_curtime = platform_get_time_usec() - usec_basetime;
 	sec_curtime = ((double)usec_curtime)/1000000.0;
-	
+
 	return quitflag;
 }
 #endif
@@ -566,12 +519,12 @@ int run_game_cont2(void)
 void run_game(void)
 {
 	//clmap = map_load_aos(fnmap);
-	
+
 	tcam.mpx = 256.5f;
 	tcam.mpz = 256.5f;
 	tcam.mpy = 32.0f-3.0f;
 	//clmap->pillars[((int)tcam.mpz)*clmap->xlen+((int)tcam.mpy)][4+1]-2.0f;
-	
+
 	tcam.mxx = 1.0f;
 	tcam.mxy = 0.0f;
 	tcam.mxz = 0.0f;
@@ -581,20 +534,20 @@ void run_game(void)
 	tcam.mzx = 0.0f;
 	tcam.mzy = 0.0f;
 	tcam.mzz = 1.0f;
-	
+
 	//render_vxl_redraw(&tcam, clmap);
-	
+
 	int quitflag = 0;
-	
+
 	usec_basetime = platform_get_time_usec();
-	
+
 	while(!quitflag)
 	{
 		// update time
 		sec_lasttime = sec_curtime;
 		int64_t usec_curtime = platform_get_time_usec() - usec_basetime;
 		sec_curtime = ((double)usec_curtime)/1000000.0;
-		
+
 		// update client/server
 #ifndef DEDI
 		if(boot_mode & 1)
@@ -645,7 +598,7 @@ int print_usage(char *rname)
 			,rname,rname,rname,rname,rname
 #endif
 			,rname,rname);
-	
+
 #ifdef WIN32
 	/*
 	MessageBox(NULL, "Don't double-click on iceball.exe. Open a commandline instead.\r\n"
@@ -653,7 +606,7 @@ int print_usage(char *rname)
 		"TIP: double-clicking on opencmd.bat will get you a commandline in the right place.", "Iceball", MB_OK|MB_ICONERROR|MB_APPLMODAL);
 	*/
 #endif
-	
+
 	return 99;
 }
 
@@ -661,6 +614,8 @@ int main_dbghelper(int argc, char *argv[])
 {
 	main_argc = argc;
 	main_argv = argv;
+	main_argv0 = argv[0];
+	main_oldcwd = NULL;
 
 #ifdef WIN32
 	// necessary for the server list to work, apparently
@@ -668,6 +623,7 @@ int main_dbghelper(int argc, char *argv[])
 		char cwd[2048] = "";
 		GetModuleFileName(NULL, cwd, 2047);
 		char *v = cwd + strlen(cwd) - 1;
+		//main_argv0 = strdup(cwd);
 		while(v >= cwd)
 		{
 			if(*v == '\\')
@@ -679,6 +635,7 @@ int main_dbghelper(int argc, char *argv[])
 		}
 		printf("path: [%s]\n", cwd);
 
+		main_oldcwd = getcwd(NULL, 2048);
 		if(_chdir(cwd) != 0)
 		{
 			MessageBox(NULL, "Failed to change directory.", "Iceball", MB_ICONSTOP);
@@ -695,21 +652,22 @@ int main_dbghelper(int argc, char *argv[])
 	{
 		//print_usage(argv[0]);
 		net_port = 0;
-		mod_basedir = "pkg/iceball/halp";
+		//mod_basedir = "pkg/iceball/halp";
+		mod_basedir = "pkg/iceball/launch";
 		printf("Starting server on port %i, mod \"%s\"\n", net_port, mod_basedir);
 		main_largstart = 4;
-		
+
 		boot_mode = 3;
 	} else
 #endif
-	
+
 #ifndef DEDI
 	if((!strcmp(argv[1], "-h")) || (!strcmp(argv[1], "/?")) || (!strcmp(argv[1], "-?")) || (!strcmp(argv[1], "--help"))) {
 		return print_usage(argv[0]);
 	} else if(!strcmp(argv[1], "-c")) {
 		if(argc <= 2 || (argc <= 3 && memcmp(argv[2], "iceball://", 10)))
 			return print_usage(argv[0]);
-		
+
 		net_port = 20737;
 		main_largstart = 3;
 		net_addr = net_addr_buf;
@@ -725,12 +683,12 @@ int main_dbghelper(int argc, char *argv[])
 		}
 		printf("Connecting to \"%s\" port %i (ENet mode)\n", net_addr, net_port);
 		mod_basedir = NULL;
-		
+
 		boot_mode = 1 | 16;
 	} else if(!strcmp(argv[1], "-C")) {
 		if(argc <= 2 || (argc <= 3 && memcmp(argv[2], "iceball://", 10)))
 			return print_usage(argv[0]);
-		
+
 		net_port = 20737;
 		main_largstart = 3;
 		net_addr = net_addr_buf;
@@ -746,36 +704,36 @@ int main_dbghelper(int argc, char *argv[])
 		}
 		printf("Connecting to \"%s\" port %i (TCP mode)\n", net_addr, net_port);
 		mod_basedir = NULL;
-		
+
 		boot_mode = 1;
 		//return 101;
 	} else if(!strcmp(argv[1], "-s")) {
 		if(argc <= 3)
 			return print_usage(argv[0]);
-		
+
 		net_port = atoi(argv[2]);
 		mod_basedir = argv[3];
 		printf("Starting server on port %i, mod \"%s\" (local mode client)\n", net_port, mod_basedir);
 		main_largstart = 4;
-		
+
 		boot_mode = 3;
 	} else
 #endif
 	if(!strcmp(argv[1], "-d")) {
 		if(argc <= 3)
 			return print_usage(argv[0]);
-		
+
 		net_port = atoi(argv[2]);
 		mod_basedir = argv[3];
 		printf("Starting headless/dedicated server on port %i, mod \"%s\"\n", net_port, mod_basedir);
 		main_largstart = 4;
-		
+
 		boot_mode = 2;
 		//return 101;
 	} else {
 		return print_usage(argv[0]);
 	}
-	
+
 	if(boot_mode & 2)
 	{
 		if(memcmp(mod_basedir,"pkg/",4))
@@ -783,14 +741,14 @@ int main_dbghelper(int argc, char *argv[])
 			fprintf(stderr, "ERROR: package base dir must start with \"pkg/\"!\n");
 			return 109;
 		}
-		
+
 		if(strlen(mod_basedir) < 5)
 		{
 			fprintf(stderr, "ERROR: package base dir can't actually be \"pkg/\"!\n");
 			return 109;
 		}
 	}
-	
+
 #ifndef DEDI
 	if((!(boot_mode & 1)) || !platform_init()) {
 #endif
@@ -817,10 +775,9 @@ int main_dbghelper(int argc, char *argv[])
 	} if(boot_mode & 1) platform_deinit();
 	}
 #endif
-	
+
 	return 0;
 }
-
 
 #ifdef __cplusplus
 extern "C"

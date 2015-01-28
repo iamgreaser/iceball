@@ -34,9 +34,21 @@ function new_player(settings)
 	this.squad = settings.squad or nil
 	this.weapon = settings.weapon or WPN_RIFLE
 	this.explosive = settings.explosive or EXPL_GRENADE
-	
+
+	-- TODO: move this to a function
+	this.wpn_list = settings.wpn_list or nil
+	if this.wpn_list == nil then
+		this.wpn_list = {}
+		local k,v
+		for k,v in pairs(weapons_enabled) do
+			if v then
+				this.wpn_list[#this.wpn_list+1] = k
+			end
+		end
+	end
+
 	this.recoil_amt = 0
-	
+
 	this.pid = settings.pid or error("pid must be set when creating player!")
 	this.neth = settings.neth
 	this.alive = false
@@ -49,7 +61,7 @@ function new_player(settings)
 	this.mdl_player = common.model_bone_new(this.mdl_player)
 	this.mdl_player = common.model_bone_new(this.mdl_player)
 	this.mdl_player = common.model_bone_new(this.mdl_player)
-	
+
 	this.score = 0
 	this.kills = 0
 	this.deaths = 0
@@ -57,33 +69,33 @@ function new_player(settings)
 	this.dead_x = nil
 	this.dead_y = nil
 	this.dead_z = nil
-	
+
 	this.permissions = {}
-	
+
 	function this.has_permission(perm)
 		return perm == nil or this.permissions[perm] ~= nil
 	end
-	
+
 	function this.add_permission(perm)
 		this.permissions[perm] = true
 	end
-	
+
 	function this.remove_permission(perm)
 		this.permissions[perm] = nil
 	end
-	
+
 	function this.add_permission_group(perms)
 		for k,v in pairs(perms) do
 			this.add_permission(k)
 		end
 	end
-	
+
 	function this.remove_permission_group(perms)
 		for k,v in pairs(perms) do
 			this.remove_permission(k)
 		end
 	end
-	
+
 	function this.clear_permissions(perms)
 		this.permissions = {}
 	end
@@ -128,7 +140,7 @@ function new_player(settings)
 		this.ev_jump = false
 		this.ev_crouch = false
 		this.ev_sneak = false
-		
+
 		this.ev_lmb = false
 		this.ev_rmb = false
 	end
@@ -144,13 +156,13 @@ function new_player(settings)
 	function this.prespawn()
 		this.alive = false
 		this.spawned = false
-		
+
 		this.grounded = false
 		this.crouching = false
-		
+
 		this.arm_rest_right = 0.0
 		this.arm_rest_left = 1.0
-		
+
 		this.t_respawn = nil
 		this.t_switch = nil
 		this.t_newblock = nil
@@ -159,31 +171,31 @@ function new_player(settings)
 		this.t_step = nil
 		this.t_piano = nil
 		this.t_piano2 = nil
-		
+
 		this.dangx, this.dangy = 0, 0
 		this.angx, this.angy = 0, 0
 		this.vx, this.vy, this.vz = 0, 0, 0
-		
+
 		this.blx1, this.bly1, this.blz1 = nil, nil, nil
 		this.blx2, this.bly2, this.blz2 = nil, nil, nil
-		
+
 		this.sx, this.sy, this.sz = 0, -1, 0
 		this.drunkx, this.drunkz = 0, 0
 		this.drunkfx, this.drunkfz = 0, 0
-		
+
 		this.blk_color = {0x7F,0x7F,0x7F}
 		this.blk_color_changed = true
 		this.blk_color_x = 3
 		this.blk_color_y = 0
-		
+
 		this.jerkoffs = 0.0
-		
+
 		this.zoom = 1.0
 		this.zooming = false
-		
+
 		this.health = 100
 		this.blocks = 25
-		
+
 		function this.expl_ammo_checkthrow() return false end
 
 		this.add_tools()
@@ -221,7 +233,7 @@ function new_player(settings)
 		if this.mode == PLM_BUILD then
 			this.tools[#(this.tools)+1] = tools[TOOL_MARKER](this)
 		end
-		
+
 		this.tool = 2
 		this.tool_last = 0
 	end
@@ -300,7 +312,7 @@ function new_player(settings)
 		this.tool = tool
 		this.ev_lmb = false
 		this.ev_rmb = false
-		
+
 		-- hud
 		if this.tools_align then
 			this.tools_align.visible = true
@@ -379,7 +391,7 @@ function new_player(settings)
 		this.angx = math.asin(yrec/ydist)
 		this.recoil_time = sec_current
 	end
-	
+
 	function this.update_score()
 		net_broadcast(nil, common.net_pack("BBBBBhhhzz",
 			PKT_PLR_ADD, this.pid,
@@ -447,7 +459,7 @@ function new_player(settings)
 		local oldhealth = this.health
 		this.health = math.max(amt, 0)
 		local hdelta = this.health - oldhealth
-		
+
 		if this.health <= 0 and this.alive then
 			this.on_death()
 			if server then
@@ -475,11 +487,11 @@ function new_player(settings)
 			this.dead_y = this.y
 			this.dead_z = this.z
 		end
-		
+
 		if server then
 			net_broadcast(nil, common.net_pack("BBB", PKT_PLR_DAMAGE, this.pid, this.health))
 		end
-		
+
 		if client then
 			if hdelta < 0 then
 				local arr = wav_ouches
@@ -606,55 +618,55 @@ function new_player(settings)
 			nax = -math.pi*0.49
 		end
 		this.dangx = (nax - this.angx)
-		
+
 		-- apply delta angles
 		if (this.mode == PLM_SPECTATE or MODE_DRUNKCAM_LOCALTURN) and this.dangy ~= 0 then
 			this.angx = this.angx + this.dangx
-			
+
 			local fx,fy,fz -- forward
 			local sx,sy,sz -- sky
 			local ax,ay,az -- horiz side
 			local bx,by,bz -- vert side
-			
+
 			local sya = math.sin(this.angy)
 			local cya = math.cos(this.angy)
 			local sxa = math.sin(this.angx)
 			local cxa = math.cos(this.angx)
-			
+
 			-- get vectors
 			fx,fy,fz = vnorm(sya*cxa, sxa, cya*cxa)
 			sx,sy,sz = vnorm(this.sx, this.sy, this.sz)
 			ax,ay,az = vnorm(vcross(fx,fy,fz,sx,sy,sz))
 			bx,by,bz = vnorm(vcross(fx,fy,fz,ax,ay,az))
-			
-			
+
+
 			-- rotate forward and sky
-			
+
 			fx,fy,fz = vrotate(this.dangy,fx,fy,fz,bx,by,bz)
 			sx,sy,sz = vrotate(this.dangy,sx,sy,sz,bx,by,bz)
-			
+
 			-- normalise F and S
 			fx,fy,fz = vnorm(fx,fy,fz)
 			sx,sy,sz = vnorm(sx,sy,sz)
-			
+
 			-- stash sky arrow
 			this.sx = sx
 			this.sy = sy
 			this.sz = sz
-			
+
 			-- convert forward from vector to polar
 			this.angx = math.asin(fy)
 			local langx = this.angx
-			
+
 			if math.cos(langx) <= 0.0 then
 				fx = -fx
 				fz = -fz
 			end
-			
+
 			this.angy = math.atan2(fx,fz)
-			
+
 			--print("polar",this.angx, this.angy)
-			
+
 		else
 			this.angx = this.angx + this.dangx
 			this.angy = this.angy + this.dangy
@@ -753,12 +765,40 @@ function new_player(settings)
 	end
 
 	function this.calc_motion_global(sec_current, sec_delta, mvx, mvy, mvz, mvchange)
-		this.vx = this.vx + (mvx - this.vx)*(1.0-math.exp(-sec_delta*mvchange))
-		this.vz = this.vz + (mvz - this.vz)*(1.0-math.exp(-sec_delta*mvchange))
-		if this.mode == PLM_NORMAL then
-			this.vy = this.vy + 2*MODE_GRAVITY*sec_delta
+		if MODE_PSPEED_CONV_PHYSICS then
+			local alt_a = math.exp(-sec_delta*mvchange*MODE_PSPEED_CONV_BRAKES)
+			local mmul = sec_delta*MODE_PSPEED_CONV_ACCEL
+			if not this.grounded then alt_a = 1.0 end
+
+			mvx = mvx * mmul
+			mvz = mvz * mmul
+
+			local md = 1.0/math.max(0.0001, math.sqrt(mvx*mvx + mvz*mvz))
+			local dx = mvx*md
+			local dz = mvz*md
+
+			local dotspd = this.vx*dx + this.vz*dz
+			--if client then print(dotspd, math.sqrt(this.vx*this.vx + this.vz*this.vz)) end
+			if (not MODE_PSPEED_CONV_SPEEDCAP_ON) or dotspd < MODE_PSPEED_CONV_SPEEDCAP then
+				this.vx = this.vx + mvx
+				this.vz = this.vz + mvz
+			end
+			this.vx = this.vx * alt_a
+			this.vz = this.vz * alt_a
+
+			if this.mode == PLM_NORMAL then
+				this.vy = (this.vy + 2.0*MODE_GRAVITY*sec_delta) * alt_a
+			else
+				this.vy = (this.vy + mvy*mmul) * alt_a
+			end
 		else
-			this.vy = this.vy + (mvy - this.vy)*(1.0-math.exp(-sec_delta*mvchange))
+			this.vx = this.vx + (mvx - this.vx)*(1.0-math.exp(-sec_delta*mvchange))
+			this.vz = this.vz + (mvz - this.vz)*(1.0-math.exp(-sec_delta*mvchange))
+			if this.mode == PLM_NORMAL then
+				this.vy = this.vy + 2*MODE_GRAVITY*sec_delta
+			else
+				this.vy = this.vy + (mvy - this.vy)*(1.0-math.exp(-sec_delta*mvchange))
+			end
 		end
 		this.jerkoffs = this.jerkoffs * math.exp(-sec_delta*15.0)
 	end
@@ -784,7 +824,7 @@ function new_player(settings)
 				by2 = by2 - 0.01
 			end
 		end
-		
+
 		if this.alive then
 			tx1,ty1,tz1 = trace_map_box(
 				ox, oy, oz,
@@ -795,14 +835,14 @@ function new_player(settings)
 		else
 			tx1,ty1,tz1 = nx,ny,nz
 		end
-		
+
 		if this.alive and MODE_AUTOCLIMB and not this.crouching then
 			by2 = by2 + 1.01
 		end
-		
+
 		if this.alive and MODE_AUTOCLIMB and not this.crouching then
 			local jerky = ty1
-			
+
 			local h1a,h1b,h1c,h1d
 			local h2a,h2b,h2c,h2d
 			local h1,h2,_
@@ -811,23 +851,23 @@ function new_player(settings)
 			h1b,h2b = trace_gap(tx1+0.39,ty1+1.0,tz1-0.39)
 			h1c,h2c = trace_gap(tx1-0.39,ty1+1.0,tz1+0.39)
 			h1d,h2d = trace_gap(tx1+0.39,ty1+1.0,tz1+0.39)
-			
+
 			if (not h1a) or (h1b and h1a < h1b) then h1a = h1b end
 			if (not h1a) or (h1c and h1a < h1c) then h1a = h1c end
 			if (not h1a) or (h1d and h1a < h1d) then h1a = h1d end
 			if (not h2a) or (h2b and h2a > h2b) then h2a = h2b end
 			if (not h2a) or (h2c and h2a > h2c) then h2a = h2c end
 			if (not h2a) or (h2d and h2a > h2d) then h2a = h2d end
-			
+
 			h1 = h1a
 			h2 = h2a
-			
+
 			local dh1 = (h1 and -(h1 - ty1))
 			local dh2 = (h2 and  (h2 - ty1))
-			
+
 			if dh2 and dh2 < by2 and dh2 > 0 then
 				--print("old", ty1, dh2, by2, h1, h2)
-				
+
 				if (dh1 and dh1 < -by1) then
 					-- crouch
 					this.crouching = true
@@ -842,12 +882,12 @@ function new_player(settings)
 						this.vz = this.vz * 0.02
 					end
 				end
-				
+
 				--print("new", ty1, this.vy)
 				--if this.vy > 0 then this.vy = 0 end
 			end
 		end
-		
+
 		if MODE_DRUNKCAM_VELOCITY then
 			local xdiff = tx1-ox
 			local zdiff = tz1-oz
@@ -867,9 +907,9 @@ function new_player(settings)
 		local fgrounded = not box_is_clear(
 			tx1-0.39, ty1+by2, tz1-0.39,
 			tx1+0.39, ty1+by2+0.1, tz1+0.39)
-		
+
 		--print(fgrounded, tx1,ty1,tz1,by2)
-		
+
 		local wasgrounded = this.grounded
 		this.grounded = (MODE_AIRJUMP and this.grounded) or fgrounded
 
@@ -879,20 +919,20 @@ function new_player(settings)
 				client.wav_play_global(wav_jump_down, this.x, this.y, this.z)
 			end
 		end
-		
+
 		return tx1, ty1, tz1
 	end
 
 	function this.tick(sec_current, sec_delta)
 		local xlen,ylen,zlen
 		xlen,ylen,zlen = common.map_get_dims()
-		
+
 		if not this.spawned then
 			return
 		end
 
 		this.tick_respawn(sec_current, sec_delta)
-		
+
 		local inwater = (this.y > ylen-3)
 
 		if this.t_switch == true then
@@ -912,11 +952,11 @@ function new_player(settings)
 				this.arm_rest_right = math.max(0.0,delta/0.2)
 			end
 		end
-		
+
 		if client then
 			local moving = ((this.ev_left == not this.ev_right) or (this.ev_forward == not this.ev_back))
 			local sneaking = (this.ev_crouch or this.ev_sneak or this.zooming)
-			
+
 			if moving and not sneaking then
 				if not this.t_step then
 					this.t_step = sec_current + 0.5
@@ -942,7 +982,7 @@ function new_player(settings)
 		end
 
 		this.tick_rotate(sec_current, sec_delta)
-		
+
 		if this.zooming then
 			this.zoom = 3.0
 		else
@@ -986,7 +1026,7 @@ function new_player(settings)
 		local cxa = math.cos(this.angx)
 		local fwx,fwy,fwz
 		fwx,fwy,fwz = sya*cxa, sxa, cya*cxa
-		
+
 		if client and this.alive and (not this.t_switch) then
 			if this.recoil_time then
 				this.recoil_amt = (sec_current - this.recoil_time) * math.pow(2, 1 - 10 * (sec_current - this.recoil_time)) * 1.5
@@ -997,7 +1037,7 @@ function new_player(settings)
 
 		-- apply local motion
 		local mvx, mvy, mvz, mvchange = this.calc_motion_local(sec_current, sec_delta)
-		
+
 		-- apply rotation
 		mvx, mvz = mvx*cya+mvz*sya, mvz*cya-mvx*sya
 
@@ -1013,31 +1053,31 @@ function new_player(settings)
 		local wasgrounded = this.grounded
 		tx1, ty1, tz1 = this.calc_motion_trace(sec_current, sec_delta, ox, oy, oz, nx, ny, nz)
 		this.x, this.y, this.z = tx1, ty1, tz1
-		
+
 		-- trace for stuff
 		do
 			local td
 			local _
-			
+
 			local camx,camy,camz
 			camx = this.x+0.4*math.sin(this.angy)
 			camy = this.y
 			camz = this.z+0.4*math.cos(this.angy)
-			
+
 			td,
 			this.blx1, this.bly1, this.blz1,
 			this.blx2, this.bly2, this.blz2
 			= trace_map_ray_dist(camx,camy,camz, fwx,fwy,fwz, (this.mode == PLM_BUILD and 40) or 5, false)
-						
+
 			this.bld1 = td
 			this.bld2 = td
-			
+
 			_,
 			_, _, _,
 			this.blx3, this.bly3, this.blz3
 			= trace_map_ray_dist(camx,camy,camz, fwx,fwy,fwz, 127.5)
 		end
-		
+
 		-- update items
 		local i
 		for i=1,#this.tools do
@@ -1053,10 +1093,10 @@ function new_player(settings)
 			net_broadcast(nil, common.net_pack("BB", PKT_PIANO, this.pid))
 		end
 	end
-	
+
         this.cam_angx = 0
         this.cam_angy = 0
-	
+
 	function this.camera_firstperson(sec_current, sec_delta)
 		-- set camera position
 		if this.alive then
@@ -1085,7 +1125,7 @@ function new_player(settings)
 		else
 			client.camera_move_to(this.dead_x, this.dead_y, this.dead_z)
 		end
-		
+
 		local angy, angx
 		if MODE_FREEAIM then
 			angy = this.cam_angy
@@ -1094,7 +1134,7 @@ function new_player(settings)
 			angy = this.angy
 			angx = this.angx
 		end
-		
+
 		-- calc camera forward direction
 		local sya = math.sin(angy)
 		local cya = math.cos(angy)
@@ -1102,17 +1142,17 @@ function new_player(settings)
 		local cxa = math.cos(angx)
 		local fwx,fwy,fwz
 		fwx,fwy,fwz = sya*cxa, sxa, cya*cxa
-		
+
 		-- drunkencam correction
 		this.sy = this.sy - MODE_DRUNKCAM_CORRECTSPEED*sec_delta
 		local ds = math.sqrt(this.sx*this.sx + this.sy*this.sy + this.sz*this.sz)
 		this.sx = this.sx / ds
 		this.sy = this.sy / ds
 		this.sz = this.sz / ds
-		
+
 		-- set camera direction
 		client.camera_point_sky(fwx, fwy, fwz, this.zoom, this.sx, this.sy, this.sz)
-		
+
 		-- offset by eye pos
 		-- slightly cheating here.
 		if this.alive then
@@ -1247,7 +1287,7 @@ function new_player(settings)
 			this.x, this.y+this.jerkoffs+0.8, this.z,
 			0.0, 0.0, this.angy-math.pi, 1.5)
 	end
-	
+
 	--[[create static widgets for hud.
 		FIXME: share 1 instance across all players? (This makes ticking trickier)
 	]]
@@ -1257,9 +1297,9 @@ function new_player(settings)
 		local root = scene.root
 		local w = root.width
 		local h = root.height
-		
+
 		-- tools
-		
+
 		this.tools_align = scene.display_object{x=root.l, y=root.t, visible=false}
 		scene.root.add_child(this.tools_align)
 		local i
@@ -1275,7 +1315,7 @@ function new_player(settings)
 			tool_scale[#tool_scale+1] = this.tools[i].gui_scale
 			tool_pick_scale[#tool_pick_scale+1] = this.tools[i].gui_pick_scale
 		end
-		
+
 		local bounce = 0. -- picked tool bounce
 
 		local function bone_rotate(dT)
@@ -1293,9 +1333,9 @@ function new_player(settings)
 			bounce = bounce + dT * 4
 		end
 		this.tools_align.add_listener(GE_DELTA_TIME, bone_rotate)
-		
+
 		bone_rotate(0)
-		
+
 		--TODO: use the actual yes/no key mappings
 		this.quit_msg = scene.textfield{wordwrap=false, color=0xFFFF3232, font=font_large, 
 			text="Are you sure? (Y/N)", x = w/2, y = h/4, align_x = 0.5, align_y = 0.5,
@@ -1308,33 +1348,36 @@ function new_player(settings)
 		this.enemy_name_msg = scene.textfield{wordwrap=false, color=0xFFFF3232, font=font_small, 
 			text="", x = w/2, y = 3*h/4, align_x = 0.5, align_y = 0.5,
 			visible=false}
-		
+
 		--TODO: update bluetext/greentext with the actual keys (if changed in controls.json)
 		this.team_change_msg_b = scene.textfield{wordwrap=false, color=0xFF0000FF, font=font_large, 
 			text="Press 1 to join Blue", x = w/2, y = h/4, align_x = 0.5, align_y = 0.5}
 		this.team_change_msg_g = scene.textfield{wordwrap=false, color=0xFF00FF00, font=font_large, 
 			text="Press 2 to join Green", x = w/2, y = h/4 + 40, align_x = 0.5, align_y = 0.5}
 		this.team_change = scene.display_object{visible=false}
-		
-		this.wpn_change_msg_rifle = scene.textfield{wordwrap=false, color=0xFFFF0000, font=font_large,
-			text="Press 1 to use Rifle", x = w/2, y = h/4, align_x = 0.5, align_y = 0.5}
-		this.wpn_change_msg_leerifle = scene.textfield{wordwrap=false, color=0xFFFF0000, font=font_large,
-			text="Press 2 to use Lee-Enfield", x = w/2, y = h/4 + 40, align_x = 0.5, align_y = 0.5}
+
+		this.wpn_change_msgs = {}
+		local i
+		for i = 1,#this.wpn_list do
+			this.wpn_change_msgs[i] = scene.textfield{wordwrap=false, color=0xFFFF0000, font=font_large,
+				text="Press "..i.." to use "..weapon_names[this.wpn_list[i]],
+				x = w/2, y = h/4 + 40*i, align_x = 0.5, align_y = 0.5}
+		end
 		this.wpn_change = scene.display_object{visible=false}
-		
+
 		-- chat and killfeed
-		
+
 		this.chat_text = scene.textfield{font=font_mini, ctab={}, 
 			align_x=0, align_y=1, x = 4, y = h - 90}
 		this.kill_text = scene.textfield{font=font_mini, ctab={}, 
 			align_x=1, align_y=1, x = w - 4, y = h - 90}
-		
+
 		-- map (large_map and minimap)
-		
+
 		this.mini_map = scene.display_object{width=128, height=128, align_x = 1, align_y = 0,
 			x=w, y=0, use_img = false}
 		this.large_map = scene.display_object{x=w/2, y=h/2 - 24, visible=false, use_img = false}
-		
+
 		function this.large_map.update_size()
 			local ow, oh
 			ow, oh = common.img_get_dims(img_overview)
@@ -1342,16 +1385,16 @@ function new_player(settings)
 			this.large_map.height = oh
 		end
 		this.large_map.update_size()
-		
+
 		function this.map_gridname(x, y)
 			return string.char(65+math.floor(x/64))..(1+math.floor(y/64))
 		end
-		
+
 		function this.print_map_location(x, y)
 			local s = "Location: "..this.map_gridname(this.x, this.z)
 			font_mini.print(x - font_mini.width*#s/2, y, 0xFFFFFFFF, s)
 		end
-		
+
 		function this.update_overview_icons(dT)
 			if this.alive then
 				for i=1,#log_mspr,2 do
@@ -1361,7 +1404,7 @@ function new_player(settings)
 					common.img_pixel_set(img_overview_icons, u, v, 0x00000000)
 				end
 				log_mspr = {}
-				
+
 				for j=1,players.max do
 					local plr = players[j]
 					if plr then
@@ -1389,7 +1432,7 @@ function new_player(settings)
 							drawit = drawit and (this.t_rcirc ~= nil and
 								(MODE_MINIMAP_RCIRC or this.large_map.visible))
 						end
-						
+
 						if drawit then
 							for i=1,#mspr_player,2 do
 								local u,v
@@ -1402,10 +1445,10 @@ function new_player(settings)
 						end
 					end
 				end
-				
+
 				for j=1,#miscents do
 					local obj = miscents[j]
-	
+
 					if obj.visible then
 						local x,y
 						x,y = obj.x, obj.z
@@ -1423,7 +1466,7 @@ function new_player(settings)
 				end
 			end
 		end
-		
+
 		function this.large_map.draw_update()
 			this.large_map.update_size()
 			local mx, my
@@ -1434,9 +1477,9 @@ function new_player(settings)
 				this.large_map.width, this.large_map.height, 
 				0, 0, 0x80FFFFFF)
 			client.img_blit(img_overview_icons, mx, my)
-			
+
 			local i
-			
+
 			for i=1,math.floor(this.large_map.height/64+0.5) do
 				font_mini.print(mx - 12, my + (i-0.5)*64,
 					0xFFFFFFFF, ""..i)
@@ -1453,10 +1496,10 @@ function new_player(settings)
 					0xFFFFFFFF, ""..string.char(64+i))
 			end
 		end
-		
+
 		local dt_samples = {}
 		local dt_max = 0
-		
+
 		this.net_graph = scene.waveform{
 			sample_sets={},
 			width=200,
@@ -1464,7 +1507,7 @@ function new_player(settings)
 			x=w/4,
 			y=h-30
 		}
-		
+
 		local function net_graph_update(delta_time)
 			this.net_graph.visible = (this.mode ~= PLM_SPECTATE)
 			-- the incoming dT is clamped, therefore we use delta_last instead
@@ -1476,24 +1519,24 @@ function new_player(settings)
 			this.net_graph.push(
 			{{dt_samples,0xFF00FF00,0xFF008800,-dt_max,dt_max}})
 		end
-		
+
 		function this.mini_map.draw_update()
 			if MODE_ENABLE_MINIMAP and this.alive then
 				local mw, mh
 				mw, mh = this.mini_map.width, this.mini_map.height
-				
+
 				local left, top
 				left = this.mini_map.l
 				top = this.mini_map.t
-				
+
 				local qx, qy
 				for qy=-1,1 do
 				for qx=-1,1 do
-				
+
 					local view_left, view_top
 					view_left = this.x-mw/2+this.large_map.width*qx
 					view_top = this.z-mh/2+this.large_map.height*qy
-				
+
 					client.img_blit(img_overview, left, top,
 						mw, mh,
 						view_left, view_top,
@@ -1511,14 +1554,14 @@ function new_player(settings)
 				this.print_map_location(this.mini_map.cx, this.mini_map.b + 2)
 			end
 		end
-		
+
 		function this.menus_visible()
 			return this.quit_msg.visible or this.team_change.visible or this.wpn_change.visible
 		end
 		local function is_view_released()
 			return gui_focus ~= nil
 		end
-		
+
 		local function quit_events(options)
 			if options.state and not is_view_released() then
 				if this.quit_msg.visible then
@@ -1539,21 +1582,21 @@ function new_player(settings)
 			local viz = this.team_change.visible
 			if options.state and not is_view_released() then
 				if viz then
-				
+
 					local team
-				
+
 					if options.key == BTSK_TOOLS[1] then viz = false; team = 0
 					elseif options.key == BTSK_TOOLS[2] then viz = false; team = 1
 					elseif (options.key == BTSK_QUIT or options.key == BTSK_TEAM)
 						then viz = false 
 					end
-					
+
 					local plr
 					plr = players[players.current]
 					if plr ~= nil and team ~= nil and team ~= plr.team then
 						net_send(nil, common.net_pack("Bbbz", PKT_PLR_OFFER, team, plr.weapon, plr.name or ""))
 					end					
-					
+
 				elseif options.key == BTSK_TEAM and not this.menus_visible() then
 					viz = true
 				end
@@ -1565,19 +1608,25 @@ function new_player(settings)
 			if options.state and not is_view_released() then
 				if viz then
 					local wpn
-				
-					if options.key == BTSK_TOOLS[1] then viz = false; wpn = WPN_RIFLE
-					elseif options.key == BTSK_TOOLS[2] then viz = false; wpn = WPN_LEERIFLE
-					elseif (options.key == BTSK_QUIT or options.key == BTSK_WPN)
+
+					if (options.key == BTSK_QUIT or options.key == BTSK_WPN)
 						then viz = false 
+					else
+						local i
+						for i = 1,#this.wpn_list do
+							if options.key == BTSK_TOOLS[i] then
+								viz = false
+								wpn = this.wpn_list[i]
+							end
+						end
 					end
-					
+
 					local plr
 					plr = players[players.current]
 					if plr ~= nil and wpn ~= nil and wpn ~= plr.weapon then
 						net_send(nil, common.net_pack("Bbbz", PKT_PLR_OFFER, plr.team, wpn, plr.name or ""))
 					end
-					
+
 				elseif options.key == BTSK_WPN and not this.menus_visible() then
 					viz = true
 				end
@@ -1601,24 +1650,24 @@ function new_player(settings)
 			local cxa = math.cos(this.angx)
 			local fwx,fwy,fwz
 			fwx,fwy,fwz = sya*cxa, sxa, cya*cxa
-			
+
 			-- perform a trace
 			local d,cx1,cy1,cz1,cx2,cy2,cz2
 			d,cx1,cy1,cz1,cx2,cy2,cz2
 			= trace_map_ray_dist(this.x+sya*0.4,this.y,this.z+cya*0.4, fwx,fwy,fwz, 127.5)
 			d = d or 75
-			
+
 			local target_idx = nil
 			local target_dist = d*d
 			local i,j
-			
+
 			for i=1,players.max do
 				local p = players[i]
 				if p and p ~= this and p.alive then
 					local dx = p.x-this.x
 					local dy = p.y-this.y+0.1
 					local dz = p.z-this.z
-					
+
 					for j=1,3 do
 						local dot, dd = isect_line_sphere_delta(dx,dy,dz,fwx,fwy,fwz)
 						if dot and dot < 0.55 and dd < target_dist then
@@ -1634,19 +1683,19 @@ function new_player(settings)
 				this.enemy_name_msg.text = players[target_idx].name
 			end
 		end
-		
+
 		this.crosshair = scene.image{img=img_crosshair, x=w/2, y=h/2}
 		this.crosshairhit = scene.image{img=img_crosshairhit, x=w/2, y=h/2, visible=false}
 		this.cpal = scene.image{img=img_cpal, x=0, y=h, align_x=0, align_y=1}
 		this.cpal_rect = scene.image{img=img_cpal_rect, align_x=0, align_y=0}
-		
+
 		local function cpal_update(options)
 			this.cpal_rect.x = this.blk_color_x * 8 + this.cpal.l
 			this.cpal_rect.y = this.blk_color_y * 8 + this.cpal.t
 		end
-		
+
 		cpal_update()
-		
+
 		this.health_text = scene.textfield{
 			font=font_digits,
 			text="100", 
@@ -1655,7 +1704,7 @@ function new_player(settings)
 			align_y=0, 
 			x = w/2,
 			y = h-48}
-			
+
 		local function health_update(options)
 			if this.mode == PLM_NORMAL and this.alive then
 				this.health_text.text = ""..this.health
@@ -1663,7 +1712,7 @@ function new_player(settings)
 				this.health_text.text = ""
 			end
 		end
-		
+
 		this.ammo_text = scene.textfield{
 			font=font_digits,
 			text="",
@@ -1672,14 +1721,14 @@ function new_player(settings)
 			align_y = 0,
 			x = w - 16,
 			y = h - 48}
-		
+
 		local function ammo_update(options)
 			this.ammo_text.color, this.ammo_text.text = this.tools[this.tool+1].textgen()
 			if this.mode == PLM_SPECTATE or not this.alive then
 				this.ammo_text.text = ""
 			end
 		end
-		
+
 		this.typing_type = this.typing_type or scene.textfield{
 			text="",
 			color=0xFFFFFFFF,
@@ -1701,12 +1750,12 @@ function new_player(settings)
 			this.typing_layout.add_child(this.typing_text)
 			this.typing_layout.visible = false
 		end
-		
+
 		function this.typing_text.done_typing(options)
 			this.typing_layout.visible = false
 			discard_typing_state(this.typing_text)
 		end
-		
+
 		function this.typing_text.on_return(options)
 			if this.typing_text.text ~= "" then
 				if this.typing_type.text == "Chat: " then
@@ -1717,10 +1766,10 @@ function new_player(settings)
 					net_send(nil, common.net_pack("Bz", PKT_CHAT_SEND_SQUAD, this.typing_text.text))
 				end
 			end
-			
+
 			this.typing_text.done_typing()
 		end
-		
+
 		local box_spacer = scene.hspacer{x=w/2,y=h/2,spread=8}
 		scene.root.add_child(box_spacer)
 		local scoreboard_frames = {}
@@ -1778,7 +1827,7 @@ function new_player(settings)
 				end
 				-- we format each column by exploiting the fixed-width text.
 				for k,v in pairs(tables) do
-					
+
 					local table_concat = {}
 					if #v == 0 then
 						table_concat = {{msg="NO PLAYERS",color=0xFFFFFFFF}}
@@ -1844,7 +1893,7 @@ function new_player(settings)
 							end
 						end
 					end
-					
+
 					scoreboard_individuals[k].ctab = table_concat
 					scoreboard_team_points[k].text = teams[k].score .. "-" .. TEAM_SCORE_LIMIT
 					local box = scoreboard_frames[k]
@@ -1852,7 +1901,7 @@ function new_player(settings)
 					local dim = vspacer.full_dimensions
 					box.width = dim.r - dim.l + 32
 					box.height = dim.b - dim.t + 64
-					
+
 				end
 				box_spacer.reflow()
 			end
@@ -1860,7 +1909,7 @@ function new_player(settings)
 		-- Almost there.
 		-- Table is not generated properly.
 		-- Empty team case is not handled properly.		
-		
+
 		-- spacer test
 		--[[local spacer = scene.hspacer{x=w/2,y=h/2,spread=8}
 		scene.root.add_child(spacer)
@@ -1883,7 +1932,7 @@ function new_player(settings)
 			end
 			spacer.reflow()
 		end)]]
-		
+
 		this.quit_msg.add_listener(GE_BUTTON, quit_events)
 		this.team_change.add_listener(GE_BUTTON, teamchange_events)
 		this.wpn_change.add_listener(GE_BUTTON, wpnchange_events)
@@ -1895,7 +1944,7 @@ function new_player(settings)
 		this.ammo_text.add_listener(GE_DELTA_TIME, ammo_update)
 		this.net_graph.add_listener(GE_DELTA_TIME, net_graph_update)
 		this.enemy_name_msg.add_listener(GE_DELTA_TIME, enemy_name_update)
-		
+
 		scene.root.add_child(this.crosshair)
 		scene.root.add_child(this.crosshairhit)
 		scene.root.add_child(this.cpal)
@@ -1910,17 +1959,19 @@ function new_player(settings)
 		scene.root.add_child(this.net_graph)
 		this.team_change.add_child(this.team_change_msg_b)
 		this.team_change.add_child(this.team_change_msg_g)
-		this.wpn_change.add_child(this.wpn_change_msg_rifle)
-		this.wpn_change.add_child(this.wpn_change_msg_leerifle)
+		local i
+		for i=1,#this.wpn_change_msgs do
+			this.wpn_change.add_child(this.wpn_change_msgs[i])
+		end
 		scene.root.add_child(this.team_change)
 		scene.root.add_child(this.wpn_change)
 		scene.root.add_child(this.quit_msg)
 		scene.root.add_child(this.reload_msg)
 		scene.root.add_child(this.enemy_name_msg)
-		
+
 		this.scene = scene
 	end
-	
+
 	function this.show_hit()
 		this.crosshair.visible = false
 		this.crosshairhit.visible = true
@@ -1930,7 +1981,7 @@ function new_player(settings)
 		end}
 
 	end
-	
+
 	function this.on_mouse_button(button, state)
 		if this.mode == PLM_SPECTATE then
 			return
@@ -1964,12 +2015,16 @@ function new_player(settings)
 			-- middleclick
 		end
 	end
-	
+
 	function this.on_mouse_motion(x, y, dx, dy)
+		if user_config.invert_y then
+			dy = -dy
+		end
+
 		this.dangy = this.dangy - dx*math.pi*sensitivity/this.zoom
 		this.dangx = this.dangx + dy*math.pi*sensitivity/this.zoom
 	end
-	
+
 	function this.focus_typing(typing_type, default_text)
 		this.typing_type.text = typing_type
 		gui_focus = this.typing_text
@@ -1979,7 +2034,7 @@ function new_player(settings)
 		this.typing_layout.reflow()
 		this.typing_layout.visible = true		
 	end
-	
+
 	function this.on_key(key, state, modif)
 		if key == BTSK_FORWARD then
 			this.ev_forward = state
@@ -2043,12 +2098,12 @@ function new_player(settings)
 		axc = math.cos(this.angx)
 
 		--font_mini.print(64,8,0xFFFFFFFF,mouse_prettyprint())
-		
+
 		local i, j
 		if not this.scene then
 			this.create_hud()
 		end
-		
+
 		if this.mode ~= PLM_SPECTATE then
 			this.render()
 		end
@@ -2117,7 +2172,7 @@ function new_player(settings)
 				obj.render()
 			end
 		end
-		
+
 		if this.mode == PLM_SPECTATE or not this.alive then
 			this.cpal.visible = false
 			this.cpal_rect.visible = false

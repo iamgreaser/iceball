@@ -22,7 +22,7 @@ typedef struct pngheader {
 	uint8_t bpc, ctyp, cmpr, filt, inter;
 } __attribute__((__packed__)) pngheader_t;
 
-#ifdef USE_OPENGL
+#ifndef DEDI
 void expandtex_gl(int *iw, int *ih);
 #endif
 
@@ -49,7 +49,7 @@ int png_check_chunk(int len, const char *data, int *rclen)
 		fprintf(stderr, "png_check_chunk: chunk too small\n");
 		return 1;
 	}
-	
+
 	int clen =
 		(((unsigned int)(unsigned char)data[0])<<24)
 		+ (((unsigned int)(unsigned char)data[1])<<16)
@@ -86,7 +86,7 @@ int png_load_IHDR(int *len, const char **data, pngheader_t *ihdr)
 
 	if(png_check_chunk(*len, *data, &clen))
 		return 1;
-	
+
 	if(memcmp((*data)+4, "IHDR", 4))
 	{
 		fprintf(stderr, "png_load_IHDR: expected IHDR chunk\n");
@@ -124,7 +124,7 @@ uint8_t png_predict_paeth(uint8_t a, uint8_t b, uint8_t c)
 	else return (uint8_t)c;
 }
 
-img_t *img_parse_png(int len, const char *data)
+img_t *img_parse_png(int len, const char *data, lua_State *L)
 {
 	pngheader_t ihdr;
 
@@ -143,7 +143,7 @@ img_t *img_parse_png(int len, const char *data)
 	data += 8;
 	if(png_load_IHDR(&len, &data, &ihdr))
 		return NULL;
-	
+
 	if(ihdr.width > 65535 || ihdr.height > 65535)
 	{
 		fprintf(stderr, "img_parse_png: image dimensions too large\n");
@@ -182,7 +182,7 @@ img_t *img_parse_png(int len, const char *data)
 		fprintf(stderr, "img_parse_png: interlacing not supported yet");
 		return NULL;
 	}
-	
+
 	uint8_t pal[256*3];
 	uint8_t trns[256];
 	int pal_len = 0;
@@ -289,7 +289,7 @@ img_t *img_parse_png(int len, const char *data)
 	// we don't need the compressed image anymore
 	if(cbuf != NULL)
 		free(cbuf);
-	
+
 	// now let's filter each scanline
 	int x, y;
 	for(y = 0; y < iheight; y++)
@@ -381,10 +381,13 @@ img_t *img_parse_png(int len, const char *data)
 	int iw, ih;
 	iw = iwidth;
 	ih = iheight;
-#ifdef USE_OPENGL
+#ifndef DEDI
 	expandtex_gl(&iw, &ih);
 #endif
-	img_t *img = (img_t*)malloc(sizeof(img_t)+4*iw*ih);
+	img_t *img = (img_t*)(
+		L != NULL
+		? lua_newuserdata(L, sizeof(img_t)+4*iw*ih)
+		: malloc(sizeof(img_t)+4*iw*ih));
 	if(img == NULL)
 	{
 		// this is very much fatal. if we don't crash now, it'll crash later anyway.
@@ -394,11 +397,11 @@ img_t *img_parse_png(int len, const char *data)
 		abort();
 	}
 	img->udtype = UD_IMG;
-#ifdef USE_OPENGL
+#ifndef DEDI
 	img->tex = 0;
 	img->tex_dirty = 1;
 #endif
-	
+
 	// copy all the things
 	img->head.idlen = 0;
 	img->head.cmtype = 0;
@@ -493,19 +496,18 @@ img_t *img_parse_png(int len, const char *data)
 		}
 	}
 
-	// TODO!
 	if(ubuf != NULL)
 		free(ubuf);
 	return img;
 }
 
-img_t *img_load_png(const char *fname)
+img_t *img_load_png(const char *fname, lua_State *L)
 {
 	int flen;
 	char *buf = net_fetch_file(fname, &flen);
 	if(buf == NULL)
 		return NULL;
-	img_t *ret = img_parse_png(flen, buf);
+	img_t *ret = img_parse_png(flen, buf, L);
 	free(buf);
 	return ret;
 }

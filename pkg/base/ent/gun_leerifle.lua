@@ -15,9 +15,13 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
+local thisid = ...
+
 if client then
-	weapon_models[WPN_LEERIFLE] = skin_load("pmf", "leerifle.pmf", DIR_PKG_PMF)
+	weapon_models[thisid] = skin_load("pmf", "leerifle.pmf", DIR_PKG_PMF)
 end
+
+weapon_names[thisid] = "Lee-Enfield"
 
 return function (plr)
 	local this = tpl_gun(plr, {
@@ -36,7 +40,7 @@ return function (plr)
 		recoil_y = -0.2,
 		sway = 0.0002,
 
-		model = weapon_models[WPN_LEERIFLE],
+		model = weapon_models[thisid],
 		
 		name = "Lee-Enfield Rifle",
 	})

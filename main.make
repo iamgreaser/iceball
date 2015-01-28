@@ -3,7 +3,7 @@
 TOOLS = 
 
 ifndef RENDERER
-RENDERER = softgm
+RENDERER = gl
 endif
 
 SRCDIR = src
@@ -47,3 +47,4 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c $(INCLUDES)
 
 
 .PHONY: all clean
+

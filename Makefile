@@ -1,26 +1,32 @@
 # I personally don't care if you steal this makefile. --GM
 
-CFLAGS = -pg -O2 -fno-strict-aliasing -g `sdl-config --cflags` -Wall -Wextra \
+#-Wno-unused-but-set-variable $(CFLAGS_EXTRA)
+CFLAGS = -fno-strict-aliasing -g `sdl-config --cflags` -Wall -Wextra \
 	-Wno-unused-variable -Wno-unused-parameter \
-	-Wno-unused-but-set-variable $(CFLAGS_EXTRA) \
-	-fopenmp \
-	-I $(INCDIR) -Ixlibinc \
+	$(CFLAGS_EXTRA) \
+	-Iinclude \
+	-Ixlibinc \
+	-I/usr/local/include \
+	$(HEADERS_SDL) \
+	$(HEADERS_ENet) \
 	$(HEADERS_Lua)
 
-# Uncomment this if you are Debian or Debian-derived
-HEADERS_Lua = #-I /usr/include/lua5.1
+HEADERS_SDL = `sdl-config --cflags`
+HEADERS_ENet = `pkg-config libenet --cflags`
+HEADERS_Lua = `pkg-config lua-5.1 --cflags`
 
-LDFLAGS = -pg -g $(LDFLAGS_EXTRA) -fopenmp
+LDFLAGS = -g -I/usr/local/include $(LDFLAGS_EXTRA) 
 LIBS_SDL = `sdl-config --libs`
-LIBS_ENet = xlibinc/libenet.a
-LIBS_Lua = -llua
+LIBS_ENet = `pkg-config libenet --libs`
+LIBS_Lua = `pkg-config lua-5.1 --libs`
 # Lua is not an acronym. Get used to typing it with lower case u/a.
 LIBS_zlib = -lz
-LIBS_sackit = -lsackit
-LIBS = -Lxlibinc -lm $(LIBS_Lua) $(LIBS_SDL) $(LIBS_zlib) $(LIBS_sackit) $(LIBS_ENet)
+LIBS_sackit = xlibinc/libsackit.a
+LIBS = -Lxlibinc -lm $(LIBS_Lua) $(LIBS_SDL) $(LIBS_zlib) $(LIBS_sackit) -lGL -lGLEW $(LIBS_ENet)
 
 BINNAME = iceball
 
-OBJDIR = build/unix
+OBJDIR = build/unix_gl
 
 include main.make
+

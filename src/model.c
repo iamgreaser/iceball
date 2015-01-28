@@ -82,7 +82,7 @@ model_bone_t *model_bone_new(model_t *pmf, int ptmax)
 	bone->parent_idx = pmf->bonelen++;
 	pmf->bones[bone->parent_idx] = bone;
 
-#ifdef USE_OPENGL
+#ifndef DEDI
 	bone->vbo_dirty = 1;
 	bone->vbo = 0;
 	bone->vbo_arr = NULL;
@@ -105,13 +105,13 @@ model_bone_t *model_bone_extend(model_bone_t *bone, int ptmax)
 
 void model_bone_free(model_bone_t *bone)
 {
-	int i = bone->parent_idx;
+	int i;
 	
 	bone->parent->bonelen--;
-	for(i = 0; i < bone->parent->bonelen; i++)
+	for(i = bone->parent_idx; i < bone->parent->bonelen; i++)
 		bone->parent->bones[i] = bone->parent->bones[i+1];
 	
-#ifdef USE_OPENGL
+#ifndef DEDI
 	if(bone->vbo != 0)
 		glDeleteBuffers(1, &(bone->vbo));
 	if(bone->vbo_arr != NULL)

@@ -14,7 +14,7 @@
     You should have received a copy of the GNU General Public License
     along with Iceball.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifdef USE_OPENGL
+#ifndef DEDI
 void expandtex_gl(int *iw, int *ih);
 #endif
 
@@ -28,10 +28,9 @@ int icelua_fn_client_img_blit(lua_State *L)
 	
 	if(lua_islightuserdata(L, 1) || !lua_isuserdata(L, 1))
 		return luaL_error(L, "not an image");
-	img_t **img_ud = (img_t**)lua_touserdata(L, 1);
-	if(img_ud == NULL || (*img_ud)->udtype != UD_IMG)
+	img_t *img = (img_t *)lua_touserdata(L, 1);
+	if(img == NULL || img->udtype != UD_IMG)
 		return luaL_error(L, "not an image");
-	img_t *img = *img_ud;
 	
 	dx = lua_tointeger(L, 2);
 	dy = lua_tointeger(L, 3);
@@ -61,17 +60,15 @@ int icelua_fn_client_img_blit_to(lua_State *L)
 	uint32_t color;
 	
 	if(lua_islightuserdata(L, 1) || !lua_isuserdata(L, 1))
-		return luaL_error(L, "not an image");
+		return luaL_error(L, "source not an image");
 	if(lua_islightuserdata(L, 2) || !lua_isuserdata(L, 2))
-		return luaL_error(L, "not an image");
-	img_t **dest_ud = (img_t**)lua_touserdata(L, 1);
-	if(dest_ud == NULL || (*dest_ud)->udtype != UD_IMG)
-		return luaL_error(L, "not an image");
-	img_t **source_ud = (img_t**)lua_touserdata(L, 2);
-	if(source_ud == NULL || (*source_ud)->udtype != UD_IMG)
-		return luaL_error(L, "not an image");
-	img_t *dest = *dest_ud;
-	img_t *source = *source_ud;
+		return luaL_error(L, "dest not an image");
+	img_t *dest = (img_t *)lua_touserdata(L, 1);
+	if(dest == NULL || dest->udtype != UD_IMG)
+		return luaL_error(L, "source not an image");
+	img_t *source = (img_t *)lua_touserdata(L, 2);
+	if(source == NULL || source->udtype != UD_IMG)
+		return luaL_error(L, "dest not an image");
 	
 	dx = lua_tointeger(L, 3);
 	dy = lua_tointeger(L, 4);
@@ -91,7 +88,7 @@ int icelua_fn_client_img_blit_to(lua_State *L)
 		source, dx, dy, bw, bh, sx, sy, color, scalex, scaley);
 #endif
 
-#ifdef USE_OPENGL
+#ifndef DEDI
 	dest->tex_dirty = 1;
 #endif
 	
@@ -121,10 +118,9 @@ int icelua_fn_common_img_load(lua_State *L)
 	lua_pushvalue(L, 1);
 	lua_call(L, 2, 1);
 	
-	img_t **img_ud = (img_t**)lua_touserdata(L, -1);
-	if(img_ud == NULL)
+	img_t *img = (img_t *)lua_touserdata(L, -1);
+	if(img == NULL)
 		return 0;
-	img_t *img = *img_ud;
 	
 	lua_pushinteger(L, img->head.width);
 	lua_pushinteger(L, img->head.height);
@@ -142,14 +138,15 @@ int icelua_fn_common_img_new(lua_State *L)
 	int h = lua_tointeger(L, 2);
 	int iw = w;
 	int ih = h;
-#ifdef USE_OPENGL
+#ifndef DEDI
 	expandtex_gl(&iw, &ih);
 #endif
 	
 	if(w < 1 || h < 1)
 		return luaL_error(L, "image too small");
 	
-	img_t *img = (img_t*)malloc(sizeof(img_t)+(iw*ih*sizeof(uint32_t)));
+	//img_t *img = (img_t*)malloc(sizeof(img_t)+(iw*ih*sizeof(uint32_t)));
+	img_t *img = (img_t*)lua_newuserdata(L, sizeof(img_t)+(iw*ih*sizeof(uint32_t)));
 	if(img == NULL)
 		return luaL_error(L, "could not allocate memory");
 	
@@ -170,12 +167,12 @@ int icelua_fn_common_img_new(lua_State *L)
 		img->pixels[i] = 0x00000000;
 	
 	img->udtype = UD_IMG;
-#ifdef USE_OPENGL
+#ifndef DEDI
 	img->tex = 0;
 	img->tex_dirty = 1;
 #endif
 	
-	*(img_t **)lua_newuserdata(L, sizeof(void *)) = img;
+	//*(img_t **)lua_newuserdata(L, sizeof(void *)) = img;
 	img_gc_set(L);
 	return 1;
 }
@@ -186,10 +183,9 @@ int icelua_fn_common_img_pixel_set(lua_State *L)
 	
 	if(lua_islightuserdata(L, 1) || !lua_isuserdata(L, 1))
 		return luaL_error(L, "not an image");
-	img_t **img_ud = (img_t**)lua_touserdata(L, 1);
-	if(img_ud == NULL || (*img_ud)->udtype != UD_IMG)
+	img_t *img = (img_t *)lua_touserdata(L, 1);
+	if(img == NULL || img->udtype != UD_IMG)
 		return luaL_error(L, "not an image");
-	img_t *img = *img_ud;
 	int x = lua_tointeger(L, 2);
 	int y = lua_tointeger(L, 3);
 	uint32_t color = lua_tointeger(L, 4);
@@ -199,12 +195,12 @@ int icelua_fn_common_img_pixel_set(lua_State *L)
 
 	int iw = img->head.width;
 	int ih = img->head.height;
-#ifdef USE_OPENGL
+#ifndef DEDI
 	expandtex_gl(&iw, &ih);
 #endif
 	
 	img->pixels[y*iw+x] = color;
-#ifdef USE_OPENGL
+#ifndef DEDI
 	img->tex_dirty = 1;
 #endif
 	
@@ -219,21 +215,20 @@ int icelua_fn_common_img_fill(lua_State *L)
 	
 	if(lua_islightuserdata(L, 1) || !lua_isuserdata(L, 1))
 		return luaL_error(L, "not an image");
-	img_t **img_ud = (img_t**)lua_touserdata(L, 1);
-	if(img_ud == NULL || (*img_ud)->udtype != UD_IMG)
+	img_t *img = (img_t *)lua_touserdata(L, 1);
+	if(img == NULL || img->udtype != UD_IMG)
 		return luaL_error(L, "not an image");
-	img_t *img = *img_ud;
 	uint32_t color = lua_tointeger(L, 2);
 	
 	int iw = img->head.width;
 	int ih = img->head.height;
-#ifdef USE_OPENGL
+#ifndef DEDI
 	expandtex_gl(&iw, &ih);
 #endif
 	for (i=0; i<(iw*ih); i++)
 		img->pixels[i] = color;    
 	
-#ifdef USE_OPENGL
+#ifndef DEDI
 	img->tex_dirty = 1;
 #endif
 	
@@ -246,14 +241,13 @@ int icelua_fn_common_img_free(lua_State *L)
 	
 	if(lua_islightuserdata(L, 1) || !lua_isuserdata(L, 1))
 		return luaL_error(L, "not an image");
-	img_t **img_ud = (img_t**)lua_touserdata(L, 1);
-	if(img_ud == NULL || (*img_ud)->udtype != UD_IMG)
+	img_t *img = (img_t *)lua_touserdata(L, 1);
+	if(img == NULL || img->udtype != UD_IMG)
 		return luaL_error(L, "not an image");
-	img_t *img = *img_ud;
 	
 #ifdef ALLOW_EXPLICIT_FREE
-	img_free(img);
-	*img_ud = NULL;
+	// Nope
+	//img_free(img);
 #endif
 	
 	return 0;
@@ -265,10 +259,9 @@ int icelua_fn_common_img_get_dims(lua_State *L)
 	
 	if(lua_islightuserdata(L, 1) || !lua_isuserdata(L, 1))
 		return luaL_error(L, "not an image");
-	img_t **img_ud = (img_t**)lua_touserdata(L, 1);
-	if(img_ud == NULL || (*img_ud)->udtype != UD_IMG)
+	img_t *img = (img_t *)lua_touserdata(L, 1);
+	if(img == NULL || img->udtype != UD_IMG)
 		return luaL_error(L, "not an image");
-	img_t *img = *img_ud;
 	
 	lua_pushinteger(L, img->head.width);
 	lua_pushinteger(L, img->head.height);

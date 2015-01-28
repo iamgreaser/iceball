@@ -84,7 +84,7 @@ int icelua_fn_common_map_new(lua_State *L)
 		*(p++) = 0; *(p++) = b; *(p++) = b; *(p++) = 0;
 		*(p++) = v; *(p++) = v; *(p++) = v; *(p++) = 1;
 	}
-#ifdef USE_OPENGL
+#ifndef DEDI
 	map->visible_chunks_arr = NULL;
 	render_init_visible_chunks(map, 0, 0);
 #endif
@@ -328,7 +328,7 @@ int icelua_fn_common_map_pillar_set(lua_State *L)
 		lua_pop(L, 1);
 	}
 
-#ifdef USE_OPENGL
+#ifndef DEDI
 	render_map_mark_chunks_as_dirty(map, px, pz);
 #endif
 	
@@ -373,7 +373,7 @@ int icelua_fn_client_map_fog_set(lua_State *L)
 	if(fog_distance > FOG_MAX_DISTANCE)
 		fog_distance = FOG_MAX_DISTANCE;
 	
-#ifdef USE_OPENGL
+#ifndef DEDI
 	// TODO: take advantage of realloc()
 	if(fog_distance != old_dist)
 		render_init_visible_chunks(map, 0, 0);

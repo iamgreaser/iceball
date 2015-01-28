@@ -19,6 +19,11 @@ if common.version.num < 4259840 then
 	error("You need Iceball version 0.1.2 or later to connect to this server.")
 end
 
+if common.mk_compat_disable then
+	common.mk_compat_disable()
+	client.mk_set_title("Iceball")
+end
+
 function client.hook_kick(reason)
 	print("Kicked - "..reason)
 	function client.hook_tick()

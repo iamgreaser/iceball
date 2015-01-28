@@ -266,7 +266,7 @@ function server.hook_tick(sec_current, sec_delta)
 				kicklist[#kicklist+1] = neth
 			elseif not cli.lastmsg then
 				cli.lastmsg = sec_current
-			elseif neth ~= "true" and cli.lastmsg + NET_MAX_LAG < sec_current then
+			elseif neth ~= true and cli.lastmsg + NET_MAX_LAG < sec_current then
 				-- don't autokick the local client - it never ACTUALLY "disconnects"
 				-- otherwise we'll be chewing through this over and over again
 				print("Autokicking client "..((neth == true and "local") or neth))

@@ -38,7 +38,7 @@ int whitelist_validate(const char *name, int port)
 {
 	if(name == NULL || port == 0 || port == -1)
 		return 0;
-	
+
 	int i;
 
 	for(i = 0; i < raw_whitelist_len; i++)
@@ -52,27 +52,80 @@ int whitelist_validate(const char *name, int port)
 int icelua_assert_stack(lua_State *L, int smin, int smax)
 {
 	int top = lua_gettop(L);
-	
+
 	if(smin != -1 && top < smin)
 		return luaL_error(L, "expected at least %d arguments, got %d", smin, top);
 	if(smax != -1 && top > smax)
 		return luaL_error(L, "expected at most %d arguments, got %d", smax, top);
-	
+
 	return top;
 }
 
 int icelua_force_get_integer(lua_State *L, int table, char *name)
 {
 	lua_getfield(L, table, name);
-	
+
 	if(!lua_isnumber(L, -1))
 		return luaL_error(L, "expected integer for \"%s\", got something else", name);
-	
+
 	int ret = lua_tointeger(L, -1);
 	lua_pop(L, 1);
-	
+
 	return ret;
 }
+
+// To be moved. Maybe.
+int icelua_fn_common_mk_compat_disable(lua_State *L)
+{
+	mk_compat_mode = 0;
+	return 0;
+}
+#ifndef DEDI
+int icelua_fn_client_mk_sys_execv(lua_State *L)
+{
+	if((boot_mode & 3) != 3 || net_port != 0)
+		return luaL_error(L, "mk_sys_execv called when not in -s 0 mode");
+
+	int top = lua_gettop(L);
+	char **arglist = malloc(sizeof(char *) * (top+2));
+	int i;
+
+	for(i = 1; i <= top; i++)
+		arglist[i] = strdup(lua_tostring(L, i));
+
+	arglist[0] = strdup(main_argv0);
+	arglist[top+1] = NULL;
+
+	SDL_Quit();
+#ifdef WIN32
+	if(main_oldcwd != NULL)
+		_chdir(main_oldcwd);
+#endif
+	printf("argv0: [%s]\n", main_argv0);
+	fflush(stdout);
+	execv(main_argv[0], arglist);
+	printf("WORK YOU FUCKASS: %s\n", strerror(errno));
+	fflush(stdout);
+
+	// DOES NOT RETURN.
+	fprintf(stderr, "ABORT: sys_execv must not return!\n");
+	fflush(stderr);
+	abort();
+	return 0;
+}
+
+extern char mk_app_title[];
+int icelua_fn_client_mk_set_title(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 1, 1);
+	const char *title = lua_tostring(L, 1);
+
+	strncpy(mk_app_title, title, 128);
+	mk_app_title[127] = '\x00';
+
+	return 0;
+}
+#endif
 
 #include "lua_fetch.h"
 
@@ -99,6 +152,9 @@ int icelua_force_get_integer(lua_State *L, int table, char *name)
 
 #ifndef DEDI
 struct icelua_entry icelua_client[] = {
+	{icelua_fn_client_mk_set_title, "mk_set_title"},
+	{icelua_fn_client_mk_sys_execv, "mk_sys_execv"},
+
 	{icelua_fn_client_mouse_lock_set, "mouse_lock_set"},
 	{icelua_fn_client_mouse_visible_set, "mouse_visible_set"},
 	{icelua_fn_client_mouse_visible_set, "mouse_visible_set"},
@@ -135,6 +191,8 @@ struct icelua_entry icelua_server[] = {
 	{NULL, NULL}
 };
 struct icelua_entry icelua_common[] = {
+	{icelua_fn_common_mk_compat_disable, "mk_compat_disable"},
+
 	{icelua_fn_common_fetch_start, "fetch_start"},
 	{icelua_fn_common_fetch_poll, "fetch_poll"},
 	{icelua_fn_common_fetch_block, "fetch_block"},
@@ -187,7 +245,7 @@ struct icelua_entry icelua_common[] = {
 	{icelua_fn_common_argb_split_to_merged, "argb_split_to_merged"},
 	{icelua_fn_common_argb_merged_to_split, "argb_merged_to_split"},
 	{icelua_fn_common_time, "time"},
-	
+
 	{NULL, NULL}
 };
 
@@ -206,16 +264,16 @@ void icelua_loadfuncs(lua_State *L, char *table, struct icelua_entry *fnlist)
 {
 	if(L == NULL)
 		return;
-	
+
 	lua_getglobal(L, table);
-	
+
 	while(fnlist->fn != NULL)
 	{
 		lua_pushcfunction(L, fnlist->fn);
 		lua_setfield (L, -2, fnlist->name);
 		fnlist++;
 	}
-	
+
 	lua_pop(L, 1);
 }
 
@@ -223,13 +281,13 @@ void icelua_loadbasefuncs(lua_State *L)
 {
 	if(L == NULL)
 		return;
-	
+
 	// load base library
 	// TODO: whitelist the functions by spawning a new environment.
 	// this is harder than it sounds.
 	lua_pushcfunction(L, luaopen_base);
 	lua_call(L, 0, 0);
-	
+
 	// here's the other three
 	lua_pushcfunction(L, luaopen_string);
 	lua_call(L, 0, 0);
@@ -237,7 +295,7 @@ void icelua_loadbasefuncs(lua_State *L)
 	lua_call(L, 0, 0);
 	lua_pushcfunction(L, luaopen_table);
 	lua_call(L, 0, 0);
-	
+
 	// overwrite dofile/loadfile.
 	lua_pushcfunction(L, icelua_fn_base_loadfile);
 	lua_setglobal(L, "loadfile");
@@ -252,29 +310,25 @@ int icelua_initfetch(void)
 	int argct = (main_largstart == -1 || (main_largstart >= main_argc)
 		? 0
 		: main_argc - main_largstart);
-	
+
 	if(to_client_local.sockfd == -1)
 		to_client_local.sockfd = SOCKFD_LOCAL;
-	
+
 	lua_getglobal(lstate_client, "client");
 	lua_pushstring(lstate_client, mod_basedir+4);
 	lua_setfield(lstate_client, -2, "base_dir");
 	lua_pop(lstate_client, 1);
-	
+
 	lua_getglobal(lstate_client, "common");
 	lua_pushstring(lstate_client, mod_basedir+4);
 	lua_setfield(lstate_client, -2, "base_dir");
 	lua_pop(lstate_client, 1);
-	
+
 	lua_getglobal(lstate_client, "client");
-#ifdef USE_OPENGL
-	lua_pushstring(lstate_client, "gl");
-#else
-	lua_pushstring(lstate_client, "softgm");
-#endif
+	lua_pushstring(lstate_client, "gl"); // Only one renderer now. -mk<3
 	lua_setfield(lstate_client, -2, "renderer");
 	lua_pop(lstate_client, 1);
-	
+
 	snprintf(xpath, 128, "%s/main_client.lua", mod_basedir);
 	lua_pushcfunction(lstate_client, icelua_fn_common_fetch_block);
 	lua_pushstring(lstate_client, "lua");
@@ -286,7 +340,7 @@ int icelua_initfetch(void)
 		lua_pop(lstate_client, 1);
 		return 1;
 	}
-	
+
 	printf("Client loaded! Initialising...\n");
 	for(i = 0; i < argct; i++)
 		lua_pushstring(lstate_client, main_argv[i+main_largstart]);
@@ -301,17 +355,17 @@ int icelua_initfetch(void)
 		lua_pop(lstate_client, 1);
 		return 1;
 	}
-	
+
 	printf("Done!\n");
 	boot_mode |= 4;
-	
+
 	return 0;
 }
 
 void icelua_pushversion(lua_State *L, const char *tabname)
 {
 	char vbuf[32];
-	
+
 	snprintf(vbuf, 31, "%i.%i", VERSION_W, VERSION_X);
 	if(VERSION_Y != 0)
 		snprintf(vbuf+strlen(vbuf), 31-strlen(vbuf), ".%i", VERSION_Y);
@@ -319,21 +373,21 @@ void icelua_pushversion(lua_State *L, const char *tabname)
 		snprintf(vbuf+strlen(vbuf), 31-strlen(vbuf), "%c", VERSION_A+96);
 	if(VERSION_Z != 0)
 		snprintf(vbuf+strlen(vbuf), 31-strlen(vbuf), "-%i", VERSION_Z);
-	
+
 	lua_getglobal(L, tabname);
-	
+
 	lua_newtable(L);
-	
+
 	lua_pushstring(L, vbuf);
 	lua_setfield(L, -2, "str");
-	
+
 	lua_pushinteger(L, 
 		(((((((VERSION_W<<5) + VERSION_X
 		)<<7) + VERSION_Y
 		)<<5) + VERSION_A
 		)<<10) + VERSION_Z);
 	lua_setfield(L, -2, "num");
-	
+
 	lua_newtable(L);
 	lua_pushinteger(L, 1); lua_pushinteger(L, VERSION_W); lua_settable(L, -3);
 	lua_pushinteger(L, 2); lua_pushinteger(L, VERSION_X); lua_settable(L, -3);
@@ -341,21 +395,24 @@ void icelua_pushversion(lua_State *L, const char *tabname)
 	lua_pushinteger(L, 4); lua_pushinteger(L, VERSION_A); lua_settable(L, -3);
 	lua_pushinteger(L, 5); lua_pushinteger(L, VERSION_Z); lua_settable(L, -3);
 	lua_setfield(L, -2, "cmp");
-	
+
 	lua_setfield(L, -2, "version");
-	
+
+	// -mk<3
+	lua_newtable(L);
+	lua_pushinteger(L, MK_REVISION);
+	lua_setfield(L, -2, "num");
+	lua_setfield(L, -2, "fork_marikiri_ver");
+
 	lua_pop(L, 1);
 }
 
 int icelua_init(void)
 {
 	int i, argct;
-	
+
 	// create states
-	lstate_client = (boot_mode & 1 ? luaL_newstate() : NULL);
-	lstate_server = (boot_mode & 2 ? luaL_newstate() : NULL);
-	
-	if(lstate_client != NULL)
+	if(boot_mode & 1)
 	{
 		// create temp state for loading config
 		lua_State *Lc = luaL_newstate();
@@ -378,7 +435,7 @@ int icelua_init(void)
 			v = lua_tointeger(Lc, -1);
 			if(v >= 0) screen_height = v;
 			lua_pop(Lc, 1);
-			
+
 			lua_getfield(Lc, -1, "cubeshift");
 			v = lua_tointeger(Lc, -1);
 			if(v != 0) screen_cubeshift = -v;
@@ -392,6 +449,11 @@ int icelua_init(void)
 			lua_getfield(Lc, -1, "smoothlighting");
 			v = lua_toboolean(Lc, -1);
 			if(!lua_isnil(Lc, -1)) screen_smooth_lighting = v;
+			lua_pop(Lc, 1);
+
+			lua_getfield(Lc, -1, "gl_vsync");
+			v = lua_toboolean(Lc, -1);
+			if(v >= 0) gl_vsync = v;
 			lua_pop(Lc, 1);
 
 			lua_getfield(Lc, -1, "gl_quality");
@@ -423,6 +485,11 @@ int icelua_init(void)
 			if(!lua_isnil(Lc, -1)) gl_frustum_cull = v;
 			lua_pop(Lc, 1);
 
+			lua_getfield(Lc, -1, "gl_occlusion_cull");
+			v = lua_tointeger(Lc, -1);
+			if(!lua_isnil(Lc, -1)) gl_occlusion_cull = v;
+			lua_pop(Lc, 1);
+
 			lua_getfield(Lc, -1, "gl_expand_textures");
 			v = lua_toboolean(Lc, -1);
 			if(!lua_isnil(Lc, -1)) gl_expand_textures = v;
@@ -447,7 +514,7 @@ int icelua_init(void)
 			v = lua_toboolean(Lc, -1);
 			if(!lua_isnil(Lc, -1)) screen_fullscreen = v;
 			lua_pop(Lc, 1);
-			
+
 			// drop table
 			lua_pop(Lc, 1);
 
@@ -458,17 +525,17 @@ int icelua_init(void)
 			v = lua_tointeger(Lc, -1);
 			if(v >= 0) wav_mfreq = v;
 			lua_pop(Lc, 1);
-			
+
 			lua_getfield(Lc, -1, "bufsize");
 			v = lua_tointeger(Lc, -1);
 			if(v >= 0) wav_bufsize = v;
 			lua_pop(Lc, 1);
-			
+
 			lua_getfield(Lc, -1, "volume");
 			f = lua_tonumber(Lc, -1);
 			if(!lua_isnil(Lc, -1)) wav_gvol = f;
 			lua_pop(Lc, 1);
-			
+
 			// drop table
 			lua_pop(Lc, 1);
 
@@ -534,13 +601,16 @@ int icelua_init(void)
 				// drop table
 				lua_pop(Lc, 1);
 			}
-			
+
 			// drop table
 			lua_pop(Lc, 1);
 		}
 #endif
 	}
-	
+
+	lstate_client = (boot_mode & 1 ? luaL_newstate() : NULL);
+	lstate_server = (boot_mode & 2 ? luaL_newstate() : NULL);
+
 	// create tables
 	if(lstate_client != NULL)
 	{
@@ -551,7 +621,7 @@ int icelua_init(void)
 		lua_pushvalue(lstate_client, LUA_GLOBALSINDEX);
 		lua_setglobal(lstate_client, "_G");
 	}
-	
+
 	if(lstate_server != NULL)
 	{
 		lua_newtable(lstate_server);
@@ -561,7 +631,7 @@ int icelua_init(void)
 		lua_pushvalue(lstate_server, LUA_GLOBALSINDEX);
 		lua_setglobal(lstate_server, "_G");
 	}
-	
+
 	// load stuff into them
 #ifndef DEDI
 	icelua_loadfuncs(lstate_client, "client", icelua_client);
@@ -575,11 +645,11 @@ int icelua_init(void)
 	icelua_loadfuncs(lstate_server, "common", icelua_common);
 	icelua_loadfuncs(lstate_server, "server", icelua_common_server);
 	icelua_loadfuncs(lstate_server, "common", icelua_common_server);
-	
+
 	// load some lua base libraries
 	icelua_loadbasefuncs(lstate_client);
 	icelua_loadbasefuncs(lstate_server);
-	
+
 	// shove some pathnames / versions in
 	if(lstate_server != NULL)
 	{
@@ -591,7 +661,7 @@ int icelua_init(void)
 		lua_pushstring(lstate_server, mod_basedir+4);
 		lua_setfield(lstate_server, -2, "base_dir");
 		lua_pop(lstate_server, 1);
-		
+
 		icelua_pushversion(lstate_server, "common");
 		icelua_pushversion(lstate_server, "server");
 
@@ -600,35 +670,35 @@ int icelua_init(void)
 		lua_setfield(lstate_server, -2, "port");
 		lua_pop(lstate_server, 1);
 	}
-	
+
 	if(lstate_client != NULL)
 	{
 		icelua_pushversion(lstate_client, "common");
 		icelua_pushversion(lstate_client, "client");
 	}
-	
+
 	/*
 	NOTE:
 	to call stuff, use lua_pcall.
 	DO NOT use lua_call! if it fails, it will TERMINATE the program!
 	*/
-	
+
 	// quick test
 	// TODO: set up a "convert/filter file path" function
 	// TODO: split the client/server inits
 	char xpath[128];
 	snprintf(xpath, 128, "%s/main_server.lua", mod_basedir);
-	
+
 	if((lstate_server != NULL) && luaL_loadfile(lstate_server, xpath) != 0)
 	{
 		printf("ERROR loading server Lua: %s\n", lua_tostring(lstate_server, -1));
 		return 1;
 	}
-	
+
 	argct = (main_largstart == -1 || (main_largstart >= main_argc)
 		? 0
 		: main_argc - main_largstart);
-	
+
 	if(lstate_server != NULL)
 	{
 		for(i = 0; i < argct; i++)
@@ -640,11 +710,11 @@ int icelua_init(void)
 			return 1;
 		}
 	}
-	
+
 	if(lstate_client != NULL && mod_basedir != NULL)
 		if(icelua_initfetch())
 			return 1;
-	
+
 	// dispatch initial connect
 	if(lstate_server != NULL && lstate_client != NULL)
 	{
@@ -655,12 +725,12 @@ int icelua_init(void)
 		{
 			lua_pushboolean(lstate_server, 1);
 			lua_newtable(lstate_server);
-			
+
 			lua_pushstring(lstate_server, "local");
 			lua_setfield(lstate_server, -2, "proto");
 			lua_pushnil(lstate_server);
 			lua_setfield(lstate_server, -2, "addr");
-			
+
 			if(lua_pcall(lstate_server, 2, 0, 0) != 0)
 			{
 				printf("ERROR running server Lua (hook_connect): %s\n", lua_tostring(lstate_server, -1));
@@ -671,7 +741,7 @@ int icelua_init(void)
 			lua_pop(lstate_server, 1);
 		}
 	}
-	
+
 	return 0;
 }
 

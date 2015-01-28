@@ -79,6 +79,11 @@ MODE_SOFTCROUCH = true
 MODE_JUMP_SPEED = 7.0
 MODE_GRAVITY = 9.81
 
+MODE_PSPEED_CONV_PHYSICS = true
+MODE_PSPEED_CONV_SPEEDCAP_ON = true
+MODE_PSPEED_CONV_SPEEDCAP = 7.0
+MODE_PSPEED_CONV_ACCEL = 3.6
+MODE_PSPEED_CONV_BRAKES = 0.7
 MODE_PSPEED_NORMAL = 7.0
 MODE_PSPEED_FLYMODE = 20.0
 MODE_PSPEED_CHANGE = 5.0
@@ -184,16 +189,36 @@ if client then
 end
 
 -- weapons
-WPN_RIFLE = 1
-WPN_LEERIFLE = 2
+do
+	local weapon_cid = 1
+	function weapon_newid()
+		local ret = weapon_cid
+		weapon_cid = ret+1
+		return ret
+	end
+	
+	function weapon_resetlist()
+		weapon_cid = 1
+		weapons = {}
+		weapons_enabled = {}
+		weapon_models = {}
+		weapon_names = {}
+	end
 
-weapon_models = {}
+	function weapon_add(path)
+		local id = weapon_newid()
+
+		weapons[id] = loadfile(path)(id)
+
+		return id
+	end
+end
 
 tpl_gun = loadfile(DIR_PKG_ROOT.."/ent/tpl_gun.lua")()
-weapons = {
-	[WPN_RIFLE] = loadfile(DIR_PKG_ROOT.."/ent/gun_rifle.lua")(),
-	[WPN_LEERIFLE] = loadfile(DIR_PKG_ROOT.."/ent/gun_leerifle.lua")(),
-}
+
+weapon_resetlist()
+WPN_RIFLE = weapon_add(DIR_PKG_ROOT.."/ent/gun_rifle.lua")
+WPN_LEERIFLE = weapon_add(DIR_PKG_ROOT.."/ent/gun_leerifle.lua")
 
 tools = {
 	[TOOL_SPADE] = loadfile(DIR_PKG_ROOT.."/ent/tool_spade.lua")(),
@@ -201,7 +226,6 @@ tools = {
 	[TOOL_MARKER] = loadfile(DIR_PKG_ROOT.."/ent/tool_marker.lua")(),
 }
 
-weapons_enabled = {}
 weapons_enabled[WPN_RIFLE] = true
 weapons_enabled[WPN_LEERIFLE] = true
 

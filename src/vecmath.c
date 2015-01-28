@@ -37,12 +37,16 @@ vec4f_t mtx_apply_vec(matrix_t *mtx, vec4f_t *vec)
 	vec4f_t ret = {.m = {}}; //c99 + vector extensions, hopefully it optimizes
 	vec4f_t accum;
 
-	const int mask[4] = {0x00,0x55,0xAA,0xFF};
-
 	for(i = 0; i < 4; i++)
 	{
 		accum.m = vec->m;
-		_mm_shuffle_ps(accum.m, accum.m, mask[i]);
+		switch(i)
+		{
+			case 0: _mm_shuffle_ps(accum.m, accum.m, 0x00); break;
+			case 1: _mm_shuffle_ps(accum.m, accum.m, 0x55); break;
+			case 2: _mm_shuffle_ps(accum.m, accum.m, 0xAA); break;
+			case 3: _mm_shuffle_ps(accum.m, accum.m, 0xFF); break;
+		}
 		accum.m *= mtx->c[i].m;
 		ret.m += accum.m;
 	}
@@ -62,9 +66,7 @@ void cam_point_dir_sky(camera_t *model, float dx, float dy, float dz, float sx, 
 	// Much nicer than the aimbot shit.
 
 	// hack to make this play nice in the OpenGL renderer
-#ifdef USE_OPENGL
 	zoom = 1.0f/zoom;
-#endif
 	
 	// Get the distances.
 	float dist_d = dx*dx+dy*dy+dz*dz;

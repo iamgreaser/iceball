@@ -138,6 +138,7 @@ function initiate_everything()
 -- *** START INITIATION FUNCTION *** --
 
 common.map_set(map_loaded)
+client.map_fog_set(192, 238, 255, 1000)
 xlen, ylen, zlen = common.map_get_dims()
 
 mdl_test = client.model_load_pmf("pkg/base/pmf/test.pmf")
@@ -448,8 +449,8 @@ function client.hook_mouse_motion(x, y, dx, dy)
 		return
 	end
 	
-	camry = camry - dx*math.pi/2000.0
-	camrx = camrx + dy*math.pi/2000.0
+	camry = camry - dx*math.pi/200.0
+	camrx = camrx + dy*math.pi/200.0
 end
 
 trx1,try1,trz1 = nil, nil, nil

@@ -1,0 +1,43 @@
+Iceball-MK Revision 11:
+- Fixed execv when executed from somewhere other than the .exe directory.
+
+Iceball-MK Revision 10:
+- Fixed model_bone_free.
+
+Iceball-MK Revision 9:
+- Fixed dedi build which was broken in Rev 8
+  - There is a version of this in the repo which says Rev 8 due to yet another oversight. There's really only one version though.
+
+Iceball-MK Revision 8:
+- Fixed a bunch of crashes and generally crap memory handling
+
+Iceball-MK Revision 7:
+- Improved frustum culling
+- Made occlusion culling actually work
+
+Iceball-MK Revision 6:
+- Added gl_vsync option for disabling vsync
+- Added occlusion culling via ARB_occlusion_query
+
+Iceball-MK Revision 5:
+- Added client.mk_sys_execv, which makes launchers possible.
+
+Iceball-MK Revision 4:
+- De-inlined two functions to work around a bug in clang.
+
+Iceball-MK Revision 3:
+- Allowed setting the app title.
+- Rebranded to just "The Hole" (from "Fire In The Hole").
+- Actually bumped the version number up this time.
+
+Iceball-MK Revision 2:
+- Added proper support for 1.x maps.
+  - Please don't use the official 1.x maps. They are copyrighted by Jagex and I don't think they'd appreciate it if you used them here.
+
+Iceball-MK Revision 1:
+- Disabled world wrap.
+- Removed the software renderer. It sucked and did not fulfil its intended purpose.
+  - By the way, I disabled the world wrap in the software renderer. But then I removed that renderer.
+- Moved the default launch directory to pkg/sparkle/launch/.
+- Made it compile properly with clang. Oh, and some of the makefiles are better.
+

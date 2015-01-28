@@ -17,6 +17,9 @@
 
 #include "common.h"
 
+int oc_wait_cycle = 1;
+int flood_cycle = 0;
+
 int lwidth = 0;
 int lheight = 0;
 float znear = 0.05f;
@@ -89,7 +92,7 @@ void render_pillar(map_t *map, map_chunk_t *chunk, int x, int z);
  */
 
 /* custom mod function that handles negative numbers */
-inline int render_mod ( int x , int y )
+int render_mod ( int x , int y )
 {
 	return x >= 0 ? x % y : y - 1 - ((-x-1) % y) ;
 }
@@ -147,9 +150,10 @@ GLfloat render_get_average_light(map_t *map, int x1, int y1, int z1, int x2, int
 	return average;
 }
 
-inline int render_visible_chunks_array_offset(map_t *map, int x, int z)
+int render_visible_chunks_array_offset(map_t *map, int x, int z)
 {
-	return z * (int) map->visible_chunks_len + x;
+	return render_mod(z, map->visible_chunks_len) * (int) map->visible_chunks_len
+		+ render_mod(x, map->visible_chunks_len);
 }
 
 void render_untesselate_visible_chunk(map_chunk_t *chunk)
@@ -162,11 +166,19 @@ void render_untesselate_visible_chunk(map_chunk_t *chunk)
 		free(chunk->vbo_arr);
 		chunk->vbo_arr = NULL;
 	}
+
 	if (chunk->vbo != 0)
 	{
 		glDeleteBuffers(1, &(chunk->vbo));
 		chunk->vbo = 0;
 	}
+
+	if(chunk->oq != 0)
+	{
+		glDeleteQueries(1, &(chunk->oq));
+		chunk->oq = 0;
+	}
+
 	chunk->vbo_dirty = 0;
 	chunk->vbo_arr_len = 0;
 }
@@ -249,12 +261,22 @@ void render_init_visible_chunks(map_t *map, int starting_chunk_coordinate_x, int
 		{
 			cx = starting_chunk_coordinate_x - (int) map->visible_chunks_len/2 + x;
 			cz = starting_chunk_coordinate_z - (int) map->visible_chunks_len/2 + z;
-			map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)].cx = cx;
-			map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)].cz = cz;
-			map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)].vbo = 0;
-			map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)].vbo_dirty = 1;
-			map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)].vbo_arr_len = 0;
-			map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)].vbo_arr = NULL;
+
+			map_chunk_t *chunk = &(map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)]);
+
+			chunk->cx = cx;
+			chunk->cz = cz;
+			chunk->vbo = 0;
+			chunk->vbo_dirty = 1;
+			chunk->vbo_arr_len = 0;
+			chunk->vbo_arr = NULL;
+
+			chunk->oq = 0;
+			chunk->oc_wait = 0;
+			chunk->oc_posted = 0;
+
+			chunk->flood_ctr = 0;
+			chunk->flood_next = NULL;
 		}
 	}
 
@@ -318,7 +340,9 @@ void render_shift_visible_chunks(map_t *map, int camera_chunk_coordinate_x, int 
 void render_map_visible_chunks_draw(map_t *map, float fx, float fy, float fz, float cx, float cy, float cz)
 {
 	int x, z;
+	int i;
 
+	//glDepthFunc(GL_ALWAYS);
 	if(map == NULL || map->visible_chunks_arr == NULL)
 		return;
 	
@@ -330,18 +354,58 @@ void render_map_visible_chunks_draw(map_t *map, float fx, float fy, float fz, fl
 
 	int cdraw = 0, cskip = 0;
 
-	// calculate appropriate Y
-	float ydist = (fy < 0.0
-		? cy*fy
-		: (map->ylen-cy)*fy);
-	
 	float emax = 1.0f / sqrtf(3.0f);
 
-	for (x = 0; x < (int) map->visible_chunks_len; x++)
+	int flood_cx = render_mod(map->visible_chunks_vcenter_x, map->visible_chunks_len);
+	int flood_cz = render_mod(map->visible_chunks_vcenter_z, map->visible_chunks_len);
+
+	int chunks_rem = 1;
+
+	flood_cycle++;
+	map_chunk_t *chunk = &(map->visible_chunks_arr[render_visible_chunks_array_offset(map, flood_cx, flood_cz)]);
+	map_chunk_t *cfollow = chunk;
+
+	//printf("%i %i = %i %i\n", flood_cx, flood_cz, chunk->cx, chunk->cz);
+
+	for(; chunks_rem > 0; chunks_rem--)
 	{
-		for (z = 0; z < (int) map->visible_chunks_len; z++)
-		{
-			map_chunk_t *chunk = &(map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)]);
+		x = chunk->cx;
+		z = chunk->cz;
+
+		do {
+
+			if(cfollow == NULL)
+			{
+				cfollow = chunk;
+				cfollow->flood_next = NULL;
+			}
+
+			// Spread
+			{
+				chunk->flood_ctr = flood_cycle;
+
+				map_chunk_t *c0 = &(map->visible_chunks_arr[render_visible_chunks_array_offset(map, x+1, z)]);
+				map_chunk_t *c1 = &(map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z+1)]);
+				map_chunk_t *c2 = &(map->visible_chunks_arr[render_visible_chunks_array_offset(map, x-1, z)]);
+				map_chunk_t *c3 = &(map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z-1)]);
+
+				//
+#define DO_FLOOD(cN,X,Z) \
+				if(cN->flood_ctr != flood_cycle) \
+				{ \
+					cN->flood_ctr = flood_cycle; \
+					cfollow->flood_next = cN; \
+					cfollow = cN; \
+					cfollow->flood_next = NULL; \
+					chunks_rem++; \
+				}
+
+				DO_FLOOD(c0,x+1,z);
+				DO_FLOOD(c1,x,z+1);
+				DO_FLOOD(c2,x-1,z);
+				DO_FLOOD(c3,x,z-1);
+			}
+
 			if (chunk->vbo_arr_len > 0)
 			{
 				cdraw++;
@@ -351,6 +415,11 @@ void render_map_visible_chunks_draw(map_t *map, float fx, float fy, float fz, fl
 					|| cx > (chunk->cx+2)*gl_chunk_size
 					|| cz > (chunk->cz+2)*gl_chunk_size)
 				{
+					// calculate appropriate Y
+					float ydist = (fy < 0.0
+						? (cy-chunk->ytmin)*fy
+						: (chunk->ybmax+1-cy)*fy);
+	
 					// calculate first corner
 					float px000 = chunk->cx*gl_chunk_size - cx;
 					float pz000 = chunk->cz*gl_chunk_size - cz;
@@ -369,58 +438,23 @@ void render_map_visible_chunks_draw(map_t *map, float fx, float fy, float fz, fl
 					float py100 = ydist;
 					float py110 = ydist;
 
-					/*
-					float px001 = px000;
-					float py001 = py000 + map->ylen;
-					float pz001 = pz000;
-					float px101 = px100;
-					float py101 = py100 + map->ylen;
-					float pz101 = pz100;
-					float px011 = px010;
-					float py011 = py010 + map->ylen;
-					float pz011 = pz010;
-					float px111 = px110;
-					float py111 = py110 + map->ylen;
-					float pz111 = pz110;
-					*/
-
-					//printf("%f %f -> %f %f\n", px00, pz00, px11, pz11);
-
 					// get lengths of corners
 					float d000 = sqrtf(px000 * px000 + py000 * py000 + pz000 * pz000);
 					float d100 = sqrtf(px100 * px100 + py000 * py000 + pz100 * pz100);
 					float d010 = sqrtf(px010 * px010 + py000 * py000 + pz010 * pz010);
 					float d110 = sqrtf(px110 * px110 + py000 * py000 + pz110 * pz110);
-					/*
-					float d001 = sqrtf(px001 * px001 + py001 * py001 + pz001 * pz001);
-					float d101 = sqrtf(px101 * px101 + py001 * py001 + pz101 * pz101);
-					float d011 = sqrtf(px011 * px011 + py001 * py001 + pz011 * pz011);
-					float d111 = sqrtf(px111 * px111 + py001 * py001 + pz111 * pz111);
-					*/
 
 					// normalise corners
 					px000 /= d000; py000 /= d000; pz000 /= d000;
 					px100 /= d100; py100 /= d100; pz100 /= d100;
 					px010 /= d010; py010 /= d010; pz010 /= d010;
 					px110 /= d110; py110 /= d110; pz110 /= d110;
-					/*
-					px001 /= d001; py001 /= d001; pz001 /= d001;
-					px101 /= d101; py101 /= d101; pz101 /= d101;
-					px011 /= d011; py011 /= d011; pz011 /= d011;
-					px111 /= d111; py111 /= d111; pz111 /= d111;
-					*/
 
 					// get dot products against forward vector
 					float e000 = px000 * f3x + py000 * f3y + pz000 * f3z;
 					float e100 = px100 * f3x + py100 * f3y + pz100 * f3z;
 					float e010 = px010 * f3x + py010 * f3y + pz010 * f3z;
 					float e110 = px110 * f3x + py110 * f3y + pz110 * f3z;
-					/*
-					float e001 = px001 * f3x + py001 * f3y + pz001 * f3z;
-					float e101 = px101 * f3x + py101 * f3y + pz101 * f3z;
-					float e011 = px011 * f3x + py011 * f3y + pz011 * f3z;
-					float e111 = px111 * f3x + py111 * f3y + pz111 * f3z;
-					*/
 
 					// frustum cull
 					if(e000 < emax && e010 < emax && e100 < emax && e110 < emax)
@@ -442,19 +476,64 @@ void render_map_visible_chunks_draw(map_t *map, float fx, float fy, float fz, fl
 				}
 
 				// draw
-				glEnableClientState(GL_VERTEX_ARRAY);
-				glEnableClientState(GL_COLOR_ARRAY);
-				glDrawArrays(GL_QUADS, 0, chunk->vbo_arr_len);
-				glDisableClientState(GL_VERTEX_ARRAY);
-				glDisableClientState(GL_COLOR_ARRAY);
+				if(chunk->oc_wait > 0)
+				{
+					chunk->oc_wait--;
+					cskip++;
+				} else {
+					int delay_draw = 0;
+
+					if(chunk->oq)
+					{
+						if(chunk->oc_posted)
+						{
+							GLuint s;
+							glGetQueryObjectuiv(chunk->oq, GL_QUERY_RESULT, &s);
+							delay_draw = (s == 0);
+							chunk->oc_posted = 0;
+						}
+					}
+
+					if(delay_draw)
+					{
+						//chunk->oc_wait = map->visible_chunks_len * map->visible_chunks_len;
+						chunk->oc_wait = oc_wait_cycle;
+						oc_wait_cycle--;
+						if(oc_wait_cycle <= 0)
+							//oc_wait_cycle = map->visible_chunks_len * map->visible_chunks_len / 10;
+							oc_wait_cycle = gl_occlusion_cull;
+					} else {
+						if(chunk->oq)
+						{
+							glBeginQuery(GL_SAMPLES_PASSED, chunk->oq);
+						}
+
+						glEnableClientState(GL_VERTEX_ARRAY);
+						glEnableClientState(GL_COLOR_ARRAY);
+						glDrawArrays(GL_QUADS, 0, chunk->vbo_arr_len);
+						glDisableClientState(GL_VERTEX_ARRAY);
+						glDisableClientState(GL_COLOR_ARRAY);
+
+						if(chunk->oq)
+						{
+							glEndQuery(GL_SAMPLES_PASSED);
+							chunk->oc_posted = 1;
+						}
+					}
+				}
 
 				// unbind buffer
 				if (chunk->vbo != 0)
 					glBindBuffer(GL_ARRAY_BUFFER, 0);
 			}
-		}
+		} while(0);
+
+		chunk = chunk->flood_next;
 	}
+
 	//printf("draw: %i/%i (%.2f%%)\n", (cdraw-cskip), cdraw, 100.0f*((float)(cdraw-cskip))/((float)cdraw));
+
+	//glDepthFunc(GL_LEQUAL);
 }
 
 int render_map_visible_chunks_count_dirty(map_t *map)
@@ -494,25 +573,67 @@ void render_map_tesselate_visible_chunks(map_t *map, int camx, int camz)
 	vx = 1; vz = 0;
 	for(i = 0; i < map->visible_chunks_len * map->visible_chunks_len; i++)
 	{
-		x = render_mod(bx + camx + map->visible_chunks_len/2, map->visible_chunks_len);
-		z = render_mod(bz + camz + map->visible_chunks_len/2, map->visible_chunks_len);
+		x = bx + camx;
+		z = bz + camz;
+
+		int do_render = 1;
+
+		if(!mk_compat_mode)
+		if(x < 0 || z < 0 || x*gl_chunk_size >= map->xlen || z*gl_chunk_size >= map->zlen)
+			do_render = 0;
+
+		x += map->visible_chunks_len/2;
+		z += map->visible_chunks_len/2;
+
+		x = render_mod(x, map->visible_chunks_len);
+		z = render_mod(z, map->visible_chunks_len);
 		chunk = &map->visible_chunks_arr[render_visible_chunks_array_offset(map, x, z)];
 
 		if (chunks_tesselated >= gl_chunks_tesselated_per_frame)
 			return;
 
-		if (chunk->vbo_dirty)
+		if (do_render && chunk->vbo_dirty)
 		{
 			render_untesselate_visible_chunk(chunk);
+			chunk->ytmin = map->ylen;
+			chunk->ytmax = 0;
+			chunk->ybmax = 0;
 			for (px = 0; px < gl_chunk_size; px++)
 			{
 				for (pz = 0; pz < gl_chunk_size; pz++)
 				{
-					render_pillar(map, chunk, chunk->cx * gl_chunk_size + px, chunk->cz * gl_chunk_size + pz);
+					int cpx = chunk->cx * gl_chunk_size + px;
+					int cpz = chunk->cz * gl_chunk_size + pz;
+
+					// Occlusion culling method 1.
+					// The impact this section has on performance is in theory negligible.
+					// Hence why there is no "if".
+					uint8_t *data = 4 + map->pillars[(cpz&(map->zlen-1))*(map->xlen)+(cpx&(map->xlen-1))];
+
+					int ytop = data[1];
+					if(chunk->ytmin > ytop) chunk->ytmin = ytop;
+
+					while(data[0] != 0)
+					{
+						data += 4*(int)(data[0]);
+
+						if(data[1] > data[3])
+							ytop = data[1];
+					}
+
+					if(chunk->ytmax < ytop) chunk->ytmax = ytop;
+					if(chunk->ybmax < (int)(data[2])) chunk->ybmax = (int)(data[2]);
+
+					render_pillar(map, chunk, cpx, cpz);
 				}
 			}
+
+			//printf("ocull1 (%i,%i) %i %i %i\n", chunk->cx, chunk->cz, chunk->ytmin, chunk->ytmax, chunk->ybmax);
+
 			if(chunk->vbo == 0 && GL_ARB_vertex_buffer_object && gl_use_vbo)
 				glGenBuffers(1, &(chunk->vbo));
+			if(chunk->oq == 0 && GL_ARB_occlusion_query && gl_occlusion_cull >= 1)
+				glGenQueries(1, &(chunk->oq));
 
 			if(chunk->vbo != 0)
 			{
@@ -520,6 +641,7 @@ void render_map_tesselate_visible_chunks(map_t *map, int camx, int camz)
 				glBufferData(GL_ARRAY_BUFFER, sizeof(float)*6*chunk->vbo_arr_len, chunk->vbo_arr, GL_STATIC_DRAW);
 				glBindBuffer(GL_ARRAY_BUFFER, 0);
 			}
+
 			chunk->vbo_dirty = 0;
 			chunks_tesselated++;
 		}

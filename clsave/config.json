@@ -29,16 +29,18 @@
 		"gl_quality": 1,
 		"gl_expand_textures": true,
 		"gl_chunk_size": 32,
-		"gl_chunks_tesselated_per_frame": 4,
+		"gl_chunks_tesselated_per_frame": 1,
 		"gl_shaders": true,
 		"gl_frustum_cull": true,
+		"gl_occlusion_cull": 0,
 		"gl_flip_quads": true,
+		"gl_vsync": true,
 		"gl_vbo": true
 	},
 	
 	"audio" : {
 		"freq": 44100,
-		"bufsize": 512,
+		"bufsize": 2048,
 		
 		"volume": 1.0
 	},
@@ -46,7 +48,7 @@
 	"security" : {
 		"bin_storage_allowed": true,
 		"raw_whitelist" : [
-			["voxelauth.com", 80]
+			["magicannon.com", 27790]
 		]
 	}
 }

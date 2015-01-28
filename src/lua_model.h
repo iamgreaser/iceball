@@ -87,12 +87,7 @@ int icelua_fn_common_model_free(lua_State *L)
 	model_t *pmf = *pmf_ud;
 	if(pmf == NULL || pmf->udtype != UD_PMF)
 		return luaL_error(L, "not a model");
-	
-#ifdef ALLOW_EXPLICIT_FREE
-	model_free(pmf);
-	*pmf_ud = NULL;
-#endif
-	
+
 	return 0;
 }
 
@@ -314,7 +309,7 @@ int icelua_fn_common_model_bone_set(lua_State *L)
 		bone->ptlen++;
 	}
 
-#ifdef USE_OPENGL
+#ifndef DEDI
 	bone->vbo_dirty = 1;
 #endif
 	

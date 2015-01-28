@@ -1,17 +1,21 @@
 # I personally don't care if you steal this makefile. --GM
 
-CFLAGS = -DDEDI -pg -O2 -fno-strict-aliasing -g -Wall -Wextra \
+CFLAGS = -DDEDI -O2 -fno-strict-aliasing -g -Wall -Wextra \
 	-Wno-unused-variable -Wno-unused-parameter \
-	-Wno-unused-but-set-variable $(CFLAGS_EXTRA) \
+	$(CFLAGS_EXTRA) \
 	-fopenmp \
-	-I $(INCDIR) -Ixlibinc \
+	-Iinclude \
+	-Ixlibinc \
+	-I/usr/local/include \
+	$(HEADERS_ENet) \
 	$(HEADERS_Lua)
 
-HEADERS_Lua =
+HEADERS_ENet = `pkg-config libenet --cflags`
+HEADERS_Lua = `pkg-config lua-5.1 --cflags`
 
-LDFLAGS = -pg -g -fopenmp $(LDFLAGS_EXTRA)
-LIBS_ENet = xlibinc/libenet.a
-LIBS_Lua = -llua
+LDFLAGS = -pg -g -I/usr/local/include $(LDFLAGS_EXTRA)
+LIBS_ENet = `pkg-config libenet --libs`
+LIBS_Lua = `pkg-config lua-5.1 --libs`
 # Lua is not an acronym. Get used to typing it with lower case u/a.
 LIBS_zlib = -lz
 LIBS_sackit = -lsackit
@@ -19,5 +23,6 @@ LIBS = -Lxlibinc/ -lm $(LIBS_Lua) $(LIBS_zlib) $(LIBS_sackit) $(LIBS_ENet)
 BINNAME = dedi_iceball
 
 OBJDIR = build/dedi
+RENDERER = headless
 
 include main.make

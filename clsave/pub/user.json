@@ -1,37 +1,38 @@
 {
 	"__COMMENT_000": "
-		
+
 		This is the sort of place you set up your 'profile' and whatnot.
 		It can be read by all mods, but not writeable by any.
-		
+
 		By the way, don't store anything important in this comment.
 		It is possible that a hacked server might be able to read it.
-		
+
 		READ THIS FILE: docs/setup_json.txt
-		
+
 		For name, and many other things, you need quotes:
 			''name'': ''your name goes here'',
 		NOT:
 			''name'': this is wrong,
-		
+
 		(replace '' with the double-quotes used to contain this comment)
 
 		You will need to also set ''kick_on_join'' to false,
 		or else you will not be able to join any servers that actually check this flag!
-		
+
 		For more info on the syntax itself, see http://json.org/
 	",
-	
+
 	"name": "",
 	"kick_on_join": true,
 	"sensitivity": 1.0,
 	"hold_to_zoom": false,
 	"fog": 127.5,
-	
+	"invert_y": false,
+
 	"skins" : {
-	
+
 	},
-	
+
 	"bio": {
 		"description": "I'm too lazy to learn how to edit my config. Laugh at me.",
 		"languages": ["pt", "pl"]

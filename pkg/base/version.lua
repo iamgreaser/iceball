@@ -20,9 +20,9 @@
 -- Thanks. --GM
 
 VERSION_ENGINE = {
-	cmp={0,1,2,0,10},
-	num=4259840+10,
-	str="0.1.2-10",
+	cmp={0,1,2,0,11},
+	num=4259840+11,
+	str="0.1.2-11",
 }
 
 -- 0.1: 4194304
@@ -121,12 +121,13 @@ VERSION_BUGS = {
 {intro=4259840+2, fix=nil, msg="Preliminary PNG support - more support to come when we can be bothered"},
 {intro=4259840+2, fix=4259840+4, msg="PNG reader lacks support for greyscale/indexed images"},
 {intro=4259840+2, fix=4259840+4, msg="PNG reader lacks support for tRNS-block transparency"},
-{intro=nil, fix=4259840+3, msg="[OpenGL] Low-quality mode not supported"},
+{renderer="gl", intro=nil, fix=4259840+3, msg="[OpenGL] Low-quality mode not supported"},
 {intro=nil, fix=4259840+5, msg="Server stability is a bit crap (this bug fixed in 0.1.2-5)"},
 {intro=nil, fix=4259840+6, msg="JSON writing not supported"},
 {intro=nil, fix=4259840+7, msg="General JSON support is broken"},
 {intro=nil, fix=4259840+9, msg="UDP sending can crash if DNS lookup fails"},
 {intro=nil, fix=4259840+10, msg="Garbage collection not supported"},
 {intro=4259840+10, fix=nil, msg="Garbage collection incomplete (only pmf/img/wav supported)"},
+{intro=4259840+10, fix=4259840+11, msg="GARBAGE COLLECTION CRASHY AND UNSTABLE, DO NOT USE THIS VERSION"},
 }
 

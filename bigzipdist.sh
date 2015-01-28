@@ -25,6 +25,8 @@ zip -r $ZIPNAME *.dll *.exe *.txt opencmd.bat docs/ \
 	pkg/iceball/snowtest/ pkg/iceball/hack_console/ \
 	pkg/iceball/pmfedit/ pkg/iceball/mapedit/ \
 	pkg/iceball/sprinting/ pkg/iceball/deucenamegen/ \
+	pkg/iceball/launch/ pkg/iceball/lib/ pkg/iceball/gfx/ \
+	pkg/iceball/altgame/ \
 	svsave/info.txt \
 	svsave/pub/server.json svsave/pub/mods.json svsave/base/vol/dummy svsave/vol/dummy \
 	src/ include/ Makefile* CMakeLists.txt main.make \

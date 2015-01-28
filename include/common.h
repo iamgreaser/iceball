@@ -15,11 +15,15 @@
     along with Iceball.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+// Features from the MK fork.
+#define MK_REVISION 11
+
+// This is what you modify: BUMP Z EVERY TIME YOU CHANGE THE C SIDE
 #define VERSION_W 0
 #define VERSION_X 1
 #define VERSION_Y 2
 #define VERSION_A 0
-#define VERSION_Z 10
+#define VERSION_Z 11
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!
@@ -37,9 +41,6 @@
 #define WAV_BUFSIZE 2048
 // MUST BE A POWER OF TWO
 #define WAV_CHN_COUNT 128
-
-// WARNING: This will eventually be disabled in 0.1.3.
-#define ALLOW_EXPLICIT_FREE
 
 //define RENDER_FACE_COUNT 2
 
@@ -67,7 +68,7 @@ typedef unsigned __int64	uint64_t;
 #pragma warning( disable: 4200 4244 4996)
 #endif
 
-#ifndef CLANG
+#ifdef _OPENMP
 #include <omp.h>
 #endif
 
@@ -84,6 +85,7 @@ typedef unsigned __int64	uint64_t;
 #endif
 
 #include <math.h>
+#include <assert.h>
 
 #include <enet/enet.h>
 
@@ -107,9 +109,7 @@ extern "C" {
 
 #ifndef DEDI
 #include <SDL.h>
-#ifdef USE_OPENGL
 #include <GL/glew.h>
-#endif
 #endif
 
 #include <sackit.h>
@@ -143,7 +143,7 @@ extern "C" {
 enum
 {
 	UD_INVALID = 0,
-	
+
 	UD_JSON,
 	UD_LOG,
 	UD_LUA,
@@ -156,11 +156,11 @@ enum
 	UD_MUS_IT,
 	UD_BIN,
 	UD_IMG_PNG,
-	
+
 	UD_MAX_SUPPORTED,
-	
+
 	UD_IMG,
-	
+
 	UD_MAX
 };
 
@@ -228,7 +228,7 @@ typedef struct model_bone
 	model_t *parent;
 	int parent_idx;
 	int ptlen, ptmax;
-#ifdef USE_OPENGL
+#ifndef DEDI
 	GLuint vbo;
 	int vbo_dirty;
 	float *vbo_arr;
@@ -266,7 +266,7 @@ PACK_END
 typedef struct img
 {
 	int udtype;
-#ifdef USE_OPENGL
+#ifndef DEDI
 	GLuint tex;
 	int tex_dirty;
 #endif
@@ -333,22 +333,32 @@ feel free to store it in the "invisible" parts.
 
 */
 
-#ifdef USE_OPENGL
-typedef struct map_chunk
+#ifndef DEDI
+typedef struct map_chunk map_chunk_t;
+struct map_chunk
 {
 	GLuint vbo;
 	int vbo_dirty;
 	int vbo_arr_len, vbo_arr_max;
 	int cx, cz;
+
+	int ytmin, ytmax, ybmax;
+	GLuint oq;
+	int oc_wait;
+	int oc_posted;
+
+	int flood_ctr;
+	map_chunk_t *flood_next;
+
 	float *vbo_arr;
-} map_chunk_t;
+};
 #endif
 
 typedef struct map
 {
 	int udtype;
 	int xlen, ylen, zlen;
-#ifdef USE_OPENGL
+#ifndef DEDI
 	/* circular array of visible map chunks */
 	map_chunk_t *visible_chunks_arr;
 	/* current virtual center position in the circular array */
@@ -367,7 +377,7 @@ enum
 {
 	BT_INVALID = 0, // don't use this type!
 	BT_SOLID_BREAKABLE,
-	
+
 	BT_MAX
 };
 
@@ -390,21 +400,21 @@ typedef struct client
 
 	// enet proto only
 	ENetPeer *peer;
-	
+
 	// client only
 	char *cfetch_ubuf;
 	char *cfetch_cbuf;
 	int cfetch_ulen, cfetch_clen;
 	int cfetch_cpos;
 	int cfetch_udtype;
-	
+
 	// server only
 	char *sfetch_ubuf;
 	char *sfetch_cbuf;
 	int sfetch_ulen, sfetch_clen;
 	int sfetch_cpos;
 	int sfetch_udtype;
-	
+
 	// serialisation - legacy proto only
 	char rpkt_buf[PACKET_LEN_MAX*2];
 	int rpkt_len;
@@ -419,7 +429,7 @@ typedef struct client
 enum
 {
 	PATH_INVALID_ENUM = 0, // don't use this!
-	
+
 	PATH_CLSAVE_BASEDIR,
 	PATH_CLSAVE_BASEDIR_VOLATILE,
 	PATH_CLSAVE_PUBLIC,
@@ -430,10 +440,10 @@ enum
 	PATH_SVSAVE_VOLATILE,
 	PATH_PKG_BASEDIR,
 	PATH_PKG,
-	
+
 	PATH_ERROR_BADCHARS,
 	PATH_ERROR_ACCDENIED,
-	
+
 	PATH_ENUM_MAX
 };
 
@@ -454,8 +464,8 @@ float equal_power_right(float pan);
 // img.c
 void img_free(img_t *img);
 void img_gc_set(lua_State *L);
-img_t *img_parse_tga(int len, const char *data);
-img_t *img_load_tga(const char *fname);
+img_t *img_parse_tga(int len, const char *data, lua_State *L);
+img_t *img_load_tga(const char *fname, lua_State *L);
 
 // json.c
 int json_parse(lua_State *L, const char *p);
@@ -482,12 +492,15 @@ extern int screen_smooth_lighting;
 extern int gl_expand_textures;
 extern int gl_use_vbo;
 extern int gl_quality;
+extern int gl_vsync;
 extern int gl_frustum_cull;
 extern int gl_flip_quads;
 extern int gl_chunk_size;
 extern int gl_visible_chunks;
 extern int gl_chunks_tesselated_per_frame;
+extern int gl_occlusion_cull;
 #endif
+extern int mk_compat_mode;
 extern int force_redraw;
 
 extern int net_port;
@@ -498,6 +511,8 @@ extern char *mod_basedir;
 
 extern int main_argc;
 extern char **main_argv;
+extern char *main_argv0;
+extern char *main_oldcwd;
 extern int main_largstart;
 
 int run_game_cont1(void);
@@ -558,6 +573,9 @@ int path_type_server_readable(int type);
 int path_type_server_writable(int type);
 
 // render.c
+void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
+	img_t *src, int dx, int dy, int bw, int bh, int sx, int sy, uint32_t color, float scalex, float scaley);
+#ifndef DEDI
 #ifdef RENDER_FACE_COUNT
 extern int render_face_remain;
 #endif
@@ -571,11 +589,8 @@ void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t
 void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_t *cam_base,
 	model_bone_t *bone, int islocal,
 	float px, float py, float pz, float ry, float rx, float ry2, float scale);
-void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
-	img_t *src, int dx, int dy, int bw, int bh, int sx, int sy, uint32_t color, float scalex, float scaley);
 int render_init(int width, int height);
 void render_deinit(void);
-#ifdef USE_OPENGL
 void render_init_visible_chunks(map_t *map, int starting_chunk_coordinate_x, int starting_chunk_coordinate_z);
 void render_map_mark_chunks_as_dirty(map_t *map, int pillar_x, int pillar_z);
 void render_free_visible_chunks(map_t *map);
@@ -583,8 +598,8 @@ int render_map_visible_chunks_count_dirty(map_t *map);
 #endif
 
 // png.c
-img_t *img_parse_png(int len, const char *data);
-img_t *img_load_png(const char *fname);
+img_t *img_parse_png(int len, const char *data, lua_State *L);
+img_t *img_load_png(const char *fname, lua_State *L);
 
 // vecmath.c
 vec4f_t mtx_apply_vec(matrix_t *mtx, vec4f_t *vec);

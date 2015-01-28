@@ -70,6 +70,7 @@ common.version = {cmp={w,x,y,a,z},num,str="w.x.ya-z"} @
 client.renderer @
 	current renderer used, "softgm" or "gl"
 	there is NO alias to common here! if you want it, do it manually.
+	note, as of 0.1.2-11, "softgm" has been removed.
 
 client/server.hook_tick = fn(sec_curtime, sec_delta)->sec_wait @
 	sets a hook called every "tick"
@@ -680,7 +681,7 @@ mus = common.mus_load_it(fname) @
 	as this is only a light userdata
 
 common.mus_free(mus) @
-	free the given sound
+	free the given atrosity of demofunk
 	if you don't do this then it's memoryleaktopia
 	(plus i'm allowed to kill you)
 
@@ -701,6 +702,19 @@ str = common.bin_load(fname) @
 
 common.bin_save(fname, str) @
 	saves a raw string to a file
+
+common.mk_compat_disable() @
+	disables backwards compat with 0.1.2-10 and earlier
+	what this currently does is it just removes the border wrap.
+
+client.mk_set_title(title) @
+	changes the window title
+	default is "iceball"
+
+client.mk_sys_execv(arglist) @
+	relaunches Iceball with the given argv[] list
+	THIS CAN ONLY BE DONE IN -s 0 MODE!
+	see pkg/iceball/launch/main_client.lua.
 
 font_mini
 	Small ASCII font, for most body text.
