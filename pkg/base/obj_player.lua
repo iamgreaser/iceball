@@ -2190,7 +2190,8 @@ function new_player(settings)
 		if debug_enabled then
 			local camx,camy,camz
 			camx,camy,camz = client.camera_get_pos()
-			local cam_pos_str = string.format("x: %f y: %f z: %f j: %f c: %i"
+			local cam_pos_str = string.format("s2: %f x: %f y: %f z: %f j: %f c: %i"
+				, math.sqrt(this.vx*this.vx + this.vz*this.vz)
 				, camx, camy, camz, this.jerkoffs, (this.crouching and 1) or 0)
 
 			font_mini.print(4, 4, 0x80FFFFFF, cam_pos_str)
