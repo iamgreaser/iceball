@@ -347,6 +347,10 @@ function new_player(settings)
 		return this.x, this.y, this.z
 	end
 
+	function this.get_vel()
+		return this.vx, this.vy, this.vz
+	end
+
 	function this.set_pos_recv(x, y, z)
 		this.x = x
 		this.y = y
@@ -765,7 +769,7 @@ function new_player(settings)
 	end
 
 	function this.calc_motion_global(sec_current, sec_delta, mvx, mvy, mvz, mvchange)
-		if MODE_PSPEED_CONV_PHYSICS then
+		if MODE_PSPEED_CONV_PHYSICS and this.mode == PLM_NORMAL then
 			local alt_a = math.exp(-sec_delta*mvchange*MODE_PSPEED_CONV_BRAKES)
 			local mmul = sec_delta*MODE_PSPEED_CONV_ACCEL
 			if not this.grounded then alt_a = 1.0 end

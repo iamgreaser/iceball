@@ -154,11 +154,7 @@ function nwdec_plrsquadset(f)
 end
 
 -- S2C packets
-network.sys_handle_s2c(PKT_PLR_POS, "Bhhh", function (neth, cli, plr, sec_current, pid, x, y, z, pkt)
-	x = x/32.0
-	y = y/32.0
-	z = z/32.0
-
+network.sys_handle_s2c(PKT_PLR_POS, "Bffffff", function (neth, cli, plr, sec_current, pid, x, y, z, vx, vy, vz, pkt)
 	local plr = players[pid]
 
 	if plr then
@@ -385,14 +381,10 @@ end)
 -- C2S packets
 network.sys_handle_c2s(PKT_KEEPALIVE, "B", function () end)
 
-network.sys_handle_c2s(PKT_PLR_POS, "Bhhh", nwdec_plrset(function (neth, cli, plr, sec_current, pid, x2, y2, z2, pkt)
-	local x = x2/32.0
-	local y = y2/32.0
-	local z = z2/32.0
-	
+network.sys_handle_c2s(PKT_PLR_POS, "Bffffff", nwdec_plrset(function (neth, cli, plr, sec_current, pid, x, y, z, vx, vy, vz, pkt)
 	plr.set_pos_recv(x, y, z)
-	net_broadcast(neth, common.net_pack("BBhhh",
-		PKT_PLR_POS, cli.plrid, x2, y2, z2))
+	net_broadcast(neth, common.net_pack("BBffffff",
+		PKT_PLR_POS, cli.plrid, x, y, z, vx, vy, vz))
 end))
 network.sys_handle_c2s(PKT_PLR_ORIENT, "BbbB", nwdec_plrset(function (neth, cli, plr, sec_current, pid, ya2, xa2, keys, pkt)
 	local ya = ya2*math.pi/128

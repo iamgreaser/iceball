@@ -251,8 +251,8 @@ command_register({
 			if target then
 				x, y, z = target.x, target.y, target.z
 				plr.set_pos_recv(x, y, z)
-				net_broadcast(nil, common.net_pack("BBhhh",
-					PKT_PLR_POS, plrid, x * 32.0, y * 32.0, z * 32.0))
+				net_broadcast(nil, common.net_pack("BBffffff",
+					PKT_PLR_POS, plrid, x, y, z, 0.0, 0.0, 0.0))
 			else
 				net_send(neth, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_error, "Error: Player not found"))
 			end
@@ -260,8 +260,8 @@ command_register({
 			--NOTE: I protest that y is down/same way AoS was
 			x, y, z = tonumber(prms[1]), tonumber(prms[2]), tonumber(prms[3])
 			plr.set_pos_recv(x, y, z)
-			net_broadcast(nil, common.net_pack("BBhhh",
-				PKT_PLR_POS, plrid, x * 32.0, y * 32.0, z * 32.0))
+			net_broadcast(nil, common.net_pack("BBffffff",
+				PKT_PLR_POS, plrid, x, y, z, 0.0, 0.0, 0.0))
 		else
 			commands["help"].func(plr, plrid, neth, {"teleport"})
 		end
@@ -285,8 +285,8 @@ command_register({
 			if (success and x >= 0 and x < xlen and z >= 0 and z < zlen) then
 				local y = common.map_pillar_get(x, z)[1+1] - 3
 				plr.set_pos_recv(x, y, z)
-				net_broadcast(nil, common.net_pack("BBhhh",
-					PKT_PLR_POS, plrid, x * 32.0 + 16, y * 32.0, z * 32.0 + 16))
+				net_broadcast(nil, common.net_pack("BBffffff",
+					PKT_PLR_POS, plrid, x + 0.5, y, z + 0.5, 0.0, 0.0 ,0.0))
 			else
 				net_send(neth, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_error, "Error: Invalid coordinates"))
 			end

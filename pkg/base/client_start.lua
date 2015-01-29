@@ -187,7 +187,7 @@ end
 chat_killfeed = scroll_list({}, 0, 10, false)
 chat_text = scroll_list({}, 0, 10, true)
 
-NET_MOVE_DELAY = 0.5
+NET_MOVE_DELAY = 0.1
 NET_ORIENT_DELAY = 0.1
 t_net_move = nil
 t_net_orient = nil
@@ -485,12 +485,11 @@ function h_tick_main(sec_current, sec_delta)
 		if not t_net_move then
 			t_net_move = sec_current + NET_MOVE_DELAY
 			local x,y,z
+			local vx,vy,vz
 			x,y,z = plr.get_pos()
-			x = x * 32.0
-			y = y * 32.0
-			z = z * 32.0
-			net_send(nil, common.net_pack("BBhhh"
-				, PKT_PLR_POS, 0x00, x, y, z))
+			vx,vy,vz = plr.get_vel
+			net_send(nil, common.net_pack("BBffffff"
+				, PKT_PLR_POS, 0x00, x, y, z, vx, vy, vz))
 		end
 		if not t_net_orient then
 			t_net_orient = sec_current + NET_ORIENT_DELAY

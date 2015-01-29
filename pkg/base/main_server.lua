@@ -105,7 +105,7 @@ function slot_add(neth, tidx, wpn, name)
 			return i
 		end
 	end
-	
+
 	return nil
 end
 
@@ -127,7 +127,7 @@ function server.hook_file(neth, ftype, fname)
 	if fname:lower():find("svsave") then
 		return nil
 	end
-	
+
 	if (ftype == "icemap" or ftype == "map") and (fname == "*MAP") then
 		return map_loaded
 	elseif (ftype == "bin") and (fname == "*FASTLOAD") then
@@ -145,7 +145,7 @@ function server.hook_file(neth, ftype, fname)
 			return "pkg/maps/gen_classic.lua.tga" --by default it will load gen_classic anyway
 		end
 	end
-	
+
 	return true
 end
 
@@ -163,10 +163,10 @@ function server.hook_connect(neth, addrinfo)
 		addrinfo.addr and addrinfo.addr.sport,
 		addrinfo.addr and addrinfo.addr.ip,
 		addrinfo.addr and addrinfo.addr.cport)
-	
+
 	-- workaround for pre-0.1.1-4 versions
 	server.port = server.port or (addrinfo.addr and addrinfo.addr.sport)
-	
+
 	local source = false
 	if addrinfo.proto == "enet/ip6" or addrinfo.proto == "tcp/ip6" then
 		-- There are two variants:
@@ -187,12 +187,12 @@ function server.hook_connect(neth, addrinfo)
 		source = source or addrinfo.addr.ip:sub(6) == "90.55."
 		source = source or addrinfo.addr.ip:sub(7) == "86.199."
 	end
-	
+
 	client_list.banned[neth] = source
 	if source then
 		client_list[neth].akick = true
 	end
-	
+
 	local ss = (neth == true and "(local)") or neth
 	--[[net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFF800000,
 		"Connected: player on neth "..ss))]]
@@ -202,10 +202,10 @@ end
 function server.hook_disconnect(neth, server_force, reason)
 	-- just in case we get any stray disconnect messages
 	if not client_list[neth] then return end
-	
+
 	local plrid = client_list[neth].plrid
 	local plr = players[plrid]
-	
+
 	local fdidx = client_list[neth].fdidx
 	local cli2 = client_list[client_list.fdlist[#(client_list.fdlist)]]
 	cli2.fdidx = fdidx
@@ -213,19 +213,19 @@ function server.hook_disconnect(neth, server_force, reason)
 	client_list.fdlist[#(client_list.fdlist)] = nil
 	client_list[neth] = nil
 	print("disconnect:", neth, server_force, reason)
-	
+
 	local ss = (neth == true and "(local)") or neth
 	--[[net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFF800000,
 		"Disconnected: player on neth "..ss))]]
 	print("Disconnected: player on neth "..ss)
-	
+
 	if plr then
 		plr.on_disconnect()
 		net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFF800000,
 			"* Player "..plr.name.." disconnected"))
 		net_broadcast(neth, common.net_pack("BB",
 			PKT_PLR_RM, plrid))
-			
+
 		-- TODO fix crash bug
 		--plr.free()
 		players[plrid] = nil
@@ -241,7 +241,7 @@ function server.hook_tick(sec_current, sec_delta)
 	local xlen,ylen,zlen
 	xlen,ylen,zlen = common.map_get_dims()
 	]]
-	
+
 	if (not lflush) or sec_current < lflush - 0.8 then
 		lflush = sec_current
 	end
@@ -284,17 +284,17 @@ function server.hook_tick(sec_current, sec_delta)
 	while true do
 		pkt, neth = common.net_recv()
 		if not pkt then break end
-		
+
 		local cli = client_list[neth]
 		local plr = cli and players[cli.plrid]
 
 		if cli then cli.lastmsg = sec_current end
-		
+
 		local cid
 		cid, pkt = common.net_unpack("B", pkt)
-		
+
 		--print("in",neth,cid)
-		
+
 		local hdl = network.sys_tab_handlers[cid]
 		if hdl then
 			hdl.f(neth, cli, plr, sec_current, common.net_unpack(hdl.s, pkt))
@@ -304,17 +304,17 @@ function server.hook_tick(sec_current, sec_delta)
 		-- TODO!
 	end
 	bhealth_prune(sec_current)
-	
+
 	local tickrate = 1/60.
 	local lowest_fps = 15
 	local max_ticksize = 1/lowest_fps
-	
+
 	if sec_delta > max_ticksize then sec_delta = max_ticksize end
 	if sec_delta < -max_ticksize then sec_delta = -max_ticksize end
-	
+
 	local moment = sec_current - sec_delta
 	server_tick_accum = server_tick_accum + sec_delta
-	
+
 	while server_tick_accum > tickrate do
 		moment = moment + tickrate
 		local i
@@ -328,13 +328,13 @@ function server.hook_tick(sec_current, sec_delta)
 			if nades[i] then nades[i].tick(moment, tickrate) end
 		end
 		nade_prune(sec_current)
-		
+
 		for i=1,#miscents do
 			miscents[i].tick(moment, tickrate)
 		end				
 		server_tick_accum = server_tick_accum - tickrate
 	end
-	
+
 	return 0.005
 end
 
@@ -368,7 +368,7 @@ if server_config.permissions ~= nil then
 			end
 		end
 	end
-	
+
 	-- Hopefully this should allow full inheritance without an infinite loop
 	-- I know it's messy - if you don't like it, feel free to redo it ;)
 	local groups_done = {}
@@ -408,7 +408,7 @@ if server_config.permissions ~= nil then
 		end
 		do_extends = table.getn(groups_done) < groups_to_do
 	end
-	
+
 	-- Print final permissions
 	print "Final Permissions:"
 	for group, perms in pairs(permissions) do
