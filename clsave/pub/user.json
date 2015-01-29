@@ -26,7 +26,7 @@
 	"kick_on_join": true,
 	"sensitivity": 1.0,
 	"hold_to_zoom": false,
-	"frame_limit": 50,
+	"frame_limit": 100,
 	"fog": 127.5,
 	"invert_y": false,
 

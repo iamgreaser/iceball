@@ -514,8 +514,8 @@ function h_tick_main(sec_current, sec_delta)
 	delta_last = sec_delta
 	
 	-- wait a bit
-	-- Frame limiter is actually broken.
-	return frame_delay_ctr
+	local d = math.max(0.00001, frame_delay_ctr - delta_last)
+	return d
 end
 
 function h_tick_init(sec_current, sec_delta)

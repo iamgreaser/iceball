@@ -273,12 +273,21 @@ int update_client_cont1(void)
 	SDL_GL_SwapBuffers();
 	SDL_Flip(screen);
 
+#ifdef WIN32
 	int msec_wait = 10*(int)(sec_wait*100.0f+0.5f);
 	if(msec_wait > 0)
 	{
 		sec_wait -= msec_wait/1000.0f;
 		SDL_Delay(msec_wait);
 	}
+#else
+	int usec_wait = (int)(((double)sec_wait)*1000000.0+0.5f);
+	if(usec_wait > 0)
+	{
+		sec_wait -= usec_wait/1000000.0;
+		usleep(usec_wait);
+	}
+#endif
 
 	SDL_Event ev;
 	while(SDL_PollEvent(&ev))

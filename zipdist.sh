@@ -1,6 +1,6 @@
 #!/bin/sh
 
-export ZIPNAME=nubdist/iceball-indev-0.1.2-12.zip
+export ZIPNAME=nubdist/iceball-indev-0.1.2-13.zip
 
 zip -r $ZIPNAME *.dll *.exe *.txt opencmd.bat docs/ \
 	clsave/config.json \
