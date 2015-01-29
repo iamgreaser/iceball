@@ -129,6 +129,6 @@ VERSION_BUGS = {
 {intro=nil, fix=4259840+10, msg="Garbage collection not supported"},
 {intro=4259840+10, fix=nil, msg="Garbage collection incomplete (only pmf/img/wav supported)"},
 {intro=4259840+10, fix=4259840+11, msg="GARBAGE COLLECTION CRASHY AND UNSTABLE, DO NOT USE THIS VERSION"},
-{intro=nil, fix=4259840+12, msg="Frame delay in client.hook_tick doesn't work properly - Frame limiter WILL NOT WORK"},
+{intro=nil, fix=4259840+12, msg="Frame delay in client.hook_tick doesn't work properly - Frame limiter will not work"},
 }
 
