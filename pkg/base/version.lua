@@ -20,9 +20,9 @@
 -- Thanks. --GM
 
 VERSION_ENGINE = {
-	cmp={0,1,2,0,11},
-	num=4259840+11,
-	str="0.1.2-11",
+	cmp={0,1,2,0,12},
+	num=4259840+12,
+	str="0.1.2-12",
 }
 
 -- 0.1: 4194304
@@ -129,5 +129,6 @@ VERSION_BUGS = {
 {intro=nil, fix=4259840+10, msg="Garbage collection not supported"},
 {intro=4259840+10, fix=nil, msg="Garbage collection incomplete (only pmf/img/wav supported)"},
 {intro=4259840+10, fix=4259840+11, msg="GARBAGE COLLECTION CRASHY AND UNSTABLE, DO NOT USE THIS VERSION"},
+{intro=nil, fix=4259840+12, msg="Frame delay in client.hook_tick doesn't work properly - Frame limiter WILL NOT WORK"},
 }
 

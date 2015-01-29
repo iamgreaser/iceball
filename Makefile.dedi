@@ -3,7 +3,6 @@
 CFLAGS = -DDEDI -O2 -fno-strict-aliasing -g -Wall -Wextra \
 	-Wno-unused-variable -Wno-unused-parameter \
 	$(CFLAGS_EXTRA) \
-	-fopenmp \
 	-Iinclude \
 	-Ixlibinc \
 	-I/usr/local/include \

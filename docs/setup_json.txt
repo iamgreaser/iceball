@@ -98,22 +98,32 @@ clsave/config.json:
 		e.g. voxelauth.com and www.voxelauth.com are NOT the same IP.
 
 clsave/pub/user.json:
-	"name" should be set to something other than null;
-	otherwise, the game will give you a really demeaning name.
-	
-	"kick_on_join" should be false;
-	otherwise, you won't even be able to get in.
-	
+	"name" should be set to something other than null or the empty string,
+	otherwise, the game will give you a random name.
+
+	"kick_on_join" should be false.
+	Servers can be set up to check this and kick if this is true
+	if they want to limit their playerbase to people who can read.
+	The check is off by default, but you might as well set this to false yourself.
+
 	"sensitivity" is mouse sensitivity.
 	it takes 1000/sensitivity pixels to rotate by 180 degrees.
 
+	"hold_to_zoom" determines scoping style.
+	Set to false if you prefer to toggle to aim.
+
+	"frame_limit" sets the maximum FPS for the game.
+	Set to 0 if you don't want an FPS limit.
+	This is broken prior to 0.1.2-12.
+
 	"fog" is the fog distance.
 	If you have an old/budget graphics card/chip, 60 is a good value.
+	(If you have a GMA 3150, get a real GPU.)
 	Maximum fog distance is determined by the server in pkg/base/common.lua,
 	and is usually 127.5. This value will be clamped by the code given by the server.
-	
+
 	"skins" is explained later in this document.
-	
+
 	"bio" is explained later in this document.
 
 -------------------------------------------------------------------------------

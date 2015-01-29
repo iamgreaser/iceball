@@ -34,7 +34,7 @@
 		"gl_frustum_cull": true,
 		"gl_occlusion_cull": 0,
 		"gl_flip_quads": true,
-		"gl_vsync": true,
+		"gl_vsync": false,
 		"gl_vbo": true
 	},
 	

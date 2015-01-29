@@ -276,7 +276,7 @@ int update_client_cont1(void)
 	int msec_wait = 10*(int)(sec_wait*100.0f+0.5f);
 	if(msec_wait > 0)
 	{
-		sec_wait -= msec_wait;
+		sec_wait -= msec_wait/1000.0f;
 		SDL_Delay(msec_wait);
 	}
 
@@ -426,8 +426,8 @@ int update_client(void)
 			lua_pop(lstate_client, 1);
 			return 1;
 		}
-		if(!(boot_mode & 2))
-			sec_wait += lua_tonumber(lstate_client, -1);
+		//if(!(boot_mode & 2))
+		sec_wait += lua_tonumber(lstate_client, -1);
 		lua_pop(lstate_client, 1);
 	}
 

@@ -19,6 +19,7 @@ print("pkg/base/client_start.lua starting")
 print(...)
 
 map_fname = nil
+frame_delay_ctr = 0.0001
 
 -- yeah this really should happen ASAP so we can boot people who suck
 dofile("pkg/base/lib_util.lua")
@@ -38,6 +39,14 @@ end
 print("json done!")
 print("name:", user_config.name)
 print("bio desc:", user_config.bio and user_config.bio.description)
+
+if user_config.frame_limit and user_config.frame_limit > 0.01 then
+	frame_delay_ctr = 1.0 / user_config.frame_limit
+	if frame_delay_ctr <= 0.0001 then
+		frame_delay_ctr = 0.0001
+	end
+	print("frame delay:", frame_delay_ctr)
+end
 
 -- OK, *NOW* we can load stuff.
 dofile("pkg/base/common.lua")
@@ -505,7 +514,8 @@ function h_tick_main(sec_current, sec_delta)
 	delta_last = sec_delta
 	
 	-- wait a bit
-	return 0.005
+	-- Frame limiter is actually broken.
+	return frame_delay_ctr
 end
 
 function h_tick_init(sec_current, sec_delta)
