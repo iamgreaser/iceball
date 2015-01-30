@@ -7,7 +7,20 @@ GreaseMonkey, 2012 - Public Domain
 
 """
 
+from __future__ import print_function
+
 import sys, struct
+
+# Backwards compatibility - make new code work on old version, not vice-versa
+PY2 = sys.version_info[0] == 2
+PY3 = sys.version_info[0] == 3
+if PY2:
+	# This script didn't use range() anyway, so no problem overwriting it in Py2
+	import __builtin__
+	range = getattr(__builtin__, "xrange")
+	_ord = ord
+else:
+	_ord = lambda x: x
 
 USAGE_MSG = """
 usage:
@@ -18,7 +31,7 @@ and the type information will be LOST!
 """
 
 if len(sys.argv) <= 2:
-	print USAGE_MSG
+	print(USAGE_MSG)
 	exit()
 
 infp = open(sys.argv[1],"rb")
@@ -27,9 +40,9 @@ if infp.read(8) != "IceMap\x1A\x01":
 
 while True:
 	tag = infp.read(7)
-	taglen = ord(infp.read(1))
+	taglen = _ord(infp.read(1))
 	
-	if tag == " "*7:
+	if tag == b" "*7:
 		break
 	
 	if taglen == 255:
@@ -42,22 +55,22 @@ while True:
 		
 		outfp = open(sys.argv[2],"wb")
 		
-		for z in xrange(512):
-			for x in xrange(512):
+		for z in range(512):
+			for x in range(512):
 				k = True
 				while k:
 					cblk = infp.read(4)
 					outfp.write(cblk)
-					n = ord(cblk[0])
+					n = _ord(cblk[0])
 					if n == 0:
-						n = ord(cblk[2])-ord(cblk[1])+1
+						n = _ord(cblk[2])-_ord(cblk[1])+1
 						k = False
 					else:
 						n = n - 1
 					
-					for i in xrange(n):
+					for i in range(n):
 						s = infp.read(4)
-						outfp.write(s[:3]+"\x7F")
+						outfp.write(s[:3]+b"\x7F")
 		
 		outfp.close()
 		infp.close()
