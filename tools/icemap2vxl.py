@@ -63,4 +63,4 @@ while True:
 		infp.close()
 		break
 	else:
-		fp.seek(taglen, 1) # SEEK_CUR
+		infp.seek(taglen, 1) # SEEK_CUR
