@@ -31,7 +31,7 @@ dofile("pkg/iceball/lib/http.lua")
 server_list = true
 master_http = http_new {url = MASTER_URL}
 if not master_http then
-	server_lsit = false
+	server_list = false
 end
 
 -- A creative hack to make this whole thing work.

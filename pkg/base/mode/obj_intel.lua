@@ -184,7 +184,7 @@ function new_intel(settings)
 		
 		while true do
 			this.x = math.floor(math.random()*xlen/4.0)+0.5
-			this.z = math.floor(math.random()*zlen)+0.5
+			this.z = math.floor((math.random()/2.0+0.25)*zlen)+0.5
 			if this.team == 1 then this.x = xlen - this.x end
 			--if this.team == 0 then this.x = xlen - this.x end -- quick test
 			if this.team == nil then this.x = this.x + (xlen - (xlen/4.0))/2 end
