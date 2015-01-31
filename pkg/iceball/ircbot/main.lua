@@ -108,7 +108,7 @@ function ircbot_conn_new(settings)
 					print("IRC bot entered channel")
 					this.in_channel = true
 					this.can_write = true
-					this.write("channel join test")
+					--this.write("channel join test")
 				else
 					print("IRC bot was force joined to a different channel")
 					this.sendq = this.sendq .. (
@@ -143,15 +143,17 @@ function ircbot_conn_new(settings)
 		if not this.working then return false end
 
 		-- Send what we can
-		local s = common.tcp_send(this.sockfd, this.sendq)
-		if s == false then
-			print("CANNOT SEND, ERROR OCCURRED")
-			this.working = false
-			common.tcp_close(this.sockfd)
-			this.sockfd = nil
-			return false
+		if this.sendq ~= "" then
+			local s = common.tcp_send(this.sockfd, this.sendq)
+			if s == false then
+				print("CANNOT SEND, ERROR OCCURRED")
+				this.working = false
+				common.tcp_close(this.sockfd)
+				this.sockfd = nil
+				return false
+			end
+			this.sendq = s
 		end
-		this.sendq = s
 
 		-- Receive what we can
 		local r = common.tcp_recv(this.sockfd)
