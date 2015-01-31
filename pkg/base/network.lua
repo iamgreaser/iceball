@@ -468,6 +468,7 @@ network.sys_handle_c2s(PKT_CHAT_SEND, "z", nwdec_plrset(function (neth, cli, plr
 		command_handle(plr, cli.plrid, neth, params, msg)
 	else
 		s = plr.name.." ("..teams[plr.team].name.."): "..msg
+		irc.write(s)
 		-- TODO: use a user-configurable table for these
 		-- if you've read the "Pubbie Tears" section of the goonstation wiki,
 		-- you'll understand why SOME of these are in there.
@@ -498,6 +499,7 @@ network.sys_handle_c2s(PKT_CHAT_SEND_TEAM, "z", nwdec_plrset(function (neth, cli
 	if s then
 		local cb = teams[plr.team].color_chat
 		local c = argb_split_to_merged(cb[1],cb[2],cb[3])
+		irc.write("teamchat["..teams[plr.team].name.."]: "..s)
 		net_broadcast_team(plr.team, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, c, s))
 	end
 end))
@@ -511,6 +513,7 @@ network.sys_handle_c2s(PKT_CHAT_SEND_SQUAD, "z", nwdec_plrset(function (neth, cl
 		end
 		
 		if s then
+			irc.write("squadchat["..teams[plr.team].name..":"..plr.squad.."]: "..s)
 			net_broadcast_squad(plr.team, plr.squad, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFFFFFF55, s))
 		end
 	end
@@ -589,8 +592,11 @@ end, function (neth, cli, plr, sec_current, tidx, wpn, name, pkt)
 		net_send(neth, common.net_pack("BB",
 			PKT_PLR_ID, cli.plrid))
 		
+		local s = "* Player "..name.." (#"..cli.plrid..", neth "..(neth or "nil")..") has joined the "..teams[plr.team].name.." team"
+		irc.write(s)
+		local s = "* Player "..name.." has joined the "..teams[plr.team].name.." team"
 		net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFF800000,
-			"* Player "..name.." has joined the "..teams[plr.team].name.." team"))
+			s))
 	end
 end))
 network.sys_handle_c2s(PKT_PLR_GUN_HIT, "BB", nwdec_plrset(function (neth, cli, plr, sec_current, tpid, styp)

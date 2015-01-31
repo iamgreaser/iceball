@@ -5,8 +5,21 @@
 	"mod_config": "svsave/pub/mods.json",
 	"heartbeat_send": false,
 	"heartbeat": [
-		["play.iceball.rakiru.com", 27790]
+		["magicannon.com", 27790]
 	],
+	"irc": [
+		{
+			"enabled": false,
+			"addr": "irc.fractiongamers.com",
+			"port": 6667,
+			"nick": "iceballnub",
+			"user": "iceball",
+			"rname": "Iceball Server Bot",
+			"channel": "#iceball",
+			"chat_prefix": ".",
+			"cmd_prefix": "!"
+		}
+	]
 	"permissions": {
 		"default" : {
 			"permissions" : [

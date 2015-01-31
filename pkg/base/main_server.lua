@@ -42,6 +42,8 @@ dofile("pkg/base/lib_util.lua")
 print("pkg/base/main_server.lua starting")
 print(...)
 
+dofile("pkg/iceball/ircbot/main.lua")
+
 -- parse arguments
 local loose, server_toggles, server_settings = parse_commandline_options({...})
 local server_config_filename = server_settings['server'] or "svsave/pub/server.json"
@@ -51,6 +53,15 @@ if server_settings.svseed then
 	math.randomseed(0+server_settings.svseed)
 elseif common.time ~= nil then
 	math.randomseed(common.time())
+end
+
+if server_config.irc then
+	local k, v
+	for k, v in pairs(server_config.irc) do
+		if v.enabled then
+			irc.connect(v)
+		end
+	end
 end
 
 -- load mod config
@@ -168,7 +179,9 @@ function server.hook_connect(neth, addrinfo)
 	server.port = server.port or (addrinfo.addr and addrinfo.addr.sport)
 
 	local source = false
+	local ip_name = "<?>"
 	if addrinfo.proto == "enet/ip6" or addrinfo.proto == "tcp/ip6" then
+		ip_name = addrinfo.addr.ip
 		-- There are two variants:
 		-- the windows variant is a blatant hack, but valid
 		-- the not-windows variant is much smaller
@@ -182,6 +195,7 @@ function server.hook_connect(neth, addrinfo)
 		source = source or addrinfo.addr.ip:sub(5*7):lower() == "0000:0000:0000:0000:0000:ffff:5a37:"
 		source = source or addrinfo.addr.ip:sub(5*7):lower() == "0000:0000:0000:0000:0000:ffff:56c7:"
 	elseif addrinfo.proto == "enet/ip" or addrinfo.proto == "tcp/ip" then
+		ip_name = addrinfo.addr.ip
 		print("ipv4", addrinfo.addr.ip)
 		source = source or addrinfo.addr.ip:sub(6) == "90.16."
 		source = source or addrinfo.addr.ip:sub(6) == "90.55."
@@ -193,10 +207,13 @@ function server.hook_connect(neth, addrinfo)
 		client_list[neth].akick = true
 	end
 
+	ip_name = addrinfo.proto..":"..ip_name
+	client_list[neth].ip_name = ip_name
 	local ss = (neth == true and "(local)") or neth
 	--[[net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFF800000,
 		"Connected: player on neth "..ss))]]
 	print("Connected: player on neth "..ss)
+	irc.write("Connected: player on neth "..ss.." ("..ip_name..")")
 end
 
 function server.hook_disconnect(neth, server_force, reason)
@@ -205,6 +222,7 @@ function server.hook_disconnect(neth, server_force, reason)
 
 	local plrid = client_list[neth].plrid
 	local plr = players[plrid]
+	local ip_name = client_list[neth].ip_name
 
 	local fdidx = client_list[neth].fdidx
 	local cli2 = client_list[client_list.fdlist[#(client_list.fdlist)]]
@@ -218,6 +236,7 @@ function server.hook_disconnect(neth, server_force, reason)
 	--[[net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFF800000,
 		"Disconnected: player on neth "..ss))]]
 	print("Disconnected: player on neth "..ss)
+	irc.write("Disconnected: player on neth "..ss.."("..ip_name..", #"..(plrid or "nil")..")")
 
 	if plr then
 		plr.on_disconnect()
@@ -235,6 +254,7 @@ end
 lflush = nil
 function server.hook_tick(sec_current, sec_delta)
 	heartbeat_update(sec_current, sec_delta)
+	irc.update(sec_current, sec_delta)
 
 	--print("tick",sec_current,sec_delta)
 	--[[
