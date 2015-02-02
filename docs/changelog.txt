@@ -1,3 +1,8 @@
+Interestingly enough this has never ever been used.
+
+Oh well, if someone wants to fill this in, that'd be awesome.
+Otherwise, try "git log".
+
 0.1.0/0.0 - Released YYYY-MM-DD.
 - Initial release.
 

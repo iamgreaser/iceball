@@ -1,2 +1,2 @@
 @echo off
-iceball-gl -s 0 pkg/iceball/mapedit
+iceball -s 0 pkg/iceball/mapedit

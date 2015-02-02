@@ -8,7 +8,7 @@ You *MUST* retain the correct directory structure.
 
 *** Have you tried running it in the command line? ***
 Open opencmd.bat, and run it from there.
-See if you get any errors.
+See what errors you get.
 You don't need to worry about stdout.txt/stderr.txt with the official builds,
 however if you built it yourself, you may need to check those files.
 
@@ -43,7 +43,10 @@ In my case I tend to prepend the commandline with "gdb --args ".
 Someone else can elaborate here if necessary.
 
 *** How do I change my name? ***
-Did you read the built-in tutorial? It mentioned a file. What was it called?
+clsave/pub/user.json.
+
+*** How do I change my resolution? ***
+clsave/config.json.
 
 *** When I click on iceball:// URLs it doesn't open iceball! ***
 Windows users: I'm not giving you any hints other than open your bloody eyes.
@@ -51,6 +54,5 @@ Windows users: I'm not giving you any hints other than open your bloody eyes.
 Other users: You'll need to work this one out yourself, sorry.
 
 *** Anything else? ***
-Join us on IRC: #iceball @ irc.quacknet.org (NOT quaKEnet!).
-This really should be on a wiki somewhere.
+Prod us on Reddit: http://reddit.com/r/buildandshoot/
 

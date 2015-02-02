@@ -15,8 +15,8 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
-if common.version.num < 4259840 then
-	error("You need Iceball version 0.1.2 or later to connect to this server.")
+if common.version.num < 8388608 then
+	error("You need Iceball version 0.2 or later to connect to this server.")
 end
 
 if common.mk_compat_disable then
@@ -146,7 +146,7 @@ dofile("pkg/base/lib_gui.lua")
 if common.version.num < 4259840+4 then
 	img_loading = img_loading or skin_load("tga", "loading_default-64c.tga", DIR_PKG_GFX)
 else
-	img_loading = img_loading or skin_load("png", "loading_default-256c.png", DIR_PKG_GFX)
+	img_loading = img_loading or skin_load("png", "loading_default.png", DIR_PKG_GFX)
 end
 
 img_map = img_map or common.img_load("*MAPIMG")

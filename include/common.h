@@ -15,15 +15,15 @@
     along with Iceball.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-// Features from the MK fork.
+// Features from the MK fork. Do not bump this unless you are syncing with it.
 #define MK_REVISION 11
 
 // This is what you modify: BUMP Z EVERY TIME YOU CHANGE THE C SIDE
 #define VERSION_W 0
-#define VERSION_X 1
-#define VERSION_Y 2
+#define VERSION_X 2
+#define VERSION_Y 0
 #define VERSION_A 0
-#define VERSION_Z 14
+#define VERSION_Z 0
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!

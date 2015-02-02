@@ -1,6 +1,6 @@
 #!/bin/sh
 
-export ZIPNAME=nubdist/iceball-0.1.2.zip
+export ZIPNAME=nubdist/iceball-0.2.zip
 
 #zip -r $ZIPNAME *.dll *.exe *.txt *.bat docs/ \
 #	pkg/base/*.lua \
@@ -26,6 +26,7 @@ zip -r $ZIPNAME *.dll *.exe *.txt opencmd.bat docs/ \
 	pkg/iceball/pmfedit/ pkg/iceball/mapedit/ \
 	pkg/iceball/sprinting/ pkg/iceball/deucenamegen/ \
 	pkg/iceball/launch/ pkg/iceball/lib/ pkg/iceball/gfx/ \
+	pkg/iceball/ircbot/ \
 	pkg/iceball/altgame/ \
 	svsave/info.txt \
 	svsave/pub/server.json svsave/pub/mods.json svsave/base/vol/dummy svsave/vol/dummy \

@@ -15,8 +15,8 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
-if common.version.num < 4259840 then
-	error("You need Iceball version 0.1.2 or later to run this code.")
+if common.version.num < 8388608 then
+	error("You need Iceball version 0.2 or later to run this code.")
 end
 
 dofile("pkg/base/lib_fastload.lua")
