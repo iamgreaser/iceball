@@ -150,6 +150,7 @@ else
 end
 
 img_map = img_map or common.img_load("*MAPIMG")
+map_img_seen = false
 
 do
 	local scriptcache = {}
@@ -269,7 +270,11 @@ do
 					loading_img.x = screen_width/2 + amount * screen_width
 					if map_img then
 						map_img.x = -screen_width/2 + amount * screen_width
+						map_img_seen = true
 					end
+				elseif map_img_seen then
+					loading_img.x = 3*screen_width/2
+					map_img.x = screen_width/2
 				end
 				
 				if csize then
