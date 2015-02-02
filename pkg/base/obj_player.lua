@@ -434,10 +434,14 @@ function new_player(settings)
 		local i
 		local blood_particlecount = math.random() * 10 + 20
 		local pvel = 0.5
+		blood_part_mdl = blood_part_mdl or new_particle_model(230, 70, 70)
+		local mdl = blood_part_mdl
+		--[[
 		local mdl = new_particle_model(
 			200 + math.random() * 55,
 			60 + math.random() * 20,
 			60 + math.random() * 20)
+		]]
 
 		for i=1,blood_particlecount do
 			particles_add(new_particle{

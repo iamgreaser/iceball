@@ -309,6 +309,7 @@ network.sys_handle_s2c(PKT_PLR_GUN_TRACER, "B", function (neth, cli, plr, sec_cu
 			plr.angy,plr.angx,
 			sec_current)
 		client.wav_play_global(wav_rifle_shot, plr.x, plr.y, plr.z)
+		tracer_part_mdl = tracer_part_mdl or new_particle_model(250, 215, 0)
 		particles_add(new_particle{
 			x = plr.x,
 			y = plr.y,
@@ -316,11 +317,9 @@ network.sys_handle_s2c(PKT_PLR_GUN_TRACER, "B", function (neth, cli, plr, sec_cu
 			vx = math.sin(plr.angy - math.pi / 4) / 2,
 			vy = 0.1,
 			vz = math.cos(plr.angy - math.pi / 4) / 2,
-			r = 250,
-			g = 215,
-			b = 0,
+			model = tracer_part_mdl,
 			size = 8,
-			lifetime = 5
+			lifetime = 1
 		})
 	end
 end)

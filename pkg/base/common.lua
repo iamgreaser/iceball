@@ -103,7 +103,7 @@ MODE_NADE_RANGE = 8.0
 MODE_NADE_DAMAGE = 210.0
 
 -- WARNING: EXPERIMENTAL - set to false if your server slows down an awful lot or locks up!
-MODE_NADE_VPL_ENABLE = false -- disabled for now to slow down the inevitable framerate divebomb we STILL haven't fixed
+MODE_NADE_VPL_ENABLE = true -- disabled for now to slow down the inevitable framerate divebomb we STILL haven't fixed
 MODE_NADE_VPL_MAX_COUNT = 300 -- O(n*m) stuff, n == number of players, m == THIS
 MODE_NADE_VPL_MAX_TRIES = 1000
 MODE_NADE_VPL_MAX_RANGE = 30.0
@@ -401,10 +401,13 @@ function bhealth_damage(x,y,z,amt,plr)
 	
 	if client then
 		local block_particlecount = math.random() * 20 + 10
+		--[[
 		local mdl = new_particle_model(
 			math.floor(c[2]*light+0.5),
 			math.floor(c[3]*light+0.5),
 			math.floor(c[4]*light+0.5)) 
+		]]
+		block_part_mdl = block_part_mdl or new_particle_model(148, 148, 148)
 
 		for i=1,block_particlecount do
 			particles_add(new_particle{
@@ -416,7 +419,7 @@ function bhealth_damage(x,y,z,amt,plr)
 				vz = math.random() * 2 - 1,
 				lifetime = 0.5 + math.random() * 0.25,
 				size = 32,
-				model = mdl,
+				model = block_part_mdl,
 			})
 		end
 	end

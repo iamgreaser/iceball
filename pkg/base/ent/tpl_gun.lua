@@ -61,6 +61,7 @@ return function (plr, cfg)
 			
 			client.wav_play_global(wav_rifle_shot, plr.x, plr.y, plr.z)
 			
+			bcase_part_mdl = bcase_part_mdl or new_particle_model(250, 215, 0)
 			particles_add(new_particle{
 				x = plr.x,
 				y = plr.y,
@@ -68,11 +69,9 @@ return function (plr, cfg)
 				vx = math.sin(plr.angy - math.pi / 4) / 2 + math.random() * 0.25,
 				vy = 0.1 + math.random() * 0.25,
 				vz = math.cos(plr.angy - math.pi / 4) / 2 + math.random() * 0.25,
-				r = 250,
-				g = 215,
-				b = 0,
+				model = bcase_part_mdl,
 				size = 8,
-				lifetime = 5
+				lifetime = 2
 			})
 		end
 		
