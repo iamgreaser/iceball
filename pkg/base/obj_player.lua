@@ -1595,22 +1595,6 @@ function new_player(settings)
 			return gui_focus ~= nil
 		end
 
-		local function quit_events(options)
-			if options.state and not is_view_released() then
-				if this.quit_msg.visible then
-					if options.key == BTSK_YES then
-						-- TODO: clean up
-						client.hook_tick = nil
-					elseif options.key == BTSK_NO then
-						this.quit_msg.visible = false
-					end
-				elseif options.key == BTSK_QUIT and 
-					not this.menus_visible() and 
-					not is_view_released() then
-					this.quit_msg.visible = true
-				end
-			end
-		end
 		local function teamchange_events(options)
 			local viz = this.team_change.visible
 			if options.state and not is_view_released() then
@@ -1966,7 +1950,6 @@ function new_player(settings)
 			spacer.reflow()
 		end)]]
 
-		this.quit_msg.add_listener(GE_BUTTON, quit_events)
 		this.team_change.add_listener(GE_BUTTON, teamchange_events)
 		this.wpn_change.add_listener(GE_BUTTON, wpnchange_events)
 		this.large_map.add_listener(GE_DELTA_TIME, this.update_overview_icons)
@@ -2107,6 +2090,10 @@ function new_player(settings)
 					this.focus_typing("Team: ", "")
 				elseif key == BTSK_SQUADCHAT then
 					this.focus_typing("Squad: ", "")
+				elseif key == BTSK_QUIT then
+					if gui_focus == nil then
+						this.quit_msg.visible = true
+					end
 				else
 					local i
 					for i=1,#BTSK_TOOLS do
@@ -2115,6 +2102,15 @@ function new_player(settings)
 						end
 					end
 				end
+			end
+		elseif state and key == BTSK_YES then
+			if this.quit_msg.visible then
+				-- TODO: clean up
+				client.hook_tick = nil
+			end
+		elseif state and key == BTSK_NO then
+			if this.quit_msg.visible then
+				this.quit_msg.visible = false
 			end
 		end
 	end
