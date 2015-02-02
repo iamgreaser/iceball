@@ -261,6 +261,11 @@ function new_nade(settings)
 				local i
 				local nade_particlecount = math.random() * 10 + 20
 				local pvel = 2
+				local mdl = new_particle_model(
+					60 + math.random() * 20,
+					60 + math.random() * 20,
+					60 + math.random() * 20)
+
 				for i=1,nade_particlecount do
 					particles_add(new_particle{
 						x = this.x,
@@ -269,10 +274,8 @@ function new_nade(settings)
 						vx = pvel*(2*math.random()-1),
 						vy = pvel*(2*math.random()-1.8),
 						vz = pvel*(2*math.random()-1),
-						r = 60 + math.random() * 20,
-						g = 60 + math.random() * 20,
-						b = 60 + math.random() * 20,
-						size = 16 + math.random() * 32
+						size = 16 + math.random() * 32,
+						model = mdl,
 					})
 				end
 			end

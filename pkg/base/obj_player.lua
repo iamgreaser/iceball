@@ -434,6 +434,11 @@ function new_player(settings)
 		local i
 		local blood_particlecount = math.random() * 10 + 20
 		local pvel = 0.5
+		local mdl = new_particle_model(
+			200 + math.random() * 55,
+			60 + math.random() * 20,
+			60 + math.random() * 20)
+
 		for i=1,blood_particlecount do
 			particles_add(new_particle{
 				x = this.x,
@@ -442,9 +447,7 @@ function new_player(settings)
 				vx = pvel*(2*math.random()-1),
 				vy = pvel*(2*math.random()-1.8),
 				vz = pvel*(2*math.random()-1),
-				r = 200 + math.random() * 55,
-				g = 60 + math.random() * 20,
-				b = 60 + math.random() * 20,
+				model = mdl,
 				size = 8 + math.random() * 16,
 				lifetime = 1
 			})

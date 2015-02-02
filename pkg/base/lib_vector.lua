@@ -52,17 +52,17 @@ end
 function vrotate(theta,x,y,z,bx,by,bz)
 	-- glRotate as specified by SGI :D
 	bx,by,bz = vnorm(bx,by,bz)
-	
+
 	-- S = [  0 -z  y ]
 	--     [  z  0 -x ]
 	--     [ -y  x  0 ]
 	-- R = uuT + cosO (I - uuT) + sinO S
 	-- alternatively
 	-- R = uuT * (1 - cosO) + IcosO + sinO S
-	
+
 	local ct = math.cos(theta)
 	local st = math.sin(theta)
-	
+
 	return
 		x*(bx*bx*(1-ct)+ct)       + y*(bx*by*(1-ct) + st*-bz)  + z*(bx*bz*(1-ct) + st*by),
 		x*(by*bx*(1-ct) + st*bz)  + y*(by*by*(1-ct)*(1-ct)+ct) + z*(by*bz*(1-ct) + st*-bx),
@@ -73,7 +73,7 @@ end
 function trace_gap(x,y,z)
 	local xlen,ylen,zlen
 	xlen,ylen,zlen = common.map_get_dims()
-	
+
 	local l = common.map_pillar_get(math.floor(x), math.floor(z))
 	i = 1
 	local h1,h2
@@ -91,17 +91,17 @@ end
 
 function box_is_clear(x1,y1,z1,x2,y2,z2,canwrap)
 	local x,z,i
-	
+
 	x1 = math.floor(x1)
 	y1 = math.floor(y1)
 	z1 = math.floor(z1)
 	x2 = math.floor(x2)
 	y2 = math.floor(y2)
 	z2 = math.floor(z2)
-	
+
 	local xlen,ylen,zlen
 	xlen,ylen,zlen = common.map_get_dims()
-	
+
 	if not canwrap then
 		if x1 < 0 or z1 < 0 then
 			return false
@@ -109,7 +109,7 @@ function box_is_clear(x1,y1,z1,x2,y2,z2,canwrap)
 			return false
 		end
 	end
-	
+
 	for z=z1,z2 do
 	for x=x1,x2 do
 		local l = common.map_pillar_get(x, z)
@@ -123,7 +123,7 @@ function box_is_clear(x1,y1,z1,x2,y2,z2,canwrap)
 		end
 	end
 	end
-	
+
 	return true
 end
 
@@ -138,16 +138,10 @@ function trace_map_ray_dist(x1,y1,z1, vx,vy,vz, maxdist, nil_on_maxdist)
 			return d
 		end
 	end
-	
+
 	local xlen,ylen,zlen
 	xlen,ylen,zlen = common.map_get_dims()
-	
-	-- offsets
-	local fx,fy,fz
-	if vx < 0 then fx = bx1 else fx = bx2 end
-	if vy < 0 then fy = by1 else fy = by2 end
-	if vz < 0 then fz = bz1 else fz = bz2 end
-	
+
 	-- direction
 	local gx,gy,gz
 	if vx < 0 then gx = -1 else gx = 1 end
@@ -156,14 +150,14 @@ function trace_map_ray_dist(x1,y1,z1, vx,vy,vz, maxdist, nil_on_maxdist)
 	vx = vx * gx
 	vy = vy * gy
 	vz = vz * gz
-	
+
 	-- cell
 	local cx,cy,cz
 	if not x1 then return nil end
 	cx = math.floor(x1)
 	cy = math.floor(y1)
 	cz = math.floor(z1)
-	
+
 	-- subpos
 	local sx,sy,sz
 	sx = x1-cx
@@ -172,12 +166,12 @@ function trace_map_ray_dist(x1,y1,z1, vx,vy,vz, maxdist, nil_on_maxdist)
 	if gx >= 0 then sx = 1-sx end
 	if gy >= 0 then sy = 1-sy end
 	if gz >= 0 then sz = 1-sz end
-	
+
 	local dist = 0
 	local pillar, npillar
 	npillar = common.map_pillar_get(cx,cz)
 	pillar = npillar
-	
+
 	while true do
 		local tx = sx/depsilon(vx)
 		local ty = sy/depsilon(vy)
@@ -185,7 +179,7 @@ function trace_map_ray_dist(x1,y1,z1, vx,vy,vz, maxdist, nil_on_maxdist)
 		local t,d
 		local ncx,ncy,ncz
 		ncx,ncy,ncz = cx,cy,cz
-		
+
 		if tx < ty and tx < tz then
 			t = tx
 			d = 0
@@ -201,15 +195,15 @@ function trace_map_ray_dist(x1,y1,z1, vx,vy,vz, maxdist, nil_on_maxdist)
 			ncz = cz + gz
 			npillar = common.map_pillar_get(ncx,ncz)
 		end
-		
+
 		dist = dist + t
-		
+
 		if dist > maxdist and nil_on_maxdist then
 			return nil, nil, nil, nil, nil, nil, nil
 		elseif dist > maxdist and not nil_on_maxdist then
 			return dist, cx, cy, cz, ncx, ncy, ncz
 		end
-		
+
 		local i=1
 		while true do
 			if ncy < npillar[i+1] then break end
@@ -217,17 +211,17 @@ function trace_map_ray_dist(x1,y1,z1, vx,vy,vz, maxdist, nil_on_maxdist)
 			i = i + npillar[i]*4
 			if ncy < npillar[i+3] then return dist, cx, cy, cz, ncx, ncy, ncz end
 		end
-		
+
 		sx = sx - vx*t
 		sy = sy - vy*t
 		sz = sz - vz*t
-		
+
 		cx,cy,cz = ncx,ncy,ncz
-		
+
 		if d == 0 then sx = 1
 		elseif d == 1 then sy = 1
 		else sz = 1 end
-		
+
 		pillar = npillar
 	end
 end
@@ -240,19 +234,19 @@ function trace_map_box(x1,y1,z1, x2,y2,z2, bx1,by1,bz1, bx2,by2,bz2, canwrap)
 			return d
 		end
 	end
-	
+
 	-- delta
 	local dx,dy,dz
 	dx = x2-x1
 	dy = y2-y1
 	dz = z2-z1
-	
+
 	-- offsets
 	local fx,fy,fz
 	if dx < 0 then fx = bx1 else fx = bx2 end
 	if dy < 0 then fy = by1 else fy = by2 end
 	if dz < 0 then fz = bz1 else fz = bz2 end
-	
+
 	-- direction
 	local gx,gy,gz
 	if dx < 0 then gx = -1 else gx = 1 end
@@ -261,19 +255,19 @@ function trace_map_box(x1,y1,z1, x2,y2,z2, bx1,by1,bz1, bx2,by2,bz2, canwrap)
 	dx = dx * gx
 	dy = dy * gy
 	dz = dz * gz
-	
+
 	-- combined box size
 	local bcx,bcy,bcz
 	bcx = (bx2-bx1)
 	bcy = (by2-by1)
 	bcz = (bz2-bz1)
-	
+
 	-- top left offset (note, incorrect name!)
 	local tlx,tly,tlz
 	if gx >= 0 then tlx = 0.999 else tlx = 0.001 end
 	if gy >= 0 then tly = 0.999 else tly = 0.001 end
 	if gz >= 0 then tlz = 0.999 else tlz = 0.001 end
-	
+
 	-- apply offset
 	x1 = x1 + fx
 	y1 = y1 + fy
@@ -284,19 +278,19 @@ function trace_map_box(x1,y1,z1, x2,y2,z2, bx1,by1,bz1, bx2,by2,bz2, canwrap)
 	bx2 = bx2 - fx
 	by2 = by2 - fy
 	bz2 = bz2 - fz
-	
+
 	-- cell
 	local cx,cy,cz
 	cx = math.floor(x1)
 	cy = math.floor(y1)
 	cz = math.floor(z1)
-	
+
 	-- target cell
 	local tcx,tcy,tcz
 	tcx = math.floor(x2+fx+gx*0.002)
 	tcy = math.floor(y2+fy+gy*0.002)
 	tcz = math.floor(z2+fz+gz*0.002)
-	
+
 	-- sub deltas
 	local sx, sy, sz
 	sx = (x1 % 1.0) - 0.001
@@ -305,30 +299,30 @@ function trace_map_box(x1,y1,z1, x2,y2,z2, bx1,by1,bz1, bx2,by2,bz2, canwrap)
 	if gx >= 0 then sx = 1-sx end
 	if gy >= 0 then sy = 1-sy end
 	if gz >= 0 then sz = 1-sz end
-	
+
 	-- restricted x/y/z
 	local rx,ry,rz
 	rx = nil
 	ry = nil
 	rz = nil
-	
+
 	-- TODO: unset these when another boundary is crossed
-	
+
 	local i
 	local iend = (
 		  math.abs(tcx-cx)
 		+ math.abs(tcy-cy)
 		+ math.abs(tcz-cz)
 	)
-	
+
 	for i=1,iend do
 		-- get the time it takes to hit the boundary
 		local tx = sx/depsilon(dx)
 		local ty = sy/depsilon(dy)
 		local tz = sz/depsilon(dz)
-		
+
 		local t, d, ck
-		
+
 		if tx < ty and tx < tz then
 			-- X first
 			d = 0
@@ -342,14 +336,14 @@ function trace_map_box(x1,y1,z1, x2,y2,z2, bx1,by1,bz1, bx2,by2,bz2, canwrap)
 			d = 2
 			t = tz
 		end
-		
+
 		sx = sx - t*dx
 		sy = sy - t*dy
 		sz = sz - t*dz
 		x1 = rx or x1 + t*dx*gx
 		y1 = ry or y1 + t*dy*gy
 		z1 = rz or z1 + t*dz*gz
-		
+
 		if d == 0 then
 			-- X first
 			sx = 1.0
@@ -369,14 +363,14 @@ function trace_map_box(x1,y1,z1, x2,y2,z2, bx1,by1,bz1, bx2,by2,bz2, canwrap)
 			if not ck then rz = cz + tlz end
 			if not rz then cz = cz + gz end
 		end
-		
+
 		--if not ck then return x1-bx1, y1-by1, z1-bz1 end
 	end
 	--
 	if rx then rx = rx - fx end
 	if ry then ry = ry - fy end
 	if rz then rz = rz - fz end
-	
+
 	return rx or x2, ry or y2, rz or z2
 end
 

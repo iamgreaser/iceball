@@ -401,6 +401,11 @@ function bhealth_damage(x,y,z,amt,plr)
 	
 	if client then
 		local block_particlecount = math.random() * 20 + 10
+		local mdl = new_particle_model(
+			math.floor(c[2]*light+0.5),
+			math.floor(c[3]*light+0.5),
+			math.floor(c[4]*light+0.5)) 
+
 		for i=1,block_particlecount do
 			particles_add(new_particle{
 				x = x + 0.5,
@@ -409,10 +414,9 @@ function bhealth_damage(x,y,z,amt,plr)
 				vx = math.random() * 2 - 1,
 				vy = math.random(),
 				vz = math.random() * 2 - 1,
-				r = math.floor(c[2]*light+0.5),
-				g = math.floor(c[3]*light+0.5),
-				b = math.floor(c[4]*light+0.5),
-				lifetime = 0.5 + math.random() * 0.25
+				lifetime = 0.5 + math.random() * 0.25,
+				size = 32,
+				model = mdl,
 			})
 		end
 	end

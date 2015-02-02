@@ -38,6 +38,19 @@ function particles_prune(sec_current)
 	end
 end
 
+function new_particle_model(r, g, b, size)
+	local mdl_particle = common.model_new(1)
+	local mdl_particle_bone , mdl_particle_tab = 0, nil
+	mdl_particle, mdl_particle_bone = common.model_bone_new(mdl_particle, 1), 0
+	mdl_particle_tab = {{
+		x = 0, y = 0, z = 0,
+		radius = size or 1,
+		r = r, g = g, b = b,
+	}}
+	common.model_bone_set(mdl_particle, mdl_particle_bone, "particle", mdl_particle_tab)
+	return mdl_particle
+end
+
 function new_particle(settings)
 	local this = {
 		x = settings.x or 0,
