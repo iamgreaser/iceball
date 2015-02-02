@@ -1134,7 +1134,7 @@ function new_player(settings)
 		-- set camera position
 		if this.alive then
 			client.camera_move_to(this.x, this.y + this.jerkoffs, this.z)
-			if MODE_FREEAIM then
+			if MODE_FREEAIM and this.crosshair then
                 	        local function ang_dist(a, b)
         	                        return math.atan2(math.sin(a-b), math.cos(a-b))
 	                        end
