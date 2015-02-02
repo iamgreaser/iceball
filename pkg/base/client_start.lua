@@ -208,16 +208,16 @@ function tracer_add(x,y,z,ya,xa,time)
 end
 
 function tracer_prune(time)
-	while tracers.head <= tracers.tail and tracers[tracers.head].time >= time + 0.4 do
+	while tracers.head <= tracers.tail and tracers[tracers.head].time + 0.4 <= time do
 		tracers[tracers.head] = nil
 		tracers.head = tracers.head + 1
 	end
-	
+
 	if tracers.head > tracers.tail then
 		tracers.head = 1
 		tracers.tail = 0
 	end
-	
+
 	tracers.time = time
 end
 
@@ -395,10 +395,44 @@ mdl_bbox, mdl_bbox_bone2 = client.model_bone_new(mdl_bbox)
 client.model_bone_set(mdl_bbox, mdl_bbox_bone1, "bbox_stand", mdl_bbox_bone_data1)
 client.model_bone_set(mdl_bbox, mdl_bbox_bone2, "bbox_crouch", mdl_bbox_bone_data2)
 
+-- profile bone count
+if false then
+	local bone_ctr = 0
+	function bone_ctr_reset()
+		local ret = bone_ctr
+		print("bones:", bone_ctr)
+		bone_ctr = 0
+		return ret
+	end
+
+	local old_model_render_bone_global = client.model_render_bone_global
+	local old_model_render_bone_local = client.model_render_bone_local
+
+	function client.model_render_bone_global(...)
+		bone_ctr = bone_ctr + 1
+		return old_model_render_bone_global(...)
+	end
+
+	function common.model_render_bone_global(...)
+		bone_ctr = bone_ctr + 1
+		return old_model_render_bone_global(...)
+	end
+
+	function client.model_render_bone_local(...)
+		bone_ctr = bone_ctr + 1
+		return old_model_render_bone_local(...)
+	end
+
+	function common.model_render_bone_local(...)
+		bone_ctr = bone_ctr + 1
+		return old_model_render_bone_local(...)
+	end
+end
 
 -- set hooks
 lflush = nil
 function h_tick_main(sec_current, sec_delta)
+	bone_ctr_reset()
 	if (not lflush) or sec_current < lflush - 0.8 then
 		lflush = sec_current
 	end
