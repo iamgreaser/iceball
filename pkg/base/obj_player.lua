@@ -843,6 +843,28 @@ function new_player(settings)
 				-0.4,  by1, -0.4,
 				0.4,  by2,  0.4,
 				false)
+
+			-- Inhibit movement into a wall
+			local cox = math.floor(ox)
+			local coz = math.floor(oz)
+			local cnxp = math.floor(tx1 + 0.39 + 0.0012)
+			local cnzp = math.floor(tz1 + 0.39 + 0.0012)
+			local cnxn = math.floor(tx1 - 0.39 - 0.0012)
+			local cnzn = math.floor(tz1 - 0.39 - 0.0012)
+
+			if nx > ox and not box_is_clear(cnxp+0.1, ty1+by1+1.0, coz+0.1, cnxp+0.9, ty1+by2, coz+0.9) then
+				tx1 = cnxp - 0.39 - 0.001
+			end
+			if nx < ox and not box_is_clear(cnxn+0.1, ty1+by1+1.0, coz+0.1, cnxn+0.9, ty1+by2, coz+0.9) then
+				tx1 = cnxn + 0.39 + 0.001
+			end
+			if nz > oz and not box_is_clear(cox+0.1, ty1+by1+1.0, cnzp+0.1, cox+0.9, ty1+by2, cnzp+0.9) then
+				tz1 = cnzp - 0.39 - 0.001
+			end
+			if nz < oz and not box_is_clear(cox+0.1, ty1+by1+1.0, cnzn+0.1, cox+0.9, ty1+by2, cnzn+0.9) then
+				tz1 = cnzp + 0.39 + 0.001
+			end
+			
 		else
 			tx1,ty1,tz1 = nx,ny,nz
 		end

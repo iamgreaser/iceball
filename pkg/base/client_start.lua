@@ -432,7 +432,10 @@ end
 -- set hooks
 lflush = nil
 function h_tick_main(sec_current, sec_delta)
-	bone_ctr_reset()
+	if bone_ctr_reset then
+		bone_ctr_reset()
+	end
+
 	if (not lflush) or sec_current < lflush - 0.8 then
 		lflush = sec_current
 	end
