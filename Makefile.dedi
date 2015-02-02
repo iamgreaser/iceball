@@ -10,11 +10,11 @@ CFLAGS = -DDEDI -O2 -fno-strict-aliasing -g -Wall -Wextra \
 	$(HEADERS_Lua)
 
 HEADERS_ENet = `pkg-config libenet --cflags`
-HEADERS_Lua = `pkg-config lua-5.1 --cflags`
+HEADERS_Lua = `pkg-config lua-5.1 --cflags` `pkg-config lua5.1 --cflags`
 
 LDFLAGS = -pg -g -I/usr/local/include $(LDFLAGS_EXTRA)
 LIBS_ENet = `pkg-config libenet --libs`
-LIBS_Lua = `pkg-config lua-5.1 --libs`
+LIBS_Lua = `pkg-config lua-5.1 --libs` `pkg-config lua5.1 --libs`
 # Lua is not an acronym. Get used to typing it with lower case u/a.
 LIBS_zlib = -lz
 LIBS_sackit = -lsackit

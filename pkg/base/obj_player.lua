@@ -2062,7 +2062,8 @@ function new_player(settings)
 				if key == BTSK_DEBUG then
 					debug_enabled = not debug_enabled
 				elseif key == SDLK_F10 then
-					local s = "clsave/"..common.base_dir.."/vol/lastsav.icemap"
+					--local s = "clsave/"..common.base_dir.."/vol/lastsav.icemap"
+					local s = "clsave/vol/lastsav.icemap"
 					print(s)
 					--client.map_load(s)
 					client.map_save(map_loaded, s, "icemap")

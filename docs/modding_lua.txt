@@ -518,7 +518,11 @@ common.json_write(fname, value) @
 
 str = common.net_pack(fmt, ...) @
 	packs data into a string
-	
+
+	WARNING: signed/unsigned kinda does matter.
+	if you give any values out of range, behaviour is undefined!
+	(in other words, ARM behaves differently from x86)
+
 	format is as such:
 	b/B = signed/unsigned 8-bit [def 0]
 	h/H = signed/unsigned 16-bit [def 0]

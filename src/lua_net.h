@@ -107,7 +107,8 @@ int icelua_fn_common_net_pack(lua_State *L)
 	int p = 2;
 	int n = 0;
 	
-	int xint;
+	int32_t xint;
+	uint32_t xuint;
 	float xfloat;
 	double xdouble;
 	
@@ -138,17 +139,28 @@ int icelua_fn_common_net_pack(lua_State *L)
 				*(s++) = xint & 0xFF;
 				*(s++) = (xint>>8) & 0xFF;
 				break;
+
+				// ARM clamps to signed or unsigned depending on argument
+				// so we need to split this into two things
 			case 'i':
-			case 'I':
-				xint = lua_tointeger(L, p++);
+				xint = lua_tonumber(L, p++);
 				*(s++) = xint & 0xFF;
 				*(s++) = (xint>>8) & 0xFF;
 				*(s++) = (xint>>16) & 0xFF;
 				*(s++) = (xint>>24) & 0xFF;
 				break;
+			case 'I':
+				xuint = lua_tonumber(L, p++);
+				*(s++) = xuint & 0xFF;
+				*(s++) = (xuint>>8) & 0xFF;
+				*(s++) = (xuint>>16) & 0xFF;
+				*(s++) = (xuint>>24) & 0xFF;
+				break;
+
+				// ARM requires floats + doubles to be word-aligned
 			case 'f':
 				xfloat = lua_tonumber(L, p++);
-				xint = *(int *)(float *)&xfloat;
+				xint = *(int32_t *)(float *)&xfloat;
 				*(s++) = xint & 0xFF;
 				*(s++) = (xint>>8) & 0xFF;
 				*(s++) = (xint>>16) & 0xFF;
@@ -156,12 +168,12 @@ int icelua_fn_common_net_pack(lua_State *L)
 				break;
 			case 'd':
 				xdouble = lua_tonumber(L, p++);
-				xint = ((int *)(float *)&xdouble)[0];
+				xint = ((int32_t *)(float *)&xdouble)[0];
 				*(s++) = xint & 0xFF;
 				*(s++) = (xint>>8) & 0xFF;
 				*(s++) = (xint>>16) & 0xFF;
 				*(s++) = (xint>>24) & 0xFF;
-				xint = ((int *)(float *)&xdouble)[1];
+				xint = ((int32_t *)(float *)&xdouble)[1];
 				*(s++) = xint & 0xFF;
 				*(s++) = (xint>>8) & 0xFF;
 				*(s++) = (xint>>16) & 0xFF;
@@ -223,7 +235,8 @@ int icelua_fn_common_net_unpack(lua_State *L)
 	int p = 0;
 	int n = 0;
 	
-	int xint;
+	int32_t xint;
+	uint32_t xuint;
 	float xfloat;
 	double xdouble;
 	
@@ -264,19 +277,21 @@ int icelua_fn_common_net_unpack(lua_State *L)
 				p++;
 				break;
 			case 'I':
-				xint = *(uint32_t *)s;
+				xuint = *(uint32_t *)s;
 				s += 4;
-				lua_pushinteger(L, xint);
+				lua_pushnumber(L, (double)xuint);
 				p++;
 				break;
 			case 'f':
-				xfloat = *(float *)s;
+				xint = *(uint32_t *)s;
+				xfloat = *(float *)&xint;
 				s += 4;
 				lua_pushnumber(L, xfloat);
 				p++;
 				break;
 			case 'd':
-				xdouble = *(double *)s;
+				xint = *(uint32_t *)s;
+				xdouble = *(double *)&xint;
 				s += 8;
 				lua_pushnumber(L, xdouble);
 				p++;
