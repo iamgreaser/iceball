@@ -80,11 +80,13 @@ function heartbeat_update(sec_current, sec_delta)
 			irc.write("*** heartbeat server \""..host.."\" port "..port.." reports bad packet format - FIX ME OR REMOVE THIS SERVER")
 			heartbeat_t_burstsleft = nil
 			heartbeat_t_nextmsg = nil
+			heartbeat_t_nextburst = heartbeat_t_nextburst + 60*30
 		elseif msg:len() >= 4 and msg:sub(1,4) == "BADV" then
 			print("*** heartbeat server \""..host.."\" port "..port.." reports bad version - UPGRADE OR REMOVE THIS SERVER")
 			irc.write("*** heartbeat server \""..host.."\" port "..port.." reports bad version - UPGRADE OR REMOVE THIS SERVER")
 			heartbeat_t_burstsleft = nil
 			heartbeat_t_nextmsg = nil
+			heartbeat_t_nextburst = heartbeat_t_nextburst + 60*30
 		end
 	end
 
