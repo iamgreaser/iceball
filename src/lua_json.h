@@ -56,7 +56,7 @@ int icelua_fn_common_json_write(lua_State *L)
 	
 	if(fname == NULL)
 		return luaL_error(L, "json_write: filename not a string");
-	if(!(boot_mode & 2) && !path_type_client_writable(path_get_type(fname)))
+	if(!(boot_mode & 2) || !path_type_client_writable(path_get_type(fname)))
 		return luaL_error(L, "json_write: file not writable!");
 	
 	json_write(L, fname);

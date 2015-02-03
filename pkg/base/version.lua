@@ -20,9 +20,9 @@
 -- Thanks. --GM
 
 VERSION_ENGINE = {
-	cmp={0,2,0,0,2},
-	num=8388608+2,
-	str="0.2-2",
+	cmp={0,2,0,0,3},
+	num=8388608+3,
+	str="0.2-3",
 }
 
 -- 0.1: 4194304
@@ -133,8 +133,9 @@ VERSION_BUGS = {
 {intro=nil, fix=4259840+12, msg="Frame delay in client.hook_tick doesn't work properly - Frame limiter will not work"},
 {intro=nil, fix=4259840+14, msg="Network serialisation broken on ARM"},
 {intro=nil, fix=8388608+1, msg="Local code cannot write to clsave/pub"},
-{intro=nil, fix=8388608+2, msg="JSON writer crashes on 64-bit builds"},
+{intro=4259840+6, fix=8388608+2, msg="JSON writer crashes on 64-bit builds"},
 {intro=nil, fix=8388608+2, msg="tcp_connect crashes on address failure"},
 {intro=nil, fix=8388608+2, msg="argb_spit_to_merged broken on ARM"},
+{intro=4259840+6, fix=8388608+3, msg="JSON writer not sandboxed"},
 }
 
