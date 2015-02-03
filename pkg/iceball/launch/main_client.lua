@@ -56,6 +56,8 @@ function client.hook_key(key, state, modif, uni)
 	if not state then
 		if key == SDLK_l then
 			client.mk_sys_execv("-s", "20737", "pkg/base", arg_closure(argv))
+		elseif key == SDLK_c then
+			client.mk_sys_execv("-s", "0", "pkg/iceball/config")
 		elseif key == SDLK_ESCAPE then
 			client.hook_tick = nil
 		elseif key >= SDLK_1 and key <= SDLK_9 then
@@ -97,8 +99,9 @@ function client.hook_render()
 	local ch = font.iheight
 	font.render(0, ch*0, "Press L for a local server on port 20737", 0xFFEEEEEE)
 	font.render(0, ch*1, "Press Escape to quit", 0xFFEEEEEE)
-	font.render(0, ch*2, "Press a number to join a server", 0xFFEEEEEE)
-	font.render(0, ch*4, "Server list:", 0xFFEEEEEE)
+	font.render(0, ch*2, "Press C to change your settings", 0xFFEEEEEE)
+	font.render(0, ch*3, "Press a number to join a server", 0xFFEEEEEE)
+	font.render(0, ch*5, "Server list:", 0xFFEEEEEE)
 
 	local i
 	if server_list == true then
@@ -108,7 +111,7 @@ function client.hook_render()
 	else
 		for i=1,#server_list do
 			local sv = server_list[i]
-			font.render(0, ch*(6+i-1), i..": "..sv.name
+			font.render(0, ch*(7+i-1), i..": "..sv.name
 				.." - "..sv.players_current.."/"..sv.players_max
 				.." - "..sv.mode
 				.." - "..sv.map, 0xAA000000)
