@@ -852,17 +852,19 @@ function new_player(settings)
 			local cnxn = math.floor(tx1 - 0.39 - 0.0012)
 			local cnzn = math.floor(tz1 - 0.39 - 0.0012)
 
-			if nx > ox and not box_is_clear(cnxp+0.1, ty1+by1+1.0, coz+0.1, cnxp+0.9, ty1+by2, coz+0.9) then
-				tx1 = cnxp - 0.39 - 0.001
-			end
-			if nx < ox and not box_is_clear(cnxn+0.1, ty1+by1+1.0, coz+0.1, cnxn+0.9, ty1+by2, coz+0.9) then
-				tx1 = cnxn + 0.39 + 0.001
-			end
-			if nz > oz and not box_is_clear(cox+0.1, ty1+by1+1.0, cnzp+0.1, cox+0.9, ty1+by2, cnzp+0.9) then
-				tz1 = cnzp - 0.39 - 0.001
-			end
-			if nz < oz and not box_is_clear(cox+0.1, ty1+by1+1.0, cnzn+0.1, cox+0.9, ty1+by2, cnzn+0.9) then
-				tz1 = cnzp + 0.39 + 0.001
+			if box_is_clear(cox+0.1, ty1+by1+1.0, coz+0.1, cox+0.9, ty1+by2, coz+0.9) then
+				if nx > ox and not box_is_clear(cnxp+0.1, ty1+by1+1.0, coz+0.1, cnxp+0.9, ty1+by2, coz+0.9) then
+					tx1 = cnxp - 0.39 - 0.001
+				end
+				if nx < ox and not box_is_clear(cnxn+0.1, ty1+by1+1.0, coz+0.1, cnxn+0.9, ty1+by2, coz+0.9) then
+					tx1 = cnxn + 0.39 + 0.001
+				end
+				if nz > oz and not box_is_clear(cox+0.1, ty1+by1+1.0, cnzp+0.1, cox+0.9, ty1+by2, cnzp+0.9) then
+					tz1 = cnzp - 0.39 - 0.001
+				end
+				if nz < oz and not box_is_clear(cox+0.1, ty1+by1+1.0, cnzn+0.1, cox+0.9, ty1+by2, cnzn+0.9) then
+					tz1 = cnzp + 0.39 + 0.001
+				end
 			end
 			
 		else
