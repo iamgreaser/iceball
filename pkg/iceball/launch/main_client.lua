@@ -68,28 +68,53 @@ function client.hook_key(key, state, modif, uni)
 	end
 end
 
-client.map_fog_set(0, 0, 170, 100)
+img_splash = common.img_load("pkg/base/gfx/splash_logo.png", "png")
+local splashtweenprogress_scale = 0.9
+local splashtweenprogress_y = 1.0
+client.map_fog_set(194, 89, 89, 100)
 function client.hook_render()
+--splash sequence
+	img_splash_width, img_splash_height = common.img_get_dims(img_splash)
+	screen_width, screen_height = client.screen_get_dims()
+	if splashtweenprogress_scale > 0.25 then
+		if splashtweenprogress_scale > 0.85 then
+			splashtweenprogress_scale = splashtweenprogress_scale - 0.001 --would be nice to do this with frame delta time
+		elseif splashtweenprogress_scale < 0.5 then
+			splashtweenprogress_scale = splashtweenprogress_scale - 0.0112
+		else
+			splashtweenprogress_scale = splashtweenprogress_scale - 0.068
+		end
+	end
+	if splashtweenprogress_y < 2.0 and  splashtweenprogress_scale < 0.85 then
+		splashtweenprogress_y = splashtweenprogress_y + 0.1
+	end
+	client.img_blit(img_splash, screen_width - (img_splash_width/(1/splashtweenprogress_scale)), (screen_height/(2/splashtweenprogress_y)) - (img_splash_height/(1/splashtweenprogress_scale)), img_splash_width/(1/splashtweenprogress_scale), img_splash_height/(1/splashtweenprogress_scale), 0, 0, 0xFFFFFFFF, splashtweenprogress_scale, splashtweenprogress_scale)
+--splash sequence end
+
+	if splashtweenprogress_scale <= 0.5 then --don't draw text over the splash
+	
 	local font = font_dejavu_bold[18]
 	local ch = font.iheight
-	font.render(0, ch*0, "Press L for a local server on port 20737")
-	font.render(0, ch*1, "Press Escape to quit")
-	font.render(0, ch*2, "Press a number to join a server")
-	font.render(0, ch*4, "Server list:")
+	font.render(0, ch*0, "Press L for a local server on port 20737", 0xFFEEEEEE)
+	font.render(0, ch*1, "Press Escape to quit", 0xFFEEEEEE)
+	font.render(0, ch*2, "Press a number to join a server", 0xFFEEEEEE)
+	font.render(0, ch*4, "Server list:", 0xFFEEEEEE)
 
 	local i
 	if server_list == true then
-		font.render(0, ch*6, "Fetching...", 0xFFAAAAAA)
+		font.render(0, ch*6, "Fetching...", 0xFFEEEEEE)
 	elseif server_list == nil then
-		font.render(0, ch*6, "Failed to fetch the server list.", 0xFFFF5555)
+		font.render(0, ch*6, "Failed to fetch the server list.", 0xFFEEEEEE)
 	else
 		for i=1,#server_list do
 			local sv = server_list[i]
 			font.render(0, ch*(6+i-1), i..": "..sv.name
 				.." - "..sv.players_current.."/"..sv.players_max
 				.." - "..sv.mode
-				.." - "..sv.map)
+				.." - "..sv.map, 0xAA000000)
 		end
+	end
+	
 	end
 end
 
