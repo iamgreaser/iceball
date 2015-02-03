@@ -591,7 +591,7 @@ end, function (neth, cli, plr, sec_current, tidx, wpn, name, pkt)
 		net_send(neth, common.net_pack("BB",
 			PKT_PLR_ID, cli.plrid))
 		
-		local s = "* Player "..name.." (#"..cli.plrid..", neth "..((neth == true and "(local)") or "nil")..") has joined the "..teams[plr.team].name.." team"
+		local s = "* Player "..name.." (#"..cli.plrid..", neth "..((neth == true and "(local)") or neth)..") has joined the "..teams[plr.team].name.." team"
 		irc.write(s)
 		local s = "* Player "..name.." has joined the "..teams[plr.team].name.." team"
 		net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFF800000,
