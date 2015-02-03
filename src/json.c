@@ -572,7 +572,7 @@ int json_write_number(lua_State *L, FILE *fp)
 */
 int json_write_string(lua_State *L, FILE *fp)
 {
-	unsigned int len;
+	size_t len;
 	const char* c = lua_tolstring(L, -1, (size_t *)&len);
 	fwrite("\"", 1, 1, fp);
 	for(; len > 0; --len)
@@ -593,8 +593,9 @@ int json_write_string(lua_State *L, FILE *fp)
 			fwrite("\\t", 2, 1, fp);
 		else if(!isprint(*c))
 		{
-			char* buf = (char*) malloc(6);
-			sprintf(buf, "\\u%4.4X", *((unsigned char*) c));
+			// TODO: handle unicode
+			char buf[20];
+			sprintf(buf, "\\u%04X", *((unsigned char*) c));
 			fwrite(buf, 6, 1, fp);
 		}
 		else
@@ -627,6 +628,7 @@ int json_write_string(lua_State *L, FILE *fp)
 int json_write_table(lua_State *L, FILE *fp)
 {
 	fwrite("{\r\n", 3, 1, fp);
+	luaL_checkstack(L, 2, "json_write_table failed to expand stack");
 	lua_pushnil(L);
 	if (lua_next(L, -2))
 	{
@@ -646,6 +648,7 @@ int json_write_table(lua_State *L, FILE *fp)
 	}
 	fwrite("}", 1, 1, fp);
 	lua_pop(L, 1);
+	luaL_checkstack(L, -2, "json_write_table failed to contract stack");
 	return 0;
 }
 
@@ -665,6 +668,7 @@ int json_write_table(lua_State *L, FILE *fp)
 */
 int json_write_array(lua_State *L, FILE *fp)
 {
+	luaL_checkstack(L, 2, "json_write_array failed to expand stack");
 	fwrite("[", 1, 1, fp);
 	lua_pushnil(L);
 	if (lua_next(L, -2))
@@ -678,6 +682,7 @@ int json_write_array(lua_State *L, FILE *fp)
 	}
 	fwrite("]", 1, 1, fp);
 	lua_pop(L, 1);
+	luaL_checkstack(L, -2, "json_write_array failed to contract stack");
 	return 0;
 }
 

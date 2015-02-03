@@ -49,7 +49,11 @@ int icelua_fn_common_tcp_connect(lua_State *L) {
 
 	snprintf(port_ch, 17, "%u", port);
 
-	getaddrinfo(host, port_ch, &hints, &res);
+	if(getaddrinfo(host, port_ch, &hints, &res) != 0)
+	{
+		if(res != NULL) freeaddrinfo(res);
+		return 0;
+	}
 	sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 
 	ret = connect(sockfd, res->ai_addr, res->ai_addrlen);
