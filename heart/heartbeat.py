@@ -31,7 +31,7 @@ def ib_version_str(n):
 	if y > 0:
 		s += ".%i" % y
 	if a > 0:
-		s += "." + chr(ord('a')+a-1)
+		s += chr(ord('a')+a-1)
 	if z > 0:
 		s += "-%i" % z
 	
@@ -45,7 +45,7 @@ def calc_ib_version(w,x,y,a,z):
 
 HB_LIFETIME = 120
 HB_VERSION = 2
-IB_VERSION_CMP = (0,2,0,0,0)
+IB_VERSION_CMP = (0,2,0,1,0)
 IB_VERSION = calc_ib_version(*IB_VERSION_CMP)
 
 # ignore "Z" version
