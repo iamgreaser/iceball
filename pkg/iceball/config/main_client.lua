@@ -126,16 +126,21 @@ function sprint(x, y, color, align, s, ...)
 end
 
 blink_cursor = "_"
+blink_time = 0
 json = common.json_load("clsave/pub/user.json")
 name = json["name"]
 
+
 function client.hook_tick(sec_current, sec_delta)
-	if blink_cursor == "_" then
-		blink_cursor = " "
-	else
-		blink_cursor = "_"
+	if blink_time < sec_current then
+		if blink_cursor == "_" then
+			blink_cursor = " "
+		else
+			blink_cursor = "_"
+		end
+		blink_time = sec_current + 0.25
 	end
-	return 0.25
+	return 0.033
 end
 
 function client.hook_key(key, state, modif, uni)
