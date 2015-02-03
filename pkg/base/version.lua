@@ -20,9 +20,9 @@
 -- Thanks. --GM
 
 VERSION_ENGINE = {
-	cmp={0,2,0,0,0},
-	num=8388608+0,
-	str="0.2",
+	cmp={0,2,0,0,1},
+	num=8388608+1,
+	str="0.2-1",
 }
 
 -- 0.1: 4194304
@@ -132,5 +132,6 @@ VERSION_BUGS = {
 {intro=4259840+10, fix=4259840+11, msg="GARBAGE COLLECTION CRASHY AND UNSTABLE, DO NOT USE THIS VERSION"},
 {intro=nil, fix=4259840+12, msg="Frame delay in client.hook_tick doesn't work properly - Frame limiter will not work"},
 {intro=nil, fix=4259840+14, msg="Network serialisation broken on ARM"},
+{intro=nil, fix=8388608+1, msg="Local code cannot write to clsave/pub"},
 }
 
