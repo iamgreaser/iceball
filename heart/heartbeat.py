@@ -31,7 +31,7 @@ def ib_version_str(n):
 	if y > 0:
 		s += ".%i" % y
 	if a > 0:
-		s += "." + chr(ord('a')+a-1)
+		s += chr(ord('a')+a-1)
 	if z > 0:
 		s += "-%i" % z
 	
