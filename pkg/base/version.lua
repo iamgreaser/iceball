@@ -20,15 +20,18 @@
 -- Thanks. --GM
 
 VERSION_ENGINE = {
-	cmp={0,2,0,0,3},
-	num=8388608+3,
+	cmp={0,2,0,1,0},
+	num=8389362,
 	str="0.2-3",
 }
+
+--error(""..common.version.num)
 
 -- 0.1: 4194304
 -- 0.1.1: 4227072
 -- 0.1.2: 4259840
 -- 0.2: 8388608
+-- 0.2a: 8389362
 
 VERSION_BUGS = {
 {intro=nil, fix=1, msg="PMF models have the wrong Z value when close to the screen edges, and can be seen through walls"},
@@ -136,6 +139,6 @@ VERSION_BUGS = {
 {intro=4259840+6, fix=8388608+2, msg="JSON writer crashes on 64-bit builds"},
 {intro=nil, fix=8388608+2, msg="tcp_connect crashes on address failure"},
 {intro=nil, fix=8388608+2, msg="argb_spit_to_merged broken on ARM"},
-{intro=4259840+6, fix=8388608+3, msg="JSON writer not sandboxed"},
+{intro=4259840+6, fix=8389362, msg="JSON writer not sandboxed - UPGRADE"},
 }
 
