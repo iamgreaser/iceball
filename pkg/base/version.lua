@@ -139,7 +139,7 @@ VERSION_BUGS = {
 {intro=4259840+6, fix=8388608+2, msg="JSON writer crashes on 64-bit builds"},
 {intro=nil, fix=8388608+2, msg="tcp_connect crashes on address failure"},
 {intro=nil, fix=8388608+2, msg="argb_spit_to_merged broken on ARM"},
-{intro=4259840+6, fix=8389362, msg="JSON writer not sandboxed - UPGRADE"},
-{intro=nil, fix=8389362+1, msg="Lua vertex array (VA) rendering not supported"},
+{intro=4259840+6, fix=8389632, msg="JSON writer not sandboxed - UPGRADE"},
+{intro=nil, fix=8389632+1, msg="Lua vertex array (VA) rendering not supported"},
 }
 
