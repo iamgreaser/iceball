@@ -20,9 +20,9 @@
 -- Thanks. --GM
 
 VERSION_ENGINE = {
-	cmp={0,2,0,1,0},
-	num=8389632,
-	str="0.2a",
+	cmp={0,2,0,1,1},
+	num=8389632+1,
+	str="0.2a-1",
 }
 
 --error(""..common.version.num)
@@ -140,5 +140,6 @@ VERSION_BUGS = {
 {intro=nil, fix=8388608+2, msg="tcp_connect crashes on address failure"},
 {intro=nil, fix=8388608+2, msg="argb_spit_to_merged broken on ARM"},
 {intro=4259840+6, fix=8389362, msg="JSON writer not sandboxed - UPGRADE"},
+{intro=nil, fix=8389362+1, msg="Lua vertex array (VA) rendering not supported"},
 }
 

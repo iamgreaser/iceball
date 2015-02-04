@@ -23,7 +23,7 @@
 #define VERSION_X 2
 #define VERSION_Y 0
 #define VERSION_A 1
-#define VERSION_Z 0
+#define VERSION_Z 1
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!
@@ -160,6 +160,7 @@ enum
 	UD_MAX_SUPPORTED,
 
 	UD_IMG,
+	UD_VA,
 
 	UD_MAX
 };
@@ -243,6 +244,17 @@ struct model
 	int bonelen, bonemax;
 	model_bone_t *bones[];
 };
+
+typedef struct va
+{
+	int udtype;
+	int data_len; // measured in points
+	float *data;
+#ifndef DEDI
+	GLuint vbo;
+	int vbo_dirty;
+#endif
+} va_t;
 
 PACK_START
 // source: http://paulbourke.net/dataformats/tga/
@@ -588,6 +600,9 @@ void render_vxl_redraw(camera_t *camera, map_t *map);
 void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t *camera, map_t *map);
 void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_t *cam_base,
 	model_bone_t *bone, int islocal,
+	float px, float py, float pz, float ry, float rx, float ry2, float scale);
+void render_vertex_array(uint32_t *pixels, int width, int height, int pitch, camera_t *cam_base,
+	va_t *bone, int islocal,
 	float px, float py, float pz, float ry, float rx, float ry2, float scale);
 int render_init(int width, int height);
 void render_deinit(void);

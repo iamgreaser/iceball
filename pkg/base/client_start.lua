@@ -20,6 +20,16 @@ print(...)
 
 map_fname = nil
 frame_delay_ctr = 0.0001
+render_sec_current = nil
+
+VA_TEST = true
+
+-- Ensure we have VA support
+if VA_TEST then
+	if not common.va_make then
+		VA_TEST = false
+	end
+end
 
 -- yeah this really should happen ASAP so we can boot people who suck
 dofile("pkg/base/lib_util.lua")
@@ -432,6 +442,7 @@ end
 -- set hooks
 lflush = nil
 function h_tick_main(sec_current, sec_delta)
+	render_sec_current = sec_current
 	if bone_ctr_reset then
 		bone_ctr_reset()
 	end
@@ -555,6 +566,7 @@ function h_tick_main(sec_current, sec_delta)
 end
 
 function h_tick_init(sec_current, sec_delta)
+	render_sec_current = sec_current
 	local i
 	--[[local squads = {[0]={},[1]={}}
 	for i=1,4 do
@@ -898,7 +910,16 @@ do
 end
 
 -- hooks in place!
+if VA_TEST then
+	va_test = common.va_make({
+		{0, 0, 0, 1, 0.5, 0.5}, {1, 0, 0, 1, 0, 0}, {0, 1, 0, 1, 0, 0},
+		{0, 0, 0, 0.5, 1, 0.5}, {0, 0, 1, 0, 1, 0}, {1, 0, 0, 0, 1, 0},
+		{0, 0, 0, 0.5, 0.5, 1}, {0, 1, 0, 0, 0, 1}, {0, 0, 1, 0, 0, 1},
+		{1, 0, 0, 0.7, 0, 0.7}, {0, 0, 1, 0.7, 0, 0.7}, {0, 1, 0, 0.7, 0, 0.7},
+	})
+end
 function client.hook_render()
+	local sec_current = render_sec_current
 	local i
 	for i=tracers.head,tracers.tail do
 		local tc = tracers[i]
@@ -939,6 +960,9 @@ function client.hook_render()
 
 	if players and players[players.current] then
 		players[players.current].show_hud()
+	end
+	if VA_TEST and sec_current then
+		client.va_render_local(va_test, -0.8, 0.35, 1, sec_current, sec_current*0.8, sec_current*0.623, 0.1)
 	end
 end
 

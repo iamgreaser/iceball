@@ -172,6 +172,7 @@ obj = common.fetch_start(ftype, fname)
 	- "wav": wav sound
 	- "it": it music module
 	- "bin": raw data
+	- "ply": Stanford PLY model
 	- "log": log data (TODO)
 	
 	for the server, this just loads the file from the disk.
@@ -630,6 +631,25 @@ remain = common.udp_sendto(udpsockfd, data, host, port) @
 
 common.udp_close(udpsockfd) @
 	closes a UDP socket
+
+va = common.va_make(vlist, oldva = nil) @
+	makes a vertex array of triangles
+	vlist is a list of lists of floats in one of these formats:
+	- {{x,y,z,r,g,b}, ...}
+
+	more formats may come soon!
+
+	if you don't follow the formats this can throw an error,
+	so WATCH OUT.
+
+	oldva, when set, replaces an existing VA with new data,
+	and then this function will (theoretically) return oldva.
+
+client.va_render_global(va, px, py, pz, ry, rx, ry2, scale) @
+	draws a vertex array relative to the world
+
+client.va_render_local(va, px, py, pz, ry, rx, ry2, scale) @
+	draws a vertex array relative to the camera
 
 wav = common.wav_load(fname) @
 	loads a sound with filename "fname"

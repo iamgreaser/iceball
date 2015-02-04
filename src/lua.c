@@ -143,6 +143,7 @@ int icelua_fn_client_mk_set_title(lua_State *L)
 #include "lua_udp.h"
 #include "lua_util.h"
 #include "lua_wav.h"
+#include "lua_va.h"
 
 // common functions
 
@@ -179,6 +180,8 @@ struct icelua_entry icelua_client[] = {
 	{icelua_fn_client_wav_play_local, "wav_play_local"},
 	{icelua_fn_client_wav_chn_exists, "wav_chn_exists"},
 	{icelua_fn_client_wav_chn_update, "wav_chn_update"},
+	{icelua_fn_client_va_render_global, "va_render_global"},
+	{icelua_fn_client_va_render_local, "va_render_local"},
 	{icelua_fn_client_wav_kill, "wav_kill"},
 	{icelua_fn_client_mus_play, "mus_play"},
 	{icelua_fn_client_mus_stop, "mus_stop"},
@@ -245,6 +248,7 @@ struct icelua_entry icelua_common[] = {
 	{icelua_fn_common_argb_split_to_merged, "argb_split_to_merged"},
 	{icelua_fn_common_argb_merged_to_split, "argb_merged_to_split"},
 	{icelua_fn_common_time, "time"},
+	{icelua_fn_common_va_make, "va_make"},
 
 	{NULL, NULL}
 };

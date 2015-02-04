@@ -1278,7 +1278,6 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 	glRotatef(rx*180.0f/M_PI, 1.0f, 0.0f, 0.0f);
 	glRotatef(ry*180.0f/M_PI, 0.0f, 1.0f, 0.0f);
 
-
 	if(bone->vbo_dirty)
 	{
 		bone->vbo_arr_len = 0;
@@ -1329,6 +1328,58 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 
 	glPopMatrix();
 }
+
+void render_vertex_array(uint32_t *pixels, int width, int height, int pitch, camera_t *cam_base,
+	va_t *va, int islocal,
+	float px, float py, float pz, float ry, float rx, float ry2, float scale)
+{
+	int i;
+
+	glEnable(GL_DEPTH_TEST);
+	glPushMatrix();
+	if(islocal)
+		glLoadIdentity();
+	glTranslatef((islocal ? -px : px), py, pz);
+	glScalef(scale,scale,scale);
+	glRotatef(ry2*180.0f/M_PI, 0.0f, 1.0f, 0.0f);
+	glRotatef(rx*180.0f/M_PI, 1.0f, 0.0f, 0.0f);
+	glRotatef(ry*180.0f/M_PI, 0.0f, 1.0f, 0.0f);
+
+	if(va->vbo_dirty)
+	{
+		va->vbo_dirty = 0;
+		
+		if(va->vbo == 0 && GL_ARB_vertex_buffer_object && gl_use_vbo)
+			glGenBuffers(1, &(va->vbo));
+
+		if(va->vbo != 0)
+		{
+			glBindBuffer(GL_ARRAY_BUFFER, va->vbo);
+			glBufferData(GL_ARRAY_BUFFER, sizeof(float)*6*va->data_len, va->data, GL_STATIC_DRAW);
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+		}
+	}
+
+	if(va->vbo == 0)
+	{
+		glVertexPointer(3, GL_FLOAT, sizeof(float)*6, va->data);
+		glColorPointer(3, GL_FLOAT, sizeof(float)*6, va->data+3);
+	} else {
+		glBindBuffer(GL_ARRAY_BUFFER, va->vbo);
+		glVertexPointer(3, GL_FLOAT, sizeof(float)*6, (void *)(0));
+		glColorPointer(3, GL_FLOAT, sizeof(float)*6, (void *)(0 + sizeof(float)*3));
+	}
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_COLOR_ARRAY);
+	glDrawArrays(GL_TRIANGLES, 0, va->data_len);
+	glDisableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_COLOR_ARRAY);
+	if(va->vbo != 0)
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glPopMatrix();
+}
+
 
 int render_init(int width, int height)
 {
