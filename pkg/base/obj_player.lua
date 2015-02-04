@@ -199,6 +199,14 @@ function new_player(settings)
 		function this.expl_ammo_checkthrow() return false end
 
 		this.add_tools()
+
+		this.ev_forward = this.key_forward
+		this.ev_back = this.key_back
+		this.ev_left = this.key_left
+		this.ev_right = this.key_right
+		this.ev_crouch = this.key_crouch
+		this.ev_jump = this.key_jump
+		this.ev_sneak = this.key_sneak
 	end
 
 	function this.add_tools()
@@ -2065,18 +2073,25 @@ function new_player(settings)
 	function this.on_key(key, state, modif)
 		if key == BTSK_FORWARD then
 			this.ev_forward = state
+			this.key_forward = state
 		elseif key == BTSK_BACK then
 			this.ev_back = state
+			this.key_back = state
 		elseif key == BTSK_LEFT then
 			this.ev_left = state
+			this.key_left = state
 		elseif key == BTSK_RIGHT then
 			this.ev_right = state
+			this.key_right = state
 		elseif key == BTSK_CROUCH then
 			this.ev_crouch = state
+			this.key_crouch = state
 		elseif key == BTSK_JUMP then
 			this.ev_jump = state
+			this.key_jump = state
 		elseif key == BTSK_SNEAK then
 			this.ev_sneak = state
+			this.key_sneak = state
 		elseif key == BTSK_SCORES then
 			show_scores = state
 		elseif state and not this.menus_visible() then
