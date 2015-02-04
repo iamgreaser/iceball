@@ -15,10 +15,24 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
+-- Default values used by anything that doesn't explicitly set them
+local default_cfg = {
+	range = 127.5,
+	spread = 0,
+	pellet_count = 1,
+}
+
 return function (plr, cfg)
 	local this = {} this.this = this
 
 	this.cfg = cfg
+	
+	-- Default cfg values
+	for k, v in pairs(default_cfg) do
+		if this.cfg[k] == nil then
+			this.cfg[k] = v
+		end
+	end
 
 	this.gui_x = 0.15
 	this.gui_y = 0.25
@@ -56,9 +70,6 @@ return function (plr, cfg)
 		xlen, ylen, zlen = common.map_get_dims()
 		
 		if client then
-			tracer_add(plr.x,plr.y,plr.z,
-				plr.angy,plr.angx)
-			
 			client.wav_play_global(wav_rifle_shot, plr.x, plr.y, plr.z)
 			
 			bcase_part_mdl = bcase_part_mdl or new_particle_model(250, 215, 0)
@@ -75,67 +86,79 @@ return function (plr, cfg)
 			})
 		end
 		
-		local sya = math.sin(plr.angy)
-		local cya = math.cos(plr.angy)
-		local sxa = math.sin(plr.angx)
-		local cxa = math.cos(plr.angx)
-		local fwx,fwy,fwz
-		fwx,fwy,fwz = sya*cxa, sxa, cya*cxa
-		
-		-- perform a trace
-		local d,cx1,cy1,cz1,cx2,cy2,cz2
-		d,cx1,cy1,cz1,cx2,cy2,cz2
-		= trace_map_ray_dist(plr.x+sya*0.4,plr.y,plr.z+cya*0.4, fwx,fwy,fwz, 127.5)
-		d = d or 127.5
-		
-		-- see if there's anyone we can kill
-		local hurt_idx = nil
-		local hurt_part = nil
-		local hurt_part_idx = 0
-		local hurt_dist = d*d
-		local i,j
-		
-		for i=1,players.max do
-			local p = players[i]
-			if p and p ~= plr and p.alive then
-				local dx = p.x-plr.x
-				local dy = p.y-plr.y+0.1
-				local dz = p.z-plr.z
+		for i=1,(this.cfg.pellet_count) do
+			-- TODO: Better spread
+			-- spread
+			local angy = plr.angy + (this.cfg.spread * (math.random() - 0.5))
+			local angx = plr.angx + (this.cfg.spread * (math.random() - 0.5))
+			
+			local sya = math.sin(angy)
+			local cya = math.cos(angy)
+			local sxa = math.sin(angx)
+			local cxa = math.cos(angx)
+			local fwx,fwy,fwz
+			fwx,fwy,fwz = sya*cxa, sxa, cya*cxa
 				
-				for j=1,3 do
-					local dot, dd = isect_line_sphere_delta(dx,dy,dz,fwx,fwy,fwz)
-					if dot and dot < 0.55 and dd < hurt_dist then
-						hurt_idx = i
-						hurt_dist = dd
-						hurt_part_idx = j
-						hurt_part = ({"head","body","legs"})[j]
-						
-						break
-					end
-					dy = dy + 1.0
-				end
-			end
-		end
-		
-		if hurt_idx then
-			if server then
-				players[hurt_idx].gun_damage(
-					hurt_part, this.cfg.dmg[hurt_part], plr)
-			else
-				net_send(nil, common.net_pack("BBB"
-					, PKT_PLR_GUN_HIT, hurt_idx, hurt_part_idx))
-				plr.show_hit()
-			end
-		else
+			-- tracer
 			if client then
-				net_send(nil, common.net_pack("BBB"
-					, PKT_PLR_GUN_HIT, 0, 0))
+				tracer_add(plr.x, plr.y, plr.z, angy, angx)
 			end
 			
-			if cx2 and cy2 <= ylen-3 and cx2 >= 0 and cx2 < xlen and cz2 >= 0 and cz2 < zlen then
-				net_send(nil, common.net_pack("BHHHH", PKT_BLK_DAMAGE, cx2, cy2, cz2, MODE_BLOCK_DAMAGE_RIFLE))
+			-- perform a trace
+			local d,cx1,cy1,cz1,cx2,cy2,cz2
+			d,cx1,cy1,cz1,cx2,cy2,cz2
+			= trace_map_ray_dist(plr.x+sya*0.4,plr.y,plr.z+cya*0.4, fwx,fwy,fwz, this.cfg.range)
+			d = d or this.cfg.range
+			
+			-- see if there's anyone we can kill
+			local hurt_idx = nil
+			local hurt_part = nil
+			local hurt_part_idx = 0
+			local hurt_dist = d*d
+			local i,j
+			
+			for i=1,players.max do
+				local p = players[i]
+				if p and p ~= plr and p.alive then
+					local dx = p.x-plr.x
+					local dy = p.y-plr.y+0.1
+					local dz = p.z-plr.z
+					
+					for j=1,3 do
+						local dot, dd = isect_line_sphere_delta(dx,dy,dz,fwx,fwy,fwz)
+						if dot and dot < 0.55 and dd < hurt_dist then
+							hurt_idx = i
+							hurt_dist = dd
+							hurt_part_idx = j
+							hurt_part = ({"head","body","legs"})[j]
+							
+							break
+						end
+						dy = dy + 1.0
+					end
+				end
 			end
-		end
+			
+			if hurt_idx then
+				if server then
+					players[hurt_idx].gun_damage(
+						hurt_part, this.cfg.dmg[hurt_part], plr)
+				else
+					net_send(nil, common.net_pack("BBB"
+						, PKT_PLR_GUN_HIT, hurt_idx, hurt_part_idx))
+					plr.show_hit()
+				end
+			else
+				if client then
+					net_send(nil, common.net_pack("BBB"
+						, PKT_PLR_GUN_HIT, 0, 0))
+				end
+				
+				if cx2 and cy2 <= ylen-3 and cx2 >= 0 and cx2 < xlen and cz2 >= 0 and cz2 < zlen then
+					net_send(nil, common.net_pack("BHHHH", PKT_BLK_DAMAGE, cx2, cy2, cz2, MODE_BLOCK_DAMAGE_RIFLE))
+				end
+			end  -- if hurt_idx
+		end  -- for pellet_count
 		
 		-- apply recoil
 		-- attempting to emulate classic behaviour provided i have it right
