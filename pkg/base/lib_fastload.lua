@@ -205,7 +205,7 @@ function fastload_analyse_client()
 		if fname == "*MAPIMG" then
 			return common.img_new(800, 600)
 		else
-			fmt = fmt or "tga"
+			fmt = fmt or "png"
 			state.cache[fmt .. ":" .. fname] = common.bin_load(fname)
 			return common.img_load(fname, fmt)
 		end
