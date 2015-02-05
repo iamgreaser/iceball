@@ -403,7 +403,7 @@ function bhealth_damage(x,y,z,amt,plr)
 	blk.qidx = bhealth.tail
 	
 	if client then
-		local block_particlecount = math.random() * 20 + 10
+		local block_particlecount = (math.random() * 20 + 10)*0
 		--[[
 		local mdl = new_particle_model(
 			math.floor(c[2]*light+0.5),
@@ -430,7 +430,8 @@ end
 
 function bhealth_prune(time)
 	--print("prune", bhealth.head, bhealth.tail)
-	if bhealth.head <= bhealth.tail then
+	map_cache_start()
+	while bhealth.head <= bhealth.tail do
 		local bhi = bhealth[bhealth.head]
 		if time >= bhi.time then
 			bhealth[bhealth.head] = nil
@@ -447,8 +448,11 @@ function bhealth_prune(time)
 			end
 			
 			bhealth.head = bhealth.head + 1
+		else
+			break
 		end
 	end
+	map_cache_end()
 	
 	if bhealth.head > bhealth.tail then
 		bhealth.head = 1
