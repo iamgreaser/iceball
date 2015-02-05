@@ -1536,13 +1536,17 @@ function new_player(settings)
 		local dt_samples = {}
 		local dt_max = 0
 
-		this.net_graph = scene.waveform{
-			sample_sets={},
-			width=200,
-			height=50,
-			x=w/4,
-			y=h-30
-		}
+		if SHOW_NETGRAPH then
+			this.net_graph = scene.waveform{
+				sample_sets={},
+				width=200,
+				height=50,
+				x=w/4,
+				y=h-30
+			}
+		else
+			this.net_graph = nil
+		end
 
 		local function net_graph_update(delta_time)
 			this.net_graph.visible = (this.mode ~= PLM_SPECTATE)
@@ -1961,7 +1965,9 @@ function new_player(settings)
 		this.chat_text.add_listener(GE_DELTA_TIME, feed_update)
 		this.health_text.add_listener(GE_DELTA_TIME, health_update)
 		this.ammo_text.add_listener(GE_DELTA_TIME, ammo_update)
-		this.net_graph.add_listener(GE_DELTA_TIME, net_graph_update)
+		if this.net_graph then
+			this.net_graph.add_listener(GE_DELTA_TIME, net_graph_update)
+		end
 		this.enemy_name_msg.add_listener(GE_DELTA_TIME, enemy_name_update)
 
 		scene.root.add_child(this.crosshair)
@@ -1975,7 +1981,9 @@ function new_player(settings)
 		scene.root.add_child(this.chat_text)
 		scene.root.add_child(this.kill_text)
 		scene.root.add_child(this.typing_layout)
-		scene.root.add_child(this.net_graph)
+		if this.net_graph then
+			scene.root.add_child(this.net_graph)
+		end
 		this.team_change.add_child(this.team_change_msg_b)
 		this.team_change.add_child(this.team_change_msg_g)
 		local i

@@ -144,6 +144,9 @@ MODE_CHAT_LINGER = 15.0
 MODE_CHAT_MAX = 10
 MODE_CHAT_STRMAX = 102
 
+-- some settings that can be moved
+SHOW_NETGRAPH = false
+
 -- scoring
 SCORE_INTEL = 10
 SCORE_KILL = 1
