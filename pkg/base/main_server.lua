@@ -147,13 +147,13 @@ function server.hook_file(neth, ftype, fname)
 		return mod_conf_file
 	elseif (ftype == "lua") and (fname == "*GAMEMODE") then
 		return GAME_MODE
-	elseif (ftype == "tga") and (fname == "*MAPIMG") then
+	elseif (ftype == "png") and (fname == "*MAPIMG") then
 		if map_fname then
-			return map_fname..".tga"
+			return map_fname..".png"
 		elseif server_settings.gen then
-			return server_settings.gen..".tga"
+			return server_settings.gen..".png"
 		else
-			return "pkg/maps/gen_classic.lua.tga" --by default it will load gen_classic anyway
+			return "pkg/maps/gen_classic.lua.png" --by default it will load gen_classic anyway
 		end
 	end
 

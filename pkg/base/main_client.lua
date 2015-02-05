@@ -149,7 +149,7 @@ else
 	img_loading = img_loading or skin_load("png", "loading_default.png", DIR_PKG_GFX)
 end
 
-img_map = img_map or common.img_load("*MAPIMG")
+img_map = img_map or common.fetch_block("png", "*MAPIMG")
 map_img_seen = false
 
 do
