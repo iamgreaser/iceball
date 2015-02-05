@@ -1,0 +1,43 @@
+##Citygen framework by Dany0, 2015
+
+So you want to make a new map generator? Well you've come to the right place!
+
+In pkg/base/citygen you will find gen_city.lua which contains the basic framework.
+
+But you want to build a new generator, so just jump right into it.
+
+You'll need to mention your generator code file in modes.json. Add a new item there, it should probably look something like this:
+
+{
+	"default" : [ "dany0/default/gen_terrain.lua", "dany0/default/gen_buildings.lua" ],
+	"mynewmapgenerator" : [ "anon/mynewmapgenerator/mynewmapgenerator.lua" ]
+}
+
+Note that you need at least one file in it to work. The following is a minimal code that will generate a flat terrain.
+
+--code start
+
+function gen_terrain(mx, my, mz)
+	local r, g, b =  12, 12, 12 -- base ground colour
+	for x=0,mx-1 do
+		for z=0,mz-1 do
+			l = {0, my - 4, my - 4, 0, b, g, r, 1} -- map pillar, check out the vxl file format for "columns"
+			common.map_pillar_set(x, z, l)
+		end
+	end
+end
+-- function load_buildings()
+--      	dofile(DIR_CITYGEN_BUILDINGS.."/basic_building.lua")
+-- end
+
+-- function create_city_grid()
+-- end
+
+-- function manufacture_buildings()
+-- end
+
+--code end
+
+As you can see you need to specify - override a few functions. These functions will be called by gen_city.lua.
+
+If you have ANY questions, ask us on the chat #iceball on i.r0t.co or file an issue on github. Enjoy!

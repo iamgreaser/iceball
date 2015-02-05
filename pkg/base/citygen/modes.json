@@ -1,0 +1,3 @@
+{
+	"default" : [ "dany0/default/gen_terrain.lua", "dany0/default/gen_buildings.lua" ]
+}
