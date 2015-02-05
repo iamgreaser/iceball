@@ -28,6 +28,7 @@ do
 	--TODO: move terrain gen to tpl_genterrain.lua
 	local ret = common.map_new(mx, my, mz)
 	common.map_set(ret)
+	print("Generating asphalt")
 	local asphalt_r, asphalt_g, asphalt_b =  12, 12, 12 -- base ground colour
 	for x=0,mx-1 do
 		for z=0,mz-1 do
@@ -37,6 +38,7 @@ do
 		end
 	end
 	
+	print("Generating lines")
 	for x=0,mx-1,16 do
 		for z=0,mz-1 do
 			if z % 4 ~= 0 then
@@ -49,17 +51,22 @@ do
 	--TODO: read the mode from JSON city settings
 	--TODO: mode should point to tpl_gencity.lua to generate the city grid
 	--TODO: grid should probably be 2d, array of lines, then buildings should adapt to terrain
+	print("Loading buildings")
 	dofile(DIR_CITYGEN_BUILDINGS.."/basic_building.lua")
 	
 	-- building1 = new_building({})
 	-- building1.build(mx/2, my-4-12, mz/2, 12, 12, 12)
 	
+	print("Making buildings")
 	local building_number = math.floor((mx-24)/12)
 	for i=1, mx-1, 12+16 do
+		print("- building section "..i)
+		map_cache_start() -- cache here instead of outside the loop to save on RAM
 		for y=1, mz-1, 12+16 do
 			building = new_building({})
 			building.build(i + 12, my-4-12, y+12, 12, 12, 12)
 		end
+		map_cache_end()
 	end
 	
 	
