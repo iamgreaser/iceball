@@ -47,7 +47,7 @@ return function (plr)
 	
 	this.reset()
 	
-	local s_prv_fire = this.prv_fire
+	local s_prv_fire = this.prv_fire --unzoom if you shot, I don't remember why this.reset() is required
 	function this.prv_fire(...)
 		local ret = s_prv_fire(...)
 		plr.zooming = false
