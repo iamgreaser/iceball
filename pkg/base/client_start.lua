@@ -22,7 +22,7 @@ map_fname = nil
 frame_delay_ctr = 0.0001
 render_sec_current = nil
 
-VA_TEST = true
+VA_TEST = false
 
 -- Ensure we have VA support
 if VA_TEST then

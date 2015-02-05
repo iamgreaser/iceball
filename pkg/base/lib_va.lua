@@ -20,7 +20,7 @@
 -- VA API available since 0.2a-1.
 
 --function parsekv6(pkt, name, ptsize, ptspacing)
-function parsekv6(pkt, scale)
+function parsekv6(pkt, scale, filt)
 	scale = scale or 1.0
 	local ptsize = 1
 	local ptspacing = scale
@@ -156,6 +156,11 @@ function parsekv6(pkt, scale)
 			vl[1+#vl] = {x1,y1,z1,r,g,b}
 		end
 	end
+
+	-- apply filter
+	if filt then filt(vl) end
+
+	-- make
 	return common.va_make(vl)
 end
 
@@ -164,7 +169,7 @@ function loadkv6(fname, name, ptsize, ptspacing)
 	return parsekv6(common.bin_load(fname), name, ptsize, ptspacing)
 end
 ]]
-function loadkv6(fname, scale)
-	return parsekv6(common.bin_load(fname), scale)
+function loadkv6(fname, scale, filt)
+	return parsekv6(common.bin_load(fname), scale, filt)
 end
 

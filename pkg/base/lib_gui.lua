@@ -999,6 +999,7 @@ function gui_create_scene(width, height, shared_rate)
 
 		this.z = options.z or 1
 		this.model = options.model or nil
+		this.va = options.va or nil
 		this.bone_idx = options.bone_idx or 0
 		this.rot_x = options.rot_x or 0
 		this.rot_y = options.rot_y or 0
@@ -1014,11 +1015,18 @@ function gui_create_scene(width, height, shared_rate)
 				local ratio = root.height/root.width
 				local mx = -(this.relx/root.width*2-1)
 				local my = (this.rely/root.height*2-1)*ratio
-				client.model_render_bone_local(this.model,
-					this.bone_idx,
-					mx, my,
-					this.z,
-					this.rot_y, this.rot_x, this.rot_y2, this.scale)
+				if this.va then
+					client.va_render_local(this.va,
+						-mx, my,
+						this.z,
+						this.rot_y, this.rot_x, this.rot_y2, this.scale)
+				else
+					client.model_render_bone_local(this.model,
+						this.bone_idx,
+						mx, my,
+						this.z,
+						this.rot_y, this.rot_x, this.rot_y2, this.scale)
+				end
 			end
 		end
 

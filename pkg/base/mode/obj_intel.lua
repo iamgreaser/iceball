@@ -93,9 +93,15 @@ function new_intel(settings)
 	end
 	
 	function this.render()
-		client.model_render_bone_global(this.mdl_intel, 0,
-			this.x, this.y-0.9, this.z,
-			this.rotpos, 0, 0, 3)
+		if this.va_intel then
+			client.va_render_global(this.va_intel,
+				this.x, this.y-0.9, this.z,
+				this.rotpos, 0, 0, 3)
+		else
+			client.model_render_bone_global(this.mdl_intel, 0,
+				this.x, this.y-0.9, this.z,
+				this.rotpos, 0, 0, 3)
+		end
 	end
 	
 	function this.render_backpack()
@@ -109,9 +115,15 @@ function new_intel(settings)
 		rpx = rpx - sya*0.4
 		rpz = rpz - cya*0.4
 		
-		client.model_render_bone_global(this.mdl_intel, 0,
-			rpx, rpy, rpz,
-			math.pi/2, math.pi/2, this.player.angy-math.pi/2, 1)
+		if this.va_intel then
+			client.va_render_global(this.va_intel,
+				rpx, rpy, rpz,
+				math.pi/2, math.pi/2, this.player.angy-math.pi/2, 1)
+		else
+			client.model_render_bone_global(this.mdl_intel, 0,
+				rpx, rpy, rpz,
+				math.pi/2, math.pi/2, this.player.angy-math.pi/2, 1)
+		end
 	end
 	
 	function this.intel_drop()
@@ -229,6 +241,21 @@ function new_intel(settings)
 	this.color_icon = (this.team and teams[this.team].color_chat) or {255,255,255}
 	local mbone,mname,mdata
 	if client then
+		if va_intel then
+			local ext_l = l
+			this.va_intel = va_intel(function (l)
+				print("FILTER", #l)
+				local i
+				for i=1,#l do
+					if l[4] == 0 and l[5] == 0 and l[6] == 0 then
+						l[4] = ext_l[1]
+						l[5] = ext_l[2]
+						l[6] = ext_l[3]
+					end
+				end
+				print("DONE FILTER")
+			end)
+		end
 		this.mdl_intel = client.model_new(1)
 		this.mdl_intel, mbone = client.model_bone_new(this.mdl_intel,1)
 		mname,mdata = common.model_bone_get(mdl_intel, 0)

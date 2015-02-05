@@ -16,6 +16,13 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
+if common.va_make then
+	function va_intel(filt)
+		print ("LOAD")
+		return loadkv6("pkg/base/kv6/bomb.kv6", 1.0/128.0, filt)
+	end
+end
+
 -- create our tent
 dofile("pkg/base/mode/obj_tent.lua")
 local s_new_tent = new_tent

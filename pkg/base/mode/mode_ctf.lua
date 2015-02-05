@@ -130,7 +130,7 @@ function new_player(...)
 		local ret = s_create_hud(...)
 		local scene = this.scene
 
-		local bone_intel = scene.bone{model=mdl_intel, bone=mdl_intel_bone,
+		local bone_intel = scene.bone{model=mdl_intel, bone=mdl_intel_bone, va=va_intel,
 			x=screen_width*0.1,y=screen_height*0.5,scale=0.18,visible=false}
 		scene.root.add_child(bone_intel)
 		
@@ -142,6 +142,7 @@ function new_player(...)
 			bone_intel.visible = (this.has_intel ~= nil)
 			if this.has_intel then
 				bone_intel.model = this.has_intel.mdl_intel
+				bone_intel.va = this.has_intel.va_intel
 			end
 		end
 		this.tools_align.add_listener(GE_DELTA_TIME, bone_rotate)
