@@ -24,9 +24,13 @@ end
 
 function particles_prune(sec_current)
 	local i
+	--print("sharticles", particles.head, particles.tail)
 	for i=particles.head,particles.tail do
 		if particles[i] and particles[i].dead then
 			particles[i] = nil
+		end
+
+		if not particles[i] then
 			if i == particles.head then
 				particles.head = particles.head + 1
 			end

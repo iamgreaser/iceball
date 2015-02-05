@@ -403,7 +403,7 @@ function bhealth_damage(x,y,z,amt,plr)
 	blk.qidx = bhealth.tail
 	
 	if client then
-		local block_particlecount = (math.random() * 20 + 10)*0 -- disabling particles to help fix rot
+		local block_particlecount = (math.random() * 20 + 10)*1 -- disabling particles to help fix rot
 		--[[
 		local mdl = new_particle_model(
 			math.floor(c[2]*light+0.5),
