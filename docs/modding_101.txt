@@ -38,6 +38,8 @@ you are only allowed to modify files in these directories:
   Client only:
     clsave/<group name>/<mod name>/vol/*
     clsave/vol/*
+  Secure mode client only (-s 0):
+    clsave/pub/*
   Server only:
     svsave/<group name>/<mod name>/vol/*
     svsave/vol/*
@@ -81,19 +83,7 @@ If you're taking on this task, please do the following:
 
  ------------------------------------------------------------------------------
 
-A quick template for a mod that uses a custom set of PMFs:
-
--- client_start.lua
-loadfile("pkg/base/client_start.lua")(...)
---stick in your plugins here
-
--- main_client.lua (the actual client entry point)
-DIR_PKG_PMF = "pkg/"..common.base_dir.."/pmf"
-loadfile("pkg/base/main_client.lua")(...)
-
--- main_server.lua
-loadfile("pkg/base/main_server.lua")(...)
-
+See docs/modding_scripts.txt for information on mods.
 
  ------------------------------------------------------------------------------
 
@@ -103,9 +93,11 @@ Maps:
 - *.icemap: Iceball map format
 - *.vxl: Ace of Spades headerless 512x512x64 VOXLAP map
   - well, why *wouldn't* we support that?
+  - 1.0 maps are supported but stuff >= 128 high seems to break
 
 Models:
 - *.pmf: Point Model Format, designed for this game
+  - Soon to be (at least in part) deprecated by the vertex array (VA) API.
 - Might support *.kv6 in future, who knows.
 
 Graphics:
@@ -117,9 +109,14 @@ Graphics:
   - Per-pixel attributes are NOT SUPPORTED.
   - X/Y offsets are IGNORED.
   - Extended TGA information is IGNORED.
+- *.png: Portable Network Graphics
+  - 1/2/4bpp images aren't supported yet.
+  - Translucency/transparency supported in a few ways, probably more than IE
+  - Try it, if it doesn't work, submit an issue.
 
 Metadata:
 - *.json: JavaScript Oriented Notation
+- Binary files are supported for read and write!
 - Hoping to support a simple line-by-line append-mode format, too.
 
 Sounds:
