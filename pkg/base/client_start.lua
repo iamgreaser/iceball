@@ -59,6 +59,7 @@ if user_config.frame_limit and user_config.frame_limit > 0.01 then
 end
 
 -- OK, *NOW* we can load stuff.
+dofile("pkg/base/lib_va.lua")
 dofile("pkg/base/common.lua")
 dofile("pkg/base/border.lua")
 
@@ -890,12 +891,15 @@ end
 
 -- hooks in place!
 if VA_TEST then
+	--[[
 	va_test = common.va_make({
 		{0, 0, 0, 1, 0.5, 0.5}, {1, 0, 0, 1, 0, 0}, {0, 1, 0, 1, 0, 0},
 		{0, 0, 0, 0.5, 1, 0.5}, {0, 0, 1, 0, 1, 0}, {1, 0, 0, 0, 1, 0},
 		{0, 0, 0, 0.5, 0.5, 1}, {0, 1, 0, 0, 0, 1}, {0, 0, 1, 0, 0, 1},
 		{1, 0, 0, 0.7, 0, 0.7}, {0, 0, 1, 0.7, 0, 0.7}, {0, 1, 0, 0.7, 0, 0.7},
 	})
+	]]
+	va_test = loadkv6("pkg/base/kv6/playerheadalt.kv6", 1.0/16.0)
 end
 function client.hook_render()
 	local sec_current = render_sec_current
