@@ -77,7 +77,7 @@ gui_create_scene(width, height, shared_rate=1/60)
 			Callback passes in the dT value of the shared alarm timer.
 		GE_KEY
 			A keypress(up or down) event.
-			Callback passes in {key(int), state(bool), modif(int bitmask)}
+			Callback passes in {key(int), state(bool), modif(int bitmask), uni(int)}
 		GE_BUTTON
 			A mapped button press(up or down) event. Use this when you expect the button to be reassignable.
 			Callback passes in {key(int), button{name(string), desc(string)}, state(bool), modif(int bitmask)}

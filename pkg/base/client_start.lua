@@ -605,10 +605,10 @@ function h_tick_init(sec_current, sec_delta)
 	return client.hook_tick(sec_current, sec_delta)
 end
 	
-local function push_keypress(key, state, modif, sym)
-	table.insert(input_events, {GE_KEY, {key=key,state=state,modif=modif}})
+local function push_keypress(key, state, modif, sym, uni)
+	table.insert(input_events, {GE_KEY, {key=key,state=state,modif=modif,uni=uni}})
 	if key_map[sym] ~= nil then
-		table.insert(input_events, {GE_BUTTON, {key=sym,button=key_map[sym],state=state,modif=modif}})		
+		table.insert(input_events, {GE_BUTTON, {key=sym,button=key_map[sym],state=state,modif=modif,uni=uni}})
 	end
 end
 
@@ -643,28 +643,7 @@ end
 function h_key(sym, state, modif, uni)
 	local key = sym
 
-	-- unicode disabled for now until stuff gets moved to GE_BUTTON, sorry guys --GM
-	uni = nil
-	
-	if key <= 256 then
-		local tmp
-		if state then tmp = 1 else tmp = 0 end
-
-		--print("key = " .. key .. " | state = " .. tmp)
-
-		if uni and state then
-			keys[sym] = uni
-			key = uni
-		elseif uni and not state then
-			if keys[sym] then
-				key = keys[sym]
-			end
-		end
-
-		--print("key = " .. key .. " | state = " .. tmp)
-	end
-
-	push_keypress(key, state, modif, sym)
+	push_keypress(key, state, modif, sym, uni)
 
 	-- disconnected ai
 	
@@ -682,7 +661,7 @@ function h_key(sym, state, modif, uni)
 		mouse_released = true
 		client.mouse_lock_set(false)
 		client.mouse_visible_set(true)
-		gui_focus.on_key(key, state, modif)
+		gui_focus.on_key(key, state, modif, uni)
 		if state and chat_text.scrollback then
 			if key == BTSK_CHATUP then
 				chat_text.cam.start = math.max(1, chat_text.cam.start - math.floor(chat_text.cam.height/2+0.5))
@@ -710,7 +689,7 @@ function h_key(sym, state, modif, uni)
 		mouse_released = false
 		client.mouse_lock_set(true)
 		client.mouse_visible_set(false)
-		return plr.on_key(key, state, modif)
+		return plr.on_key(key, state, modif, uni)
 	end
 end
 

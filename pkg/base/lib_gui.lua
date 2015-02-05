@@ -73,7 +73,7 @@ function gui_create_fixwidth_font(image, char_width, char_height, indexing_fn, s
 
 	-- compute a non-wrapped characters + positions output suitable for usage in text selections as well as render
 	function this.compute_unwrapped(x, y, c, str)
-		
+
 		result = {{}}
 		local col_count = 1
 
@@ -82,14 +82,14 @@ function gui_create_fixwidth_font(image, char_width, char_height, indexing_fn, s
 			result[1][col_count] = {char, this.indexing_fn(char), x, y, c}
 			x = x + this.width
 		end
-		
+
 		return result
 	end
-	
+
 	-- compute characters + positions from a colortable, where each line of table contains a string "msg" and a color "color"
 	function this.compute_ctab(ctab, x, y)
 		local result = {}
-		
+
 		for k, v in pairs(ctab) do
 			-- compute and append a single line
 			local line = this.compute_unwrapped(x, y, v.color, v.msg)
@@ -109,7 +109,7 @@ function gui_create_fixwidth_font(image, char_width, char_height, indexing_fn, s
 	-- 1. find whitespace
 
 		if wp < this.width then wp = this.width end -- force width to at least 1 char
-		
+
 		local i
 		local j
 		local toks = {}
@@ -189,9 +189,9 @@ function gui_create_fixwidth_font(image, char_width, char_height, indexing_fn, s
 
 	-- get the AABB dimensions of text given precomputed text data
 	function this.dimensions(data)
-		
+
 		if #data<1 or #data[1]<1 then return {l=0,r=0,t=0,b=0,width=1,height=1} end
-		
+
 		local result = {l=data[1][1][3],
 						r=data[1][1][3] + this.width,
 						t=data[1][1][4],
@@ -252,9 +252,9 @@ function gui_create_fixwidth_font(image, char_width, char_height, indexing_fn, s
 
 	-- print a selection of precomputed text
 	function this.print_precomputed(data, offx, offy, buffer)
-		
+
 		local lastc = nil
-		
+
 		for y=1,#data do
 			for x=1,#data[y] do
 				local char = data[y][x][1]
@@ -301,7 +301,7 @@ function gui_get_char(key, modif)
 	return nil
 end
 
-function gui_string_edit(str, insert_position, maxlen, key, modif)
+function gui_string_edit(str, insert_position, maxlen, key, modif, uni)
 	if key == SDLK_BACKSPACE then
 		if insert_position <= 1 then 
 			str = string.sub(str, 2, #str)
@@ -317,7 +317,13 @@ function gui_string_edit(str, insert_position, maxlen, key, modif)
 				  string.sub(str, insert_position + 1, #str)
 		end
 	else
-		local k = gui_get_char(key, modif)
+		--local k = gui_get_char(key, modif)
+		local k = uni
+		if (not k) or (k < 32 or k >= 127) then
+			k = nil
+		else
+			k = string.char(k)
+		end
 
 		if #str < maxlen and k then
 			str = string.sub(str, 1, insert_position - 1) .. 
@@ -337,7 +343,7 @@ function gui_create_scene(width, height, shared_rate)
 
 	function scene.display_object(options)
 		local this = widgets.widget(options)
-		
+
 		this.visible = options.visible
 		if this.visible == nil then this.visible = true end -- draws this node and children
 		this.drawable = options.drawable
@@ -348,7 +354,7 @@ function gui_create_scene(width, height, shared_rate)
 		this.listeners = options.listeners or {}
 		this.alarms = options.alarms or {} -- ticked if seen. Will NOT dispose finished alarms for you!
 		this.static_alarms = options.static_alarms or {}
-		
+
 		function this.free()
 			common.img_free(this.img) for k,v in pairs(this.children) do v.free() end
 		end
@@ -448,11 +454,11 @@ function gui_create_scene(width, height, shared_rate)
 		end
 		return this
 	end
-	
+
 	local root = scene.display_object{x=0, y=0,
 		width=width, height=height, align_x=0, align_y=0}
 	scene.root = root
-	
+
 	function scene.hspacer(options)
 		local this = widgets.hspacer(options)
 		if options.visible~=nil then this.visible = options.visible else this.visible = true end
@@ -463,7 +469,7 @@ function gui_create_scene(width, height, shared_rate)
 		end
 		return this
 	end
-	
+
 	function scene.vspacer(options)
 		local this = widgets.vspacer(options)
 		if options.visible~=nil then this.visible = options.visible else this.visible = true end
@@ -474,10 +480,10 @@ function gui_create_scene(width, height, shared_rate)
 		end
 		return this
 	end
-	
+
 	local shared_rate = shared_rate or 1./60
 	local sharecount = 0
-	
+
 	function scene.pump_listeners(dT, events)
 		-- copy incoming events
 		local e = {}
@@ -495,10 +501,10 @@ function gui_create_scene(width, height, shared_rate)
 		-- propogate
 		root.pump_listeners(dT, e)
 	end
-	
+
 	function scene.draw() root.draw() end
 	function scene.free() root.free() end
-	
+
 	function scene.rect_frame(options)
 
 		local this = scene.display_object(options)
@@ -529,7 +535,7 @@ function gui_create_scene(width, height, shared_rate)
 		return this
 
 	end
-	
+
 	--[[
 		Draws any number of sampled waveforms as a graph.
 		To use, "sample_sets" should contain at least one table of
@@ -541,7 +547,7 @@ function gui_create_scene(width, height, shared_rate)
 		hi_lim is higher limit of the samples.
 	]]
 	function scene.waveform(options)
-		
+
 		local this = scene.display_object(options)
 
 		this.sample_sets = options.sample_sets or {
@@ -559,10 +565,10 @@ function gui_create_scene(width, height, shared_rate)
 			local bg_col = this.bg_col
 			local midpoint_col = this.midpoint_col
 			common.img_fill(img, bg_col)
-			
+
 			local half_h = h/2
 			local lim = h / 2 - 1;
-			
+
 			for k,sample_packet in pairs(this.sample_sets) do
 				local samples = sample_packet[1]
 				local col_1 = sample_packet[2]
@@ -570,9 +576,9 @@ function gui_create_scene(width, height, shared_rate)
 				local scaleX = (#samples-1) / w;
 				local amin = sample_packet[4]
 				local amax = sample_packet[5]
-				
+
 				-- draw midpoint and edges
-				
+
 				for n=1, w do
 					common.img_pixel_set(
 						img, math.floor(n), 0, this.midpoint_col);
@@ -581,20 +587,20 @@ function gui_create_scene(width, height, shared_rate)
 					common.img_pixel_set(
 						img, math.floor(half_h - lim), 0, this.midpoint_col);
 				end
-				
+
 				-- now draw the actual waveform
-				
+
 				if #samples > 1 then
-				
+
 					-- (inlined rescale_value)
 					local adist = amax - amin;
 					local bmin = -lim
 					local bmax = lim
 					local bdist = bmax - bmin;
 					local ratio = bdist / adist;
-					
+
 					local last = bmin + (samples[1] - amin) * ratio
-					
+
 					for n=1, w do
 						local cur = bmin + (samples[math.floor(n*scaleX)+1] - amin) * ratio
 						local top = math.floor(math.max(cur, last));
@@ -606,29 +612,29 @@ function gui_create_scene(width, height, shared_rate)
 						common.img_pixel_set(img, math.floor(n), cur, col_1);
 						last = cur;
 					end
-				
+
 				end
-				
+
 			end
-			
+
 		end
-		
+
 		function this.push(sample_sets)
 			this.sample_sets = sample_sets
 			this.dirty = true
 		end
 
 		return this		
-		
+
 	end
-	
+
 	function scene.tile9(options)
 
 		local this = scene.display_object(options)
 
 		this.tiles = options.tiles
 		if this.tiles == nil then error('tile9 requires a tiles image specified') end
-		
+
 		this.tile_width, this.tile_height = common.img_get_dims(this.tiles)
 		this.tile_width = math.floor(this.tile_width / 3)
 		this.tile_height = math.floor(this.tile_height / 3)
@@ -656,7 +662,7 @@ function gui_create_scene(width, height, shared_rate)
 				cap_x = ix
 			end
 			cap_x = cap_x + tw
-			
+
 			local cap_y = 0
 			for iy = th, h-th*2, th do
 				client.img_blit_to(img, this.tiles, 0, iy, tw, th, 0, th)
@@ -664,32 +670,32 @@ function gui_create_scene(width, height, shared_rate)
 				cap_y = iy
 			end
 			cap_y = cap_y + th
-			
+
 			-- middle
 			for ix = tw, w-tw*2, tw do
 				for iy = th, h-th*2, th do
 					client.img_blit_to(img, this.tiles, ix, iy, tw, th, tw, th)
 				end
 			end
-			
+
 			-- fill gaps with partial tiles
-			
+
 			client.img_blit_to(img, this.tiles, cap_x, 0, w-tw-cap_x, th, tw, 0)
 			client.img_blit_to(img, this.tiles, cap_x, h-th, w-tw-cap_x, th, tw, th*2)
 			for iy = th, h-th*2, th do
 				client.img_blit_to(img, this.tiles, cap_x, iy, w-tw-cap_x, th, tw, th)
 			end
-			
+
 			client.img_blit_to(img, this.tiles, 0, cap_y, tw, h-th-cap_y, 0, th)
 			client.img_blit_to(img, this.tiles, w-tw, cap_y, tw, h-th-cap_y, tw*2, th)
 			for ix = tw, w-tw*2, tw do
 				client.img_blit_to(img, this.tiles, ix, cap_y, tw, h-th-cap_y, tw, th)
 			end
-			
+
 			client.img_blit_to(img, this.tiles, cap_x, cap_y, w-tw-cap_x, h-th-cap_y, tw, th)
-			
+
 		end
-		
+
 		return this
 
 	end
@@ -725,12 +731,12 @@ function gui_create_scene(width, height, shared_rate)
 				this.dirty = true
 			end
 		end
-		
+
 		local _text
 		local _ctab
 		local _color = options.color or 0xFF880088
 		if type(_color) ~= "number" then error("color "..tostring(_color).." is not a number") end
-		
+
 		local function recalc_glyphs()
 			if _ctab ~= nil then
 				this.text_cache = this.font.compute_ctab(_ctab, 0, 0)
@@ -745,7 +751,7 @@ function gui_create_scene(width, height, shared_rate)
 			end		
 			this.dirty = true
 		end
-		
+
 		local function recalc_size()
 			recalc_glyphs()
 			if this.autosize then
@@ -765,16 +771,16 @@ function gui_create_scene(width, height, shared_rate)
 			_text = str
 			recalc_size()
 		end
-		
+
 		function this.getter_keys.ctab()
 			return _ctab
 		end
 
 		function this.setter_keys.ctab(ctab)
 			_text = nil
-			
+
 			-- test sameness
-			
+
 			local same = true
 			if _ctab == nil or #_ctab ~= #ctab then same = false
 			else
@@ -784,9 +790,9 @@ function gui_create_scene(width, height, shared_rate)
 				end
 			end
 			if same then return end
-			
+
 			-- copy and dirtify
-			
+
 			local tabcopy = {}
 			for k, v in pairs(ctab) do
 				table.insert(tabcopy, v)
@@ -799,11 +805,11 @@ function gui_create_scene(width, height, shared_rate)
 			common.img_fill(this.img, 0x00000000)
 			this.font.print_precomputed(this.text_cache, 0, 0, this.img)
 		end
-			
+
 		function this.getter_keys.color(v)
 			return _color
 		end
-		
+
 		function this.setter_keys.color(v)
 			if type(v) ~= "number" then error("color "..tostring(v).." is not a number") end
 			_color = v
@@ -812,29 +818,32 @@ function gui_create_scene(width, height, shared_rate)
 
 		this.text = options.text or ""
 		if options.ctab ~= nil then this.ctab = options.ctab end
-		
+
 		function this.on_return(key, state, modif)
 			this.done_typing()
 		end
-		
+
 		function this.clear_keyrepeat()
 			this.static_alarms['key_waitbuf'] = nil
 			this.static_alarms['key_repeat'] = nil
 			this.repeating_key = nil
 			this.repeating_modif = nil
+			this.repeating_uni = nil
 		end
-		
+
 		function this.done_typing()
 			discard_typing_state(this)
 		end
-		
+
 		this.repeating_key = nil
 		this.repeating_modif = nil
-		
+		this.repeating_uni = nil
+
 		function this.key_repeated()
 			local state = true
 			local key = this.repeating_key
 			local modif = this.repeating_modif
+			local uni = this.repeating_uni
 			if key == SDLK_ESCAPE then
 				this.done_typing()
 			elseif key == SDLK_RETURN then
@@ -859,7 +868,8 @@ function gui_create_scene(width, height, shared_rate)
 					this.cursor_position, 
 					MODE_CHAT_STRMAX, 
 					key, 
-					modif)
+					modif,
+					uni)
 				if key ~= SDLK_DELETE then
 					this.cursor_position = math.max(
 						1, 
@@ -871,11 +881,12 @@ function gui_create_scene(width, height, shared_rate)
 				this.input_buffer.edit(this.text)
 			end
 		end
-		
-		function this.on_key(key, state, modif)
+
+		function this.on_key(key, state, modif, uni, dicks)
 			if this.take_input then
 				if state then
 					this.repeating_key = key
+					this.repeating_uni = uni
 					this.repeating_modif = modif
 					this.static_alarm{name='key_waitbuf', time=0.45,on_trigger=function()
 						if this.repeating_key ~= nil then
@@ -894,12 +905,12 @@ function gui_create_scene(width, height, shared_rate)
 				end
 			end
 		end
-		
+
 		this.add_listener(GE_KEY, this.on_key)
-		
+
 		this.cursor_position = 1
 		this.input_buffer = collect_new_history_buf()
-		
+
 		function this.cursor_backwards()
 			this.cursor_position = math.max(1, this.cursor_position - 1)
 		end
@@ -912,7 +923,7 @@ function gui_create_scene(width, height, shared_rate)
 		function this.cursor_to_text_end()
 			this.cursor_position = #this.text + 1
 		end
-		
+
 		function this.buffer_backwards()
 			this.text = this.input_buffer.prev()
 			this.cursor_to_text_end()
@@ -925,7 +936,7 @@ function gui_create_scene(width, height, shared_rate)
 			this.input_buffer.append()
 			if this.input_buffer.length() > 100 then this.input_buffer.shift() end
 		end
-		
+
 		function this.get_cursor_xy()
 			if this.text_cache == nil or #this.text == 0 then 
 				return {x=0, y=0} 
@@ -938,27 +949,27 @@ function gui_create_scene(width, height, shared_rate)
 						y=lastchar[4]}
 			end
 		end
-		
+
 		recalc_size()
 
 		return this
 
 	end
-	
+
 	function scene.image(options)
-		
+
 		local this = scene.display_object(options)
-		
+
 		this._img = options.img
 		this.use_img = false
-		
+
 		function this.getter_keys.width()
 			error("can't set the width of an image")
 		end
 		function this.getter_keys.height()
 			error("can't set the height of an image")
 		end
-		
+
 		function this._recalc_size()
 			local pw, ph 
 			pw, ph = common.img_get_dims(this.img)
@@ -976,9 +987,9 @@ function gui_create_scene(width, height, shared_rate)
 		function this.draw_update()
 			client.img_blit(this._img, this.l, this.t)
 		end
-		
+
 		this._recalc_size()
-		
+
 		return this
 	end
 
@@ -1014,20 +1025,20 @@ function gui_create_scene(width, height, shared_rate)
 		return this
 
 	end
-	
+
 	--[[
 		Each frame, before we start drawing, we traverse the DL tree in order to
 		pass in events.
-		
+
 		Each displayobject has a "hash of lists" - one list for each event type.
 		Callbacks are simply stored in the list.
 	]]
-	
+
 	--[[
 		The shared alarm records "whether it went off" this frame.
 		Each count of the trigger injects a SHARED_ALARM event into this frame.
 	]]
-		
+
 	scene.text_cursor = scene.rect_frame{
 				frame_col = 0x33004488, 
 				fill_col = 0x66004488,
@@ -1041,17 +1052,17 @@ function gui_create_scene(width, height, shared_rate)
 		local this = scene.text_cursor
 		-- TODO: Figure out if gui_focus should really be global
 		if gui_focus ~= nil and gui_focus.font ~=nil then
-			
+
 			local font = gui_focus.font
-			
+
 			this.width = font.width
 			this.height = font.height
 			scene.text_cursor.set_parent(gui_focus)
-			
+
 			local target = gui_focus.get_cursor_xy()
-			
+
 			-- tweening
-			
+
 			if this.visible == false then
 				this.x = target.x
 				this.y = target.y
@@ -1059,7 +1070,7 @@ function gui_create_scene(width, height, shared_rate)
 				this.x = this.x + (target.x - this.x) * 0.3
 				this.y = this.y + (target.y - this.y) * 0.3
 			end
-			
+
 			this.visible = true			
 		else
 			this.visible = false
@@ -1067,7 +1078,7 @@ function gui_create_scene(width, height, shared_rate)
 		end
 	end)
 	scene.text_cursor.set_parent(scene.root)
-	
+
 	-- TEST CODE
 	--[[local frame = scene.rect_frame{width=320,height=320, x=width/2, y=height/2}
 	local frame2 = scene.rect_frame{width=32,height=32, x=0, y=0}
@@ -1080,17 +1091,17 @@ function gui_create_scene(width, height, shared_rate)
 	frame.add_child(frame3)
 	frame.child_to_top(text1)
 	frame.add_child(bone)
-	
+
 	-- rotate using shared alarm(accumulates 60hz frames)
-	
+
 	local function bone_rotate(dT)
 		bone.rot_y = bone.rot_y + 1./6
 	end
 	bone.add_listener(GE_SHARED_ALARM, bone_rotate)]]
 	--[[
-	
+
 	-- rotate using dT(passes in the raw dT value and multiplies)
-	
+
 	local function bone_rotate_2(dT)
 		bone.rot_y = bone.rot_y + dT
 	end
