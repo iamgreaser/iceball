@@ -205,7 +205,7 @@ function fastload_analyse_client()
 		if fname == "*MAPIMG" then
 			return common.img_new(800, 600)
 		else
-			fmt = fmt or "png"
+			fmt = fmt or "tga"
 			state.cache[fmt .. ":" .. fname] = common.bin_load(fname)
 			return common.img_load(fname, fmt)
 		end
@@ -243,6 +243,8 @@ function fastload_analyse_client()
 
 		if typ == "lua" then
 			return loadfile_wrap(fname)
+		elseif typ == "png" and fname == "*MAPIMG" then
+			return common.img_new(800, 600)
 		else
 			state.cache[typ .. ":" .. fname] = common.bin_load(fname)
 			return common.fetch_block(typ, fname)
