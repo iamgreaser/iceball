@@ -2191,9 +2191,10 @@ function new_player(settings)
 				if plr.alive and plr.team == this.team then
 					local px,py
 					local dx,dy,dz
-					dx,dy,dz = plr.x-this.x,
-						plr.y+plr.jerkoffs-this.y-this.jerkoffs-0.5,
-						plr.z-this.z
+					local x,y,z = client.camera_get_pos()
+					dx,dy,dz = plr.x-x,
+						plr.y+plr.jerkoffs-y-this.jerkoffs-0.5,
+						plr.z-z
 					local d = dx*dx+dy*dy+dz*dz
 					d = math.sqrt(d)
 					dx,dy,dz = dx/d,dy/d,dz/d
