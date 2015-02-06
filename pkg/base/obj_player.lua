@@ -627,7 +627,7 @@ function new_player(settings)
 			this.input_reset()
 		end
 
-		if client then
+		if client and this.respawn_msg then
 			if this.alive then
 				this.respawn_msg.visible = false
 			else
