@@ -23,6 +23,9 @@ THE SOFTWARE.
 -- Master server to use.
 MASTER_URL = "http://magicannon.com:27790/master.json"
 
+-- Time in seconds between auto-updates, or nil to disable
+AUTO_REFRESH_RATE = nil
+
 -- Some arguments...
 argv = {...}
 
@@ -66,6 +69,8 @@ function client.hook_key(key, state, modif, uni)
 				local sv = server_list[idx]
 				client.mk_sys_execv("-c", sv.address, sv.port, arg_closure(argv))
 			end
+		elseif key == SDLK_r then
+			master_http = http_new {url = MASTER_URL}
 		end
 	end
 end
@@ -100,18 +105,19 @@ function client.hook_render()
 	font.render(0, ch*0, "Press L for a local server on port 20737", 0xFFEEEEEE)
 	font.render(0, ch*1, "Press Escape to quit", 0xFFEEEEEE)
 	font.render(0, ch*2, "Press C to change your settings", 0xFFEEEEEE)
-	font.render(0, ch*3, "Press a number to join a server", 0xFFEEEEEE)
-	font.render(0, ch*5, "Server list:", 0xFFEEEEEE)
+	font.render(0, ch*3, "Press R to update the server list", 0xFFEEEEEE)
+	font.render(0, ch*4, "Press a number to join a server", 0xFFEEEEEE)
+	font.render(0, ch*6, "Server list:", 0xFFEEEEEE)
 
 	local i
 	if server_list == true then
-		font.render(0, ch*6, "Fetching...", 0xFFEEEEEE)
+		font.render(0, ch*7, "Fetching...", 0xFFEEEEEE)
 	elseif server_list == nil then
-		font.render(0, ch*6, "Failed to fetch the server list.", 0xFFEEEEEE)
+		font.render(0, ch*7, "Failed to fetch the server list.", 0xFFEEEEEE)
 	else
 		for i=1,#server_list do
 			local sv = server_list[i]
-			font.render(0, ch*(7+i-1), i..": "..sv.name
+			font.render(0, ch*(8+i-1), i..": "..sv.name
 				.." - "..sv.players_current.."/"..sv.players_max
 				.." - "..sv.mode
 				.." - "..sv.map, 0xAA000000)
@@ -121,20 +127,26 @@ function client.hook_render()
 	end
 end
 
+server_refresh = 0
 function client.hook_tick(sec_current, sec_delta)
 	-- Fetch the master server list if possible.
 	if master_http then
 		local status = master_http.update()
 		if status == nil then
 			master_http = nil
+			server_refresh = sec_current
 			server_list = nil
 		elseif status ~= true then
 			print(status)
 			server_list = common.json_parse(status)
 			server_list = server_list and server_list.servers
 			master_http = nil
+			server_refresh = sec_current
 		end
+	elseif AUTO_REFRESH_RATE and server_refresh + AUTO_REFRESH_RATE < sec_current then
+		master_http = http_new {url = MASTER_URL}
 	end
+	
 	return 0.01
 end
 
