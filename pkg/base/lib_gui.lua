@@ -20,7 +20,7 @@ if client then
 dofile("pkg/base/lib_util.lua")
 
 -- load images
-img_font_numbers = skin_load("tga", "font-numbers.tga", DIR_PKG_GFX)
+img_font_numbers = skin_load("png", "font-numbers.png", DIR_PKG_GFX)
 img_font_mini = skin_load("tga", "font-mini.tga", DIR_PKG_GFX)
 img_font_large = skin_load("tga", "font-large.tga", DIR_PKG_GFX)
 img_tiles_roundrect = skin_load("tga", "roundrect.tga", DIR_PKG_GFX)

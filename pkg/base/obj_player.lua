@@ -1744,7 +1744,7 @@ function new_player(settings)
 		this.health_text = scene.textfield{
 			font=font_digits,
 			text="100", 
-			color=0xFFA1FFA1,
+			color=0xFFFF0000,
 			align_x=0.5, 
 			align_y=0, 
 			x = w/2,
@@ -1761,7 +1761,7 @@ function new_player(settings)
 		this.ammo_text = scene.textfield{
 			font=font_digits,
 			text="",
-			color=0xFFC0C0C0,
+			color=0xFFFFFFFF,
 			align_x = 1,
 			align_y = 0,
 			x = w - 16,
