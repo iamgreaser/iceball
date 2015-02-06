@@ -20,6 +20,8 @@ local default_cfg = {
 	range = 127.5,
 	spread = 0,
 	pellet_count = 1,
+	shot_sound = wav_rifle_shot,
+	reload_sound = wav_rifle_reload,
 }
 
 return function (plr, cfg)
@@ -70,7 +72,7 @@ return function (plr, cfg)
 		xlen, ylen, zlen = common.map_get_dims()
 		
 		if client then
-			client.wav_play_global(wav_rifle_shot, plr.x, plr.y, plr.z)
+			client.wav_play_global(this.cfg.shot_sound, plr.x, plr.y, plr.z)
 			
 			bcase_part_mdl = bcase_part_mdl or new_particle_model(250, 215, 0)
 			particles_add(new_particle{
@@ -85,6 +87,8 @@ return function (plr, cfg)
 				lifetime = 2
 			})
 		end
+		
+		net_send(nil, common.net_pack("BBB", PKT_PLR_GUN_SHOT, 0, 1))
 		
 		for i=1,(this.cfg.pellet_count) do
 			-- TODO: Better spread
@@ -170,7 +174,7 @@ return function (plr, cfg)
 		if this.ammo_reserve ~= 0 then
 		if not this.reloading then
 			this.reloading = true
-			client.wav_play_global(wav_rifle_reload, plr.x, plr.y, plr.z)
+			client.wav_play_global(this.cfg.reload_sound, plr.x, plr.y, plr.z)
 			net_send(nil, common.net_pack("BB", PKT_PLR_GUN_RELOAD, 0))
 			plr.zooming = false
 			this.t_reload = nil
@@ -299,6 +303,18 @@ return function (plr, cfg)
 			if plr.zooming then swayamt = swayamt * 0.25 end
 			plr.angx = plr.angx + math.sin(sec_current * 2) * swayamt
 			plr.angy = plr.angy + math.sin(sec_current * 2.5) * swayamt
+		end
+	end
+	
+	function this.remote_client_fire(fire_type)
+		client.wav_play_global(this.cfg.shot_sound, plr.x, plr.y, plr.z)
+		
+		-- TODO: See network.lua comment in PKT_PLR_GUN_SHOT handler for future tracer code
+		for i=1,(this.cfg.pellet_count) do
+			local angy = plr.angy + (this.cfg.spread * (math.random() - 0.5))
+			local angx = plr.angx + (this.cfg.spread * (math.random() - 0.5))
+			
+			tracer_add(plr.x, plr.y, plr.z, angy, angx)
 		end
 	end
 

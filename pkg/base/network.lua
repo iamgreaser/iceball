@@ -127,6 +127,7 @@ do
 		"PIANO",
 		"NADE_PIN",
 		"BUILD_BOX",
+		"PLR_GUN_SHOT",
 	}
 	local i,p
 	for i,p in pairs(pktlist) do
@@ -302,6 +303,7 @@ network.sys_handle_s2c(PKT_PLR_BLK_COUNT, "BB", function (neth, cli, plr, sec_cu
 	end
 end)
 network.sys_handle_s2c(PKT_PLR_GUN_TRACER, "B", function (neth, cli, plr, sec_current, pid, pkt)
+	-- Refactor incoming - see PKT_PLR_GUN_SHOT
 	local plr = players[pid]
 	
 	if plr then
@@ -613,11 +615,6 @@ network.sys_handle_c2s(PKT_PLR_GUN_HIT, "BB", nwdec_plrset(function (neth, cli, 
 			end
 		end
 	end
-	
-	if plr.tool == TOOL_GUN then
-		-- we don't want the spade spewing tracers!
-		net_broadcast(neth, common.net_pack("BB", PKT_PLR_GUN_TRACER, cli.plrid))
-	end
 end))
 network.sys_handle_c2s(PKT_PLR_TOOL, "BB", nwdec_plrset(function (neth, cli, plr, sec_current, tpid, tool, pkt)
 	if plr and tool >= 0 and tool <= 3 then
@@ -709,3 +706,20 @@ network.sys_handle_common(PKT_BUILD_BOX, "BhhhhhhBBBB", function (neth, cli, plr
 	end
 end)
 
+network.sys_handle_s2c(PKT_PLR_GUN_SHOT, "BB", function (neth, cli, plr, sec_current, pid, fire_type, pkt)
+	local plr = players[pid]
+	
+	if plr then
+		local tool = plr.tools[plr.tool+1]
+		if tool and tool.remote_client_fire then
+			-- For now, we will spawn tracers in this function, but in future we need to sync the tracer directions somehow (either by sharing a seed, or sending the direction of every tracer)
+			tool.remote_client_fire(fire_type)
+		end
+	end
+end)
+
+network.sys_handle_c2s(PKT_PLR_GUN_SHOT, "BB", nwdec_plrset(function (neth, cli, plr, sec_current, pid, fire_type, pkt)
+	if plr then  -- Copy-pasted - not sure why we need this check
+		net_broadcast(neth, common.net_pack("BBB", PKT_PLR_GUN_SHOT, cli.plrid, fire_type))
+	end
+end))

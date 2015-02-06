@@ -90,6 +90,9 @@ return function (plr)
 			-- TODO: Make base gun work better in situations like this (ammo is removed in tick)
 			this.ammo_clip = this.ammo_clip - 1
 		end
+		
+		net_send(nil, common.net_pack("BBB", PKT_PLR_GUN_SHOT, 0, multiplier))
+		
 		for i=1,(this.cfg.pellet_count * multiplier) do
 			-- TODO: Better spread
 			-- spread
@@ -173,6 +176,19 @@ return function (plr)
 	local s_tick = this.tick
 	function this.tick(sec_current, sec_delta)
 		s_tick(sec_current, sec_delta)
+	end
+	
+	function this.remote_client_fire(fire_type)
+		-- TODO: Different sound for alt-fire (fire_type == 2)
+		client.wav_play_global(this.cfg.shot_sound, plr.x, plr.y, plr.z)
+		
+		-- TODO: See network.lua comment in PKT_PLR_GUN_SHOT handler for future tracer code
+		for i=1,(this.cfg.pellet_count * fire_type) do
+			local angy = plr.angy + (this.cfg.spread * (math.random() - 0.5))
+			local angx = plr.angx + (this.cfg.spread * (math.random() - 0.5))
+			
+			tracer_add(plr.x, plr.y, plr.z, angy, angx)
+		end
 	end
 	
 	return this
