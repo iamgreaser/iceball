@@ -18,7 +18,6 @@ function manufacture_buildings()
 		map_cache_start() -- cache here instead of outside the loop to save on RAM
 		for y=1+12, mz-1-12, 1*(12+16) do
 			rand_height = math.floor(13 + math.random()*37)
-			print("RAND:"..rand_height)
 			building = new_building({})
 			building.build(i + 12, my-4-rand_height, y+12, 12, rand_height, 12)
 		end
