@@ -326,21 +326,18 @@ network.sys_handle_s2c(PKT_PLR_GUN_TRACER, "B", function (neth, cli, plr, sec_cu
 	end
 end)
 network.sys_handle_s2c(PKT_NADE_THROW, "BhhhhhhH", function (neth, cli, plr, sec_current, pid,x,y,z,vx,vy,vz,fuse, pkt)
-	if plr and plr.explosive and plr.explosive.ammo > 0 then
-		plr.explosive.ammo = plr.explosive.ammo - 1
-		local n = new_nade({
-			x = x/32,
-			y = y/32,
-			z = z/32,
-			vx = vx/256,
-			vy = vy/256,
-			vz = vz/256,
-			fuse = fuse/100,
-			pid = pid
-		})
-		client.wav_play_global(wav_whoosh, x, y, z)
-		nade_add(n)
-	end
+	local n = new_nade({
+		x = x/32,
+		y = y/32,
+		z = z/32,
+		vx = vx/256,
+		vy = vy/256,
+		vz = vz/256,
+		fuse = fuse/100,
+		pid = pid
+	})
+	client.wav_play_global(wav_whoosh, x, y, z)
+	nade_add(n)
 end)
 network.sys_handle_s2c(PKT_MAP_RCIRC, "", function (neth, cli, plr, sec_current, pkt)
 	local plr = players[players.current]
