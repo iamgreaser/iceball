@@ -9,6 +9,7 @@ zip -r $ZIPNAME *.dll *.exe *.txt opencmd.bat docs/ \
 	clsave/vol/dummy \
 	svsave/pub/dummy \
 	svsave/vol/dummy \
+	pkg/iceball/halp/ \
 	pkg/iceball/launch/ \
 	pkg/iceball/config/ \
 	pkg/iceball/lib/ \

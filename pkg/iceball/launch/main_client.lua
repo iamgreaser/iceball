@@ -75,7 +75,7 @@ function client.hook_key(key, state, modif, uni)
 	end
 end
 
-img_splash = common.img_load("pkg/base/gfx/splash_logo.png", "png")
+img_splash = common.img_load("pkg/iceball/gfx/splash_logo.png", "png")
 local splashtweenprogress_scale = 0.9
 local splashtweenprogress_y = 1.0
 client.map_fog_set(194, 89, 89, 100)
