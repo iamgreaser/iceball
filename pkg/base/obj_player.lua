@@ -626,6 +626,15 @@ function new_player(settings)
 		if not this.alive then
 			this.input_reset()
 		end
+
+		if client then
+			if this.alive then
+				this.respawn_msg.visible = false
+			else
+				this.respawn_msg.visible = true
+				this.respawn_msg.text = "Respawning in " .. math.ceil(this.t_respawn - sec_current)
+			end
+		end
 	end
 
 	function this.tick_rotate(sec_current, sec_delta)
@@ -1393,6 +1402,10 @@ function new_player(settings)
 			text="", x = w/2, y = 3*h/4, align_x = 0.5, align_y = 0.5,
 			visible=false}
 
+		this.respawn_msg = scene.textfield{wordwrap=false, color=0xFFFF3232, font=font_large,
+			text="", x = w/2, y = h-font_large.height-10, align_x = 0.5, align_y = 0,
+			visible = false}
+
 		--TODO: update bluetext/greentext with the actual keys (if changed in controls.json)
 		this.team_change_msg_b = scene.textfield{wordwrap=false, color=0xFF0000FF, font=font_large, 
 			text="Press 1 to join Blue", x = w/2, y = h/4, align_x = 0.5, align_y = 0.5}
@@ -2003,6 +2016,7 @@ function new_player(settings)
 		scene.root.add_child(this.quit_msg)
 		scene.root.add_child(this.reload_msg)
 		scene.root.add_child(this.enemy_name_msg)
+		scene.root.add_child(this.respawn_msg)
 
 		this.scene = scene
 	end
