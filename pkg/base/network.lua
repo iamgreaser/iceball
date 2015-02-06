@@ -128,6 +128,7 @@ do
 		"NADE_PIN",
 		"BUILD_BOX",
 		"PLR_GUN_SHOT",
+		"NEW_MAP",
 	}
 	local i,p
 	for i,p in pairs(pktlist) do
@@ -373,6 +374,69 @@ network.sys_handle_s2c(PKT_NADE_PIN, "B", function (neth, cli, plr, sec_current,
 	local plr = players[pid]
 	if plr then
 		client.wav_play_global(wav_pin, plr.x, plr.y, plr.z)
+	end
+end)
+network.sys_handle_s2c(PKT_NEW_MAP, "", function (neth, cli, plr, sec_current, pkt)
+	--crashes
+	--dofile("pkg/base/main_client.lua")
+
+	map_loaded = common.map_load(map_fname, "auto")
+	common.map_set(map_loaded)
+
+	-- set borders
+	do
+		local xlen, ylen, zlen
+		xlen, ylen, zlen = common.map_get_dims()
+		local r,g,b
+		r,g,b = client.map_fog_get()
+		if MODE_BORDER_SHOW then
+			borders = {
+				new_border(-1, 0, 0, 1, 0, 0, r,g,b),
+				new_border(xlen+1, ylen, zlen, 1, 0, 0, r,g,b),
+				new_border(0, 0, -1, 0, 0, 1, r,g,b),
+				new_border(xlen, ylen, zlen+1, 0, 0, 1, r,g,b),
+				new_border(-1, 0, 0, 1, 0, 0, r,g,b),
+				new_border(xlen+1, ylen, zlen, 1, 0, 0, r,g,b),
+				new_border(0, 0, -1, 0, 0, 1, r,g,b),
+				new_border(xlen, ylen, zlen+1, 0, 0, 1, r,g,b),
+			}
+		end
+	end
+
+	-- create map overview
+	do
+		local xlen, ylen, zlen
+		xlen, ylen, zlen = common.map_get_dims()
+		img_overview = common.img_new(xlen, zlen)
+		img_overview_grid = common.img_new(xlen, zlen)
+		img_overview_icons = common.img_new(xlen, zlen)
+		local x,z
+
+		for z=0,zlen-1 do
+		for x=0,xlen-1 do
+			local l = common.map_pillar_get(x,z)
+			local c = argb_split_to_merged(l[7],l[6],l[5])
+			common.img_pixel_set(img_overview, x, z, c)
+		end
+		end
+		
+		for z=63,zlen-1,64 do
+		for x=0,xlen-1 do
+			common.img_pixel_set(img_overview_grid, x, z, 0xFFFFFFFF)
+		end
+		end
+		for z=0,zlen-1 do
+		for x=63,xlen-1,64 do
+			common.img_pixel_set(img_overview_grid, x, z, 0xFFFFFFFF)
+		end
+		end
+		
+		for x=0,xlen-1 do
+			common.img_pixel_set(img_overview_grid, x, zlen-1, 0xFFFF0000)
+		end
+		for z=0,zlen-1 do
+			common.img_pixel_set(img_overview_grid, xlen-1, z, 0xFFFF0000)
+		end
 	end
 end)
 

@@ -159,6 +159,52 @@ command_register({
 })
 
 command_register({
+	command = "map",
+	permission = "map",
+	usage = "/map <filename>",
+	func = function(plr, plrid, neth, prms, msg)
+		local status, err = pcall(function()
+			local _map_loaded = common.map_load(prms[1], "auto")
+			common.map_set(_map_loaded)
+			map_loaded = _map_loaded
+		end)
+		if not status then
+			net_send(neth, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_error, "Error while loading map: " .. err))
+			return
+		end
+		map_fname = prms[1]
+		map_name = map_fname
+		while map_name do
+			local p = map_name:find("/", 1, true)
+			if not p then break end
+			map_name = map_name:sub(p+1)
+		end
+		net_broadcast(nil, common.net_pack("B", PKT_NEW_MAP))
+		mode_reset()
+	end
+})
+
+command_register({
+	command = "genmap",
+	permission = "map",
+	usage = "/genmap <filename> <flags>",
+	func = function(plr, plrid, neth, prms, msg)
+		local status, err = pcall(function()
+			local _map_loaded, map_name = loadfile(prms[1])(parse_commandline_options(prms))
+			common.map_set(_map_loaded)
+			map_loaded = _map_loaded
+		end)
+		if not status then
+			net_send(neth, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_error, "Error while loading map: " .. err))
+			return
+		end
+		map_fname = prms[1]
+		net_broadcast(nil, common.net_pack("B", PKT_NEW_MAP))
+		mode_reset()
+	end
+})
+
+command_register({
 	command = "squad",
 	permission = "squad",
 	usage = "/squad <squad name> (Use \"none\" to leave your squad)",

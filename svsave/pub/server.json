@@ -59,7 +59,8 @@
 				"gmode",
 				"piano",
 				"intelcmd",
-				"goto"
+				"goto",
+				"map"
 			]
 		},
 		"admin" : {
