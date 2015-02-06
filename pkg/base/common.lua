@@ -103,7 +103,7 @@ MODE_NADE_RANGE = 8.0
 MODE_NADE_DAMAGE = 210.0
 
 -- WARNING: EXPERIMENTAL - set to false if your server slows down an awful lot or locks up!
-MODE_NADE_VPL_ENABLE = false -- disabled for now to slow down the inevitable framerate divebomb we STILL haven't fixed
+MODE_NADE_VPL_ENABLE = true -- disabled for now to slow down the inevitable framerate divebomb we STILL haven't fixed
 MODE_NADE_VPL_MAX_COUNT = 300 -- O(n*m) stuff, n == number of players, m == THIS
 MODE_NADE_VPL_MAX_TRIES = 1000
 MODE_NADE_VPL_MAX_RANGE = 30.0

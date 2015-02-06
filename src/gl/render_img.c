@@ -68,7 +68,6 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 	ih = src->head.height;
 	expandtex_gl(&iw, &ih);
 
-	// TODO: cache shit so we don't have to constantly upload the same image over and over again
 	glEnable(GL_TEXTURE_2D);
 	if(src->tex_dirty)
 	{

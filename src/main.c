@@ -785,6 +785,8 @@ int main_dbghelper(int argc, char *argv[])
 	}
 #endif
 
+	fflush(stdout);
+	fflush(stderr);
 	return 0;
 }
 

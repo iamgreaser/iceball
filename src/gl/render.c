@@ -17,6 +17,8 @@
 
 #include "common.h"
 
+void expandtex_gl(int *iw, int *ih);
+
 int oc_wait_cycle = 1;
 int flood_cycle = 0;
 
@@ -1288,9 +1290,17 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 			const float oamp = 0.0004;
 			const float oper = 0.031;
 			
+			/*
 			ox = oamp*sin(i*oper*M_PI*2.0);
 			oy = oamp*sin(i*oper*M_PI*2.0 + M_PI*2.0/3.0);
 			oz = oamp*sin(i*oper*M_PI*2.0 - M_PI*2.0/3.0);
+			*/
+
+			// Disabled. If you get Z fighting, your loss.
+			// (Use a VA loader for a more GL-friendly format.)
+			ox = 0.0f;
+			oy = 0.0f;
+			oz = 0.0f;
 
 			model_point_t *pt = &(bone->pts[i]);
 			render_pmf_cube(bone, pt->x/256.0f+ox, pt->y/256.0f+oy, pt->z/256.0f+oz, pt->r, pt->g, pt->b, pt->radius*2.0f/256.0f + oamp);
@@ -1331,7 +1341,8 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 
 void render_vertex_array(uint32_t *pixels, int width, int height, int pitch, camera_t *cam_base,
 	va_t *va, int islocal,
-	float px, float py, float pz, float ry, float rx, float ry2, float scale)
+	float px, float py, float pz, float ry, float rx, float ry2, float scale,
+	img_t *img)
 {
 	int i;
 
@@ -1355,27 +1366,65 @@ void render_vertex_array(uint32_t *pixels, int width, int height, int pitch, cam
 		if(va->vbo != 0)
 		{
 			glBindBuffer(GL_ARRAY_BUFFER, va->vbo);
-			glBufferData(GL_ARRAY_BUFFER, sizeof(float)*6*va->data_len, va->data, GL_STATIC_DRAW);
+			glBufferData(GL_ARRAY_BUFFER, sizeof(float)*va->stride*va->data_len, va->data, GL_STATIC_DRAW);
 			glBindBuffer(GL_ARRAY_BUFFER, 0);
 		}
 	}
 
+	if(img != NULL)
+	{
+		int iw, ih;
+		iw = img->head.width;
+		ih = img->head.height;
+		expandtex_gl(&iw, &ih);
+
+		glEnable(GL_TEXTURE_2D);
+		if(img->tex_dirty)
+		{
+			if(img->tex == 0)
+				glGenTextures(1, &(img->tex));
+			
+			glBindTexture(GL_TEXTURE_2D, img->tex);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iw, ih, 0, GL_BGRA, GL_UNSIGNED_BYTE, img->pixels);
+			// BILINEAR FILTERING IS FOR PLEBS
+			// (just kidding, I may add support for it later)
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+			img->tex_dirty = 0;
+		} else {
+			glBindTexture(GL_TEXTURE_2D, img->tex);
+		}
+	}
+
+	glColor3f(1.0f, 1.0f, 1.0f);
+	glTexCoord2f(0.0f, 0.0f);
 	if(va->vbo == 0)
 	{
-		glVertexPointer(3, GL_FLOAT, sizeof(float)*6, va->data);
-		glColorPointer(3, GL_FLOAT, sizeof(float)*6, va->data+3);
+		glVertexPointer(3, GL_FLOAT, sizeof(float)*va->stride, va->data);
+		if(va->color_offs != -1) glColorPointer(3, GL_FLOAT, sizeof(float)*va->stride, va->data+sizeof(float)*va->color_offs);
+		if(va->texcoord_offs != -1) glTexCoordPointer(2, GL_FLOAT, sizeof(float)*va->stride, va->data+sizeof(float)*va->texcoord_offs);
 	} else {
 		glBindBuffer(GL_ARRAY_BUFFER, va->vbo);
-		glVertexPointer(3, GL_FLOAT, sizeof(float)*6, (void *)(0));
-		glColorPointer(3, GL_FLOAT, sizeof(float)*6, (void *)(0 + sizeof(float)*3));
+		glVertexPointer(3, GL_FLOAT, sizeof(float)*va->stride, (void *)(0));
+		if(va->color_offs != -1) glColorPointer(3, GL_FLOAT, sizeof(float)*va->stride, (void *)(0 + sizeof(float)*va->color_offs));
+		if(va->texcoord_offs != -1) glTexCoordPointer(3, GL_FLOAT, sizeof(float)*va->stride, (void *)(0 + sizeof(float)*va->texcoord_offs));
 	}
 	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_COLOR_ARRAY);
+	if(va->color_offs != -1) glEnableClientState(GL_COLOR_ARRAY);
+	if(va->texcoord_offs != -1) glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 	glDrawArrays(GL_TRIANGLES, 0, va->data_len);
+	if(va->texcoord_offs != -1) glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	if(va->color_offs != -1) glDisableClientState(GL_COLOR_ARRAY);
 	glDisableClientState(GL_VERTEX_ARRAY);
-	glDisableClientState(GL_COLOR_ARRAY);
 	if(va->vbo != 0)
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	if(img != NULL)
+	{
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glDisable(GL_TEXTURE_2D);
+	}
 
 	glPopMatrix();
 }

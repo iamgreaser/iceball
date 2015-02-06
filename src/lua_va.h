@@ -36,80 +36,94 @@ int va_gc_lua(lua_State *L)
 // client functions
 int icelua_fn_client_va_render_global(lua_State *L)
 {
-	int top = icelua_assert_stack(L, 8, 8);
+	int top = icelua_assert_stack(L, 8, 9);
 	float px, py, pz;
 	float ry, rx, ry2;
 	float scale;
-	
+
 	if(lua_islightuserdata(L, 1) || !lua_isuserdata(L, 1))
 		return luaL_error(L, "not a VA");
+	if(lua_islightuserdata(L, 9) || !lua_isuserdata(L, 9))
+		return luaL_error(L, "texture not an image");
 	va_t *va = (va_t*)lua_touserdata(L, 1);
 	if(va == NULL || va->udtype != UD_VA)
 		return luaL_error(L, "not a VA");
-	
+
+	img_t *img = (top >= 9 && !lua_isnil(L, 9)
+		? (img_t *)lua_touserdata(L, 9)
+		: NULL);
+	if(img != NULL && img->udtype != UD_IMG)
+		return luaL_error(L, "texture not an image");
+
 	px = lua_tonumber(L, 2);
 	py = lua_tonumber(L, 3);
 	pz = lua_tonumber(L, 4);
-	
+
 	ry = lua_tonumber(L, 5);
 	rx = lua_tonumber(L, 6);
 	ry2 = lua_tonumber(L, 7);
-	
+
 	scale = lua_tonumber(L, 8);
-	
+
 #ifdef DEDI
 	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
 #else
 	render_vertex_array((uint32_t*)screen->pixels, screen->w, screen->h, screen->pitch/4, &tcam,
-		va, 0, px, py, pz, ry, rx, ry2, scale);
+		va, 0, px, py, pz, ry, rx, ry2, scale, img);
 #endif
-	
+
 	return 0;
 }
 
 int icelua_fn_client_va_render_local(lua_State *L)
 {
-	int top = icelua_assert_stack(L, 8, 8);
+	int top = icelua_assert_stack(L, 8, 9);
 	float px, py, pz;
 	float ry, rx, ry2;
 	float scale;
-	
+
 	if(lua_islightuserdata(L, 1) || !lua_isuserdata(L, 1))
 		return luaL_error(L, "not a VA");
+	if(top >= 9 && !lua_isnil(L, 9) && (lua_islightuserdata(L, 9) || !lua_isuserdata(L, 9)))
+		return luaL_error(L, "texture not an image");
 	va_t *va = (va_t*)lua_touserdata(L, 1);
 	if(va == NULL || va->udtype != UD_VA)
 		return luaL_error(L, "not a VA");
-	
+
+	img_t *img = (top >= 9 && !lua_isnil(L, 9)
+		? (img_t *)lua_touserdata(L, 9)
+		: NULL);
+	if(img != NULL && img->udtype != UD_IMG)
+		return luaL_error(L, "texture not an image");
+
 	px = lua_tonumber(L, 2);
 	py = lua_tonumber(L, 3);
 	pz = lua_tonumber(L, 4);
-	
+
 	ry = lua_tonumber(L, 5);
 	rx = lua_tonumber(L, 6);
 	ry2 = lua_tonumber(L, 7);
-	
+
 	scale = lua_tonumber(L, 8);
-	
+
 #ifdef DEDI
 	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
 #else
 	render_vertex_array((uint32_t*)screen->pixels, screen->w, screen->h, screen->pitch/4, &tcam,
-		va, 1, px, py, pz, ry, rx, ry2, scale);
+		va, 1, px, py, pz, ry, rx, ry2, scale, img);
 #endif
-	
+
 	return 0;
 }
 
 int icelua_fn_common_va_make(lua_State *L)
 {
 	int i, j;
-	int top = icelua_assert_stack(L, 1, 2);
+	int top = icelua_assert_stack(L, 1, 3);
 
 	if(!lua_istable(L, 1))
 		return luaL_error(L, "arg 1 not a table");
-	if(top == 2 && lua_isnil(L, 2))
-		top = 1;
-	if(top == 2 && (lua_islightuserdata(L, 2) || !lua_isuserdata(L, 2)))
+	if(top >= 2 && (!lua_isnil(L, 2)) && (lua_islightuserdata(L, 2) || !lua_isuserdata(L, 2)))
 		return luaL_error(L, "arg 2 not a VA");
 
 	// Get length
@@ -117,7 +131,7 @@ int icelua_fn_common_va_make(lua_State *L)
 
 	// Create VA
 	va_t *va;
-	if(top == 2)
+	if(top >= 2 && (!lua_isnil(L, 2)))
 	{
 		va = lua_touserdata(L, 2);
 		lua_pushvalue(L, 2);
@@ -140,20 +154,44 @@ int icelua_fn_common_va_make(lua_State *L)
 	if(va == NULL || va->udtype != UD_VA)
 		return luaL_error(L, "arg 2 not a VA");
 
+	const char *vafmt = (top >= 3 ? lua_tostring(L, 3) : "3v,3c");
+
+	// Get VA format
+	if(vafmt == NULL)
+		return luaL_error(L, "arg 3 not a string");
+
+	if(!strcmp(vafmt, "3v,3c"))
+	{
+		va->color_offs = 3;
+		va->texcoord_offs = -1;
+		va->stride = 6;
+	} else if(!strcmp(vafmt, "3v,3c,2t")) {
+		va->color_offs = 3;
+		va->texcoord_offs = 5;
+		va->stride = 8;
+	} else if(!strcmp(vafmt, "3v,2t")) {
+		va->color_offs = -1;
+		va->texcoord_offs = 3;
+		va->stride = 5;
+	} else {
+		return luaL_error(L, "VA format not supported");
+
+	}
+
 	va->data_len = data_len;
-	va->data = malloc(sizeof(float)*6*va->data_len);
+	va->data = realloc(va->data, sizeof(float)*va->stride*va->data_len);
 
 	// Fill VA
 	for(i = 0; i < data_len; i++)
 	{
 		lua_pushinteger(L, i+1);
 		lua_gettable(L, 1);
-		
-		for(j = 0; j < 6; j++)
+
+		for(j = 0; j < va->stride; j++)
 		{
 			lua_pushinteger(L, j+1);
 			lua_gettable(L, -2);
-			va->data[i*6 + j] = lua_tonumber(L, -1);
+			va->data[i*va->stride + j] = lua_tonumber(L, -1);
 			lua_pop(L, 1);
 		}
 

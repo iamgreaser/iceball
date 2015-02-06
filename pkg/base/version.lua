@@ -20,9 +20,9 @@
 -- Thanks. --GM
 
 VERSION_ENGINE = {
-	cmp={0,2,0,1,1},
-	num=8389632+1,
-	str="0.2a-1",
+	cmp={0,2,0,1,2},
+	num=8389632+2,
+	str="0.2a-2",
 }
 
 --error(""..common.version.num)
@@ -141,5 +141,8 @@ VERSION_BUGS = {
 {intro=nil, fix=8388608+2, msg="argb_spit_to_merged broken on ARM"},
 {intro=4259840+6, fix=8389632, msg="JSON writer not sandboxed - UPGRADE"},
 {intro=nil, fix=8389632+1, msg="Lua vertex array (VA) rendering not supported"},
+{intro=8389632+1, fix=8389632+2, msg="VA API rendering broken on non-VBO mode"},
+{intro=8389632+1, fix=8389632+2, msg="Memory leak when reusing a VA in va_make"},
+{intro=8389632+1, fix=8389632+2, msg="VA API lacks support for textures"},
 }
 

@@ -22,7 +22,7 @@ map_fname = nil
 frame_delay_ctr = 0.0001
 render_sec_current = nil
 
-VA_TEST = false
+VA_TEST = true
 
 -- Ensure we have VA support
 if VA_TEST then
@@ -901,7 +901,21 @@ if VA_TEST then
 		{1, 0, 0, 0.7, 0, 0.7}, {0, 0, 1, 0.7, 0, 0.7}, {0, 1, 0, 0.7, 0, 0.7},
 	})
 	]]
-	va_test = loadkv6("pkg/base/kv6/playerheadalt.kv6", 1.0/16.0)
+	--va_test = loadkv6("pkg/base/kv6/playerheadalt.kv6", 1.0/16.0)
+	va_test = common.va_make({
+		{0, 0, 0, 0, 0}, {1, 0, 0, 0, 1}, {0, 1, 0, 1, 0},
+		{0, 0, 0, 0, 0}, {0, 0, 1, 0, 1}, {1, 0, 0, 1, 0},
+		{0, 0, 0, 0, 0}, {0, 1, 0, 0, 1}, {0, 0, 1, 1, 0},
+		{1, 0, 0, 0, 0}, {0, 0, 1, 0, 1}, {0, 1, 0, 1, 0},
+	}, nil, "3v,2t")
+	--[[
+	va_test = common.va_make({
+		{0, 0, 0, 1, 0.5, 0.5, 0, 0}, {1, 0, 0, 1, 0, 0, 0, 1}, {0, 1, 0, 1, 0, 0, 1, 0},
+		{0, 0, 0, 0.5, 1, 0.5, 0, 0}, {0, 0, 1, 0, 1, 0, 0, 1}, {1, 0, 0, 0, 1, 0, 1, 0},
+		{0, 0, 0, 0.5, 0.5, 1, 0, 0}, {0, 1, 0, 0, 0, 1, 0, 1}, {0, 0, 1, 0, 0, 1, 1, 0},
+		{1, 0, 0, 0.7, 0, 0.7, 0, 0}, {0, 0, 1, 0.7, 0, 0.7, 0, 1}, {0, 1, 0, 0.7, 0, 0.7, 1, 0},
+	}, nil, "3v,3c,2t")
+	]]
 end
 function client.hook_render()
 	local sec_current = render_sec_current
@@ -947,7 +961,7 @@ function client.hook_render()
 		players[players.current].show_hud()
 	end
 	if VA_TEST and sec_current then
-		client.va_render_local(va_test, -0.8, 0.35, 1, sec_current, sec_current*0.8, sec_current*0.623, 0.1)
+		client.va_render_local(va_test, -0.8, 0.35, 1, sec_current, sec_current*0.8, sec_current*0.623, 0.1, img_overview)
 	end
 end
 
