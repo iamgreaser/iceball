@@ -117,6 +117,7 @@ clsave/pub/user.json:
 	This is broken prior to 0.1.2-12.
 
 	"fog" is the fog distance.
+	0 means "use the server defined maximum".
 	If you have an old/budget graphics card/chip, 60 is a good value.
 	(If you have a GMA 3150, get a real GPU.)
 	Maximum fog distance is determined by the server in pkg/base/common.lua,

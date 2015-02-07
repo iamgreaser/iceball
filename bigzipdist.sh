@@ -1,6 +1,6 @@
 #!/bin/sh
 
-export ZIPNAME=nubdist/iceball-0.2a.zip
+export ZIPNAME=nubdist/iceball-0.2.1.zip
 
 #zip -r $ZIPNAME *.dll *.exe *.txt *.bat docs/ \
 #	pkg/base/*.lua \
@@ -34,6 +34,7 @@ zip -r $ZIPNAME *.dll *.exe *.txt opencmd.bat docs/ \
 	clsave/pub/controls.json \
 	xlibinc/dummy winlibs/dummy \
 	tools/icemap2vxl.py tools/kv62pmf.py \
+	findlua.sh \
 	\
 	-x pkg/base/srcwav16/ pkg/base/kv6/ pkg/base/glsl/
 

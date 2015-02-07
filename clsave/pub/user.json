@@ -27,7 +27,7 @@
 	"sensitivity": 1.0,
 	"hold_to_zoom": false,
 	"frame_limit": 100,
-	"fog": 127.5,
+	"fog": 0.0,
 	"invert_y": false,
 
 	"skins" : {

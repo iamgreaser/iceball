@@ -20,9 +20,9 @@
 -- Thanks. --GM
 
 VERSION_ENGINE = {
-	cmp={0,2,0,1,7},
-	num=8389632+7,
-	str="0.2a-7",
+	cmp={0,2,1,0,0},
+	num=8421376+0,
+	str="0.2.1",
 }
 
 --error(""..common.version.num)
@@ -32,6 +32,7 @@ VERSION_ENGINE = {
 -- 0.1.2: 4259840
 -- 0.2: 8388608
 -- 0.2a: 8389632
+-- 0.2.1: 8421376
 
 VERSION_BUGS = {
 {intro=nil, fix=1, msg="PMF models have the wrong Z value when close to the screen edges, and can be seen through walls"},

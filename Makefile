@@ -13,12 +13,12 @@ CFLAGS = -fno-strict-aliasing -g `sdl-config --cflags` -Wall -Wextra \
 
 HEADERS_SDL = `sdl-config --cflags`
 HEADERS_ENet = `pkg-config libenet --cflags`
-HEADERS_Lua = `pkg-config lua-5.1 --cflags` `pkg-config lua5.1 --cflags`
+HEADERS_Lua = `./findlua.sh --cflags`
 
 LDFLAGS = -g -I/usr/local/include $(LDFLAGS_EXTRA) 
 LIBS_SDL = `sdl-config --libs`
 LIBS_ENet = `pkg-config libenet --libs`
-LIBS_Lua = `pkg-config lua-5.1 --libs` `pkg-config lua5.1 --libs`
+LIBS_Lua = `./findlua.sh --libs`
 # Lua is not an acronym. Get used to typing it with lower case u/a.
 LIBS_zlib = -lz
 LIBS_sackit = xlibinc/libsackit.a

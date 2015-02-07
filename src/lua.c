@@ -147,7 +147,11 @@ int icelua_fn_client_mk_sys_execv(lua_State *L)
 #endif
 	printf("argv0: [%s]\n", main_argv0);
 	fflush(stdout);
+#ifdef WIN32
 	execv(v, arglist);
+#else
+	execv(main_argv0, arglist);
+#endif
 	printf("WORK YOU FUCKASS: %s\n", strerror(errno));
 	fflush(stdout);
 

@@ -803,6 +803,7 @@ borders = {}
 print(client.map_fog_get())
 --client.map_fog_set(24,0,32,60)
 foglvl = user_config.fog or MODE_DEFAULT_FOG
+if foglvl <= 1 then foglvl = MODE_MAX_FOG end
 if MODE_MAX_FOG and foglvl > MODE_MAX_FOG then
 	foglvl = MODE_MAX_FOG
 end
