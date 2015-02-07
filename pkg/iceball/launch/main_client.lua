@@ -95,7 +95,12 @@ function client.hook_render()
 	if splashtweenprogress_y < 2.0 and  splashtweenprogress_scale < 0.85 then
 		splashtweenprogress_y = splashtweenprogress_y + 0.1
 	end
-	client.img_blit(img_splash, screen_width - (img_splash_width/(1/splashtweenprogress_scale)), (screen_height/(2/splashtweenprogress_y)) - (img_splash_height/(1/splashtweenprogress_scale)), img_splash_width/(1/splashtweenprogress_scale), img_splash_height/(1/splashtweenprogress_scale), 0, 0, 0xFFFFFFFF, splashtweenprogress_scale, splashtweenprogress_scale)
+	img_splash_width = img_splash_width*splashtweenprogress_scale
+	img_splash_height = img_splash_height*splashtweenprogress_scale
+	local x, y
+	x = (screen_width/2) - (img_splash_width/2)
+	y = (screen_height/(2/splashtweenprogress_y)) - img_splash_height
+	client.img_blit(img_splash, x, y, img_splash_width, img_splash_height, 0, 0, 0xFFFFFFFF, splashtweenprogress_scale, splashtweenprogress_scale)
 --splash sequence end
 
 	if splashtweenprogress_scale <= 0.5 then --don't draw text over the splash
