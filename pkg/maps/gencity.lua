@@ -325,9 +325,6 @@ do
 	local mx=user_settings["mx"] or 512
 	local my=user_settings["my"] or 96
 	local mz=user_settings["mz"] or 512
-	MAP_H=my
-	mx=256
-	mz=256
 	local ret=common.map_new(mx, my, mz)
 	common.map_set(ret)
 	xcells=mx/16
