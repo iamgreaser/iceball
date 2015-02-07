@@ -179,15 +179,17 @@ return function (plr)
 	end
 	
 	function this.remote_client_fire(fire_type)
-		-- TODO: Different sound for alt-fire (fire_type == 2)
-		client.wav_play_global(this.cfg.shot_sound, plr.x, plr.y, plr.z)
-		
-		-- TODO: See network.lua comment in PKT_PLR_GUN_SHOT handler for future tracer code
-		for i=1,(this.cfg.pellet_count * fire_type) do
-			local angy = plr.angy + (this.cfg.spread * (math.random() - 0.5))
-			local angx = plr.angx + (this.cfg.spread * (math.random() - 0.5))
+		if client then
+			-- TODO: Different sound for alt-fire (fire_type == 2)
+			client.wav_play_global(this.cfg.shot_sound, plr.x, plr.y, plr.z)
 			
-			tracer_add(plr.x, plr.y, plr.z, angy, angx)
+			-- TODO: See network.lua comment in PKT_PLR_GUN_SHOT handler for future tracer code
+			for i=1,(this.cfg.pellet_count * fire_type) do
+				local angy = plr.angy + (this.cfg.spread * (math.random() - 0.5))
+				local angx = plr.angx + (this.cfg.spread * (math.random() - 0.5))
+				
+				tracer_add(plr.x, plr.y, plr.z, angy, angx)
+			end
 		end
 	end
 	
