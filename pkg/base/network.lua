@@ -350,7 +350,10 @@ network.sys_handle_s2c(PKT_PLR_GUN_RELOAD, "B", function (neth, cli, plr, sec_cu
 	local plr = players[pid]
 	
 	if plr then
-		client.wav_play_global(wav_rifle_reload, plr.x, plr.y, plr.z)
+		local tool = plr.tools[plr.tool+1]
+		if tool and tool.remote_client_reload then
+			tool.remote_client_reload(fire_type)
+		end
 	end
 end)
 network.sys_handle_s2c(PKT_TEAM_SCORE, "bh", function (neth, cli, plr, sec_current, tidx, score, pkt)
@@ -709,8 +712,11 @@ network.sys_handle_c2s(PKT_NADE_THROW, "hhhhhhH", nwdec_plrset(function (neth, c
 	end
 end))
 network.sys_handle_c2s(PKT_PLR_GUN_RELOAD, "", nwdec_plrset(function (neth, cli, plr, sec_current, pkt)
-	-- TODO: actually reload with serverside counts
 	net_broadcast(neth, common.net_pack("BB", PKT_PLR_GUN_RELOAD, cli.plrid))
+	local tool = plr.tools[plr.tool+1]
+	if tool and tool.remote_client_reload then
+		tool.remote_client_reload(fire_type)
+	end
 end))
 network.sys_handle_c2s(PKT_BLK_DAMAGE, "HHHH", nwdec_plrset(function (neth, cli, plr, sec_current, x, y, z, amt, pkt)
 	if not (plr and plr.has_permission("build")) then return end
@@ -782,5 +788,9 @@ end)
 network.sys_handle_c2s(PKT_PLR_GUN_SHOT, "BB", nwdec_plrset(function (neth, cli, plr, sec_current, pid, fire_type, pkt)
 	if plr then  -- Copy-pasted - not sure why we need this check
 		net_broadcast(neth, common.net_pack("BBB", PKT_PLR_GUN_SHOT, cli.plrid, fire_type))
+		local tool = plr.tools[plr.tool+1]
+		if tool and tool.remote_client_fire then
+			tool.remote_client_fire(fire_type)
+		end
 	end
 end))

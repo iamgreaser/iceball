@@ -317,15 +317,32 @@ return function (plr, cfg)
 	end
 	
 	function this.remote_client_fire(fire_type)
-		client.wav_play_global(this.cfg.shot_sound, plr.x, plr.y, plr.z)
+		if client then
+			client.wav_play_global(this.cfg.shot_sound, plr.x, plr.y, plr.z)
 		
-		-- TODO: See network.lua comment in PKT_PLR_GUN_SHOT handler for future tracer code
-		for i=1,(this.cfg.pellet_count) do
-			local angy = plr.angy + (this.cfg.spread * (math.random() - 0.5))
-			local angx = plr.angx + (this.cfg.spread * (math.random() - 0.5))
-			
-			tracer_add(plr.x, plr.y, plr.z, angy, angx)
+			-- TODO: See network.lua comment in PKT_PLR_GUN_SHOT handler for future tracer code
+			for i=1,(this.cfg.pellet_count) do
+				local angy = plr.angy + (this.cfg.spread * (math.random() - 0.5))
+				local angx = plr.angx + (this.cfg.spread * (math.random() - 0.5))
+				
+				tracer_add(plr.x, plr.y, plr.z, angy, angx)
+			end
 		end
+		
+		this.ammo_clip = this.ammo_clip - 1
+	end
+	
+	function this.remote_client_reload()
+		if client then
+			client.wav_play_global(this.cfg.reload_sound, plr.x, plr.y, plr.z)
+		end
+		
+		local adelta = this.cfg.ammo_clip - this.ammo_clip
+		if adelta > this.ammo_reserve then
+			adelta = this.ammo_reserve
+		end
+		this.ammo_reserve = this.ammo_reserve - adelta
+		this.ammo_clip = this.ammo_clip + adelta
 	end
 
 	return this
