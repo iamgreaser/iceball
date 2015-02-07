@@ -16,7 +16,7 @@
 ]]
 DIR_CITYGEN = "pkg/base/citygen/"
 DIR_CITYGEN_BUILDINGS = DIR_CITYGEN.."buildings/"
-
+dofile(DIR_CITYGEN.."utils/citygen_utils.lua")
 --OVERRIDE ME! I am called 1st.
 function gen_terrain(mx, my, mz) end --mx = mapx = map "width"
 
