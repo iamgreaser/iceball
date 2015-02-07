@@ -34,6 +34,7 @@ return function (plr)
 			body = 100,
 			legs = 100,
 		},
+		block_damage = 100,
 		
 		ammo_clip = 1,
 		ammo_reserve = 25,

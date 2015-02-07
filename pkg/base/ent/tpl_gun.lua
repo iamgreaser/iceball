@@ -18,6 +18,7 @@
 -- Default values used by anything that doesn't explicitly set them
 local default_cfg = {
 	range = 127.5,
+	block_damage = MODE_BLOCK_DAMAGE_RIFLE,
 	spread = 0,
 	pellet_count = 1,
 	shot_sound = wav_rifle_shot,
@@ -159,7 +160,7 @@ return function (plr, cfg)
 				end
 				
 				if cx2 and cy2 <= ylen-3 and cx2 >= 0 and cx2 < xlen and cz2 >= 0 and cz2 < zlen then
-					net_send(nil, common.net_pack("BHHHH", PKT_BLK_DAMAGE, cx2, cy2, cz2, MODE_BLOCK_DAMAGE_RIFLE))
+					net_send(nil, common.net_pack("BHHHH", PKT_BLK_DAMAGE, cx2, cy2, cz2, this.cfg.block_damage))
 				end
 			end  -- if hurt_idx
 		end  -- for pellet_count

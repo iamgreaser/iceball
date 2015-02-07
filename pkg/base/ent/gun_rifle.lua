@@ -34,6 +34,7 @@ return function (plr)
 			body = 49,
 			legs = 33,
 		},
+		block_damage = MODE_BLOCK_DAMAGE_RIFLE,
 		
 		ammo_clip = 10,
 		ammo_reserve = 50,
