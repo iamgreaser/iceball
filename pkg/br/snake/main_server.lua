@@ -15,7 +15,11 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
-dofile("pkg/br/snake/heartbeat.lua")
+MODE_HEARTBEAT = false
+
+if MODE_HEARTBEAT then
+	dofile("pkg/br/snake/heartbeat.lua")
+end
 
 players_current = 0
 players_max = 1
@@ -29,9 +33,13 @@ function server.hook_disconnect()
 end
 
 function server.hook_tick(sec_current, sec_delta)
-	heartbeat_update(sec_current, sec_delta)
+	if MODE_HEARTBEAT then
+		heartbeat_update(sec_current, sec_delta)
+	end
 	return 0.005
 end
 
-print("Starting heartbeat server...")
-heartbeat_init()
+if MODE_HEARTBEAT then
+	print("Starting heartbeat server...")
+	heartbeat_init()
+end
