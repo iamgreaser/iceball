@@ -93,13 +93,13 @@ int icelua_fn_client_mk_sys_execv(lua_State *L)
 	for(i = 1; i <= top; i++)
 		arglist[i] = strdup(lua_tostring(L, i));
 
-	arglist[0] = strdup(main_argv0);
 	arglist[top+1] = NULL;
 
 	SDL_Quit();
 #ifdef WIN32
 	main_argv0 = "iceball.exe"; // fuck it
 #endif
+	arglist[0] = strdup(main_argv0);
 	printf("argv0: [%s]\n", main_argv0);
 	fflush(stdout);
 	execv(main_argv0, arglist);
