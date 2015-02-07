@@ -8,7 +8,7 @@ if pkg-config lua-5.1 ; then
 	pkg-config lua-5.1 $@
 elif pkg-config lua5.1 ; then
 	# Debian
-	pkg-config lua-5.1 $@
+	pkg-config lua5.1 $@
 elif pkg-config lua --atleast-version 5.1 --max-version 5.1.9999 ; then
 	# Slackware?
 	pkg-config lua $@
