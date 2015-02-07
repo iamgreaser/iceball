@@ -1,7 +1,7 @@
 Iceball
 Copyright (C) 2012-2015, Iceball contributors
 Forums: Dead. Best bet is to go on /r/BuildAndShoot.
-IRC: Dead, too.
+IRC: irc://irc.fractiongamers.com/#iceball
 
 If you have a Windows build, running iceball.exe should open the server list.
 
