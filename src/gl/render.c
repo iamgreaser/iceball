@@ -1303,7 +1303,7 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 			oz = 0.0f;
 
 			model_point_t *pt = &(bone->pts[i]);
-			render_pmf_cube(bone, pt->x/256.0f+ox, pt->y/256.0f+oy, pt->z/256.0f+oz, pt->r, pt->g, pt->b, pt->radius*2.0f/256.0f + oamp);
+			render_pmf_cube(bone, pt->x/256.0f+ox, pt->y/256.0f+oy, pt->z/256.0f+oz, pt->r, pt->g, pt->b, pt->radius*2.0f/256.0f); // + oamp);
 		}
 		
 		bone->vbo_dirty = 0;
