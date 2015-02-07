@@ -20,9 +20,9 @@
 -- Thanks. --GM
 
 VERSION_ENGINE = {
-	cmp={0,2,0,1,6},
-	num=8389632+6,
-	str="0.2a-6",
+	cmp={0,2,0,1,7},
+	num=8389632+7,
+	str="0.2a-7",
 }
 
 --error(""..common.version.num)
@@ -145,6 +145,6 @@ VERSION_BUGS = {
 {intro=8389632+1, fix=8389632+2, msg="Memory leak when reusing a VA in va_make"},
 {intro=8389632+1, fix=8389632+2, msg="VA API lacks support for textures"},
 {intro=8389632+2, fix=8389632+3, msg="Compat breakage with va_render_global and textures"},
-{intro=4259840+11, fix=8389632+5, msg="[Win32] Needs a workaround for a bug in MSVCRT's execv function"},
+{intro=4259840+11, fix=8389632+7, msg="[Windows] Launcher crashes when joining server if path contains spaces and not run from command line"},
 }
 

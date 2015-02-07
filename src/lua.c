@@ -93,16 +93,61 @@ int icelua_fn_client_mk_sys_execv(lua_State *L)
 	for(i = 1; i <= top; i++)
 		arglist[i] = strdup(lua_tostring(L, i));
 
+	arglist[0] = strdup(main_argv0);
 	arglist[top+1] = NULL;
 
 	SDL_Quit();
 #ifdef WIN32
-	main_argv0 = "iceball.exe"; // fuck it
+	//if(main_oldcwd != NULL)
+	//	_chdir(main_oldcwd);
+	
+	char cwd[2048] = "";
+	GetModuleFileName(NULL, cwd, 2047);
+	char *v = cwd + strlen(cwd) - 1;
+	while (v >= cwd)
+	{
+		if (*v == '\\')
+		{
+			v++;
+			break;
+		}
+		v--;
+	}
+	arglist[0] = v;
+	
+	for (i = 0; i <= top; i++)
+	{
+		int new_size = strlen(arglist[i]) + 3;
+		int j;
+		for (j = 0; j < strlen(arglist[i]); j++)
+		{
+			if (arglist[i][j] == '"' || arglist[i][j] == '\\')
+				new_size++;
+		}
+		char *new_arg = malloc(new_size);
+		char *k = new_arg;
+		char *l = arglist[i];
+		*(k++) = '"';
+		while (*l != 0)
+		{
+			if (*l == '"' || *l == '\\')
+				*(k++) = '\\';
+			*(k++) = *(l++);
+		}
+		*(k++) = '"';
+		*(k++) = 0;
+		arglist[i] = new_arg;
+	}
+	/*FILE *fp = fopen("FUCK.txt", "w");
+	for (i = 0; i <= top; i++)
+	{
+		fprintf(fp, "%s ", arglist[i]);
+		fflush(fp);
+	}*/
 #endif
-	arglist[0] = strdup(main_argv0);
 	printf("argv0: [%s]\n", main_argv0);
 	fflush(stdout);
-	execv(main_argv0, arglist);
+	execv(v, arglist);
 	printf("WORK YOU FUCKASS: %s\n", strerror(errno));
 	fflush(stdout);
 
