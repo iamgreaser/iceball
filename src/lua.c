@@ -98,19 +98,11 @@ int icelua_fn_client_mk_sys_execv(lua_State *L)
 
 	SDL_Quit();
 #ifdef WIN32
-	const char *follow = main_argv0;
-	while(*follow != '\x00')
-	{
-		if(*follow == '\\' || *follow == '/')
-			main_argv0 = follow+1;
-
-		follow++;
-	}
-	//if(main_oldcwd != NULL) _chdir(main_oldcwd);
+	main_argv0 = "iceball.exe"; // fuck it
 #endif
 	printf("argv0: [%s]\n", main_argv0);
 	fflush(stdout);
-	execv(main_argv[0], arglist);
+	execv(main_argv0, arglist);
 	printf("WORK YOU FUCKASS: %s\n", strerror(errno));
 	fflush(stdout);
 
