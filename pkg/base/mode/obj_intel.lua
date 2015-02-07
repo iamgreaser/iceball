@@ -16,7 +16,13 @@
 ]]
 
 if client then
-	mdl_intel, mdl_intel_bone = skin_load("pmf", "intel.pmf", DIR_PKG_PMF), 0
+	if common.va_make then
+		function va_intel(filt)
+			return loadkv6(DIR_PKG_KV6.."/intel.kv6", 1.0/24.0, filt)
+		end
+	else
+		mdl_intel, mdl_intel_bone = skin_load("pmf", "intel.pmf", DIR_PKG_PMF), 0
+	end
 end
 
 function new_intel(settings)
@@ -257,11 +263,13 @@ function new_intel(settings)
 				print("DONE FILTER")
 			end)
 		end
-		this.mdl_intel = client.model_new(1)
-		this.mdl_intel, mbone = client.model_bone_new(this.mdl_intel,1)
-		mname,mdata = common.model_bone_get(mdl_intel, 0)
-		recolor_component(l[1],l[2],l[3],mdata)
-		common.model_bone_set(this.mdl_intel, 0, mname, mdata)
+		if mdl_intel then
+			this.mdl_intel = client.model_new(1)
+			this.mdl_intel, mbone = client.model_bone_new(this.mdl_intel,1)
+			mname,mdata = common.model_bone_get(mdl_intel, 0)
+			recolor_component(l[1],l[2],l[3],mdata)
+			common.model_bone_set(this.mdl_intel, 0, mname, mdata)
+		end
 	end
 	
 	this.prespawn()

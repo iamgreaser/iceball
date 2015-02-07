@@ -1363,7 +1363,7 @@ function new_player(settings)
 		for i=1,#this.tools do
 			xacc = xacc + this.tools[i].gui_x
 			local va = (this.tools[i].get_va and this.tools[i].get_va())
-			print(va)
+			--print(va)
 			this.tools_align.add_child(scene.bone{
 				va=va,
 				model=this.tools[i].get_model(), bone=0,
