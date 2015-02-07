@@ -19,7 +19,7 @@ local thisid = ...
 
 if client then
 	if common.va_make then
-		weapon_vas[thisid] = loadkv6(DIR_PKG_KV6.."/leerifle.kv6", 1.0/64.0)
+		weapon_vas[thisid] = loadkv6(DIR_PKG_KV6.."/leerifle.kv6", 1.0/96.0)
 	else
 		weapon_models[thisid] = skin_load("pmf", "leerifle.pmf", DIR_PKG_PMF)
 	end
