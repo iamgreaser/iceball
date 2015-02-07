@@ -18,7 +18,11 @@
 local thisid = ...
 
 if client then
-	weapon_models[thisid] = skin_load("pmf", "rifle.pmf", DIR_PKG_PMF)
+	if common.va_make then
+		weapon_vas[thisid] = loadkv6(DIR_PKG_KV6.."/rifle.kv6", 1.0/64.0)
+	else
+		weapon_models[thisid] = skin_load("pmf", "rifle.pmf", DIR_PKG_PMF)
+	end
 end
 
 weapon_names[thisid] = "Rifle"
@@ -40,6 +44,7 @@ return function (plr)
 		recoil_y = -0.05,
 
 		model = weapon_models[thisid],
+		va = weapon_vas[thisid],
 		
 		name = "Rifle",
 	})

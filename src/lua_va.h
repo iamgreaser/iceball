@@ -43,7 +43,7 @@ int icelua_fn_client_va_render_global(lua_State *L)
 
 	if(lua_islightuserdata(L, 1) || !lua_isuserdata(L, 1))
 		return luaL_error(L, "not a VA");
-	if(lua_islightuserdata(L, 9) || !lua_isuserdata(L, 9))
+	if(top >= 9 && !lua_isnil(L, 9) && (lua_islightuserdata(L, 9) || !lua_isuserdata(L, 9)))
 		return luaL_error(L, "texture not an image");
 	va_t *va = (va_t*)lua_touserdata(L, 1);
 	if(va == NULL || va->udtype != UD_VA)

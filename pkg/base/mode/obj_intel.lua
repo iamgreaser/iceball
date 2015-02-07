@@ -243,14 +243,15 @@ function new_intel(settings)
 	if client then
 		if va_intel then
 			local ext_l = l
-			this.va_intel = va_intel(function (l)
-				print("FILTER", #l)
+			this.va_intel = va_intel(function (ll)
+				print("FILTER", #ll)
 				local i
-				for i=1,#l do
+				for i=1,#ll do
+					local l = ll[i]
 					if l[4] == 0 and l[5] == 0 and l[6] == 0 then
-						l[4] = ext_l[1]
-						l[5] = ext_l[2]
-						l[6] = ext_l[3]
+						l[4] = this.color[1]/255.0
+						l[5] = this.color[2]/255.0
+						l[6] = this.color[3]/255.0
 					end
 				end
 				print("DONE FILTER")

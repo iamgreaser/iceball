@@ -238,9 +238,16 @@ return function (plr)
 				for dist=mblk,0,-1 do
 					_, blx1, bly1, blz1 = trace_map_ray_dist(plr.x+0.4*ays,plr.y,plr.z+0.4*ayc, ays*axc,axs,ayc*axc, dist, false)
 					if blx1 >= 0 and blx1 < xlen and bly1 >= 0 and bly1 <= ylen - 3 and blz1 >= 0 and blz1 < zlen then
-						client.model_render_bone_global(mdl_Xcube, mdl_Xcube_bone,
-							blx1+0.5, bly1+0.5, blz1+0.5,
-							0.0, 0.0, 0.0, 24.0)
+						if va_Xcube then
+							client.va_render_global(va_Xcube,
+								blx1+0.5, bly1+0.5, blz1+0.5,
+								0.0, 0.0, 0.0, 24.0)
+						else
+							client.model_render_bone_global(mdl_Xcube,
+								mdl_Xcube_bone,
+								blx1+0.5, bly1+0.5, blz1+0.5,
+								0.0, 0.0, 0.0, 24.0)
+						end
 						break
 					end
 				end

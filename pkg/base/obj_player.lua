@@ -1362,7 +1362,11 @@ function new_player(settings)
 		local tool_pick_scale = {}
 		for i=1,#this.tools do
 			xacc = xacc + this.tools[i].gui_x
-			this.tools_align.add_child(scene.bone{model=this.tools[i].get_model(), bone=0,
+			local va = (this.tools[i].get_va and this.tools[i].get_va())
+			print(va)
+			this.tools_align.add_child(scene.bone{
+				va=va,
+				model=this.tools[i].get_model(), bone=0,
 				x=xacc*w*5/8})
 			tool_y[#tool_y+1] = this.tools[i].gui_y
 			tool_scale[#tool_scale+1] = this.tools[i].gui_scale

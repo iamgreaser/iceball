@@ -19,6 +19,15 @@
 -- Basically, loaders and whatnot.
 -- VA API available since 0.2a-1.
 
+CAM_SHADING = {
+	0xC0/255.0,
+	0xA0/255.0,
+	0xD0/255.0,
+	0xE0/255.0,
+	0xFF/255.0,
+	0xD0/255.0,
+}
+
 --function parsekv6(pkt, name, ptsize, ptspacing)
 function parsekv6(pkt, scale, filt)
 	scale = scale or 1.0
@@ -90,6 +99,13 @@ function parsekv6(pkt, scale, filt)
 	return mdl
 	]]
 
+	local spx = CAM_SHADING[1]
+	local spy = CAM_SHADING[2]
+	local spz = CAM_SHADING[3]
+	local snx = CAM_SHADING[4]
+	local sny = CAM_SHADING[5]
+	local snz = CAM_SHADING[6]
+
 	local vl = {}
 	for i=1,#l do
 		local x0 = l[i].x
@@ -103,57 +119,57 @@ function parsekv6(pkt, scale, filt)
 		local b  = l[i].b/255.0
 
 		if l[i].vnx then
-			vl[1+#vl] = {x0,y0,z0,r,g,b}
-			vl[1+#vl] = {x0,y1,z0,r,g,b}
-			vl[1+#vl] = {x0,y0,z1,r,g,b}
-			vl[1+#vl] = {x0,y0,z1,r,g,b}
-			vl[1+#vl] = {x0,y1,z0,r,g,b}
-			vl[1+#vl] = {x0,y1,z1,r,g,b}
+			vl[1+#vl] = {x0,y0,z0,r*snx,g*snx,b*snx}
+			vl[1+#vl] = {x0,y1,z0,r*snx,g*snx,b*snx}
+			vl[1+#vl] = {x0,y0,z1,r*snx,g*snx,b*snx}
+			vl[1+#vl] = {x0,y0,z1,r*snx,g*snx,b*snx}
+			vl[1+#vl] = {x0,y1,z0,r*snx,g*snx,b*snx}
+			vl[1+#vl] = {x0,y1,z1,r*snx,g*snx,b*snx}
 		end
 
 		if l[i].vpx then
-			vl[1+#vl] = {x1,y0,z0,r,g,b}
-			vl[1+#vl] = {x1,y0,z1,r,g,b}
-			vl[1+#vl] = {x1,y1,z0,r,g,b}
-			vl[1+#vl] = {x1,y1,z0,r,g,b}
-			vl[1+#vl] = {x1,y0,z1,r,g,b}
-			vl[1+#vl] = {x1,y1,z1,r,g,b}
+			vl[1+#vl] = {x1,y0,z0,r*spx,g*spx,b*spx}
+			vl[1+#vl] = {x1,y0,z1,r*spx,g*spx,b*spx}
+			vl[1+#vl] = {x1,y1,z0,r*spx,g*spx,b*spx}
+			vl[1+#vl] = {x1,y1,z0,r*spx,g*spx,b*spx}
+			vl[1+#vl] = {x1,y0,z1,r*spx,g*spx,b*spx}
+			vl[1+#vl] = {x1,y1,z1,r*spx,g*spx,b*spx}
 		end
 
 		if l[i].vny then
-			vl[1+#vl] = {x0,y0,z0,r,g,b}
-			vl[1+#vl] = {x0,y0,z1,r,g,b}
-			vl[1+#vl] = {x1,y0,z0,r,g,b}
-			vl[1+#vl] = {x1,y0,z0,r,g,b}
-			vl[1+#vl] = {x0,y0,z1,r,g,b}
-			vl[1+#vl] = {x1,y0,z1,r,g,b}
+			vl[1+#vl] = {x0,y0,z0,r*sny,g*sny,b*sny}
+			vl[1+#vl] = {x0,y0,z1,r*sny,g*sny,b*sny}
+			vl[1+#vl] = {x1,y0,z0,r*sny,g*sny,b*sny}
+			vl[1+#vl] = {x1,y0,z0,r*sny,g*sny,b*sny}
+			vl[1+#vl] = {x0,y0,z1,r*sny,g*sny,b*sny}
+			vl[1+#vl] = {x1,y0,z1,r*sny,g*sny,b*sny}
 		end
 
 		if l[i].vpy then
-			vl[1+#vl] = {x0,y1,z0,r,g,b}
-			vl[1+#vl] = {x1,y1,z0,r,g,b}
-			vl[1+#vl] = {x0,y1,z1,r,g,b}
-			vl[1+#vl] = {x0,y1,z1,r,g,b}
-			vl[1+#vl] = {x1,y1,z0,r,g,b}
-			vl[1+#vl] = {x1,y1,z1,r,g,b}
+			vl[1+#vl] = {x0,y1,z0,r*spy,g*spy,b*spy}
+			vl[1+#vl] = {x1,y1,z0,r*spy,g*spy,b*spy}
+			vl[1+#vl] = {x0,y1,z1,r*spy,g*spy,b*spy}
+			vl[1+#vl] = {x0,y1,z1,r*spy,g*spy,b*spy}
+			vl[1+#vl] = {x1,y1,z0,r*spy,g*spy,b*spy}
+			vl[1+#vl] = {x1,y1,z1,r*spy,g*spy,b*spy}
 		end
 
 		if l[i].vnz then
-			vl[1+#vl] = {x0,y0,z0,r,g,b}
-			vl[1+#vl] = {x1,y0,z0,r,g,b}
-			vl[1+#vl] = {x0,y1,z0,r,g,b}
-			vl[1+#vl] = {x0,y1,z0,r,g,b}
-			vl[1+#vl] = {x1,y0,z0,r,g,b}
-			vl[1+#vl] = {x1,y1,z0,r,g,b}
+			vl[1+#vl] = {x0,y0,z0,r*snz,g*snz,b*snz}
+			vl[1+#vl] = {x1,y0,z0,r*snz,g*snz,b*snz}
+			vl[1+#vl] = {x0,y1,z0,r*snz,g*snz,b*snz}
+			vl[1+#vl] = {x0,y1,z0,r*snz,g*snz,b*snz}
+			vl[1+#vl] = {x1,y0,z0,r*snz,g*snz,b*snz}
+			vl[1+#vl] = {x1,y1,z0,r*snz,g*snz,b*snz}
 		end
 
 		if l[i].vpz then
-			vl[1+#vl] = {x0,y0,z1,r,g,b}
-			vl[1+#vl] = {x0,y1,z1,r,g,b}
-			vl[1+#vl] = {x1,y0,z1,r,g,b}
-			vl[1+#vl] = {x1,y0,z1,r,g,b}
-			vl[1+#vl] = {x0,y1,z1,r,g,b}
-			vl[1+#vl] = {x1,y1,z1,r,g,b}
+			vl[1+#vl] = {x0,y0,z1,r*spz,g*spz,b*spz}
+			vl[1+#vl] = {x0,y1,z1,r*spz,g*spz,b*spz}
+			vl[1+#vl] = {x1,y0,z1,r*spz,g*spz,b*spz}
+			vl[1+#vl] = {x1,y0,z1,r*spz,g*spz,b*spz}
+			vl[1+#vl] = {x0,y1,z1,r*spz,g*spz,b*spz}
+			vl[1+#vl] = {x1,y1,z1,r*spz,g*spz,b*spz}
 		end
 	end
 

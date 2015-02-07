@@ -16,7 +16,13 @@
 ]]
 
 if client then
-	mdl_tent, mdl_tent_bone = skin_load("pmf", "tent.pmf", DIR_PKG_PMF), 0
+	if common.va_make then
+		function va_tent(filt)
+			return loadkv6(DIR_PKG_KV6.."/flagpole.kv6", 1.0/16.0, filt)
+		end
+	else
+		mdl_tent, mdl_tent_bone = skin_load("pmf", "tent.pmf", DIR_PKG_PMF), 0
+	end
 end
 
 function new_tent(settings)
@@ -86,9 +92,15 @@ function new_tent(settings)
 	end
 	
 	function this.render()
-		client.model_render_bone_global(this.mdl_tent, 0,
-			this.x, this.y, this.z,
-			0, 0, 0, 3)
+		if this.va_tent then
+			client.va_render_global(this.va_tent,
+				this.x, this.y, this.z,
+				0, 0, 0, 3)
+		else
+			client.model_render_bone_global(this.mdl_tent, 0,
+				this.x, this.y, this.z,
+				0, 0, 0, 3)
+		end
 	end
 	
 	function this.prespawn()
@@ -152,11 +164,27 @@ function new_tent(settings)
 	this.color_icon = (this.team and teams[this.team].color_chat) or {255,255,255}
 	local mbone,mname,mdata
 	if client then
-		this.mdl_tent = client.model_new(1)
-		this.mdl_tent, mbone = client.model_bone_new(this.mdl_tent,1)
-		mname,mdata = common.model_bone_get(mdl_tent, 0)
-		recolor_component(l[1],l[2],l[3],mdata)
-		common.model_bone_set(this.mdl_tent, 0, mname, mdata)
+		if va_tent then
+			this.va_tent = va_tent(function (ll)
+				print("FILTER", #ll)
+				local i
+				for i=1,#ll do
+					local l = ll[i]
+					if l[4] == 0 and l[5] == 0 and l[6] == 0 then
+						l[4] = this.color[1]/255.0
+						l[5] = this.color[2]/255.0
+						l[6] = this.color[3]/255.0
+					end
+				end
+				print("DONE FILTER")
+			end)
+		else
+			this.mdl_tent = client.model_new(1)
+			this.mdl_tent, mbone = client.model_bone_new(this.mdl_tent,1)
+			mname,mdata = common.model_bone_get(mdl_tent, 0)
+			recolor_component(l[1],l[2],l[3],mdata)
+			common.model_bone_set(this.mdl_tent, 0, mname, mdata)
+		end
 	end
 	
 	this.prespawn()

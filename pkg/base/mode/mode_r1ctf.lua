@@ -19,7 +19,7 @@
 if common.va_make then
 	function va_intel(filt)
 		print ("LOAD")
-		return loadkv6("pkg/base/kv6/bomb.kv6", 1.0/128.0, filt)
+		return loadkv6(DIR_PKG_KV6.."/bomb.kv6", 1.0/128.0, filt)
 	end
 end
 

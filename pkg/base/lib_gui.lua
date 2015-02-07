@@ -1010,7 +1010,7 @@ function gui_create_scene(width, height, shared_rate)
 		this.getter_keys.height = this.getter_keys.width
 
 		function this.draw_update()
-			if this.model ~= nil then
+			if this.model ~= nil or this.va ~= nil then
 				-- remap pixel coordinates to (-1, 1) range
 				local ratio = root.height/root.width
 				local mx = -(this.relx/root.width*2-1)

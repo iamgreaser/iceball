@@ -22,7 +22,7 @@ map_fname = nil
 frame_delay_ctr = 0.0001
 render_sec_current = nil
 
-VA_TEST = true
+VA_TEST = false
 
 -- Ensure we have VA support
 if VA_TEST then
@@ -336,19 +336,26 @@ img_crosshair = client.img_load("pkg/base/gfx/crosshair.tga")
 img_crosshairhit = client.img_load("pkg/base/gfx/crosshairhit.tga")
 img_chevron = client.img_load("pkg/base/gfx/chevron.tga")
 
+-- load kv6 models
+-- TODO: remove the pmfs
+
 -- load/make models
 mdl_test = skin_load("pmf", "test.pmf", DIR_PKG_PMF)
 mdl_test_bone = client.model_bone_find(mdl_test, "test")
 mdl_cube = skin_load("pmf", "cube.pmf", DIR_PKG_PMF)
 mdl_cube_bone = client.model_bone_find(mdl_cube, "bncube")
-mdl_Xcube = skin_load("pmf", "xcube.pmf", DIR_PKG_PMF)
-mdl_Xcube_bone = client.model_bone_find(mdl_cube, "bnXcube")
 mdl_spade, mdl_spade_bone = skin_load("pmf", "spade.pmf", DIR_PKG_PMF), 0
 mdl_block, mdl_block_bone = skin_load("pmf", "block.pmf", DIR_PKG_PMF), 0
 mdl_piano, mdl_piano_bone = skin_load("pmf", "piano.pmf", DIR_PKG_PMF), 0
 mdl_marker, mdl_marker_bone = skin_load("pmf", "marker.pmf", DIR_PKG_PMF), 0
-
 mdl_tracer, mdl_tracer_bone = skin_load("pmf", "tracer.pmf", DIR_PKG_PMF), 0
+
+if common.va_make then
+	va_Xcube = loadkv6(DIR_PKG_KV6.."/xcube.kv6", 1.0/256.0)
+else
+	mdl_Xcube = skin_load("pmf", "xcube.pmf", DIR_PKG_PMF)
+	mdl_Xcube_bone = client.model_bone_find(mdl_cube, "bnXcube")
+end
 
 -- quick hack to stitch a player model together
 if false then
