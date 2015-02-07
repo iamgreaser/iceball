@@ -240,7 +240,7 @@ return function (plr)
 					if blx1 >= 0 and blx1 < xlen and bly1 >= 0 and bly1 <= ylen - 3 and blz1 >= 0 and blz1 < zlen then
 						if va_Xcube then
 							client.va_render_global(va_Xcube,
-								blx1+0.55, bly1+0.55, blz1+0.55,
+								blx1+0.4, bly1+0.5, blz1+0.4,
 								0.0, 0.0, 0.0, 24.0)
 						else
 							client.model_render_bone_global(mdl_Xcube,
