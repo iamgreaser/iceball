@@ -20,9 +20,9 @@
 -- Thanks. --GM
 
 VERSION_ENGINE = {
-	cmp={0,2,0,1,3},
-	num=8389632+3,
-	str="0.2a-3",
+	cmp={0,2,0,1,4},
+	num=8389632+4,
+	str="0.2a-4",
 }
 
 --error(""..common.version.num)
@@ -145,5 +145,6 @@ VERSION_BUGS = {
 {intro=8389632+1, fix=8389632+2, msg="Memory leak when reusing a VA in va_make"},
 {intro=8389632+1, fix=8389632+2, msg="VA API lacks support for textures"},
 {intro=8389632+2, fix=8389632+3, msg="Compat breakage with va_render_global and textures"},
+{intro=4259840+11, fix=8389632+4, msg="[Win32] Needs a workaround for a bug in MinGW's execv function"},
 }
 

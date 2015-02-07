@@ -98,8 +98,15 @@ int icelua_fn_client_mk_sys_execv(lua_State *L)
 
 	SDL_Quit();
 #ifdef WIN32
-	if(main_oldcwd != NULL)
-		_chdir(main_oldcwd);
+	const char *follow = main_argv0;
+	while(*follow != '\x00')
+	{
+		if(*follow == '\\' || *follow == '/')
+			main_argv0 = follow+1;
+
+		follow++;
+	}
+	//if(main_oldcwd != NULL) _chdir(main_oldcwd);
 #endif
 	printf("argv0: [%s]\n", main_argv0);
 	fflush(stdout);
