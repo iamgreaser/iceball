@@ -300,6 +300,8 @@ function new_player(...)
 		this.round_start_text.add_listener(GE_DELTA_TIME, round_start_update)
 		this.scene.root.add_child(this.round_start_text)
 		
+		this.scene.root.remove_child(this.respawn_msg)
+		
 		return ret
 	end
 
