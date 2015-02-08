@@ -1,31 +1,27 @@
 --Gen city by LeCom
 --Nooby code, feel free to fix things and optimize the code for lua
---Coming soon: chairs and fences
 
+--TODO: make noise and colour values more appropriate
+function ROAD_COLOR() d=math.random(0, 1) return {d, d, d} end
+function CONCRETE_GROUND_COLOR() d=math.random(-4, 4) return {128+d, 128+d, 128+d} end
+function GRASS_COLOR() return {0, 128+math.random(-8, 8), 0} end
 
---These should really be converted into arrays ASAP
-ROAD_R=0
-ROAD_G=0
-ROAD_B=0
+function BUILDING_WALL_COLOR() d=math.random(-4, 4) return {100+d, 100+d, 100+d} end
+function BUILDING_FLOOR_COLOR() d=math.random(-4, 4) return {100+d, 100+d, 100+d} end
+function BUILDING_STAIR_COLUMN_COLOR() return {32, 32, 32} end
+function BUILDING_STAIR_COLOR() return {128, 128, 128} end
 
-CONCRETE_R=128
-CONCRETE_G=128
-CONCRETE_B=128
-
-GRASS_R=0
-GRASS_G=128
-GRASS_B=0
-
-WALL_R=128
-WALL_G=128
-WALL_B=128
-
-TABLE_R=128
-TABLE_G=64
-TABLE_B=0
-
+function BUILDING_TABLE_COLOR() return {128, 64, 0} end
 TABLE_W=2
-TABLE_L=4
+TABLE_L=5
+function BUILDING_CHAIR_COLOR() return {128, 64, 0} end
+
+
+function FENCE_COLOR() d=math.random(-32, 32) return {80+d, 80+d, 80+d} end
+FENCE_HEIGHT=6
+
+function RUBBISH_BIN_COLOR() d=math.random(-32, 32) return {55+d, 64+d, 64+d} end
+function RUBBISH_BIN_TOP_COLOR() d=math.random(-16, 16) return {25+d, 32+d, 32+d} end
 
 xcells=32
 zcells=32
@@ -46,8 +42,6 @@ HROAD_W=ROAD_W/2
 
 FLOOR_Y=0
 
-MAP_H=0
-
 function ternary(c, t, f)
 	if c then
 		return t
@@ -57,7 +51,7 @@ function ternary(c, t, f)
 end
 
 function randint(x, y)
-	return x+math.floor(tonumber(math.random()*(y-x)))
+	return math.random(x, y)
 end
 
 function gen_table(x1, y1, z1)
@@ -66,13 +60,24 @@ function gen_table(x1, y1, z1)
 	tz2=z1+TABLE_L
 	for x=x1, tx2 do
 		for z=z1, tz2 do
-			map_block_set(x, ty2, z, 1, TABLE_R, TABLE_G, TABLE_B)
+			map_block_set(x, ty2, z, 1, unpack(BUILDING_TABLE_COLOR()))
 		end
 	end
-	map_block_set(x1, y1, z1, 1, TABLE_R, TABLE_G, TABLE_B)
-	map_block_set(x1, y1, tz2, 1, TABLE_R, TABLE_G, TABLE_B)
-	map_block_set(tx2, y1, z1, 1, TABLE_R, TABLE_G, TABLE_B)
-	map_block_set(tx2, y1, tz2, 1, TABLE_R, TABLE_G, TABLE_B)
+	map_block_set(x1, y1, z1, 1, unpack(BUILDING_TABLE_COLOR()))
+	map_block_set(x1, y1, tz2, 1, unpack(BUILDING_TABLE_COLOR()))
+	map_block_set(tx2, y1, z1, 1, unpack(BUILDING_TABLE_COLOR()))
+	map_block_set(tx2, y1, tz2, 1, unpack(BUILDING_TABLE_COLOR()))
+end
+
+function gen_chair(x1, y1, z1)
+	map_block_set(x1, y1, z1, 1, unpack(BUILDING_CHAIR_COLOR()))
+	map_block_set(x1, y1-1, z1, 1, unpack(BUILDING_CHAIR_COLOR()))
+	map_block_set(x1-1, y1, z1, 1, unpack(BUILDING_CHAIR_COLOR()))
+end
+
+function gen_bin(x, y, z)
+	map_block_set(x, y, z, 1, unpack(RUBBISH_BIN_COLOR()))
+	map_block_set(x, y-1, z, 1, unpack(RUBBISH_BIN_TOP_COLOR()))
 end
 
 function gen_grass(xc, zc, xnl, xnr, znl, znr)
@@ -80,7 +85,52 @@ function gen_grass(xc, zc, xnl, xnr, znl, znr)
 	z1=zc*zcsize
 	for x=0, xcsize-1 do
 		for z=0, zcsize-1 do
-			map_block_set(x+x1, FLOOR_Y, z+z1, 1, GRASS_R, GRASS_G, GRASS_B)
+			map_block_set(x+x1, FLOOR_Y, z+z1, 1, unpack(GRASS_COLOR()))
+		end
+	end
+	if randint(0, 3)~=0 then
+		return
+	end
+	xd=0
+	zd=0
+	while (xd==0) and (zd==0) do
+		xd=randint(-1, 1)
+		zd=randint(-1, 1)
+	end
+	mdl=0
+	if xd~=0 then
+		fencex=x1+xcsize/2+(xcsize/2-ternary(xd==1, 1, 0))*xd
+		for z=z1, z1+xcsize-1 do
+			mdl=1-mdl
+			for y=0, FENCE_HEIGHT do
+				if(y%2)==mdl then
+					map_block_set(fencex, FLOOR_Y-y, z, 1, unpack(FENCE_COLOR()))
+				end
+			end
+		end
+	else
+		fencez=z1+zcsize/2+(zcsize/2-ternary(zd==1, 1, 0))*zd
+		for x=x1, x1+xcsize-1 do
+			mdl=1-mdl
+			for y=0, FENCE_HEIGHT do
+				if(y%2)==mdl then
+					map_block_set(x, FLOOR_Y-y, fencez, 1,  unpack(FENCE_COLOR()))
+				end
+			end
+		end
+	end
+	b=randint(0, 2)
+	if b==0 then
+		b=randint(1, 2)
+		for i=0, b-1 do
+			if xd~=0 then
+				x=x1+xcsize/2+(xcsize/2-randint(1, 2)-ternary(xd==1, 1, 0))*xd
+				z=z1+randint(1, zcsize-1)
+			else
+				x=x1+randint(1, xcsize-1)
+				z=z1+zcsize/2+(zcsize/2-randint(1, 2)-ternary(zd==1, 1, 0))*zd
+			end
+			gen_bin(x, FLOOR_Y-1, z)
 		end
 	end
 end
@@ -121,18 +171,22 @@ function gen_building(xc, zc, xnl, xnr, znl, znr)
 					end
 				end
 				if continue==0 then
-					map_block_set(x, fy, z, 1, WALL_R, WALL_G, WALL_B)
+					map_block_set(x, fy, z, 1, unpack(BUILDING_FLOOR_COLOR()))
 				end
 			end
 		end
-		--HERE SHOULD BE THE TABLE AND CHAIR GEN CODE
 		table_count=randint(0, 2)
-		if table_count then
+		if table_count~=0 then
 			for i=0, table_count do
 				gen_table(ternary(randint(0, 1)==0, x1+1, x2-TABLE_W-1), y2, ternary(randint(0, 1)==0, z1+1, z2-TABLE_L-1))
 			end
 		end
-		--SKIPPING FURNITURE AND CONTINUING WITH WALLS (x direction)
+		chair_count=randint(0, 5)
+		if chair_count~=0 then
+			for i=0, chair_count do
+				gen_chair(ternary(randint(0, 1)==0, x1+4, x2-5)+1, y2, ternary(randint(0, 1)==0, z1+4, z2-5))
+			end
+		end
 		do_zlhw=(zlh<=f or znl==false) or h==0
 		do_zrhw=(zrh<=f or znr==false) or h==0
 		do_xlhw=(xlh<=f or xnl==false) or h==0
@@ -140,20 +194,20 @@ function gen_building(xc, zc, xnl, xnr, znl, znr)
 		if do_zlhw or do_zrhw then
 			for x=x1, x2 do
 				if do_zlhw then
-					map_block_set(x, y1, z1, 1,  WALL_R, WALL_G, WALL_B)
-					map_block_set(x, y2, z1, 1, WALL_R, WALL_G, WALL_B)
+					map_block_set(x, y1, z1, 1, unpack(BUILDING_WALL_COLOR()))
+					map_block_set(x, y2, z1, 1, unpack(BUILDING_WALL_COLOR()))
 				end
 				if do_zrhw then
-					map_block_set(x, y1, z2, 1,  WALL_R, WALL_G, WALL_B)
-					map_block_set(x, y2, z2, 1,  WALL_R, WALL_G, WALL_B)
+					map_block_set(x, y1, z2, 1,  unpack(BUILDING_WALL_COLOR()))
+					map_block_set(x, y2, z2, 1,  unpack(BUILDING_WALL_COLOR()))
 				end
 				if ((x-x1)%WINDOW_WIDTH)==0 or x==x1 or x==x2 then
 					for y=y1, y2 do
 						if do_zlhw then
-							map_block_set(x, y, z1, 1, WALL_R, WALL_G, WALL_B)
+							map_block_set(x, y, z1, 1, unpack(BUILDING_WALL_COLOR()))
 						end
 						if do_zrhw then
-							map_block_set(x, y, z2, 1, WALL_R, WALL_G, WALL_B)
+							map_block_set(x, y, z2, 1, unpack(BUILDING_WALL_COLOR()))
 						end
 					end
 				end
@@ -162,20 +216,20 @@ function gen_building(xc, zc, xnl, xnr, znl, znr)
 		--WALLS (z direction)
 		for z=z1, z2 do
 			if do_xlhw then
-				map_block_set(x1, y1, z, 1, WALL_R, WALL_G, WALL_B)
-				map_block_set(x1, y2, z, 1, WALL_R, WALL_G, WALL_B)
+				map_block_set(x1, y1, z, 1, unpack(BUILDING_WALL_COLOR()))
+				map_block_set(x1, y2, z, 1, unpack(BUILDING_WALL_COLOR()))
 			end
 			if do_xrhw then
-				map_block_set(x2, y1, z, 1, WALL_R, WALL_G, WALL_B)
-				map_block_set(x2, y2, z, 1, WALL_R, WALL_G, WALL_B)
+				map_block_set(x2, y1, z, 1, unpack(BUILDING_WALL_COLOR()))
+				map_block_set(x2, y2, z, 1, unpack(BUILDING_WALL_COLOR()))
 			end
 			if ((z-z1)%WINDOW_WIDTH)==0 or z==z1 or z==z2 then
 				for y=y1, y2 do
 					if do_xlhw then
-						map_block_set(x1, y, z, 1, WALL_R, WALL_G, WALL_B)
+						map_block_set(x1, y, z, 1, unpack(BUILDING_WALL_COLOR()))
 					end
 					if do_xrhw then
-						map_block_set(x2, y, z, 1, WALL_R, WALL_G, WALL_B)
+						map_block_set(x2, y, z, 1, unpack(BUILDING_WALL_COLOR()))
 					end
 				end
 			end
@@ -185,7 +239,7 @@ function gen_building(xc, zc, xnl, xnr, znl, znr)
 			for y=FLOOR_Y-h*BUILDING_FLOOR_HEIGHT, FLOOR_Y do
 				x=midx
 				z=midz
-				map_block_set(x, y, z, 1, WALL_R, WALL_G, WALL_B)
+				map_block_set(x, y, z, 1, unpack(BUILDING_STAIR_COLUMN_COLOR()))
 				ymod=(y-FLOOR_Y+1)%8
 				if ymod>=1 and ymod<4 then
 					x=x+1
@@ -202,7 +256,7 @@ function gen_building(xc, zc, xnl, xnr, znl, znr)
 						z=z-1
 					end
 				end
-				map_block_set(x, y, z, 1, WALL_R, WALL_G, WALL_B)
+				map_block_set(x, y, z, 1, unpack(BUILDING_STAIR_COLOR()))
 			end
 		end
 	end
@@ -221,7 +275,7 @@ function gen_road(xc, zc, xnl, xnr, znl, znr)
 	for x=0, xcsize-1 do
 		for z=0, zcsize-1 do
 			if (x+.5-xcsize/2.0)*(x+.5-xcsize/2.0)+(z+.5-zcsize/2.0)*(z+.5-zcsize/2.0)<=powrange then
-				map_block_set(x+x1, FLOOR_Y, z+z1, 1, ROAD_R, ROAD_G, ROAD_B)
+				map_block_set(x+x1, FLOOR_Y, z+z1, 1, unpack(ROAD_COLOR()))
 			end
 		end
 	end
@@ -229,7 +283,7 @@ function gen_road(xc, zc, xnl, xnr, znl, znr)
 		midx=x1+xcsize/2
 		for z=z1, z1+zcsize/2 do
 			build_white_line=(z%4)~=0
-			for x=midx-HROAD_W, midx+HROAD_W do
+			for x=midx-HROAD_W, midx+HROAD_W-1 do
 				continue=0
 				c=map_block_get(x, FLOOR_Y, z)
 				if c[2]==white_r and c[3]==white_g and c[4]==white_b then
@@ -240,7 +294,7 @@ function gen_road(xc, zc, xnl, xnr, znl, znr)
 					continue=1
 				end
 				if continue==0 then
-					map_block_set(x, FLOOR_Y, z, 1, ROAD_R, ROAD_G, ROAD_B)
+					map_block_set(x, FLOOR_Y, z, 1, unpack(ROAD_COLOR()))
 				end
 			end
 		end
@@ -249,7 +303,7 @@ function gen_road(xc, zc, xnl, xnr, znl, znr)
 		midx=x1+xcsize/2
 		for z=z1+zcsize/2, z2 do
 			build_white_line=(z%4)~=0
-			for x=midx-HROAD_W, midx+HROAD_W do
+			for x=midx-HROAD_W, midx+HROAD_W-1 do
 				continue=0
 				c=map_block_get(x, FLOOR_Y, z)
 				if c[2]==white_r and c[3]==white_g and c[4]==white_b then
@@ -260,7 +314,7 @@ function gen_road(xc, zc, xnl, xnr, znl, znr)
 					continue=1
 				end
 				if continue==0 then
-					map_block_set(x, FLOOR_Y, z, 1, ROAD_R, ROAD_G, ROAD_B)
+					map_block_set(x, FLOOR_Y, z, 1, unpack(ROAD_COLOR()))
 				end
 			end
 		end
@@ -269,7 +323,7 @@ function gen_road(xc, zc, xnl, xnr, znl, znr)
 		midz=z1+zcsize/2
 		for x=x1, x1+xcsize/2 do
 			build_white_line=(x%4)~=0
-			for z=midz-HROAD_W, midz+HROAD_W do
+			for z=midz-HROAD_W, midz+HROAD_W-1 do
 				continue=0
 				c=map_block_get(x, FLOOR_Y, z)
 				if c[2]==white_r and c[3]==white_g and c[4]==white_b then
@@ -280,7 +334,7 @@ function gen_road(xc, zc, xnl, xnr, znl, znr)
 					continue=1
 				end
 				if continue==0 then
-					map_block_set(x, FLOOR_Y, z, 1, ROAD_R, ROAD_G, ROAD_B)
+					map_block_set(x, FLOOR_Y, z, 1, unpack(ROAD_COLOR()))
 				end
 			end
 		end
@@ -289,7 +343,7 @@ function gen_road(xc, zc, xnl, xnr, znl, znr)
 		midz=z1+zcsize/2
 		for x=x1+xcsize/2, x2 do
 			build_white_line=(x%4)~=0
-			for z=midz-HROAD_W, midz+HROAD_W do
+			for z=midz-HROAD_W, midz+HROAD_W-1 do
 				continue=0
 				c=map_block_get(x, FLOOR_Y, z)
 				if c[2]==white_r and c[3]==white_g and c[4]==white_b then
@@ -300,15 +354,45 @@ function gen_road(xc, zc, xnl, xnr, znl, znr)
 					continue=1
 				end
 				if continue==0 then
-					map_block_set(x, FLOOR_Y, z, 1, ROAD_R, ROAD_G, ROAD_B)
+					map_block_set(x, FLOOR_Y, z, 1, unpack(ROAD_COLOR()))
 				end
+			end
+		end
+	end
+	if znl~=gen_road and znr~=gen_road then
+		b=randint(0, 2)
+		if b==0 then
+			b=randint(1, 3)
+			for i=0, b-1 do
+				zd=randint(0, 1)*2-1
+				x=randint(x1, x2-1)
+				z=z1+zcsize/2+(zcsize/2-ternary(zd==1, 1, 0))*zd
+				gen_bin(x, FLOOR_Y-1, z)
+			end
+		end
+	end
+	if xnr~=gen_road and xnl~=gen_road then
+		b=randint(0, 2)
+		if b==0 then
+			b=randint(1, 3)
+			for i=0, b-1 do
+				xd=randint(0, 1)*2-1
+				z=randint(x1, x2-1)
+				x=x1+xcsize/2+(xcsize/2-ternary(xd==1, 1, 0))*xd
+				gen_bin(x, FLOOR_Y-1, z)
 			end
 		end
 	end
 end
 
 function gen_border(xc, zc, xnl, xnr, znl, znr)
-	return gen_grass(xc, zc, xnl, xnr, znl, znr)
+	x1=xc*xcsize
+	z1=zc*zcsize
+	for x=0, xcsize-1 do
+		for z=0, zcsize-1 do
+			map_block_set(x+x1, FLOOR_Y, z+z1, 1, unpack(GRASS_COLOR()))
+		end
+	end
 end
 
 
@@ -334,7 +418,8 @@ do
 	zcsize=mz/zcells
 	for x=0, mx-1 do
 		for z=0, mz-1 do
-			l={0, my-4, my-4, 0, CONCRETE_R, CONCRETE_G, CONCRETE_B, 1}
+			c=CONCRETE_GROUND_COLOR()
+			l={0, my-4, my-4, 0, c[1], c[2], c[3], 1}
 			common.map_pillar_set(x, z, l)
 		end
 	end
