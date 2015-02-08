@@ -16,13 +16,6 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
-if common.va_make then
-	function va_intel(filt)
-		print ("LOAD")
-		return loadkv6(DIR_PKG_KV6.."/bomb.kv6", 1.0/128.0, filt)
-	end
-end
-
 -- create our tent
 dofile("pkg/base/mode/obj_tent.lua")
 local s_new_tent = new_tent
@@ -46,6 +39,15 @@ end
 -- apply 1ctf
 dofile("pkg/base/mode/mode_1ctf.lua")
 
+-- replace model
+if common.va_make then
+	function va_intel(filt)
+		print ("LOAD")
+		return loadkv6(DIR_PKG_KV6.."/bomb.kv6", 1.0/128.0, filt)
+	end
+end
+
+
 -- replace their tent with ours
 new_tent = f_new_tent
 
@@ -61,7 +63,7 @@ function new_intel(...)
 	this.color = {255,0,0}
 	this.color_icon = {255,0,0}
 
-	if client then
+	if client and mdl_intel then
 		l = this.color
 		local mname, mdata
 		mname,mdata = common.model_bone_get(mdl_intel, 0)
