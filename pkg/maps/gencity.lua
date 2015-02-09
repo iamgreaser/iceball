@@ -23,10 +23,14 @@ FENCE_HEIGHT=6
 function RUBBISH_BIN_COLOR() d=math.random(-32, 32) return {55+d, 64+d, 64+d} end
 function RUBBISH_BIN_TOP_COLOR() d=math.random(-16, 16) return {25+d, 32+d, 32+d} end
 
+function BUSH_COLOR() return {0, 128+math.random(-16, 16), 0} end
+function LANTERN_COLOR() return {64, 64, 64} end
+function LANTERN_LAMP_COLOR() return {255, 255, 0} end
+LANTERN_H=8
+LANTERN_INTERVAL=8
+
 xcells=32
 zcells=32
-xcsize=0
-zcsize=0
 
 cells={}
 celldata={}
@@ -34,11 +38,14 @@ celldata={}
 MIN_BUILDING_H=2
 MAX_BUILDING_H=4
 BUILDING_FLOOR_HEIGHT=6
-WINDOW_WIDTH=4
+WINDOW_WIDTH=3
+WINDOW_HEIGHT=2
+WINDOW_FRAME_WIDTH=4
+WINDOW_OFFSET=3
 
-ROAD_W=12
+ROAD_W=10
 
-HROAD_W=ROAD_W/2
+HROAD_W=math.floor(ROAD_W/2)
 
 FLOOR_Y=0
 
@@ -50,8 +57,25 @@ function ternary(c, t, f)
 	end
 end
 
-function randint(x, y)
-	return math.random(x, y)
+function gen_bush(x1, y1, z1, x2, y2, z2)
+	r=3
+	midy=(y2-y1)/2+y1
+	midz=(z2-z1)/2+z1
+	for x=x1, x2-1 do
+		pow_r=r*r/4
+		for z=z1, z2-1 do
+			pow_z=(z-midz)*(z-midz)
+			for y=y1, y2-1 do
+				pow_y=(y-midy)*(y-midy)
+				if pow_z+pow_y<pow_r and math.random(0, 2) ~=0 then
+					map_block_set(x, y, z, 1, unpack(BUSH_COLOR()))
+				end
+			end
+		end
+		if math.random(0, 1)==0 then
+			r=r+math.random(-1, 1)
+		end
+	end
 end
 
 function gen_table(x1, y1, z1)
@@ -75,86 +99,116 @@ function gen_chair(x1, y1, z1)
 	map_block_set(x1-1, y1, z1, 1, unpack(BUILDING_CHAIR_COLOR()))
 end
 
-function gen_bin(x, y, z)
-	map_block_set(x, y, z, 1, unpack(RUBBISH_BIN_COLOR()))
-	map_block_set(x, y-1, z, 1, unpack(RUBBISH_BIN_TOP_COLOR()))
+function gen_bin(x1, y1, z1)
+	map_block_set(x1, y1, z1, 1, unpack(RUBBISH_BIN_COLOR()))
+	map_block_set(x1, y1-1, z1, 1, unpack(RUBBISH_BIN_TOP_COLOR()))
 end
 
-function gen_grass(xc, zc, xnl, xnr, znl, znr)
-	x1=xc*xcsize
-	z1=zc*zcsize
-	for x=0, xcsize-1 do
-		for z=0, zcsize-1 do
+function gen_lantern(x1, y1, z1, xd, zd)
+	hy=y1-LANTERN_H
+	for y=hy, y1 do
+		map_block_set(x1, y, z1, 1, unpack(LANTERN_COLOR()))
+	end
+	for i=1, 2 do
+		x=x1+xd*i
+		z=z1+zd*i
+		map_block_set(x+zd, hy, z+xd, 1, unpack(LANTERN_COLOR()))
+		map_block_set(x-zd, hy, z-xd, 1, unpack(LANTERN_COLOR()))
+	end
+	for i=1, 2 do
+		x=x1+xd*i
+		z=z1+zd*i
+		map_block_set(x, hy, z, 1, unpack(LANTERN_LAMP_COLOR()))
+	end
+	map_block_set(x1+xd*3, hy, z1+zd*3, 1, unpack(LANTERN_COLOR()))
+end
+
+function gen_grass(x1, z1, xsize, zsize, xnl, xnr, znl, znr)
+	x2=x1+xsize
+	z2=z1+zsize
+	for x=0, xsize-1 do
+		for z=0, zsize-1 do
 			map_block_set(x+x1, FLOOR_Y, z+z1, 1, unpack(GRASS_COLOR()))
 		end
 	end
-	if randint(0, 3)~=0 then
-		return
-	end
-	xd=0
-	zd=0
-	while (xd==0) and (zd==0) do
-		xd=randint(-1, 1)
-		zd=randint(-1, 1)
-	end
-	mdl=0
-	if xd~=0 then
-		fencex=x1+xcsize/2+(xcsize/2-ternary(xd==1, 1, 0))*xd
-		for z=z1, z1+xcsize-1 do
-			mdl=1-mdl
-			for y=0, FENCE_HEIGHT do
-				if(y%2)==mdl then
-					map_block_set(fencex, FLOOR_Y-y, z, 1, unpack(FENCE_COLOR()))
+	wallxd=0
+	wallzd=0
+	if math.random(0, 3)==0 then
+		wallxd=0
+		wallzd=0
+		while wallxd==0 and wallzd==0 do
+			wallxd=math.random(-1, 1)
+			wallzd=math.random(-1, 1)
+		end
+		mdl=0
+		if wallxd~=0 then
+			fencex=x1+xsize/2+(xsize/2-ternary(wallxd==1, 1, 0))*wallxd
+			for z=z1, z1+xsize-1 do
+				mdl=1-mdl
+				for y=0, FENCE_HEIGHT do
+					if(y%2)==mdl then
+						map_block_set(fencex, FLOOR_Y-y, z, 1, unpack(FENCE_COLOR()))
+					end
+				end
+			end
+		else
+			fencez=z1+zsize/2+(zsize/2-ternary(wallzd==1, 1, 0))*wallzd
+			for x=x1, x1+xsize-1 do
+				mdl=1-mdl
+				for y=0, FENCE_HEIGHT do
+					if(y%2)==mdl then
+						map_block_set(x, FLOOR_Y-y, fencez, 1,  unpack(FENCE_COLOR()))
+					end
 				end
 			end
 		end
-	else
-		fencez=z1+zcsize/2+(zcsize/2-ternary(zd==1, 1, 0))*zd
-		for x=x1, x1+xcsize-1 do
-			mdl=1-mdl
-			for y=0, FENCE_HEIGHT do
-				if(y%2)==mdl then
-					map_block_set(x, FLOOR_Y-y, fencez, 1,  unpack(FENCE_COLOR()))
-				end
-			end
-		end
 	end
-	b=randint(0, 2)
-	if b==0 then
-		b=randint(1, 2)
+	if math.random(0, 2)==0 and (wallxd~=0 or wallzd~=0) then
+		b=math.random(1, 2)
 		for i=0, b-1 do
-			if xd~=0 then
-				x=x1+xcsize/2+(xcsize/2-randint(1, 2)-ternary(xd==1, 1, 0))*xd
-				z=z1+randint(1, zcsize-1)
+			if wallxd~=0 then
+				x=x1+xsize/2+(xsize/2-math.random(1, 2)-ternary(wallxd==1, 1, 0))*wallxd
+				z=z1+math.random(1, zsize-1)
 			else
-				x=x1+randint(1, xcsize-1)
-				z=z1+zcsize/2+(zcsize/2-randint(1, 2)-ternary(zd==1, 1, 0))*zd
+				x=x1+math.random(1, xsize-1)
+				z=z1+zsize/2+(zsize/2-math.random(1, 2)-ternary(wallzd==1, 1, 0))*wallzd
 			end
 			gen_bin(x, FLOOR_Y-1, z)
 		end
 	end
+	bushes=math.random(0, 5)
+	bush_w=4
+	bush_l=6
+	if bushes then
+		for b=0, bushes-1 do
+			x=math.random(x1+4, x2-bush_l-4)
+			z=math.random(z1+4, z2-bush_w-4)
+			gen_bush(x, FLOOR_Y-bush_w, z, x+bush_l, FLOOR_Y, z+bush_w)
+		end
+	end
 end
 
-function gen_building(xc, zc, xnl, xnr, znl, znr)
-	x1=xc*xcsize
-	z1=zc*zcsize
-	x2=x1+xcsize-1
-	z2=z1+zcsize-1
-	h=celldata[xc][yc]
-	h=4
-	--UNSAFE TERNARY OPERATOR
-	xlh=(xnl and celldata[xc-1][zc] or 1024)
-	xrh=(xnr and celldata[xc+1][zc] or 1024)
-	zlh=(znl and celldata[xc][zc-1] or 1024)
-	zrh=(znr and celldata[xc][zc+1] or 1024)
+--Array accesses need to be replaced by arrays passed to functions
+function gen_building(x1, z1, xsize, zsize, xnl, xnr, znl, znr)
+	x2=x1+xsize-1
+	z2=z1+zsize-1
+	xc=x1/xsize
+	zc=z1/zsize
+	h=celldata[xc][zc]
 	xnl=xnl==gen_building
 	xnr=xnr==gen_building
 	znl=znl==gen_building
 	znr=znr==gen_building
+	--UNSAFE TERNARY OPERATOR
+	xlh=(xnl and celldata[xc-1][zc] or -1)
+	xrh=(xnr and celldata[xc+1][zc] or -1)
+	zlh=(znl and celldata[xc][zc-1] or -1)
+	zrh=(znr and celldata[xc][zc+1] or -1)
+	neighbour_higher=xlh>h or xrh>h or zlh>h or xrh>h
 	neighbour=xnl or xnr or znl or znr
-	do_stairs=not neighbour or randint(0, 3)==0
-	midx=xcsize/2+x1
-	midz=zcsize/2+z1
+	do_stairs=neighbour_higher==false or math.random(0, 3)==0
+	midx=xsize/2+x1
+	midz=zsize/2+z1
 	--walls
 	for f=0, h-1 do
 		y1=FLOOR_Y-(f+1)*BUILDING_FLOOR_HEIGHT+1
@@ -175,68 +229,125 @@ function gen_building(xc, zc, xnl, xnr, znl, znr)
 				end
 			end
 		end
-		table_count=randint(0, 2)
+		table_count=math.random(0, 2)
 		if table_count~=0 then
 			for i=0, table_count do
-				gen_table(ternary(randint(0, 1)==0, x1+1, x2-TABLE_W-1), y2, ternary(randint(0, 1)==0, z1+1, z2-TABLE_L-1))
+				gen_table(ternary(math.random(0, 1)==0, x1+1, x2-TABLE_W-1), y2, ternary(math.random(0, 1)==0, z1+1, z2-TABLE_L-1))
 			end
 		end
-		chair_count=randint(0, 5)
+		chair_count=math.random(0, 5)
 		if chair_count~=0 then
 			for i=0, chair_count do
-				gen_chair(ternary(randint(0, 1)==0, x1+4, x2-5)+1, y2, ternary(randint(0, 1)==0, z1+4, z2-5))
+				gen_chair(ternary(math.random(0, 1)==0, x1+4, x2-5)+1, y2, ternary(math.random(0, 1)==0, z1+4, z2-5))
 			end
 		end
-		do_zlhw=(zlh<=f or znl==false) or h==0
-		do_zrhw=(zrh<=f or znr==false) or h==0
-		do_xlhw=(xlh<=f or xnl==false) or h==0
-		do_xrhw=(xrh<=f or xnr==false) or h==0
+
+		do_zlhw=(zlh<=f or znl==false)
+		do_zrhw=(zrh<=f or znr==false)
+		do_xlhw=(xlh<=f or xnl==false)
+		do_xrhw=(xrh<=f or xnr==false)
+
+		door_side=0
+		if f==0 then door_side=math.random(1, 8) end
+		if xlh==f then door_side=bit_or(door_side, 1) end
+		if xrh==f then door_side=bit_or(door_side, 2) end
+		if zrh==f then door_side=bit_or(door_side, 4) end
+		if zlh==f then door_side=bit_or(door_side, 8) end
+
+		upper_window_y=y1+WINDOW_HEIGHT/2
+		lower_window_y=y2-WINDOW_HEIGHT/2-(WINDOW_HEIGHT%2)
+
+		--WALLS (x direction)
 		if do_zlhw or do_zrhw then
-			for x=x1, x2 do
-				if do_zlhw then
-					map_block_set(x, y1, z1, 1, unpack(BUILDING_WALL_COLOR()))
-					map_block_set(x, y2, z1, 1, unpack(BUILDING_WALL_COLOR()))
-				end
-				if do_zrhw then
-					map_block_set(x, y1, z2, 1,  unpack(BUILDING_WALL_COLOR()))
-					map_block_set(x, y2, z2, 1,  unpack(BUILDING_WALL_COLOR()))
-				end
-				if ((x-x1)%WINDOW_WIDTH)==0 or x==x1 or x==x2 then
-					for y=y1, y2 do
-						if do_zlhw then
-							map_block_set(x, y, z1, 1, unpack(BUILDING_WALL_COLOR()))
-						end
-						if do_zrhw then
-							map_block_set(x, y, z2, 1, unpack(BUILDING_WALL_COLOR()))
-						end
+			window_c=-1+WINDOW_OFFSET
+			window=0
+			for x=x1, x2 do		
+				for y=y1, y2 do
+					build_block=y>=lower_window_y or y<upper_window_y or window==0
+					if do_zlhw and build_block and not (bit_and(door_side, 8)~=0 and window==1) then
+						map_block_set(x, y, z1, 1, unpack(BUILDING_WALL_COLOR()))
+					end
+					if do_zrhw and build_block and not (bit_and(door_side, 4)~=0 and window==1) then
+						map_block_set(x, y, z2, 1, unpack(BUILDING_WALL_COLOR()))
 					end
 				end
+				if window==0 then
+					if window_c>=WINDOW_FRAME_WIDTH then
+						window=1
+						window_c=0
+					end
+				else
+					if window_c>=WINDOW_WIDTH then
+						window=0
+						window_c=0
+					end
+				end
+				window_c=window_c+1
 			end
 		end
 		--WALLS (z direction)
-		for z=z1, z2 do
-			if do_xlhw then
-				map_block_set(x1, y1, z, 1, unpack(BUILDING_WALL_COLOR()))
-				map_block_set(x1, y2, z, 1, unpack(BUILDING_WALL_COLOR()))
-			end
-			if do_xrhw then
-				map_block_set(x2, y1, z, 1, unpack(BUILDING_WALL_COLOR()))
-				map_block_set(x2, y2, z, 1, unpack(BUILDING_WALL_COLOR()))
-			end
-			if ((z-z1)%WINDOW_WIDTH)==0 or z==z1 or z==z2 then
-				for y=y1, y2 do
-					if do_xlhw then
+		if do_xlhw or do_xrhw then
+			window_c=-1+WINDOW_OFFSET
+			window=0
+			for z=z1, z2 do		
+				for y=y1, y2 do	
+					build_block=y>=lower_window_y or y<upper_window_y or window==0
+					if do_xlhw and build_block and not (bit_and(door_side, 1)~=0 and window==1) then
 						map_block_set(x1, y, z, 1, unpack(BUILDING_WALL_COLOR()))
 					end
-					if do_xrhw then
+					if do_xrhw and build_block and not (bit_and(door_side, 2)~=0 and window==1) then
 						map_block_set(x2, y, z, 1, unpack(BUILDING_WALL_COLOR()))
+					end
+				end
+				if window==0 then
+					if window_c>=WINDOW_FRAME_WIDTH then
+						window=1
+						window_c=0
+					end
+				else
+					if window_c>=WINDOW_WIDTH then
+						window=0
+						window_c=0
+					end
+				end
+				window_c=window_c+1
+			end
+		end
+		--Doors
+		--[[
+		DOOR_WIDTH=10
+		if zlh==f or zrh==f then
+			xs=x1+(xsize-DOOR_WIDTH)/2
+			xe=x2-(xsize-DOOR_WIDTH)/2
+			for x=xs, xe do
+				for y=y1, y2 do
+					if zlh==f then
+						map_block_break(x, y, z1)
+					end
+					if zrh==f then
+						map_block_break(x, y, z2)
 					end
 				end
 			end
 		end
+		if xlh==f or xrh==f then
+			zs=z1+(zsize-DOOR_WIDTH)/2
+			ze=z2-(zsize-DOOR_WIDTH)/2
+			for z=zs, ze do
+				for y=y1, y2 do
+					if xlh==f then
+						map_block_break(x1, y, z)
+					end
+					if xrh==f then
+						map_block_break(x2, y, z)
+					end
+				end
+			end
+		end
+		--]]
 		--Stairs
 		if do_stairs then
-			for y=FLOOR_Y-h*BUILDING_FLOOR_HEIGHT, FLOOR_Y do
+			for y=FLOOR_Y-(f+1)*BUILDING_FLOOR_HEIGHT, FLOOR_Y-f*BUILDING_FLOOR_HEIGHT do
 				x=midx
 				z=midz
 				map_block_set(x, y, z, 1, unpack(BUILDING_STAIR_COLUMN_COLOR()))
@@ -263,25 +374,23 @@ function gen_building(xc, zc, xnl, xnr, znl, znr)
 end
 
 -- xc = grid x ; zc = grid z ; xnl, xnr = left/right neighbour tiles ; znl, znr = upper/lower neighbour tiles
-function gen_road(xc, zc, xnl, xnr, znl, znr)
-	x1=xc*xcsize
-	z1=zc*zcsize
-	x2=x1+xcsize
-	z2=z1+zcsize
+function gen_road(x1, z1, xsize, zsize, xnl, xnr, znl, znr)
+	x2=x1+xsize
+	z2=z1+zsize
 	white_r=255
 	white_g=255
 	white_b=255
 	powrange=(ROAD_W/2.0)*(ROAD_W/2.0)
-	for x=0, xcsize-1 do
-		for z=0, zcsize-1 do
-			if (x+.5-xcsize/2.0)*(x+.5-xcsize/2.0)+(z+.5-zcsize/2.0)*(z+.5-zcsize/2.0)<=powrange then
+	for x=0, xsize-1 do
+		for z=0, zsize-1 do
+			if (x+.5-xsize/2.0)*(x+.5-xsize/2.0)+(z+.5-zsize/2.0)*(z+.5-zsize/2.0)<=powrange then
 				map_block_set(x+x1, FLOOR_Y, z+z1, 1, unpack(ROAD_COLOR()))
 			end
 		end
 	end
 	if znl==gen_road then
-		midx=x1+xcsize/2
-		for z=z1, z1+zcsize/2 do
+		midx=x1+xsize/2
+		for z=z1, z1+zsize/2 do
 			build_white_line=(z%4)~=0
 			for x=midx-HROAD_W, midx+HROAD_W-1 do
 				continue=0
@@ -300,8 +409,8 @@ function gen_road(xc, zc, xnl, xnr, znl, znr)
 		end
 	end
 	if znr==gen_road then
-		midx=x1+xcsize/2
-		for z=z1+zcsize/2, z2 do
+		midx=x1+xsize/2
+		for z=z1+zsize/2, z2 do
 			build_white_line=(z%4)~=0
 			for x=midx-HROAD_W, midx+HROAD_W-1 do
 				continue=0
@@ -320,8 +429,8 @@ function gen_road(xc, zc, xnl, xnr, znl, znr)
 		end
 	end
 	if xnl==gen_road then
-		midz=z1+zcsize/2
-		for x=x1, x1+xcsize/2 do
+		midz=z1+zsize/2
+		for x=x1, x1+xsize/2 do
 			build_white_line=(x%4)~=0
 			for z=midz-HROAD_W, midz+HROAD_W-1 do
 				continue=0
@@ -340,8 +449,8 @@ function gen_road(xc, zc, xnl, xnr, znl, znr)
 		end
 	end
 	if xnr==gen_road then
-		midz=z1+zcsize/2
-		for x=x1+xcsize/2, x2 do
+		midz=z1+zsize/2
+		for x=x1+xsize/2, x2 do
 			build_white_line=(x%4)~=0
 			for z=midz-HROAD_W, midz+HROAD_W-1 do
 				continue=0
@@ -360,36 +469,46 @@ function gen_road(xc, zc, xnl, xnr, znl, znr)
 		end
 	end
 	if znl~=gen_road and znr~=gen_road then
-		b=randint(0, 2)
+		b=math.random(0, 2)
 		if b==0 then
-			b=randint(1, 3)
+			b=math.random(1, 3)
 			for i=0, b-1 do
-				zd=randint(0, 1)*2-1
-				x=randint(x1, x2-1)
-				z=z1+zcsize/2+(zcsize/2-ternary(zd==1, 1, 0))*zd
+				zd=math.random(0, 1)*2-1
+				x=math.random(x1, x2-1)
+				z=z1+zsize/2+(zsize/2-ternary(zd==1, 1, 0))*zd
 				gen_bin(x, FLOOR_Y-1, z)
+			end
+		end
+		if xnr==gen_road or xnl==gen_road then
+			for x=x1+LANTERN_INTERVAL*ternary(xnl~=gen_road, 1, 0),  x2-1-LANTERN_INTERVAL*ternary(xnr~=gen_road, 1, 0), LANTERN_INTERVAL do
+				gen_lantern(x, FLOOR_Y-1, z1+1, 0, 1)
+				gen_lantern(x, FLOOR_Y-1, z2-2, 0, -1)
 			end
 		end
 	end
 	if xnr~=gen_road and xnl~=gen_road then
-		b=randint(0, 2)
+		b=math.random(0, 2)
 		if b==0 then
-			b=randint(1, 3)
+			b=math.random(1, 3)
 			for i=0, b-1 do
-				xd=randint(0, 1)*2-1
-				z=randint(x1, x2-1)
-				x=x1+xcsize/2+(xcsize/2-ternary(xd==1, 1, 0))*xd
+				xd=math.random(0, 1)*2-1
+				z=math.random(x1, x2-1)
+				x=x1+xsize/2+(xsize/2-ternary(wallxd==1, 1, 0))*xd
 				gen_bin(x, FLOOR_Y-1, z)
+			end
+		end
+		if znr==gen_road or znl==gen_road then
+			for z=z1+LANTERN_INTERVAL*ternary(znl~=gen_road, 1, 0),  z2-1-LANTERN_INTERVAL*ternary(znr~=gen_road, 1, 0), LANTERN_INTERVAL do
+				gen_lantern(x1+1, FLOOR_Y-1, z, 1, 0)
+				gen_lantern(x2-2, FLOOR_Y-1, z, -1, 0)
 			end
 		end
 	end
 end
 
-function gen_border(xc, zc, xnl, xnr, znl, znr)
-	x1=xc*xcsize
-	z1=zc*zcsize
-	for x=0, xcsize-1 do
-		for z=0, zcsize-1 do
+function gen_border(x1, z1, xsize, zsize, xnl, xnr, znl, znr)
+	for x=0, xsize-1 do
+		for z=0, zsize-1 do
 			map_block_set(x+x1, FLOOR_Y, z+z1, 1, unpack(GRASS_COLOR()))
 		end
 	end
@@ -433,8 +552,7 @@ do
 				cell=choice(gen_funcs)
 				cells[x][z]=cell
 				if cell==gen_building then
-					celldata[x][z]=randint(MIN_BUILDING_H, MAX_BUILDING_H)
-					celldata[x][z]=4
+					celldata[x][z]=math.random(MIN_BUILDING_H, MAX_BUILDING_H)
 				end
 			else
 				cells[x][z]=gen_border
@@ -442,11 +560,11 @@ do
 		end
 	end
 	map_cache_start()
-	z=randint(1, zcells-2)
+	z=math.random(1, zcells-2)
 	zd=0
 	for x=0, xcells-1 do
 		if not zd then
-			zd=randint(-1, 1)
+			zd=math.random(-1, 1)
 			z=z+zd
 			if z>=zcells then
 				z=0
@@ -480,7 +598,7 @@ do
 			if z<=zcells-2 then
 				znr=cells[x][z+1]
 			end
-			cells[x][z](x, z, xnl, xnr, znl, znr)
+			cells[x][z](x*xcsize, z*zcsize, xcsize, zcsize, xnl, xnr, znl, znr)
 		end
 	end
 	map_cache_end()
