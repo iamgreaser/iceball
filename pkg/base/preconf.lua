@@ -70,7 +70,7 @@ function model_load(mdict, prio, sdir)
 	end
 
 	for i=1,#prio do
-		local mdl = SKIN_ENABLE[prio[i]] and model_loaders[prio[i]](
+		local mdl = model_loaders[prio[i]](
 			true, mdict[prio[i]].bdir.."/"..mdict[prio[i]].name, mdict[prio[i]])
 		if mdl then return mdl end
 	end

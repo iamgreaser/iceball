@@ -264,6 +264,17 @@ function model_loaders.pmf(isfile, pkt, extra)
 	end)
 end
 
+function model_loaders.lua(isfile, pkt, extra)
+	extra = extra or {}
+	--print(pkt)
+	if isfile then pkt = loadfile(pkt) end
+	if not pkt then return nil end
+
+	print(pkt)
+
+	return pkt
+end
+
 --[[
 function loadkv6(fname, name, ptsize, ptspacing)
 	return parsekv6(common.bin_load(fname), name, ptsize, ptspacing)
