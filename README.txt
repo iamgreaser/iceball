@@ -98,3 +98,5 @@ and to get updates from the main repo:
 - git pull --rebase upstream master
 - git push origin master
 
+
+Join the chat at https://gitter.im/iamgreaser/iceball
