@@ -224,6 +224,7 @@ function fastload_analyse_client()
 	state.e.common.img_new = common.img_new
 	state.e.common.map_pillar_get = common.map_pillar_get
 	state.e.common.img_pixel_set = common.img_pixel_set
+	state.e.common.net_unpack = common.net_unpack
 	--state.e.common.@ = common.@
 	--state.e.common.@ = common.@
 
@@ -232,6 +233,10 @@ function fastload_analyse_client()
 
 	-- client.wav_cube_size: dummy
 	function state.e.client.wav_cube_size() end
+
+	-- client.va_make: dummy
+	function state.e.client.va_make() end
+	function state.e.common.va_make() end
 
 	-- common.fetch_block: Need to cache all the things, except for the things that we can't
 	local function fetch_block(typ, fname)
@@ -251,6 +256,11 @@ function fastload_analyse_client()
 		end
 	end
 	state.e.common.fetch_block = fetch_block
+
+	-- common.bin_load: Call fetch_block instead
+	function state.e.common.bin_load(fname)
+		return fetch_block("bin", fname)
+	end
 
 	-- common.fetch_start: Call fetch_block instead
 	function state.e.common.fetch_start(ftype, fname)
