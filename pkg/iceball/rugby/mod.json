@@ -1,3 +1,4 @@
 {
-	"preload": ["main.lua"]
+	"preload": ["pre.lua"],
+	"load": ["main.lua"],
 }
