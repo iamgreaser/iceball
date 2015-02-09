@@ -35,6 +35,13 @@ return function (plr)
 	local function prv_recolor_block(r,g,b)
 		if not client then return end
 		this.mdl = mdl_block({filt=function () return r,g,b end})
+		this.mdl_cube = mdl_cube({filt=function(br,bg,bb)
+			if br > 4 then
+				return r,g,b
+			else
+				return br,bg,bb
+			end
+		end})
 	end
 
 	function this.recolor()
@@ -207,27 +214,7 @@ return function (plr)
 			for dist=mblk,1,-1 do
 				_, blx1, bly1, blz1 = trace_map_ray_dist(plr.x+0.4*ays,plr.y,plr.z+0.4*ayc, ays*axc,axs,ayc*axc, dist, false)
 				if blx1 >= 0 and blx1 < xlen and bly1 >= 0 and bly1 <= ylen - 3 and blz1 >= 0 and blz1 < zlen and (map_is_buildable(blx1, bly1, blz1) or MODE_BLOCK_PLACE_IN_AIR) then
-					--[[
-					bname, mdl_data = client.model_bone_get(mdl_cube, mdl_cube_bone)
-					
-					mdl_data_backup = mdl_data
-					
-					for i=1,#mdl_data do
-						if mdl_data[i].r > 4 then
-							mdl_data[i].r = math.max(plr.blk_color[1], 5) --going all the way down to
-							mdl_data[i].g = math.max(plr.blk_color[2], 5) --to 4 breaks it and you'd
-							mdl_data[i].b = math.max(plr.blk_color[3], 5) --have to reload the model
-						end
-					end
-					
-					client.model_bone_set(mdl_cube, mdl_cube_bone, bname, mdl_data)
-					
-					client.model_render_bone_global(mdl_cube, mdl_cube_bone,
-						blx1+0.55, bly1+0.55, blz1+0.55,
-						0.0, 0.0, 0.0, 24.0) --no rotation, 24 roughly equals the cube size
-					]]
-
-					mdl_cube_inst.render_global(
+					this.mdl_cube.render_global(
 						blx1+0.55, bly1+0.55, blz1+0.55,
 						0.0, 0.0, 0.0, 24.0) --no rotation, 24 roughly equals the cube size
 					err = false
