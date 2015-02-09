@@ -21,17 +21,21 @@ PLM_BUILD = 3
 
 if client then
 	mdl_player_head = model_load({
+		kv6={bdir=DIR_PKG_KV6, name="playerhead.kv6", scale=1.0/32.0},
 		pmf={bdir=DIR_PKG_PMF, name="player.pmf", bone=0},
-	}, {"pmf"})
+	}, {"kv6","pmf"})
 	mdl_player_body = model_load({
+		kv6={bdir=DIR_PKG_KV6, name="playerbody.kv6", scale=1.0/32.0},
 		pmf={bdir=DIR_PKG_PMF, name="player.pmf", bone=1},
-	}, {"pmf"})
+	}, {"kv6","pmf"})
 	mdl_player_arm = model_load({
+		kv6={bdir=DIR_PKG_KV6, name="playerarm.kv6", scale=1.0/32.0},
 		pmf={bdir=DIR_PKG_PMF, name="player.pmf", bone=2},
-	}, {"pmf"})
+	}, {"kv6","pmf"})
 	mdl_player_leg = model_load({
+		kv6={bdir=DIR_PKG_KV6, name="playerleg.kv6", scale=1.0/32.0},
 		pmf={bdir=DIR_PKG_PMF, name="player.pmf", bone=3},
-	}, {"pmf"})
+	}, {"kv6","pmf"})
 end
 
 function new_player(settings)
