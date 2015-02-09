@@ -161,10 +161,14 @@ do
 		if string.sub(fname, 1,6) == "clsave" then return client.fetch_block(ftype, fname) end
 		if widgets ~= nil then
 			scene = gui_create_scene(w, h)
-			loading_img = scene.image{img=img_loading, x=screen_width/2, y=screen_height/2}
+			img_loading_width, img_loading_height = client.img_get_dims(img_loading)
+			img_loading_scale = math.min(screen_width/img_loading_width, screen_height/img_loading_height)
+			loading_img = scene.image{img=img_loading, x=screen_width/2, y=screen_height/2, width = screen_width, height = screen_height, scalex = img_loading_scale, scaley = img_loading_scale}
 			scene.root.add_child(loading_img)
 			if img_map then
-				map_img = scene.image{img=img_map, x=-screen_width/2, y=screen_height/2}
+				img_map_width, img_map_height = client.img_get_dims(img_map)
+				img_map_scale = math.min(screen_width/img_map_width, screen_height/img_map_height)
+				map_img = scene.image{img=img_map, x=-screen_width/2, y=screen_height/2, width = screen_width, height = screen_height, scalex = img_map_scale, scaley = img_map_scale}
 				scene.root.add_child(map_img)
 			end
 		end

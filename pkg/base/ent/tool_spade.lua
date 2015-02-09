@@ -26,7 +26,12 @@ return function (plr)
 	this.gui_pick_scale = 1.3
 
 	this.mspeed_mul = MODE_PSPEED_SPADE
-
+	if not this.mdl_cube_marker and mdl_cube then
+		this.mdl_cube_marker = mdl_cube({filt=function(br,bg,bb)
+				return 233,16,16
+		end})
+	end
+		
 	function this.get_damage(styp, tplr)
 		if tplr.team == plr.team then return 0, "ERROR" end
 		local dmg = 1000
@@ -190,14 +195,17 @@ return function (plr)
 	function this.render(px,py,pz,ya,xa,ya2)
 		ya = ya - math.pi/2
 		if plr.blx1 and (plr.alive or plr.respawning) and map_block_get(plr.blx2, plr.bly2, plr.blz2) then
-			mdl_test_inst.render_global(
-				plr.blx1+0.5, plr.bly1+0.5, plr.blz1+0.5,
-				rotpos*0.01, rotpos*0.004, 0.0, 0.1+0.01*math.sin(rotpos*0.071))
-			mdl_test_inst.render_global(
-				(plr.blx1*2+plr.blx2)/3+0.5,
-				(plr.bly1*2+plr.bly2)/3+0.5,
-				(plr.blz1*2+plr.blz2)/3+0.5,
-				-rotpos*0.01, -rotpos*0.004, 0.0, 0.1+0.01*math.sin(-rotpos*0.071))
+			this.mdl_cube_marker.render_global(
+						plr.blx2+0.55, plr.bly2+0.55, plr.blz2+0.55,
+						0.0, 0.0, 0.0, 24.0+math.abs(2*math.sin(rotpos*0.071)))
+			-- mdl_test_inst.render_global(
+				-- plr.blx1+0.5, plr.bly1+0.5, plr.blz1+0.5,
+				-- rotpos*0.01, rotpos*0.004, 0.0, 0.1+0.01*math.sin(rotpos*0.071))
+			-- mdl_test_inst.render_global(
+				-- (plr.blx1*2+plr.blx2)/3+0.5,
+				-- (plr.bly1*2+plr.bly2)/3+0.5,
+				-- (plr.blz1*2+plr.blz2)/3+0.5,
+				-- -rotpos*0.01, -rotpos*0.004, 0.0, 0.1+0.01*math.sin(-rotpos*0.071))
 		end
 		this.mdl.render_global(
 			px, py, pz, ya, xa, ya2, 1)

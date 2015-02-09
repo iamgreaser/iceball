@@ -573,7 +573,7 @@ function gui_create_scene(width, height, shared_rate)
 				local samples = sample_packet[1]
 				local col_1 = sample_packet[2]
 				local col_2 = sample_packet[3]
-				local scaleX = (#samples-1) / w;
+				local scalex = (#samples-1) / w;
 				local amin = sample_packet[4]
 				local amax = sample_packet[5]
 
@@ -602,7 +602,7 @@ function gui_create_scene(width, height, shared_rate)
 					local last = bmin + (samples[1] - amin) * ratio
 
 					for n=1, w do
-						local cur = bmin + (samples[math.floor(n*scaleX)+1] - amin) * ratio
+						local cur = bmin + (samples[math.floor(n*scalex)+1] - amin) * ratio
 						local top = math.floor(math.max(cur, last));
 						local bot = math.floor(math.min(cur, last));
 						for z=bot, top do
@@ -961,6 +961,9 @@ function gui_create_scene(width, height, shared_rate)
 		local this = scene.display_object(options)
 
 		this._img = options.img
+		this.width, this.height = common.img_get_dims(this._img)
+		this.width, this.height = options.width or this.width, options.height or this.height
+		this.scalex, this.scaley = options.scalex or 1.0, options.scaley or 1.0
 		this.use_img = false
 
 		function this.getter_keys.width()
@@ -970,9 +973,9 @@ function gui_create_scene(width, height, shared_rate)
 			error("can't set the height of an image")
 		end
 
-		function this._recalc_size()
+		function this._recalc_size() 
 			local pw, ph 
-			pw, ph = common.img_get_dims(this.img)
+			pw, ph = this.width or pw, this.height or ph
 			rawset(this, 'width', pw)
 			rawset(this, 'height', ph)
 			this.dirty = true
@@ -985,7 +988,7 @@ function gui_create_scene(width, height, shared_rate)
 			this._recalc_size()
 		end
 		function this.draw_update()
-			client.img_blit(this._img, this.l, this.t)
+			client.img_blit(this._img, this.l, this.t, this.width, this.height, 0, 0, 0xFFFFFFFF, this.scalex, this.scaley)
 		end
 
 		this._recalc_size()
