@@ -19,8 +19,7 @@ return function (plr)
 	local this = {} this.this = this
 
 	this.plr = plr
-	this.mdl = mdl_spade
-	this.mdl_bone = mdl_spade_bone
+	this.mdl = mdl_spade_inst
 	this.gui_x = 0.1
 	this.gui_y = 0.3
 	this.gui_scale = 0.2
@@ -191,16 +190,16 @@ return function (plr)
 	function this.render(px,py,pz,ya,xa,ya2)
 		ya = ya - math.pi/2
 		if plr.blx1 and (plr.alive or plr.respawning) and map_block_get(plr.blx2, plr.bly2, plr.blz2) then
-			client.model_render_bone_global(mdl_test, mdl_test_bone,
+			mdl_test_inst.render_global(
 				plr.blx1+0.5, plr.bly1+0.5, plr.blz1+0.5,
 				rotpos*0.01, rotpos*0.004, 0.0, 0.1+0.01*math.sin(rotpos*0.071))
-			client.model_render_bone_global(mdl_test, mdl_test_bone,
+			mdl_test_inst.render_global(
 				(plr.blx1*2+plr.blx2)/3+0.5,
 				(plr.bly1*2+plr.bly2)/3+0.5,
 				(plr.blz1*2+plr.blz2)/3+0.5,
 				-rotpos*0.01, -rotpos*0.004, 0.0, 0.1+0.01*math.sin(-rotpos*0.071))
 		end
-		client.model_render_bone_global(this.mdl, this.mdl_bone,
+		this.mdl.render_global(
 			px, py, pz, ya, xa, ya2, 1)
 	end
 	

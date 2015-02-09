@@ -22,7 +22,12 @@ local thisid = ...
 if client then
 	wav_shotgun_shot = skin_load("wav", "shotgun-shot.wav", DIR_SHOTGUN)
 
-	weapon_models[thisid] = skin_load("pmf", "shotgun.pmf", DIR_SHOTGUN)
+	weapon_models[thisid] = model_load({
+		pmf = {
+			bdir = DIR_SHOTGUN,
+			name = "shotgun.pmf",
+		},
+	}, {"pmf"})
 end
 
 weapon_names[thisid] = "Shotgun"
@@ -46,7 +51,7 @@ return function (plr)
 		recoil_x = 0.002,
 		recoil_y = -0.3,
 
-		model = weapon_models[thisid],
+		model = client and (weapon_models[thisid] {}),
 		
 		name = weapon_names[thisid],
 	})

@@ -205,7 +205,6 @@ do
 		weapons = {}
 		weapons_enabled = {}
 		weapon_models = {}
-		weapon_vas = {}
 		weapon_names = {}
 	end
 

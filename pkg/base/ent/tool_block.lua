@@ -34,13 +34,7 @@ return function (plr)
 	
 	local function prv_recolor_block(r,g,b)
 		if not client then return end
-		if not this.mdl then
-			this.mdl, this.mdl_bone = common.model_bone_new(common.model_new(1))
-		end
-		local mname,mdata
-		mname,mdata = common.model_bone_get(mdl_block, mdl_block_bone)
-		recolor_component(r,g,b,mdata)
-		common.model_bone_set(this.mdl, this.mdl_bone, mname, mdata)
+		this.mdl = mdl_block({filt=function () return r,g,b end})
 	end
 
 	function this.recolor()
@@ -64,7 +58,7 @@ return function (plr)
 	this.reset()
 
 	function this.free()
-		if this.mdl then common.model_free(this.mdl) this.mdl = nil end
+		this.mdl = nil
 	end
 
 	function this.restock()
@@ -213,6 +207,7 @@ return function (plr)
 			for dist=mblk,1,-1 do
 				_, blx1, bly1, blz1 = trace_map_ray_dist(plr.x+0.4*ays,plr.y,plr.z+0.4*ayc, ays*axc,axs,ayc*axc, dist, false)
 				if blx1 >= 0 and blx1 < xlen and bly1 >= 0 and bly1 <= ylen - 3 and blz1 >= 0 and blz1 < zlen and (map_is_buildable(blx1, bly1, blz1) or MODE_BLOCK_PLACE_IN_AIR) then
+					--[[
 					bname, mdl_data = client.model_bone_get(mdl_cube, mdl_cube_bone)
 					
 					mdl_data_backup = mdl_data
@@ -230,6 +225,11 @@ return function (plr)
 					client.model_render_bone_global(mdl_cube, mdl_cube_bone,
 						blx1+0.55, bly1+0.55, blz1+0.55,
 						0.0, 0.0, 0.0, 24.0) --no rotation, 24 roughly equals the cube size
+					]]
+
+					mdl_cube_inst.render_global(
+						blx1+0.55, bly1+0.55, blz1+0.55,
+						0.0, 0.0, 0.0, 24.0) --no rotation, 24 roughly equals the cube size
 					err = false
 					break
 				end
@@ -238,16 +238,9 @@ return function (plr)
 				for dist=mblk,0,-1 do
 					_, blx1, bly1, blz1 = trace_map_ray_dist(plr.x+0.4*ays,plr.y,plr.z+0.4*ayc, ays*axc,axs,ayc*axc, dist, false)
 					if blx1 >= 0 and blx1 < xlen and bly1 >= 0 and bly1 <= ylen - 3 and blz1 >= 0 and blz1 < zlen then
-						if va_Xcube then
-							client.va_render_global(va_Xcube,
-								blx1+0.4, bly1+0.5, blz1+0.4,
-								0.0, 0.0, 0.0, 24.0)
-						else
-							client.model_render_bone_global(mdl_Xcube,
-								mdl_Xcube_bone,
-								blx1+0.55, bly1+0.55, blz1+0.55,
-								0.0, 0.0, 0.0, 24.0)
-						end
+						mdl_Xcube_inst.render_global(
+							blx1+0.55, bly1+0.55, blz1+0.55,
+							0.0, 0.0, 0.0, 24.0)
 						break
 					end
 				end
@@ -255,7 +248,7 @@ return function (plr)
 			end
 		end
 		if plr.blocks > 0 then
-			client.model_render_bone_global(this.mdl, this.mdl_bone,
+			this.mdl.render_global(
 				px, py, pz, ya, xa, ya2, 1)
 		end
 	end

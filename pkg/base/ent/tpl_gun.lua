@@ -229,10 +229,6 @@ return function (plr, cfg)
 		end
 	end
 	
-	function this.get_va()
-		return this.cfg.va
-	end
-	
 	function this.get_model()
 		return this.cfg.model
 	end
@@ -248,13 +244,7 @@ return function (plr, cfg)
 	end
 	
 	function this.render(px, py, pz, ya, xa, ya2)
-		if this.get_va and this.get_va() then
-			client.va_render_global(this.get_va(),
-				px, py, pz, ya, xa, ya2, 3)
-		else
-			client.model_render_bone_global(this.get_model(), 0,
-				px, py, pz, ya, xa, ya2, 3)
-		end
+		this.get_model().render_global(px, py, pz, ya, xa, ya2, 3)
 	end
 	
 	function this.tick(sec_current, sec_delta)

@@ -19,8 +19,7 @@ return function (plr)
 	local this = {} this.this = this
 
 	this.plr = plr
-	this.mdl = mdl_nade
-	this.mdl_bone = mdl_nade_bone
+	this.mdl = mdl_nade_inst
 	this.gui_x = 0.15
 	this.gui_y = 0.25
 	this.gui_scale = 0.1
@@ -141,12 +140,12 @@ return function (plr)
 	end
 	
 	function this.get_model()
-		return mdl_nade
+		return this.mdl
 	end
 	
 	function this.render(px, py, pz, ya, xa, ya2)
 		if this.ammo > 0 then
-			client.model_render_bone_global(this.get_model(), 0,
+			this.get_model().render_global(
 				px, py, pz, ya, xa, ya2, 1)
 		end
 	end

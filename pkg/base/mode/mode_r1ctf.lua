@@ -40,13 +40,19 @@ end
 dofile("pkg/base/mode/mode_1ctf.lua")
 
 -- replace model
-if common.va_make then
-	function va_intel(filt)
-		print ("LOAD")
-		return loadkv6(DIR_PKG_KV6.."/bomb.kv6", 1.0/128.0, filt)
-	end
+if client then
+	mdl_intel = model_load({
+		kv6 = {
+			bdir = DIR_PKG_KV6,
+			name = "bomb.kv6",
+			scale = 1.0/128.0,
+		},
+		pmf = {
+			bdir = DIR_PKG_PMF,
+			name = "intel.pmf",
+		},
+	}, {"kv6", "pmf"})
 end
-
 
 -- replace their tent with ours
 new_tent = f_new_tent
@@ -63,13 +69,19 @@ function new_intel(...)
 	this.color = {255,0,0}
 	this.color_icon = {255,0,0}
 
-	if client and mdl_intel then
-		l = this.color
-		local mname, mdata
-		mname,mdata = common.model_bone_get(mdl_intel, 0)
-		print(l[1],l[2],l[3])
-		recolor_component(l[1],l[2],l[3],mdata)
-		common.model_bone_set(this.mdl_intel, 0, mname, mdata)
+	if client then
+		this.mdl_intel = mdl_intel {}
+		if this.mdl_intel.fmt == "pmf" then
+			this.mdl_intel = mdl_intel {
+				filt=function (r,g,b)
+					if r==0 and g==0 and b==0 then
+						return 255,0,0
+					else
+						return r,g,b
+					end
+				end,
+			}
+		end
 	end
 
 	return this

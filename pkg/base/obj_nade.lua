@@ -16,7 +16,10 @@
 ]]
 
 if client then
-	mdl_nade, mdl_nade_bone = skin_load("pmf", "nade.pmf", DIR_PKG_PMF), 0
+	mdl_nade = model_load({
+		pmf={bdir=DIR_PKG_PMF, name="nade.pmf"},
+	}, {"pmf"})
+	mdl_nade_inst = mdl_nade {}
 end
 
 function nade_add(nade)
@@ -293,7 +296,7 @@ function new_nade(settings)
 	function this.render()
 		if this.dead then return end
 
-		client.model_render_bone_global(mdl_nade, mdl_nade_bone,
+		mdl_nade_inst.render_global(
 			this.x, this.y, this.z,
 			0.0, 0.0, 0.0, 1.0)
 	end

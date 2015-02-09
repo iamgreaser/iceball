@@ -18,11 +18,17 @@
 local thisid = ...
 
 if client then
-	if common.va_make then
-		weapon_vas[thisid] = loadkv6(DIR_PKG_KV6.."/leerifle.kv6", 1.0/96.0)
-	else
-		weapon_models[thisid] = skin_load("pmf", "leerifle.pmf", DIR_PKG_PMF)
-	end
+	weapon_models[thisid] = model_load({
+		kv6 = {
+			bdir = DIR_PKG_KV6,
+			name = "leerifle.kv6",
+			scale = 1.0/128.0,
+		},
+		pmf = {
+			bdir = DIR_PKG_PMF,
+			name = "leerifle.pmf",
+		},
+	}, {"kv6", "pmf"})
 end
 
 weapon_names[thisid] = "Lee-Enfield"
@@ -45,8 +51,7 @@ return function (plr)
 		recoil_y = -0.2,
 		sway = 0.0002,
 
-		model = weapon_models[thisid],
-		va = weapon_vas[thisid],
+		model = client and (weapon_models[thisid] {}),
 		
 		name = "Lee-Enfield Rifle",
 	})

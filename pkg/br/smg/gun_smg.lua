@@ -24,7 +24,12 @@ if client then
 	wav_smg_shot = wav_rifle_shot
 	wav_smg_reload = wav_rifle_reload
 
-	weapon_models[thisid] = skin_load("pmf", "smg.pmf", DIR_SMG)
+	weapon_models[thisid] = model_load({
+		pmf = {
+			bdir = DIR_SMG,
+			name = "smg.pmf",
+		},
+	}, {"pmf"})
 end
 
 weapon_names[thisid] = "SMG"
@@ -46,7 +51,7 @@ return function (plr)
 		recoil_x = 0.0001,
 		recoil_y = -0.005,
 
-		model = weapon_models[thisid],
+		model = client and (weapon_models[thisid] {}),
 		
 		name = "SMG",
 	})

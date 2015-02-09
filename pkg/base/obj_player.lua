@@ -20,11 +20,18 @@ PLM_SPECTATE = 2
 PLM_BUILD = 3
 
 if client then
-	mdl_player = skin_load("pmf", "player.pmf", DIR_PKG_PMF)
-	mdl_player_head = client.model_bone_find(mdl_player, "head")
-	mdl_player_body = client.model_bone_find(mdl_player, "body")
-	mdl_player_arm = client.model_bone_find(mdl_player, "arm")
-	mdl_player_leg = client.model_bone_find(mdl_player, "leg")
+	mdl_player_head = model_load({
+		pmf={bdir=DIR_PKG_PMF, name="player.pmf", bone=0},
+	}, {"pmf"})
+	mdl_player_body = model_load({
+		pmf={bdir=DIR_PKG_PMF, name="player.pmf", bone=1},
+	}, {"pmf"})
+	mdl_player_arm = model_load({
+		pmf={bdir=DIR_PKG_PMF, name="player.pmf", bone=2},
+	}, {"pmf"})
+	mdl_player_leg = model_load({
+		pmf={bdir=DIR_PKG_PMF, name="player.pmf", bone=3},
+	}, {"pmf"})
 end
 
 function new_player(settings)
@@ -56,11 +63,15 @@ function new_player(settings)
 	this.zooming = false
 	this.mode = settings.mode or PLM_NORMAL
 
-	this.mdl_player = common.model_new(4)
-	this.mdl_player = common.model_bone_new(this.mdl_player)
-	this.mdl_player = common.model_bone_new(this.mdl_player)
-	this.mdl_player = common.model_bone_new(this.mdl_player)
-	this.mdl_player = common.model_bone_new(this.mdl_player)
+	function teamfilt(tr, tg, tb)
+		return (function (r,g,b)
+			if r == 0 and g == 0 and b == 0 then
+				return tr, tg, tb
+			else
+				return r, g, b
+			end
+		end)
+	end
 
 	this.score = 0
 	this.kills = 0
@@ -103,18 +114,11 @@ function new_player(settings)
 	local function prv_recolor_team(r,g,b)
 		if not client then return end
 		local mname,mdata
-		mname,mdata = common.model_bone_get(mdl_player, mdl_player_head)
-		recolor_component(r,g,b,mdata)
-		common.model_bone_set(this.mdl_player, mdl_player_head, mname, mdata)
-		mname,mdata = common.model_bone_get(mdl_player, mdl_player_body)
-		recolor_component(r,g,b,mdata)
-		common.model_bone_set(this.mdl_player, mdl_player_body, mname, mdata)
-		mname,mdata = common.model_bone_get(mdl_player, mdl_player_arm)
-		recolor_component(r,g,b,mdata)
-		common.model_bone_set(this.mdl_player, mdl_player_arm, mname, mdata)
-		mname,mdata = common.model_bone_get(mdl_player, mdl_player_leg)
-		recolor_component(r,g,b,mdata)
-		common.model_bone_set(this.mdl_player, mdl_player_leg, mname, mdata)
+		local f = teamfilt(r,g,b)
+		this.mdl_player_head = mdl_player_head {filt=f}
+		this.mdl_player_body = mdl_player_body {filt=f}
+		this.mdl_player_arm = mdl_player_arm {filt=f}
+		this.mdl_player_leg = mdl_player_leg {filt=f}
 	end
 
 	function this.recolor_team()
@@ -1252,7 +1256,7 @@ function new_player(settings)
 			local size = (0.5-dt)/(0.5-0.4)
 			if size > 1.0 then size = 1.0 end
 			local dist = (dt/0.5) * -20
-			client.model_render_bone_global(mdl_piano, mdl_piano_bone, this.x, this.y + dist + 2.5, this.z, 0, 0, 0, size*4)
+			mdl_piano_inst.render_global(this.x, this.y + dist + 2.5, this.z, 0, 0, 0, size*4)
 		end
 		if this.t_piano2 and this.t_piano2 ~= true then
 			local dt = this.t_piano2_delta
@@ -1263,7 +1267,7 @@ function new_player(settings)
 			local h1,h2
 			h1,h2 = trace_gap(this.dead_x or this.x, this.dead_y or this.y, this.dead_z or this.z)
 			if h2 then py = h2 end
-			client.model_render_bone_global(mdl_piano, mdl_piano_bone, this.dead_x or this.x, py, this.dead_z or this.z, 0, 0, 0, dt*4)
+			mdl_piano_inst.render_global(this.dead_x or this.x, py, this.dead_z or this.z, 0, 0, 0, dt*4)
 		end
 		local ays,ayc,axs,axc
 		ays = math.sin(this.angy)
@@ -1316,27 +1320,27 @@ function new_player(settings)
 				math.pi/2, -this.angx + this.recoil_amt, this.angy)
 		end
 
-		client.model_render_bone_global(this.mdl_player, mdl_player_arm,
+		this.mdl_player_arm.render_global(
 			this.x+hand_x1, this.y+this.jerkoffs+hand_y1, this.z+hand_z1,
 			0.0, rax_right-math.pi/2,
 			this.angy-math.pi, 2.0)
-		client.model_render_bone_global(this.mdl_player, mdl_player_arm,
+		this.mdl_player_arm.render_global(
 			this.x+hand_x2, this.y+this.jerkoffs+hand_y2, this.z+hand_z2,
 			0.0, rax_left-math.pi/2,
 			this.angy-math.pi, 2.0)
 
-		client.model_render_bone_global(this.mdl_player, mdl_player_leg,
+		this.mdl_player_leg.render_global(
 			this.x+leg_x1, this.y+this.jerkoffs+leg_y1, this.z+leg_z1,
 			0.0, swing, this.angy-math.pi, 2.2)
-		client.model_render_bone_global(this.mdl_player, mdl_player_leg,
+		this.mdl_player_leg.render_global(
 			this.x+leg_x2, this.y+this.jerkoffs+leg_y2, this.z+leg_z2,
 			0.0, -swing, this.angy-math.pi, 2.2)
 
-		client.model_render_bone_global(this.mdl_player, mdl_player_head,
+		this.mdl_player_head.render_global(
 			this.x, this.y+this.jerkoffs, this.z,
 			0.0, this.angx, this.angy-math.pi, 1)
 
-		client.model_render_bone_global(this.mdl_player, mdl_player_body,
+		this.mdl_player_body.render_global(
 			this.x, this.y+this.jerkoffs+0.8, this.z,
 			0.0, 0.0, this.angy-math.pi, 1.5)
 	end

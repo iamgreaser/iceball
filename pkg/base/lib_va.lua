@@ -29,8 +29,12 @@ CAM_SHADING = {
 }
 
 --function parsekv6(pkt, name, ptsize, ptspacing)
-function parsekv6(pkt, scale, filt)
-	scale = scale or 1.0
+function model_loaders.kv6(isfile, pkt, extra)
+	extra = extra or {}
+	if isfile then pkt = common.bin_load(pkt) end
+	if not pkt then return nil end
+
+	local scale = extra.scale or 1.0
 	local ptsize = 1
 	local ptspacing = scale
 	if pkt:sub(1,4) ~= "Kvxl" then
@@ -106,78 +110,158 @@ function parsekv6(pkt, scale, filt)
 	local sny = CAM_SHADING[5]
 	local snz = CAM_SHADING[6]
 
-	local vl = {}
-	for i=1,#l do
-		local x0 = l[i].x
-		local y0 = l[i].y
-		local z0 = l[i].z
-		local x1 = l[i].x+scale
-		local y1 = l[i].y+scale
-		local z1 = l[i].z+scale
-		local r  = l[i].r/255.0
-		local g  = l[i].g/255.0
-		local b  = l[i].b/255.0
-
-		if l[i].vnx then
-			vl[1+#vl] = {x0,y0,z0,r*snx,g*snx,b*snx}
-			vl[1+#vl] = {x0,y1,z0,r*snx,g*snx,b*snx}
-			vl[1+#vl] = {x0,y0,z1,r*snx,g*snx,b*snx}
-			vl[1+#vl] = {x0,y0,z1,r*snx,g*snx,b*snx}
-			vl[1+#vl] = {x0,y1,z0,r*snx,g*snx,b*snx}
-			vl[1+#vl] = {x0,y1,z1,r*snx,g*snx,b*snx}
-		end
-
-		if l[i].vpx then
-			vl[1+#vl] = {x1,y0,z0,r*spx,g*spx,b*spx}
-			vl[1+#vl] = {x1,y0,z1,r*spx,g*spx,b*spx}
-			vl[1+#vl] = {x1,y1,z0,r*spx,g*spx,b*spx}
-			vl[1+#vl] = {x1,y1,z0,r*spx,g*spx,b*spx}
-			vl[1+#vl] = {x1,y0,z1,r*spx,g*spx,b*spx}
-			vl[1+#vl] = {x1,y1,z1,r*spx,g*spx,b*spx}
-		end
-
-		if l[i].vny then
-			vl[1+#vl] = {x0,y0,z0,r*sny,g*sny,b*sny}
-			vl[1+#vl] = {x0,y0,z1,r*sny,g*sny,b*sny}
-			vl[1+#vl] = {x1,y0,z0,r*sny,g*sny,b*sny}
-			vl[1+#vl] = {x1,y0,z0,r*sny,g*sny,b*sny}
-			vl[1+#vl] = {x0,y0,z1,r*sny,g*sny,b*sny}
-			vl[1+#vl] = {x1,y0,z1,r*sny,g*sny,b*sny}
-		end
-
-		if l[i].vpy then
-			vl[1+#vl] = {x0,y1,z0,r*spy,g*spy,b*spy}
-			vl[1+#vl] = {x1,y1,z0,r*spy,g*spy,b*spy}
-			vl[1+#vl] = {x0,y1,z1,r*spy,g*spy,b*spy}
-			vl[1+#vl] = {x0,y1,z1,r*spy,g*spy,b*spy}
-			vl[1+#vl] = {x1,y1,z0,r*spy,g*spy,b*spy}
-			vl[1+#vl] = {x1,y1,z1,r*spy,g*spy,b*spy}
-		end
-
-		if l[i].vnz then
-			vl[1+#vl] = {x0,y0,z0,r*snz,g*snz,b*snz}
-			vl[1+#vl] = {x1,y0,z0,r*snz,g*snz,b*snz}
-			vl[1+#vl] = {x0,y1,z0,r*snz,g*snz,b*snz}
-			vl[1+#vl] = {x0,y1,z0,r*snz,g*snz,b*snz}
-			vl[1+#vl] = {x1,y0,z0,r*snz,g*snz,b*snz}
-			vl[1+#vl] = {x1,y1,z0,r*snz,g*snz,b*snz}
-		end
-
-		if l[i].vpz then
-			vl[1+#vl] = {x0,y0,z1,r*spz,g*spz,b*spz}
-			vl[1+#vl] = {x0,y1,z1,r*spz,g*spz,b*spz}
-			vl[1+#vl] = {x1,y0,z1,r*spz,g*spz,b*spz}
-			vl[1+#vl] = {x1,y0,z1,r*spz,g*spz,b*spz}
-			vl[1+#vl] = {x0,y1,z1,r*spz,g*spz,b*spz}
-			vl[1+#vl] = {x1,y1,z1,r*spz,g*spz,b*spz}
-		end
-	end
-
-	-- apply filter
-	if filt then filt(vl) end
-
 	-- make
-	return common.va_make(vl)
+	return (function (settings)
+		local this = {
+			fmt = "kv6",
+			tex = settings.tex or nil,
+			filt = settings.filt or nil,
+		} this.this = this
+
+		-- apply filter
+		local srcl = l
+		local l = {}
+		if this.filt then
+			local i
+			for i=1,#srcl do
+				l[i] = {}
+				l[i].r, l[i].g, l[i].b = this.filt(srcl[i].r, srcl[i].g, srcl[i].b)
+				l[i].x = srcl[i].x
+				l[i].y = srcl[i].y
+				l[i].z = srcl[i].z
+				l[i].vpx = srcl[i].vpx
+				l[i].vpy = srcl[i].vpy
+				l[i].vpz = srcl[i].vpz
+				l[i].vnx = srcl[i].vnx
+				l[i].vny = srcl[i].vny
+				l[i].vnz = srcl[i].vnz
+			end
+		else
+			l = srcl
+		end
+
+		local vl = {}
+		for i=1,#l do
+			local x0 = l[i].x
+			local y0 = l[i].y
+			local z0 = l[i].z
+			local x1 = l[i].x+scale
+			local y1 = l[i].y+scale
+			local z1 = l[i].z+scale
+			local r  = l[i].r/255.0
+			local g  = l[i].g/255.0
+			local b  = l[i].b/255.0
+
+			if l[i].vnx then
+				vl[1+#vl] = {x0,y0,z0,r*snx,g*snx,b*snx}
+				vl[1+#vl] = {x0,y1,z0,r*snx,g*snx,b*snx}
+				vl[1+#vl] = {x0,y0,z1,r*snx,g*snx,b*snx}
+				vl[1+#vl] = {x0,y0,z1,r*snx,g*snx,b*snx}
+				vl[1+#vl] = {x0,y1,z0,r*snx,g*snx,b*snx}
+				vl[1+#vl] = {x0,y1,z1,r*snx,g*snx,b*snx}
+			end
+
+			if l[i].vpx then
+				vl[1+#vl] = {x1,y0,z0,r*spx,g*spx,b*spx}
+				vl[1+#vl] = {x1,y0,z1,r*spx,g*spx,b*spx}
+				vl[1+#vl] = {x1,y1,z0,r*spx,g*spx,b*spx}
+				vl[1+#vl] = {x1,y1,z0,r*spx,g*spx,b*spx}
+				vl[1+#vl] = {x1,y0,z1,r*spx,g*spx,b*spx}
+				vl[1+#vl] = {x1,y1,z1,r*spx,g*spx,b*spx}
+			end
+
+			if l[i].vny then
+				vl[1+#vl] = {x0,y0,z0,r*sny,g*sny,b*sny}
+				vl[1+#vl] = {x0,y0,z1,r*sny,g*sny,b*sny}
+				vl[1+#vl] = {x1,y0,z0,r*sny,g*sny,b*sny}
+				vl[1+#vl] = {x1,y0,z0,r*sny,g*sny,b*sny}
+				vl[1+#vl] = {x0,y0,z1,r*sny,g*sny,b*sny}
+				vl[1+#vl] = {x1,y0,z1,r*sny,g*sny,b*sny}
+			end
+
+			if l[i].vpy then
+				vl[1+#vl] = {x0,y1,z0,r*spy,g*spy,b*spy}
+				vl[1+#vl] = {x1,y1,z0,r*spy,g*spy,b*spy}
+				vl[1+#vl] = {x0,y1,z1,r*spy,g*spy,b*spy}
+				vl[1+#vl] = {x0,y1,z1,r*spy,g*spy,b*spy}
+				vl[1+#vl] = {x1,y1,z0,r*spy,g*spy,b*spy}
+				vl[1+#vl] = {x1,y1,z1,r*spy,g*spy,b*spy}
+			end
+
+			if l[i].vnz then
+				vl[1+#vl] = {x0,y0,z0,r*snz,g*snz,b*snz}
+				vl[1+#vl] = {x1,y0,z0,r*snz,g*snz,b*snz}
+				vl[1+#vl] = {x0,y1,z0,r*snz,g*snz,b*snz}
+				vl[1+#vl] = {x0,y1,z0,r*snz,g*snz,b*snz}
+				vl[1+#vl] = {x1,y0,z0,r*snz,g*snz,b*snz}
+				vl[1+#vl] = {x1,y1,z0,r*snz,g*snz,b*snz}
+			end
+
+			if l[i].vpz then
+				vl[1+#vl] = {x0,y0,z1,r*spz,g*spz,b*spz}
+				vl[1+#vl] = {x0,y1,z1,r*spz,g*spz,b*spz}
+				vl[1+#vl] = {x1,y0,z1,r*spz,g*spz,b*spz}
+				vl[1+#vl] = {x1,y0,z1,r*spz,g*spz,b*spz}
+				vl[1+#vl] = {x0,y1,z1,r*spz,g*spz,b*spz}
+				vl[1+#vl] = {x1,y1,z1,r*spz,g*spz,b*spz}
+			end
+		end
+
+		-- make
+		this.va = common.va_make(vl)
+
+		-- conserve memory
+		vl = {}
+
+		function this.render_global(x, y, z, r1, r2, r3, s)
+			client.va_render_global(this.va, x, y, z, r1, r2, r3, s, this.tex)
+		end
+
+		function this.render_local(x, y, z, r1, r2, r3, s)
+			client.va_render_local(this.va, -x, y, z, r1, r2, r3, s, this.tex)
+		end
+
+		return this
+	end)
+end
+
+function model_loaders.pmf(isfile, pkt, extra)
+	extra = extra or {}
+	--print(pkt)
+	if isfile then pkt = common.fetch_block("pmf", pkt) end
+	if not pkt then return nil end
+
+	return (function(settings)
+		local this = {
+			fmt = "pmf",
+			filt=settings.filt or nil,
+		}
+
+		this.pmf = pkt
+		this.bone = extra.bone or 0
+
+		if this.filt then
+			local dname, data = common.model_bone_get(this.pmf, this.bone)
+			local i
+			for i=1,#data do
+				data[i].r, data[i].g, data[i].b
+				= this.filt(data[i].r, data[i].g, data[i].b)
+			end
+			this.pmf = common.model_new(1)
+			this.pmf, this.bone = common.model_bone_new(this.pmf)
+			common.model_bone_set(this.pmf, this.bone, dname, data)
+		end
+
+		function this.render_global(x, y, z, r1, r2, r3, s)
+			client.model_render_bone_global(this.pmf, this.bone, x, y, z, r1, r2, r3, s)
+		end
+
+		function this.render_local(x, y, z, r1, r2, r3, s)
+			client.model_render_bone_local(this.pmf, this.bone, x, y, z, r1, r2, r3, s)
+		end
+
+		return this
+	end)
 end
 
 --[[
@@ -186,6 +270,7 @@ function loadkv6(fname, name, ptsize, ptspacing)
 end
 ]]
 function loadkv6(fname, scale, filt)
-	return parsekv6(common.bin_load(fname), scale, filt)
+	print("loadkv6", fname, scale, filt)
+	return model_loaders.kv6(true, fname, {scale=scale})({filt=filt})
 end
 

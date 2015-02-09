@@ -340,22 +340,26 @@ img_chevron = client.img_load("pkg/base/gfx/chevron.tga")
 -- TODO: remove the pmfs
 
 -- load/make models
-mdl_test = skin_load("pmf", "test.pmf", DIR_PKG_PMF)
-mdl_test_bone = client.model_bone_find(mdl_test, "test")
-mdl_cube = skin_load("pmf", "cube.pmf", DIR_PKG_PMF)
-mdl_cube_bone = client.model_bone_find(mdl_cube, "bncube")
-mdl_spade, mdl_spade_bone = skin_load("pmf", "spade.pmf", DIR_PKG_PMF), 0
-mdl_block, mdl_block_bone = skin_load("pmf", "block.pmf", DIR_PKG_PMF), 0
-mdl_piano, mdl_piano_bone = skin_load("pmf", "piano.pmf", DIR_PKG_PMF), 0
-mdl_marker, mdl_marker_bone = skin_load("pmf", "marker.pmf", DIR_PKG_PMF), 0
-mdl_tracer, mdl_tracer_bone = skin_load("pmf", "tracer.pmf", DIR_PKG_PMF), 0
+mdl_test = model_load({pmf={bdir=DIR_PKG_PMF, name="test.pmf"}},{"pmf"})
+mdl_cube = model_load({pmf={bdir=DIR_PKG_PMF, name="cube.pmf"}},{"pmf"})
+mdl_spade = model_load({pmf={bdir=DIR_PKG_PMF, name="spade.pmf"}},{"pmf"})
+mdl_block = model_load({pmf={bdir=DIR_PKG_PMF, name="block.pmf"}},{"pmf"})
+mdl_piano = model_load({pmf={bdir=DIR_PKG_PMF, name="piano.pmf"}},{"pmf"})
+mdl_marker = model_load({pmf={bdir=DIR_PKG_PMF, name="marker.pmf"}},{"pmf"})
+mdl_tracer = model_load({pmf={bdir=DIR_PKG_PMF, name="tracer.pmf"}},{"pmf"})
 
-if common.va_make then
-	va_Xcube = loadkv6(DIR_PKG_KV6.."/xcube.kv6", 1.0/256.0)
-else
-	mdl_Xcube = skin_load("pmf", "xcube.pmf", DIR_PKG_PMF)
-	mdl_Xcube_bone = client.model_bone_find(mdl_cube, "bnXcube")
-end
+mdl_Xcube = model_load({
+	kv6={bdir=DIR_PKG_KV6, name="xcube.kv6", scale=1.0/256.0},
+	pmf={bdir=DIR_PKG_PMF, name="xcube.pmf"},
+},{"kv6","pmf"})
+
+mdl_test_inst = client and mdl_test {}
+mdl_cube_inst = client and mdl_cube {}
+mdl_spade_inst = client and mdl_spade {}
+mdl_piano_inst = client and mdl_piano {}
+mdl_Xcube_inst = client and mdl_Xcube {}
+mdl_marker_inst = client and mdl_marker {}
+mdl_tracer_inst = client and mdl_tracer {}
 
 -- quick hack to stitch a player model together
 if false then
@@ -383,10 +387,7 @@ if false then
 	client.model_save_pmf(mbase, "clsave/vol/player.pmf")
 end
 
-local _
-_, mdl_block_data = client.model_bone_get(mdl_block, mdl_block_bone)
-
-
+--[[
 mdl_bbox = client.model_new(1)
 mdl_bbox_bone_data1 = {
 	{radius=10, x = -100, y = -70, z = -100, r = 255, g = 85, b = 85},
@@ -412,6 +413,7 @@ mdl_bbox, mdl_bbox_bone1 = client.model_bone_new(mdl_bbox)
 mdl_bbox, mdl_bbox_bone2 = client.model_bone_new(mdl_bbox)
 client.model_bone_set(mdl_bbox, mdl_bbox_bone1, "bbox_stand", mdl_bbox_bone_data1)
 client.model_bone_set(mdl_bbox, mdl_bbox_bone2, "bbox_crouch", mdl_bbox_bone_data2)
+]]
 
 -- profile bone count
 if false then
@@ -947,7 +949,7 @@ function client.hook_render()
 		
 		client.wav_chn_update(tracers.chn, x, y, z)
 		
-		client.model_render_bone_global(mdl_tracer, mdl_tracer_bone,
+		mdl_tracer_inst.render_global(
 			x,y,z,
 			0.0, -tc.xa, tc.ya, 1)
 	end

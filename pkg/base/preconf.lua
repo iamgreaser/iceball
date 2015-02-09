@@ -19,7 +19,7 @@
 MODE_NUB_KICKONJOIN = false
 
 -- skins allowed 
-SKIN_ENABLE_SRC = {"pmf", "tga", "png", "wav", "it"}
+SKIN_ENABLE_SRC = {"pmf", "kv6", "tga", "png", "wav", "it"}
 SKIN_ENABLE = {}
 do
 	local i
@@ -53,5 +53,28 @@ function skin_load(ftype, name, bdir, sdir)
 	hdl = hdl or common.fetch_block(ftype, bdir.."/"..name)
 	print(hdl)
 	return hdl
+end
+
+model_loaders = {}
+dofile("pkg/base/lib_va.lua")
+
+function model_load(mdict, prio, sdir)
+	sdir = sdir or DIR_SKIN
+	local i
+
+	for i=1,#prio do
+		--print(prio[i], sdir.."/"..mdict[prio[i]].name)
+		local mdl = SKIN_ENABLE[prio[i]] and model_loaders[prio[i]](
+			true, sdir.."/"..mdict[prio[i]].name, mdict[prio[i]])
+		if mdl then return mdl end
+	end
+
+	for i=1,#prio do
+		local mdl = SKIN_ENABLE[prio[i]] and model_loaders[prio[i]](
+			true, mdict[prio[i]].bdir.."/"..mdict[prio[i]].name, mdict[prio[i]])
+		if mdl then return mdl end
+	end
+
+	return nil
 end
 
