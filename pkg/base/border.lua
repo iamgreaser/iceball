@@ -120,9 +120,11 @@ function new_border(x, y, z, nx, ny, nz, r, g, b)
 		z = this.z*this.nz + cz*(1-this.nz) + this.nx*this.u + this.ny*this.v
 
 		if this.va_border then
+			if client.gfx_depth_mask then client.gfx_depth_mask(false) end
 			client.va_render_global(this.va_border,
 				x, y, z, 0, 0, 0, 1,
 				nil, "ah")
+			if client.gfx_depth_mask then client.gfx_depth_mask(true) end
 		else
 			client.model_render_bone_global(this.mdl_border, this.mdl_border_bone,
 				x, y, z, 0, 0, 0, 256)

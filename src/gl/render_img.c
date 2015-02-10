@@ -124,6 +124,7 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 	glDisable(GL_BLEND);
 	glBindTexture(GL_TEXTURE_2D, 0);		
 	glDisable(GL_TEXTURE_2D);
+	glEnable(GL_DEPTH_TEST);
 }
 
 void render_blit_img_toimg(uint32_t *pixels, int width, int height, int pitch,

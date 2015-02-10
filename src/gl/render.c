@@ -1235,6 +1235,8 @@ void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t
 	render_init(lwidth, lheight);
 	glClearColor(fog[0], fog[1], fog[2], 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_ALPHA_TEST);
+	glAlphaFunc(GL_GREATER, 0.0f);
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_FOG);
@@ -1270,7 +1272,6 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 {
 	int i;
 
-	glEnable(GL_DEPTH_TEST);
 	glPushMatrix();
 	if(islocal)
 		glLoadIdentity();
@@ -1346,7 +1347,6 @@ void render_vertex_array(uint32_t *pixels, int width, int height, int pitch, cam
 {
 	int i;
 
-	glEnable(GL_DEPTH_TEST);
 	glPushMatrix();
 	if(islocal)
 		glLoadIdentity();

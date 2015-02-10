@@ -213,6 +213,63 @@ obj = common.fetch_block(ftype, fname) @
 	if there is already something being fetched,
 	it will return "nil", too
 
+client.gfx_alpha_test(enable) @
+	(enable ? glEnable : glDisable)(GL_ALPHA_TEST);
+
+	this is reset to true by the start of each frame
+
+client.gfx_clear_depth() @
+	glClear(GL_DEPTH_BUFFER_BIT);
+
+	clears the depth buffer AKA z buffer
+
+client.gfx_depth_mask(enable) @
+	glDepthMask(enable ? GL_TRUE : GL_FALSE);
+
+	enables (or disables) writing to the depth buffer AKA z buffer
+	this is reset to true by the start of each frame
+
+client.gfx_depth_test(enable) @
+	(enable ? glEnable : glDisable)(GL_DEPTH_TEST);
+
+	this is reset to true by the start of each frame
+	this is ALSO reset to true after calling client.img_blit
+	so watch out!
+
+client.gfx_stencil_func(func, ref, mask) @
+	glStencilFunc(func, ref, mask)
+
+	func is a string containing one of these:
+	- "0" - GL_NEVER
+	- "<" - GL_LESS
+	- "<=" - GL_LEQUAL
+	- ">" - GL_GREATER
+	- ">=" - GL_GEQUAL
+	- "==" - GL_EQUAL
+	- "~=" - GL_NOTEQUAL
+	- "1" - GL_ALWAYS
+
+	ref and mask are as per the OpenGL spec
+
+client.gfx_stencil_op(mask) @
+	glStencilOp(fail, zfail, zpass);
+
+	mask is a 3-char string,
+	each char representing fail, zfail and zpass respectively
+
+	meaning of each char:
+	- ; - GL_KEEP
+	- 0 - GL_ZERO
+	- = - GL_REPLACE
+	- + - GL_INCR
+	- - - GL_DECR
+	- ~ = GL_INVERT
+
+client.gfx_stencil_test(enable) @
+	(enable ? glEnable : glDisable)(GL_STENCIL_TEST);
+
+	this is reset to FALSE by the start of each frame
+
 map = common.map_load(fname, fmt = "auto") @
 	loads a map, either "vxl" or "icemap"
 	use "auto" to autodetect

@@ -20,9 +20,9 @@
 -- Thanks. --GM
 
 VERSION_ENGINE = {
-	cmp={0,2,1,0,1},
-	num=8421376+1,
-	str="0.2.1-1",
+	cmp={0,2,1,0,2},
+	num=8421376+2,
+	str="0.2.1-2",
 }
 
 --error(""..common.version.num)
@@ -148,5 +148,6 @@ VERSION_BUGS = {
 {intro=8389632+2, fix=8389632+3, msg="Compat breakage with va_render_global and textures"},
 {intro=4259840+11, fix=8389632+7, msg="[Windows] Launcher crashes when joining server if path contains spaces and not run from command line"},
 {intro=4259840+1, fix=8421376+1, msg="VA API lacks support for blending"},
+{intro=nil, fix=8421376+2, msg="Lack of depth / stencil buffer mode selection support"},
 }
 

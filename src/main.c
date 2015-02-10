@@ -269,6 +269,9 @@ int update_client_cont1(void)
 		}
 	}
 
+	// clean up stuff that may have happened in the scene
+	glDepthMask(GL_TRUE);
+
 	SDL_UnlockSurface(screen);
 	SDL_GL_SwapBuffers();
 	SDL_Flip(screen);
