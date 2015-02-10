@@ -208,7 +208,9 @@ function model_loaders.kv6(isfile, pkt, extra)
 		end
 
 		-- make
-		this.va = common.va_make(vl)
+		--local i for i=1,#vl do vl[i][7] = 0.4 end
+		--this.va = common.va_make(vl, nil, "3v,4c")
+		this.va = common.va_make(vl, nil, "3v,3c")
 
 		-- conserve memory
 		vl = {}

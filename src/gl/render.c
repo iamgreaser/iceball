@@ -1342,7 +1342,7 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 void render_vertex_array(uint32_t *pixels, int width, int height, int pitch, camera_t *cam_base,
 	va_t *va, int islocal,
 	float px, float py, float pz, float ry, float rx, float ry2, float scale,
-	img_t *img)
+	img_t *img, int do_blend, char sfactor, char dfactor, float alpha)
 {
 	int i;
 
@@ -1397,17 +1397,55 @@ void render_vertex_array(uint32_t *pixels, int width, int height, int pitch, cam
 		}
 	}
 
-	glColor3f(1.0f, 1.0f, 1.0f);
+	if(do_blend)
+	{
+		glEnable(GL_BLEND);
+
+		GLenum rsfactor = GL_ONE;
+		GLenum rdfactor = GL_ZERO;
+
+		switch(sfactor)
+		{
+			case '0': rsfactor = GL_ZERO; break;
+			case '1': rsfactor = GL_ONE; break;
+			case 'C': rsfactor = GL_DST_COLOR; break;
+			case 'R': rsfactor = GL_ONE_MINUS_DST_COLOR; break;
+			case 'a': rsfactor = GL_SRC_ALPHA; break;
+			case 'A': rsfactor = GL_DST_ALPHA; break;
+			case 'h': rsfactor = GL_ONE_MINUS_SRC_ALPHA; break;
+			case 'H': rsfactor = GL_ONE_MINUS_DST_ALPHA; break;
+			case 's': rsfactor = GL_SRC_ALPHA_SATURATE; break;
+		}
+
+		switch(dfactor)
+		{
+			case '0': rdfactor = GL_ZERO; break;
+			case '1': rdfactor = GL_ONE; break;
+			case 'c': rdfactor = GL_SRC_COLOR; break;
+			case 'r': rdfactor = GL_ONE_MINUS_SRC_COLOR; break;
+			case 'a': rdfactor = GL_SRC_ALPHA; break;
+			case 'A': rdfactor = GL_DST_ALPHA; break;
+			case 'h': rdfactor = GL_ONE_MINUS_SRC_ALPHA; break;
+			case 'H': rdfactor = GL_ONE_MINUS_DST_ALPHA; break;
+		}
+
+		glBlendFunc(rsfactor, rdfactor);
+		glColor4f(1.0f, 1.0f, 1.0f, alpha);
+	} else {
+		glDisable(GL_BLEND);
+		glColor3f(1.0f, 1.0f, 1.0f);
+	}
+
 	glTexCoord2f(0.0f, 0.0f);
 	if(va->vbo == 0)
 	{
 		glVertexPointer(3, GL_FLOAT, sizeof(float)*va->stride, va->data);
-		if(va->color_offs != -1) glColorPointer(3, GL_FLOAT, sizeof(float)*va->stride, va->data+sizeof(float)*va->color_offs);
+		if(va->color_offs != -1) glColorPointer(va->color_size, GL_FLOAT, sizeof(float)*va->stride, va->data+sizeof(float)*va->color_offs);
 		if(va->texcoord_offs != -1) glTexCoordPointer(2, GL_FLOAT, sizeof(float)*va->stride, va->data+sizeof(float)*va->texcoord_offs);
 	} else {
 		glBindBuffer(GL_ARRAY_BUFFER, va->vbo);
 		glVertexPointer(3, GL_FLOAT, sizeof(float)*va->stride, (void *)(0));
-		if(va->color_offs != -1) glColorPointer(3, GL_FLOAT, sizeof(float)*va->stride, (void *)(0 + sizeof(float)*va->color_offs));
+		if(va->color_offs != -1) glColorPointer(va->color_size, GL_FLOAT, sizeof(float)*va->stride, (void *)(0 + sizeof(float)*va->color_offs));
 		if(va->texcoord_offs != -1) glTexCoordPointer(3, GL_FLOAT, sizeof(float)*va->stride, (void *)(0 + sizeof(float)*va->texcoord_offs));
 	}
 	glEnableClientState(GL_VERTEX_ARRAY);
@@ -1427,6 +1465,7 @@ void render_vertex_array(uint32_t *pixels, int width, int height, int pitch, cam
 	}
 
 	glPopMatrix();
+	glDisable(GL_BLEND);
 }
 
 

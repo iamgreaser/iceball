@@ -23,7 +23,7 @@
 #define VERSION_X 2
 #define VERSION_Y 1
 #define VERSION_A 0
-#define VERSION_Z 0
+#define VERSION_Z 1
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!
@@ -250,6 +250,7 @@ typedef struct va
 	int udtype;
 	int color_offs;
 	int texcoord_offs;
+	int color_size;
 	int stride;
 	int data_len; // measured in points
 	float *data;
@@ -607,7 +608,7 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 void render_vertex_array(uint32_t *pixels, int width, int height, int pitch, camera_t *cam_base,
 	va_t *bone, int islocal,
 	float px, float py, float pz, float ry, float rx, float ry2, float scale,
-	img_t *tex);
+	img_t *tex, int do_blend, char sfactor, char dfactor, float alpha);
 int render_init(int width, int height);
 void render_deinit(void);
 void render_init_visible_chunks(map_t *map, int starting_chunk_coordinate_x, int starting_chunk_coordinate_z);

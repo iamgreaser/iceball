@@ -36,10 +36,11 @@ int va_gc_lua(lua_State *L)
 // client functions
 int icelua_fn_client_va_render_global(lua_State *L)
 {
-	int top = icelua_assert_stack(L, 8, 9);
+	int top = icelua_assert_stack(L, 8, 11);
 	float px, py, pz;
 	float ry, rx, ry2;
 	float scale;
+	float alpha;
 
 	if(lua_islightuserdata(L, 1) || !lua_isuserdata(L, 1))
 		return luaL_error(L, "not a VA");
@@ -64,12 +65,21 @@ int icelua_fn_client_va_render_global(lua_State *L)
 	ry2 = lua_tonumber(L, 7);
 
 	scale = lua_tonumber(L, 8);
+	alpha = (top >= 11 && lua_isnumber(L, 11) ? lua_tonumber(L, 11) : 1.0f);
+
+	const char *bmode = (top >= 10 ? lua_tostring(L, 10) : NULL);
+	char sfactor = '1', dfactor = '0';
+	if(bmode != NULL && strlen(bmode) >= 2)
+	{
+		sfactor = bmode[0];
+		dfactor = bmode[1];
+	}
 
 #ifdef DEDI
 	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
 #else
 	render_vertex_array((uint32_t*)screen->pixels, screen->w, screen->h, screen->pitch/4, &tcam,
-		va, 0, px, py, pz, ry, rx, ry2, scale, img);
+		va, 0, px, py, pz, ry, rx, ry2, scale, img, (bmode != NULL), sfactor, dfactor, alpha);
 #endif
 
 	return 0;
@@ -77,10 +87,11 @@ int icelua_fn_client_va_render_global(lua_State *L)
 
 int icelua_fn_client_va_render_local(lua_State *L)
 {
-	int top = icelua_assert_stack(L, 8, 9);
+	int top = icelua_assert_stack(L, 8, 11);
 	float px, py, pz;
 	float ry, rx, ry2;
 	float scale;
+	float alpha;
 
 	if(lua_islightuserdata(L, 1) || !lua_isuserdata(L, 1))
 		return luaL_error(L, "not a VA");
@@ -105,12 +116,21 @@ int icelua_fn_client_va_render_local(lua_State *L)
 	ry2 = lua_tonumber(L, 7);
 
 	scale = lua_tonumber(L, 8);
+	alpha = (top >= 11 && lua_isnumber(L, 11) ? lua_tonumber(L, 11) : 1.0f);
+
+	const char *bmode = (top >= 10 ? lua_tostring(L, 10) : NULL);
+	char sfactor = '1', dfactor = '0';
+	if(bmode != NULL && strlen(bmode) >= 2)
+	{
+		sfactor = bmode[0];
+		dfactor = bmode[1];
+	}
 
 #ifdef DEDI
 	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
 #else
 	render_vertex_array((uint32_t*)screen->pixels, screen->w, screen->h, screen->pitch/4, &tcam,
-		va, 1, px, py, pz, ry, rx, ry2, scale, img);
+		va, 1, px, py, pz, ry, rx, ry2, scale, img, (bmode != NULL), sfactor, dfactor, alpha);
 #endif
 
 	return 0;
@@ -163,12 +183,24 @@ int icelua_fn_common_va_make(lua_State *L)
 	if(!strcmp(vafmt, "3v,3c"))
 	{
 		va->color_offs = 3;
+		va->color_size = 3;
 		va->texcoord_offs = -1;
 		va->stride = 6;
 	} else if(!strcmp(vafmt, "3v,3c,2t")) {
 		va->color_offs = 3;
+		va->color_size = 3;
 		va->texcoord_offs = 5;
 		va->stride = 8;
+	} else if(!strcmp(vafmt, "3v,4c")) {
+		va->color_offs = 3;
+		va->color_size = 4;
+		va->texcoord_offs = -1;
+		va->stride = 7;
+	} else if(!strcmp(vafmt, "3v,4c,2t")) {
+		va->color_offs = 3;
+		va->color_size = 4;
+		va->texcoord_offs = 6;
+		va->stride = 9;
 	} else if(!strcmp(vafmt, "3v,2t")) {
 		va->color_offs = -1;
 		va->texcoord_offs = 3;

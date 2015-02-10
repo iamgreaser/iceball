@@ -637,6 +637,8 @@ va = common.va_make(vlist, oldva = nil, format = "3v,3c") @
 	vlist is a list of lists of floats in one of these formats:
 	- {{x,y,z,r,g,b}, ...} ("3v,3c" since 0.2a-1, format arg unsupported there!)
 	- {{x,y,z,r,g,b,u,v}, ...} ("3v,3c,2t" since 0.2a-2)
+	- {{x,y,z,r,g,b,a}, ...} ("3v,4c" since 0.2.1-1)
+	- {{x,y,z,r,g,b,a,u,v}, ...} ("3v,4c,2t" since 0.2.1-1)
 	- {{x,y,z,u,v}, ...} ("3v,2t" since 0.2a-2)
 
 	more formats may come soon!
@@ -647,15 +649,42 @@ va = common.va_make(vlist, oldva = nil, format = "3v,3c") @
 	oldva, when set, replaces an existing VA with new data,
 	and then this function will (theoretically) return oldva.
 
-client.va_render_global(va, px, py, pz, ry, rx, ry2, scale, tex = nil) @
+client.va_render_global(va, px, py, pz, ry, rx, ry2, scale, tex = nil, afmt = nil, alpha = 1.0) @
 	draws a vertex array relative to the world
 
 	tex must be a power-of-two texture
 
-client.va_render_local(va, px, py, pz, ry, rx, ry2, scale, tex = nil) @
+	afmt consists of two characters, or is nil
+	note, if afmt is nil, blending is disabled!
+	(i.e. it behaves like you used "10")
+
+	first character defines source from one of these: 01CRahAHs
+	second character defines dest from one of these: 01crahAH
+
+	meanings of each char:
+	- sd 0 = GL_ZERO
+	- sd 1 = GL_ONE
+	- .d c = GL_SRC_COLOR
+	- s. C = GL_DST_COLOR
+	- .d r = GL_ONE_MINUS_SRC_COLOR
+	- s. R = GL_ONE_MINUS_DST_COLOR
+	- sd a = GL_SRC_ALPHA
+	- sd A = GL_DST_ALPHA
+	- sd h = GL_ONE_MINUS_SRC_ALPHA
+	- sd H = GL_ONE_MINUS_DST_ALPHA
+	- s. s = GL_SRC_ALPHA_SATURATE
+	
+	useful blend modes:
+	- additive: "11"
+	- multiplicative: "C0" (?)
+	- translucent: "ah"
+
+	note, "alpha" only works with VAs that don't provide a colour
+
+client.va_render_local(va, px, py, pz, ry, rx, ry2, scale, tex = nil, afmt = nil, alpha = 1.0) @
 	draws a vertex array relative to the camera
 
-	tex must be a power-of-two texture
+	see above for notes
 
 wav = common.wav_load(fname) @
 	loads a sound with filename "fname"

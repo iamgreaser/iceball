@@ -180,6 +180,7 @@ int icelua_fn_client_mk_set_title(lua_State *L)
 #include "lua_base.h"
 #include "lua_bin.h"
 #include "lua_camera.h"
+#include "lua_gfx.h"
 #include "lua_image.h"
 #include "lua_input.h"
 #include "lua_json.h"
