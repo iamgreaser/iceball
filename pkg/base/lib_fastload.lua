@@ -238,6 +238,9 @@ function fastload_analyse_client()
 	function state.e.client.va_make() end
 	function state.e.common.va_make() end
 
+	-- client.img_fill: dummy
+	function state.e.client.img_fill() end
+
 	-- common.fetch_block: Need to cache all the things, except for the things that we can't
 	local function fetch_block(typ, fname)
 		print("fetch", typ, fname)
