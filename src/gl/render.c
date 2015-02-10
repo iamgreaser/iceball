@@ -1235,6 +1235,7 @@ void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t
 	render_init(lwidth, lheight);
 	glClearColor(fog[0], fog[1], fog[2], 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glDisable(GL_STENCIL_TEST);
 	glEnable(GL_ALPHA_TEST);
 	glAlphaFunc(GL_GREATER, 0.0f);
 	glEnable(GL_CULL_FACE);
