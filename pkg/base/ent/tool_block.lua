@@ -193,7 +193,8 @@ return function (plr)
 
 	function this.textgen()
 		local cr,cg,cb
-		cr,cg,cb = this.plr.blk_color[1],this.plr.blk_color[2],this.plr.blk_color[3]
+		cr,cg,cb = this.plr.blk_color[1], this.plr.blk_color[2], this.plr.blk_color[3]
+		cr,cg,cb = ((255 - cr) + 64) % 255, ((255 - cg) + 64) % 255, ((255 - cb) - 196) % 255 -- apply colour effect for contrast
 		local col = (cr*256+cg)*256+cb+0xFF000000
 		return col, ""..this.plr.blocks
 	end
