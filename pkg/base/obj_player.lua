@@ -20,6 +20,11 @@ PLM_SPECTATE = 2
 PLM_BUILD = 3
 
 if client then
+	if not img_fsrect then
+		img_fsrect = client.img_new(client.screen_get_dims())
+		client.img_fill(img_fsrect, 0xFFFF0000)
+	end
+
 	mdl_player_head = model_load({
 		kv6={bdir=DIR_PKG_KV6, name="playerhead.kv6", scale=10.0/256.0},
 		pmf={bdir=DIR_PKG_PMF, name="player.pmf", bone=0},
@@ -2199,7 +2204,31 @@ function new_player(settings)
 		for i=1,players.max do
 			local plr = players[i]
 			if plr and plr ~= this then
-				plr.render()
+				if client.gfx_stencil_test and plr.team == this.team then
+					client.gfx_stencil_test(true)
+
+					-- PASS 1: set to 1 for invisible pixels
+					client.gfx_depth_mask(false)
+					client.gfx_stencil_func("1", 1, 255)
+					client.gfx_stencil_op(";=;")
+					plr.render()
+					client.gfx_depth_mask(true)
+
+					-- PASS 2: set to 0 for visible pixels
+					client.gfx_stencil_func("1", 0, 255)
+					client.gfx_stencil_op(";;=")
+					plr.render()
+
+					-- PASS 3: draw red for stencil == 1; clear stencil
+					client.gfx_stencil_func("==", 1, 255)
+					client.gfx_stencil_op("000")
+					client.img_blit(img_fsrect, 0, 0)
+
+					client.gfx_stencil_test(false)
+				else
+					plr.render()
+				end
+
 				if plr.alive and plr.team == this.team then
 					local px,py
 					local dx,dy,dz
