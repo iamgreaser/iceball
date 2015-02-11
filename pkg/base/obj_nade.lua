@@ -54,18 +54,18 @@ function new_nade(settings)
 		x1 = settings.x,
 		y1 = settings.y,
 		z1 = settings.z,
-		
+
 		vx = settings.vx,
 		vy = settings.vy,
 		vz = settings.vz,
-		
+
 		pid = settings.pid,
-		
+
 		trem = 0.0,
 		fuse = settings.fuse,
 		dead = false
 	} this.this = this
-	
+
 	local function prv_advance()
 		local d,x1,y1,z1,x2,y2,z2,_
 		this.x0 = this.x1
@@ -78,17 +78,17 @@ function new_nade(settings)
 			this.x0,this.y0,this.z0,
 			this.vx/db,this.vy/db,this.vz/db,
 			db)
-		
+
 		local df = 1.0
 		if d then
 			df = math.max(0,d/db-0.001)
 			--print("df",df,d,db)
 		end
-		
+
 		this.x1 = this.x0 + this.vx*df
 		this.y1 = this.y0 + this.vy*df
 		this.z1 = this.z0 + this.vz*df
-		
+
 		if x1 then
 			if x1 ~= x2 then this.vx = -this.vx*MODE_NADE_BDAMP end
 			if y1 ~= y2 then this.vy = -this.vy*MODE_NADE_BDAMP end
@@ -97,10 +97,10 @@ function new_nade(settings)
 			this.vy = this.vy * MODE_NADE_ADAMP
 			this.vz = this.vz * MODE_NADE_ADAMP
 		end
-		
+
 		this.vy = this.vy + 5*9.81*MODE_NADE_STEP*MODE_NADE_STEP
 	end
-	
+
 	function this.explode_dmg()
 		local hplr = this.pid and players[this.pid]
 		if hplr and not hplr.has_permission("kill") then return end
@@ -110,16 +110,16 @@ function new_nade(settings)
 		x0,y0,z0 = math.floor(this.x)
 			, math.floor(this.y)
 			, math.floor(this.z)
-		
+
 		local xlen,ylen,zlen
 		xlen,ylen,zlen = common.map_get_dims()
-		
+
 		local vpls = nil
 		if MODE_NADE_VPL_ENABLE then
 			vpls = vpl_gen_from_sphere(this.x, this.y, this.z,
 				MODE_NADE_VPL_MAX_COUNT, MODE_NADE_VPL_MAX_RANGE, MODE_NADE_VPL_MAX_TRIES)
 		end
-		
+
 		local i
 		for i=1,players.max do
 			local plr = players[i]
@@ -173,7 +173,7 @@ function new_nade(settings)
 					dx = plr.x-this.x
 					dy = (plr.y+0.9)-this.y
 					dz = plr.z-this.z
-					
+
 					local dd = dx*dx+dy*dy+dz*dz
 					if dd < MODE_NADE_RANGE*MODE_NADE_RANGE then
 						dd = math.sqrt(dd)
@@ -184,7 +184,7 @@ function new_nade(settings)
 						nd = trace_map_ray_dist(this.x,this.y,this.z, dx,dy,dz, dd)
 						if not nd then
 							local dmg = (-(math.pow(dd / MODE_NADE_RANGE, 4)) + 1) * MODE_NADE_DAMAGE
-							
+
 							plr.explosive_damage(dmg, hplr)
 						end
 					end
@@ -193,7 +193,7 @@ function new_nade(settings)
 		end
 
 		if hplr and not hplr.has_permission("build") then return end
-		
+
 		if map_block_get(x0,y0,z0) ~= nil then
 			if y0 < ylen-2 then
 				map_block_break(x0,y0,z0)
@@ -232,13 +232,13 @@ function new_nade(settings)
 				end
 			end
 		end
-		
-		
+
+
 	end
-	
+
 	function this.tick(sec_current, sec_delta)
 		if this.dead then return end
-		
+
 		this.trem = this.trem - sec_delta
 		local i = 10
 		while this.trem < 0 do
@@ -247,12 +247,12 @@ function new_nade(settings)
 			i = i - 1
 			if i <= 0 then break end
 		end
-		
+
 		local lerp = 1-this.trem/MODE_NADE_STEP
 		this.x = this.x1*lerp+this.x0*(1-lerp)
 		this.y = this.y1*lerp+this.y0*(1-lerp)
 		this.z = this.z1*lerp+this.z0*(1-lerp)
-		
+
 		this.fuse = this.fuse - sec_delta
 		if this.fuse <= 0 then
 			if client then
@@ -262,7 +262,9 @@ function new_nade(settings)
 					v(true)
 				end
 				local i
-				local nade_particlecount = math.random() * 10 + 20
+				local nade_particlecount = (
+					MODE_NADE_VPL_ENABLE and 1
+					) or (math.random() * 10 + 20)
 				local pvel = 2
 				nade_part_mdl = nade_part_mdl or new_particle_model(70, 70, 70)
 				local mdl = nade_part_mdl
@@ -292,7 +294,7 @@ function new_nade(settings)
 			this.dead = true
 		end
 	end
-	
+
 	function this.render()
 		if this.dead then return end
 
@@ -300,6 +302,6 @@ function new_nade(settings)
 			this.x, this.y, this.z,
 			0.0, 0.0, 0.0, 1.0)
 	end
-	
+
 	return this
 end

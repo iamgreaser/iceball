@@ -448,11 +448,55 @@ end
 function map_block_get(x,y,z)
 	local xlen,ylen,zlen 
 	xlen,ylen,zlen = common.map_get_dims()
-	if y < 0 or y >= ylen then return end
-	
-	local t = map_pillar_raw_get(x,z)
-	return t[y+1]
+	if y < 0 then return nil end
+	if y >= ylen then return false end
+
+	if map_cache then
+		local t = map_pillar_raw_get(x,z)
+		return t[y+1]
+	else
+		local l = common.map_pillar_get(x,z)
+		local i = 1
+		local ltop = 0
+		while true do
+			-- Check if air
+			if y < l[i+1] then return nil end
+
+			-- Check lower colour group
+			if y <= l[i+2] then 
+				i = i + ((y-l[i+1])+1)*4
+				return {l[i+3], l[i+2], l[i+1], l[i+0]}
+			end
+
+			-- Check N
+			if l[i+0] == 0 then
+				-- Solid invisible
+				return false
+			end
+
+			-- Calculate ltop
+			ltop = (l[i+0] - 1) - (l[i+2] - l[i+1] + 1)
+
+			-- Advance
+			i = i + l[i+0]*4
+
+			-- Check for ceiling clash
+			if y < l[i+3] then
+				-- Check upper colour group
+				if y < l[i+3]-ltop then
+					-- Solid invisible
+					return false
+				else
+					-- Coloured solid
+					i = i + (y-l[i+3])*4
+					return {l[i+3], l[i+2], l[i+1], l[i+0]}
+				end
+			end
+
+		end
+	end
 end
+
 
 function map_block_set(x,y,z,typ,r,g,b)
 	local xlen,ylen,zlen 
