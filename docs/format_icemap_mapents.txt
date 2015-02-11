@@ -1,0 +1,48 @@
+Icemap - MapEnts
+================
+
+The MapEnts chunk stores data relating to entities on the map. Entities include
+things like spawn points, pickup locations, prancing llama locations and 
+preferred dance move, etc.
+
+The data is stored as a JSON list, like so:
+
+	[
+		{
+			"class": "entitiy type",
+			"class_specific_key": "arbitrary data"
+		},
+		... additional entities
+	]
+
+The `class` attribute must be in every entry, and defines the type of entity.
+All other fields are arbitrary and are set/used in any way by anything.
+However, here are some suggested standards to follow:
+ * Keys should be lowercase
+ * Words in keys should be separated by underscores
+ * Vectors should be specified as lists of numbers
+
+Entity Types
+-------------
+
+Any game, mod or tool can create arbitrary entities, but the "official"/known
+ones are documented below:
+
+### spawn
+
+Spawn area:
+
+	{
+		"class": "spawn",
+		"team": 0,
+		"pos_min": [0, 0, 128],
+		"pos_max": [128, 63, 384]
+	}
+
+Specific spawn point:
+
+	{
+		"class": "spawn",
+		"team": 0,
+		"pos": [0, 0, 128]
+	}

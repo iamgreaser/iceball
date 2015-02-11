@@ -343,6 +343,16 @@ common.map_pillar_set(px, pz, table) @
 	
 	WE'RE NOT DOING IT FOR YOU!
 
+common.map_mapents_get() @
+	gets the MapEnts chunk data (as a hopefully-json string)
+	
+	this will be nil if there is no map loaded or no MapEnts chunk
+
+common.map_mapents_set(mapents) @
+	sets the MapEnts chunk data
+
+	mapents should be a json string
+
 client.camera_point(dx, dy, dz, zoom = 1.0, roll = 0.0) @
 	points the camera in a direction with zoom factor "zoom"
 	and roll "roll" (in radians, sorry)

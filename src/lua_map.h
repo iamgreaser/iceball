@@ -385,3 +385,39 @@ int icelua_fn_client_map_fog_set(lua_State *L)
 
 	return 4;
 }
+
+int icelua_fn_common_map_mapents_get(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 0, 0);
+	map_t *map = (L == lstate_server ? svmap : clmap);
+	
+	// If no entities, return nil
+	if(map == NULL || map->udtype != UD_MAP || map->entities == NULL)
+		return 0;
+	
+	lua_pushlstring(L, map->entities, map->entities_size);
+	
+	return 1;
+}
+
+int icelua_fn_common_map_mapents_set(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 1, 1);
+	map_t *map = (L == lstate_server ? svmap : clmap);
+	
+	size_t ents_size;
+	const char *ents = lua_tolstring(L, 1, &ents_size);
+	if(ents == NULL)
+		return luaL_error(L, "not a string");
+	
+	// If no map, error
+	if(map == NULL || map->udtype != UD_MAP)
+		return luaL_error(L, "no map");
+	
+	if (!map_set_mapents(map, ents, ents_size))
+	{
+		return luaL_error(L, "error setting MapEnts");
+	}
+	
+	return 0;
+}

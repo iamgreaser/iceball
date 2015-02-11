@@ -264,6 +264,8 @@ struct icelua_entry icelua_common[] = {
 	{icelua_fn_common_map_get_dims, "map_get_dims"},
 	{icelua_fn_common_map_pillar_get, "map_pillar_get"},
 	{icelua_fn_common_map_pillar_set, "map_pillar_set"},
+	{icelua_fn_common_map_mapents_get, "map_mapents_get"},
+	{icelua_fn_common_map_mapents_set, "map_mapents_set"},
 	{icelua_fn_common_model_new, "model_new"},
 	{icelua_fn_common_model_load_pmf, "model_load_pmf"},
 	{icelua_fn_common_model_save_pmf, "model_save_pmf"},

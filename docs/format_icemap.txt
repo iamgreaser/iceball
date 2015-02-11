@@ -60,4 +60,17 @@ now, here are the defined chunks as per version 1 of the format.
 		
 		NOTE: THIS IS CURRENTLY NOT SUPPORTED AND SIMPLY IGNORED
 		      BY THE ENGINE. But please include these if you can.
+	
+	MapEnts:
+		db "MapEnts", length
+		; entity data goes here
+		
+		this contains information regarding entities on the map.
+		
+		entity data is a JSON blob.
+		
+		entities include things like spawn points, pickup locations, etc.
+		see format_icemap_mapents.txt for JSON format and known entity types
+		
+		must appear no more than once.
 

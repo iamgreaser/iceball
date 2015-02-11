@@ -23,7 +23,7 @@
 #define VERSION_X 2
 #define VERSION_Y 1
 #define VERSION_A 0
-#define VERSION_Z 3
+#define VERSION_Z 4
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!
@@ -386,6 +386,8 @@ typedef struct map
 	int visible_chunks_len;
 #endif
 	uint8_t **pillars;
+	char *entities;
+	size_t entities_size;  // Includes null-terminator
 	// TODO ? heap allocator ?
 } map_t;
 

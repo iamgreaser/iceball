@@ -16,7 +16,7 @@
 */
 
 #include "common.h"
-map_t *map_parse_root(const char *dend, const char *data, int xlen, int ylen, int zlen, int wipe_lighting)
+int map_parse_root(map_t *map, const char *dend, const char *data, int xlen, int ylen, int zlen, int wipe_lighting)
 {
 	// TODO: refactor a bit
 
@@ -24,13 +24,6 @@ map_t *map_parse_root(const char *dend, const char *data, int xlen, int ylen, in
 	int i,x,z,pi;
 
 	int taglen = (int)(dend-data);
-
-	map_t *map = (map_t*)malloc(sizeof(map_t));
-	if(map == NULL)
-	{
-		error_perror("map_parse_root: malloc");
-		return NULL;
-	}
 
 	map->udtype = UD_MAP;
 
@@ -44,8 +37,7 @@ map_t *map_parse_root(const char *dend, const char *data, int xlen, int ylen, in
 	if(map->pillars == NULL)
 	{
 		error_perror("map_parse_root: malloc(map->pillars)");
-		map_free(map);
-		return NULL;
+		return 0;
 	}
 
 	printf("mapdata %i %ix%ix%i\n"
@@ -118,7 +110,7 @@ map_t *map_parse_root(const char *dend, const char *data, int xlen, int ylen, in
 	render_init_visible_chunks(map, 0, 0);
 #endif
 
-	return map;
+	return 1;
 }
 
 map_t *map_parse_aos(int len, const char *data)
@@ -129,7 +121,20 @@ map_t *map_parse_aos(int len, const char *data)
 	const char *p = data;
 	const char *dend = data + len;
 
-	return map_parse_root(dend, data, 512, -1, 512, 1);
+	map_t *map = (map_t*)malloc(sizeof(map_t));
+	if(map == NULL)
+	{
+		error_perror("map_parse_aos: malloc");
+		return NULL;
+	}
+
+	if (!map_parse_root(map, dend, data, 512, -1, 512, 1))
+	{
+		error_perror("map_parse_aos: bad map data");
+		map_free(map);
+		return NULL;
+	}
+	return map;
 }
 
 map_t *map_parse_icemap(int len, const char *data)
@@ -148,7 +153,12 @@ map_t *map_parse_icemap(int len, const char *data)
 	}
 	p += 8;
 
-	map_t *map = NULL;
+	map_t *map = (map_t*)calloc(1, sizeof(map_t));
+	if(map == NULL)
+	{
+		error_perror("map_parse_icemap: malloc");
+		return NULL;
+	}
 
 	int taglen;
 	for(;;)
@@ -176,10 +186,18 @@ map_t *map_parse_icemap(int len, const char *data)
 			taglen = (int)*(uint32_t *)p;
 			p += 4;
 		}
+		
+		// Check for derpy chunk len
+		if(p + taglen > dend)
+		{
+			error_perror("map_load_icemap: premature end!");
+			map_free(map);
+			return NULL;
+		}
 
 		if(!memcmp(tag,"MapData",7))
 		{
-			if(map != NULL && map->pillars != NULL)
+			if(map->pillars != NULL)
 			{
 				fprintf(stderr, "map_load_icemap: more than one MapData!\n");
 				map_free(map);
@@ -191,19 +209,40 @@ map_t *map_parse_icemap(int len, const char *data)
 			int zlen = ((uint16_t *)p)[2];
 			p += 6;
 
-			map = map_parse_root(p+taglen, p, xlen, ylen, zlen, 0);
+			if (!map_parse_root(map, p+taglen, p, xlen, ylen, zlen, 0))
+			{
+				error_perror("map_load_icemap: bad MapData");
+				map_free(map);
+				return NULL;
+			}
 			p += taglen-6;
 		} else if(!memcmp(tag,"MetaInf",7)) {
 			// TODO!
 			if(taglen > 0)
 				p += taglen;
+		} else if(!memcmp(tag,"MapEnts",7)) {
+			if (map->entities != NULL)
+			{
+				fprintf(stderr, "map_load_icemap: more than one MapEnts!\n");
+				map_free(map);
+				return NULL;
+			}
+			
+			if (!map_set_mapents(map, p, taglen))
+			{
+				error_perror("map_load_icemap: bad MapEnts");
+				map_free(map);
+				return NULL;
+			}
+			
+			p += taglen;
 		} else {
 			if(taglen > 0)
 				p += taglen;
 		}
 	}
 
-	if(map == NULL || map->pillars == NULL)
+	if(map->pillars == NULL)
 	{
 		fprintf(stderr, "map_load_icemap: MapData missing!\n");
 		map_free(map);
@@ -407,6 +446,33 @@ int map_save_icemap(map_t *map, const char *fname)
 	return 0;
 }
 
+int map_set_mapents(map_t *map, const char *src, size_t size)
+{
+	// Check for null terminator
+	if (src[size - 1] != '\0')
+		size++;
+	
+	if (map->entities == NULL) {
+		map->entities = (char*)malloc(size);
+	} else {
+		map->entities = (char*)realloc(map->entities, size);
+	}
+	
+	if(map->entities == NULL)
+	{
+		error_perror("map_set_mapents: malloc");
+		return 0;
+	}
+	
+	memcpy(map->entities, src, size);
+	map->entities_size = size;
+	
+	// Ensure null terminator
+	map->entities[size - 1] = '\0';
+	
+	return 1;
+}
+
 void map_free(map_t *map)
 {
 	if(map == NULL)
@@ -414,6 +480,9 @@ void map_free(map_t *map)
 
 	if(map->pillars != NULL)
 		free(map->pillars);
+
+	if(map->entities != NULL)
+		free(map->entities);
 #ifndef DEDI
 	render_free_visible_chunks(map);
 #endif
