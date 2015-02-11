@@ -342,12 +342,16 @@ img_chevron = client.img_load("pkg/base/gfx/chevron.tga")
 -- load/make models
 mdl_test = model_load({pmf={bdir=DIR_PKG_PMF, name="test.pmf"}},{"pmf"})
 mdl_cube = model_load({pmf={bdir=DIR_PKG_PMF, name="cube.pmf"}},{"pmf"})
-mdl_spade = model_load({pmf={bdir=DIR_PKG_PMF, name="spade.pmf"}},{"pmf"})
 mdl_block = model_load({pmf={bdir=DIR_PKG_PMF, name="block.pmf"}},{"pmf"})
 mdl_piano = model_load({pmf={bdir=DIR_PKG_PMF, name="piano.pmf"}},{"pmf"})
 mdl_marker = model_load({pmf={bdir=DIR_PKG_PMF, name="marker.pmf"}},{"pmf"})
 mdl_tracer = model_load({pmf={bdir=DIR_PKG_PMF, name="tracer.pmf"}},{"pmf"})
 
+mdl_spade = model_load({
+	kv6={bdir=DIR_PKG_KV6, name="spade.kv6", scale=1.0/16.0},
+	pmf={bdir=DIR_PKG_PMF, name="spade.pmf"},
+	{},
+},{"kv6","pmf"})
 mdl_Xcube = model_load({
 	kv6={bdir=DIR_PKG_KV6, name="xcube.kv6", scale=1.0/256.0},
 	pmf={bdir=DIR_PKG_PMF, name="xcube.pmf"},
