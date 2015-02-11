@@ -15,10 +15,11 @@ CFLAGS = -O2 -fno-strict-aliasing -g -Wall -Wextra \
 	-Wno-unused-variable -Wno-unused-parameter \
 	-Wno-unused-but-set-variable \
 	-Iwinlibs -Iwinlibs/SDL \
-	-msse2 -mfpmath=sse \
 	-DGL_BGRA=0x80E1 \
 	$(CFLAGS_EXTRA) \
 	-I $(INCDIR)
+
+	#-msse2 -mfpmath=sse \
 
 LDFLAGS = -g $(LDFLAGS_EXTRA)
 LIBS_SDL = -lSDLmain -lSDL

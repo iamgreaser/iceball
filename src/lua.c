@@ -98,6 +98,7 @@ int icelua_fn_client_mk_sys_execv(lua_State *L)
 
 	SDL_Quit();
 #ifdef WIN32
+#if 1
 	//if(main_oldcwd != NULL)
 	//	_chdir(main_oldcwd);
 	
@@ -144,6 +145,11 @@ int icelua_fn_client_mk_sys_execv(lua_State *L)
 		fprintf(fp, "%s ", arglist[i]);
 		fflush(fp);
 	}*/
+#else
+	char *v = strdup("iceball.exe");
+	arglist[0] = v;
+	main_argv0 = v;
+#endif
 #endif
 	printf("argv0: [%s]\n", main_argv0);
 	fflush(stdout);

@@ -54,7 +54,7 @@ int icelua_fn_common_map_new(lua_State *L)
 		return luaL_error(L, "map size too small");
 	
 	// XXX: shouldn't this be in map.c?
-	map_t *map = (map_t*)malloc(sizeof(map_t));
+	map_t *map = (map_t*)calloc(1, sizeof(map_t));
 	if(map == NULL)
 	{
 		int err = errno;
