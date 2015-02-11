@@ -546,6 +546,7 @@ map_t *map_load_aos(const char *fname);
 map_t *map_load_icemap(const char *fname);
 char *map_serialise_icemap(map_t *map, int *len);
 int map_save_icemap(map_t *map, const char *fname);
+int map_set_mapents(map_t *map, const char *src, size_t size);
 void map_free(map_t *map);
 
 // model.c
