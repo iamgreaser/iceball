@@ -507,6 +507,11 @@ common.img_pixel_set(img, x, y, color) @
 	
 	drawing is clipped
 
+common.img_pixel_get(img, x, y) @
+	gets the pixel x,y colour on image "img"
+	
+	x, y clipped
+
 common.img_free(img) @
 	free the given image
 

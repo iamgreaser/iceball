@@ -207,6 +207,33 @@ int icelua_fn_common_img_pixel_set(lua_State *L)
 	return 0;
 }
 
+
+int icelua_fn_common_img_pixel_get(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 3, 3);
+	
+	if(lua_islightuserdata(L, 1) || !lua_isuserdata(L, 1))
+		return luaL_error(L, "not an image");
+	img_t *img = (img_t *)lua_touserdata(L, 1);
+	if(img == NULL || img->udtype != UD_IMG)
+		return luaL_error(L, "not an image");
+	int x = lua_tointeger(L, 2);
+	int y = lua_tointeger(L, 3);
+	
+	if(x < 0 || y < 0 || x >= img->head.width || y >= img->head.height)
+		return 0;
+
+	int iw = img->head.width;
+	int ih = img->head.height;
+#ifndef DEDI
+	expandtex_gl(&iw, &ih);
+#endif
+	
+	lua_pushnumber(L, (double)(uint32_t)img->pixels[y*iw+x]);
+	return 1;
+}
+
+
 int icelua_fn_common_img_fill(lua_State *L)
 {
 	int i;

@@ -21,8 +21,8 @@
 
 VERSION_ENGINE = {
 	cmp={0,2,1,0,2},
-	num=8421376+2,
-	str="0.2.1-2",
+	num=8421376+3,
+	str="0.2.1-3",
 }
 
 --error(""..common.version.num)
