@@ -73,7 +73,8 @@ function new_player(...)
 
 	local s_show_hud = this.show_hud
 	function this.show_hud(sec_current, sec_delta, ...)
-		if client.gfx_stencil_test then
+		-- this is a bit derpy so dummied out for now
+		if false and client.gfx_stencil_test then
 			-- Stencil hackery
 			client.gfx_stencil_test(true)
 			--print("STENC")
