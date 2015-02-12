@@ -25,8 +25,13 @@ function new_building(settings)
 	local this = {} this.this = this
 
 	this.type = "building template - I'm not supposed to be built! change this"
+	this.x, this.y, this.z, this.width, this.length, this.height = settings.x, settings.y, settings.z, settings.width, settings.length, settings.height
 	
-	function this.build(x, y, z, width, height, depth)
+	function this.build()
+		this.build_at(this.x, this.y, this.z, this.width, this.length, this.height)
+	end
+	
+	function this.build_at(x, y, z, width, length, height)
 	end
 	
 	return this

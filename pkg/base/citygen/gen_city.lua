@@ -27,7 +27,7 @@ function load_buildings() end
 function create_city_grid() end
 
 --OVERRIDE ME! I am called 4th and last.
-function manufacture_buildings() end
+function manufacture_buildings(terrain_meta, map_grid) end
 
 do
 	local ret
@@ -52,16 +52,16 @@ do
 		ret = common.map_new(mx, my, mz)
 		common.map_set(ret)
 		print("Generating terrain")
-		gen_terrain(mx, my, mz)
+		terrain_meta = gen_terrain(mx, my, mz)
 		print("Loading buildings")
 		load_buildings()
 		--print("Loading prefabs")
 		--load_kv6()
 		print("Generating the city outline")
-		create_city_grid()
+		map_grid = create_city_grid()
 		print("Making buildings")
 		--map_cache_start() -- please handle map caching yourselves!
-		manufacture_buildings()
+		manufacture_buildings(terrain_meta, map_grid)
 		
 		--collectgarbage() --waiting for this to be implemented
 		print("gen finished")		

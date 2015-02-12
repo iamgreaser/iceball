@@ -15,7 +15,7 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
-dofile("pkg/base/citygen/buildings/tpl_building.lua")
+dofile(DIR_CITYGEN_BUILDINGS.."tpl_building.lua")
 local s_new_building = new_building
 local function f_new_building(...)
 	local this = s_new_building(...)
@@ -27,12 +27,12 @@ local function f_new_building(...)
 	-- this.z = settings.z
 	
 	
-	local s_build = this.build
-	function this.build(x, y, z, width, depth, height)
-			if depth % 2 == 0 then depth = depth + 1 end
+	local s_build = this.build_at
+	function this.build_at(x, y, z, width, length, height)
+			if height % 2 == 0 then height = height + 1 end
 			local start_x, start_z = x, z
 			local current_x, current_z = start_x, start_z
-			local end_x, end_z = x+width, z+ height
+			local end_x, end_z = x+width, z+ length
 			
 			repeat
 				chunk_header = 0
@@ -44,12 +44,12 @@ local function f_new_building(...)
 				type_of_block = 1
 				pillar_table = {chunk_header, starting_block, ending_block, air_start, b, g, r, type_of_block}
 				-- common.map_pillar_set(current_x, current_z, pillar_table)
-				for i=y,y+depth do
+				for i=y,y+height do
 					rand = math.floor(math.random()*5)%4
-					if rand == 3 and i > y+depth - 5 then
+					if rand == 3 and i > y+height - 5 then
 						map_block_set(current_x, i, current_z, 1, r-60, g-60, b-60)
 					else
-						if current_x % 2 == 0 and i < y+depth - 5 and i % 3 ~= 0 and i > y then
+						if current_x % 2 == 0 and i < y+height - 5 and i % 3 ~= 0 and i > y then
 							map_block_set(current_x, i, current_z, 1, 35, 156, 233)
 						else
 							map_block_set(current_x, i, current_z, 1, r, g, b)
@@ -59,7 +59,7 @@ local function f_new_building(...)
 				current_x = current_x + 1
 				if current_x>= end_x then
 					current_x = start_x
-					current_z = current_z + height - 1
+					current_z = current_z + length - 1
 				end
 			until current_z  >= end_z
 			
@@ -75,12 +75,12 @@ local function f_new_building(...)
 				type_of_block = 1
 				pillar_table = {chunk_header, starting_block, ending_block, air_start, b, g, r, type_of_block}
 				common.map_pillar_set(current_x, current_z, pillar_table)
-				for i=y,y+depth do
+				for i=y,y+height do
 					rand = math.floor(math.random()*5)%4
-					if rand == 3 and i > y+depth - 5 then
+					if rand == 3 and i > y+height - 5 then
 						map_block_set(current_x, i, current_z, 1, r-60, g-60, b-60)
 					else
-						if current_z % 2 == 0 and i < y+depth - 5 and i % 3 ~= 0 and i > y then
+						if current_z % 2 == 0 and i < y+height - 5 and i % 3 ~= 0 and i > y then
 							map_block_set(current_x, i, current_z, 1, 35, 156, 233)
 						else
 							map_block_set(current_x, i, current_z, 1, r, g, b)
@@ -94,7 +94,7 @@ local function f_new_building(...)
 				end
 			until current_x  >= end_x
 			
-			for i=y+1, y+depth, 4 do
+			for i=y+1, y+height, 4 do
 				for current_x = start_x+1, end_x-1-1 do
 				
 					for current_z = start_z+1, end_z-1-1 do

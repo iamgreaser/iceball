@@ -19,7 +19,7 @@ function manufacture_buildings()
 		for y=1+12, mz-1-12, 1*(12+16) do
 			rand_height = math.floor(13 + math.random()*37)
 			building = new_building({})
-			building.build(i + 12, my-4-rand_height, y+12, 12, rand_height, 12)
+			building.build_at(i + 12, my-4-rand_height, y+12, 12, 12, rand_height)
 		end
 		map_cache_end()
 	end

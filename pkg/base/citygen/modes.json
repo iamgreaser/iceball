@@ -1,4 +1,5 @@
 {
 	"default" : [ "dany0/default/gen_terrain.lua", "dany0/default/gen_buildings.lua" ],
-	"lecomm" : [ "lecomm/genmap.lua", "lecomm/gencells.lua" ]
+	"lecomm" : [ "lecomm/genmap.lua", "lecomm/gencells.lua" ],
+	"football" : [ "dany0/football/gen_terrain.lua", "dany0/football/gen_buildings.lua" ]
 }
