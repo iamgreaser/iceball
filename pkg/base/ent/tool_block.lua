@@ -59,7 +59,7 @@ return function (plr)
 		if plr.blk_color then
 			prv_recolor_block(plr.blk_color[1], plr.blk_color[2], plr.blk_color[3])
 		end
-		plr.blocks = 25
+		plr.blocks = MODE_BLOCKS_SPAWN
 	end
 
 	this.reset()
@@ -69,7 +69,7 @@ return function (plr)
 	end
 
 	function this.restock()
-		plr.blocks = 100
+		plr.blocks = MODE_BLOCKS_MAX
 	end
 
 	function this.focus()

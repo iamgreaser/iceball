@@ -294,7 +294,7 @@ network.sys_handle_s2c(PKT_PLR_BLK_COLOR, "BBBB", function (neth, cli, plr, sec_
 		plr.block_recolor()
 	end
 end)
-network.sys_handle_s2c(PKT_PLR_BLK_COUNT, "BB", function (neth, cli, plr, sec_current, pid, blocks, pkt)
+network.sys_handle_s2c(PKT_PLR_BLK_COUNT, "BH", function (neth, cli, plr, sec_current, pid, blocks, pkt)
 	local plr = players[pid]
 	
 	--print("19",pid,blocks)
@@ -497,8 +497,8 @@ network.sys_handle_c2s(PKT_BLK_RM1, "HHH", nwdec_plrset(function (neth, cli, plr
 			if plr.tool == TOOL_SPADE then
 				local oblocks = plr.blocks
 				oblocks = oblocks + 1
-				if oblocks > 100 then
-					oblocks = 100
+				if oblocks > MODE_BLOCKS_MAX then
+					oblocks = MODE_BLOCKS_MAX
 				end
 				
 				plr.set_blocks(oblocks)

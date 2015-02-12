@@ -207,7 +207,7 @@ function new_player(settings)
 		this.zooming = false
 
 		this.health = 100
-		this.blocks = 25
+		this.blocks = MODE_BLOCKS_SPAWN
 
 		function this.expl_ammo_checkthrow() return false end
 
@@ -432,10 +432,10 @@ function new_player(settings)
 		if not server then return end
 
 		if (blocks == 0) ~= (oblocks == 0) then
-			net_broadcast(nil, common.net_pack("BBB",
+			net_broadcast(nil, common.net_pack("BBH",
 				PKT_PLR_BLK_COUNT, this.pid, this.blocks))
 		else
-			net_send(this.neth, common.net_pack("BBB",
+			net_send(this.neth, common.net_pack("BBH",
 				PKT_PLR_BLK_COUNT, this.pid, this.blocks))
 		end
 	end
@@ -745,7 +745,11 @@ function new_player(settings)
 			end
 			if this.ev_jump and this.alive and (MODE_CHEAT_FLY or this.grounded) then
 				this.vy = -MODE_JUMP_SPEED
-				this.ev_jump = false
+
+				if not MODE_JUMP_POGO then
+					this.ev_jump = false
+				end
+
 				if client then
 					client.wav_play_global(wav_jump_up, this.x, this.y, this.z)
 				end

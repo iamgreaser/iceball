@@ -77,6 +77,7 @@ MODE_AIRJUMP = false
 MODE_SOFTCROUCH = true
 
 MODE_JUMP_SPEED = 7.0
+MODE_JUMP_POGO = true
 MODE_GRAVITY = 9.81
 
 MODE_PSPEED_CONV_PHYSICS = true
@@ -126,7 +127,7 @@ MODE_DRUNKCAM_CORRECTSPEED = 10.0
 
 MODE_DELAY_SPADE_DIG = 1.0
 MODE_DELAY_SPADE_HIT = 0.25
-MODE_DELAY_BLOCK_BUILD = 0.5
+MODE_DELAY_BLOCK_BUILD = 0.25
 MODE_DELAY_TOOL_CHANGE = 0.2
 MODE_DELAY_NADE_THROW = 0.5
 
@@ -136,6 +137,9 @@ MODE_BLOCK_DAMAGE_RIFLE = 34
 MODE_BLOCK_REGEN_TIME = 30.0
 MODE_BLOCK_PLACE_IN_AIR = false --TODO: make this a server config variable, maybe godmode?
 MODE_BLOCK_NO_RED_MARKER = false
+
+MODE_BLOCKS_SPAWN = 100
+MODE_BLOCKS_MAX = 300
 
 MODE_RCIRC_LINGER = 60.0
 MODE_RESPAWN_TIME = 8.0
@@ -379,8 +383,8 @@ function bhealth_damage(x,y,z,amt,plr)
 			if plr and plr.tool == TOOL_SPADE then
 				local oblocks = plr.blocks
 				oblocks = oblocks + 1
-				if oblocks > 100 then
-					oblocks = 100
+				if oblocks > MODE_BLOCKS_MAX then
+					oblocks = MODE_BLOCKS_MAX
 				end
 				
 				plr.set_blocks(oblocks)
