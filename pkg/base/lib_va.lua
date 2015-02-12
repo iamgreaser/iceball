@@ -272,7 +272,7 @@ function model_loaders.lua(isfile, pkt, extra)
 	if isfile then pkt = loadfile(pkt) end
 	if not pkt then return nil end
 
-	print(pkt)
+	--print(pkt)
 
 	return pkt
 end

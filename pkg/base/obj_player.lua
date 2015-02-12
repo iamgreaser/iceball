@@ -769,14 +769,6 @@ function new_player(settings)
 		mvy = mvy / mvd
 		mvz = mvz / mvd
 
-		-- apply tool speedup
-		-- TODO: i REALLY, *REALLY* want to move this one out of here. --GM
-		local msmul = this.tools[this.tool+1].mspeed_mul 
-		if this.mode == PLM_NORMAL and msmul then
-			mvx = mvx * msmul
-			mvz = mvz * msmul
-		end
-
 		-- apply base slowdown
 		local mvspd = MODE_PSPEED_NORMAL
 		local mvchange = MODE_PSPEED_CHANGE

@@ -348,7 +348,7 @@ mdl_marker = model_load({pmf={bdir=DIR_PKG_PMF, name="marker.pmf"}},{"pmf"})
 mdl_tracer = model_load({pmf={bdir=DIR_PKG_PMF, name="tracer.pmf"}},{"pmf"})
 
 mdl_spade = model_load({
-	kv6={bdir=DIR_PKG_KV6, name="spade.kv6", scale=1.0/16.0},
+	kv6={bdir=DIR_PKG_KV6, name="spade.kv6", scale=1.0/24.0},
 	pmf={bdir=DIR_PKG_PMF, name="spade.pmf"},
 	{},
 },{"kv6","pmf"})

@@ -58,7 +58,7 @@ do
 	end
 
 	function this.render_local(x, y, z, r1, r2, r3, s)
-		client.va_render_local(this.va, x, y, z, r1, r2, r3, s, this.tex)
+		client.va_render_local(this.va, -x, y, z, r1, r2, r3, s, this.tex)
 	end
 
 	return this
