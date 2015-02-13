@@ -75,14 +75,33 @@ function client.hook_key(key, state, modif, uni)
 	end
 end
 
-img_splash = common.img_load("pkg/iceball/gfx/splash_logo.png", "png")
+--render pre-load
+local screen_width, screen_height = client.screen_get_dims()
+
+local font = font_dejavu_bold[18]
+local ch = font.iheight
+local text_offset = ch+ch --cha cha cha! \o/
+
+local img_row_bkg_width = screen_width - 2*text_offset
+local img_row_bkg = common.img_new(img_row_bkg_width, ch + 2)
+common.img_fill(img_row_bkg, 0x99111111)
+local img_row_bkg_transparent = common.img_new(img_row_bkg_width, ch + 2)
+common.img_fill(img_row_bkg_transparent, 0x22111111)
+
+local img_splash = common.img_load("pkg/iceball/gfx/splash_logo.png", "png")
+local img_splash_width, img_splash_height
+local img_splash_width, img_splash_height_scaled
+
 local splashtweenprogress_scale = 0.9
 local splashtweenprogress_y = 1.0
-client.map_fog_set(194, 89, 89, 100)
+
+client.map_fog_set(16, 136, 189, 100)
 function client.hook_render()
---splash sequence
-	img_splash_width, img_splash_height = common.img_get_dims(img_splash)
-	screen_width, screen_height = client.screen_get_dims()
+	--splash sequence
+	if not img_splash_width then
+		img_splash_width, img_splash_height = common.img_get_dims(img_splash)
+	end
+	
 	if splashtweenprogress_scale > 0.25 then
 		if splashtweenprogress_scale > 0.85 then
 			splashtweenprogress_scale = splashtweenprogress_scale - 0.001 --would be nice to do this with frame delta time
@@ -95,38 +114,45 @@ function client.hook_render()
 	if splashtweenprogress_y < 2.0 and  splashtweenprogress_scale < 0.85 then
 		splashtweenprogress_y = splashtweenprogress_y + 0.1
 	end
-	img_splash_width = img_splash_width*splashtweenprogress_scale
-	img_splash_height = img_splash_height*splashtweenprogress_scale
-	local x, y
-	x = (screen_width/2) - (img_splash_width/2)
-	y = (screen_height/(2/splashtweenprogress_y)) - img_splash_height
-	client.img_blit(img_splash, x, y, img_splash_width, img_splash_height, 0, 0, 0xFFFFFFFF, splashtweenprogress_scale, splashtweenprogress_scale)
---splash sequence end
-
-	if splashtweenprogress_scale <= 0.5 then --don't draw text over the splash
+	img_splash_width_scaled = img_splash_width*splashtweenprogress_scale
+	img_splash_height_scaled = img_splash_height*splashtweenprogress_scale
+	local splash_x, splash_y
+	splash_x = (screen_width/2) - (img_splash_width_scaled/2)
+	splash_y = (screen_height/(2/splashtweenprogress_y)) - img_splash_height_scaled
+	client.img_blit(img_splash, splash_x, splash_y, img_splash_width_scaled, img_splash_height_scaled, 0, 0, 0xFFFFFFFF, splashtweenprogress_scale, splashtweenprogress_scale)
+	--splash sequence end
 	
-	local font = font_dejavu_bold[18]
-	local ch = font.iheight
-	font.render(0, ch*0, "Press L for a local server on port 20737", 0xFFEEEEEE)
-	font.render(0, ch*1, "Press Escape to quit", 0xFFEEEEEE)
-	font.render(0, ch*2, "Press C to change your settings", 0xFFEEEEEE)
-	font.render(0, ch*3, "Press R to update the server list", 0xFFEEEEEE)
-	font.render(0, ch*4, "Press a number to join a server", 0xFFEEEEEE)
-	font.render(0, ch*6, "Server list:", 0xFFEEEEEE)
+	if splashtweenprogress_scale <= 0.5 then --don't draw the rest until the splash finishes
+	
+	
+	font.render(text_offset, ch*0, "Press L for a local server on port 20737", 0xFFEEEEEE)
+	font.render(text_offset, ch*1, "Press Escape to quit", 0xFFEEEEEE)
+	font.render(text_offset, ch*2, "Press C to change your settings", 0xFFEEEEEE)
+	font.render(text_offset, ch*3, "Press R to update the server list", 0xFFEEEEEE)
+	font.render(text_offset, ch*4, "Press a number to join a server", 0xFFEEEEEE)
+	font.render(text_offset, ch*6, "Server list:", 0xFFEEEEEE)
 
 	local i
 	if server_list == true then
-		font.render(0, ch*7, "Fetching...", 0xFFEEEEEE)
+		font.render(text_offset, ch*7, "Fetching...", 0xFFEEEEEE)
 	elseif server_list == nil then
-		font.render(0, ch*7, "Failed to fetch the server list.", 0xFFEEEEEE)
+		font.render(text_offset, ch*7, "Failed to fetch the server list.", 0xFFEEEEEE)
 	else
 		for i=1,#server_list do
+			client.img_blit(img_row_bkg, text_offset-2, (ch+4)*(8+i-1) - 1)
+		
 			local sv = server_list[i]
-			font.render(0, ch*(8+i-1), i..": "..sv.name
+			font.render(text_offset, (ch+4)*(8+i-1), i..": "..sv.name
 				.." - "..sv.players_current.."/"..sv.players_max
 				.." - "..sv.mode
-				.." - "..sv.map, 0xAA000000)
+				.." - "..sv.map, 0xFFEEEEEE)
+			
 		end
+--		common.img_fill(img_row_bkg, 0x22111111)
+		for i=#server_list+1,9 do
+			client.img_blit(img_row_bkg_transparent, text_offset-2, (ch+4)*(8+i-1) - 1)
+		end
+		--common.img_fill(img_row_bkg, 0x99111111)
 	end
 	
 	end
