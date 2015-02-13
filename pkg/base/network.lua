@@ -588,6 +588,12 @@ network.sys_handle_c2s(PKT_PLR_OFFER, "bbz", nwdec_plrset(function (neth, cli, p
 	plr.wpn = weapons[wpn](plr)
 	if plr.team ~= tidx then
 		plr.set_health_damage(0, 0xFF800000, plr.name.." changed teams", nil)
+		if not teams[tidx] then
+			print("HACK ATTEMPT from neth "..tostring(neth))
+			server.net_kick(neth, "Hack attempt")
+			return
+		end
+		print(plr, tidx, teams[tidx])
 		net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFF800000,
 			"* Player "..plr.name.." has joined the "..teams[tidx].name.." team"))
 	elseif plr.weapon ~= wpn then

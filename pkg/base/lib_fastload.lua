@@ -135,6 +135,9 @@ function fastload_analyse_client()
 	state.e.pcall = pcall
 	state.e.pairs = pairs
 	state.e.ipairs = ipairs
+	
+	-- Tell it there's a sandbox
+	state.e.sandbox = {}
 
 	-- client.wav_play_local/global
 	function state.e.client.wav_play_local(...) return 1 end

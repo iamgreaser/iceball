@@ -15,8 +15,14 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
+SANDBOX_SERVER = false
+
 if common.version.num < 8388608 then
 	error("You need Iceball version 0.2 or later to run this code.")
+end
+
+if SANDBOX_SERVER and not sandbox then
+	return (loadfile("pkg/base/sandbox/main.lua"))(...)
 end
 
 dofile("pkg/base/lib_fastload.lua")

@@ -15,8 +15,14 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
+SANDBOX_CLIENT = true
+
 if common.version.num < 8388608 then
 	error("You need Iceball version 0.2 or later to connect to this server.")
+end
+
+if SANDBOX_CLIENT and not sandbox then
+	return (loadfile("pkg/base/sandbox/main.lua"))(...)
 end
 
 if common.mk_compat_disable then
@@ -155,6 +161,7 @@ do
 	local last_keepalive = common.time()
 	function load_screen_fetch(ftype, fname)
 		if string.sub(fname, 1,6) == "clsave" then return client.fetch_block(ftype, fname) end
+		--if true then return client.fetch_block(ftype, fname) end
 		if widgets ~= nil then
 			scene = gui_create_scene(w, h)
 			img_loading_width, img_loading_height = client.img_get_dims(img_loading)
