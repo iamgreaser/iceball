@@ -103,12 +103,12 @@ function model_loaders.kv6(isfile, pkt, extra)
 	return mdl
 	]]
 
-	local spx = CAM_SHADING[1]
-	local spy = CAM_SHADING[2]
-	local spz = CAM_SHADING[3]
-	local snx = CAM_SHADING[4]
-	local sny = CAM_SHADING[5]
-	local snz = CAM_SHADING[6]
+	local spx = extra.shading_off and 1 or CAM_SHADING[1]
+	local spy = extra.shading_off and 1 or CAM_SHADING[2]
+	local spz = extra.shading_off and 1 or CAM_SHADING[3]
+	local snx = extra.shading_off and 1 or CAM_SHADING[4]
+	local sny = extra.shading_off and 1 or CAM_SHADING[5]
+	local snz = extra.shading_off and 1 or CAM_SHADING[6]
 
 	-- make
 	return (function (settings)
