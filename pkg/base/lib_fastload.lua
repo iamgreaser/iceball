@@ -234,6 +234,9 @@ function fastload_analyse_client()
 	-- client.screen_get_dims: 800, 600
 	function state.e.client.screen_get_dims() return 800, 600 end
 
+	-- client.mk_set_title: dummy
+	function state.e.client.mk_set_title() end
+
 	-- client.wav_cube_size: dummy
 	function state.e.client.wav_cube_size() end
 
