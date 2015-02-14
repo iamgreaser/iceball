@@ -58,6 +58,10 @@ if user_config.frame_limit and user_config.frame_limit > 0.01 then
 	print("frame delay:", frame_delay_ctr)
 end
 
+-- speed through stuff
+FAST_LOCAL_INIT = user_config.fast_load_screen
+if FAST_LOCAL_INIT and sandbox then sandbox.gfx_select(nil) end
+
 -- OK, *NOW* we can load stuff.
 dofile("pkg/base/lib_va.lua")
 dofile("pkg/base/common.lua")
@@ -1013,4 +1017,7 @@ end
 print("pkg/base/client_start.lua: Loading mods...")
 load_mod_list(getfenv(), nil, {"load", "load_client"}, client_config)
 print("pkg/base/client_start.lua loaded.")
+
+if FAST_LOCAL_INIT and sandbox then sandbox.gfx_select(sandbox.this()) end
+
 

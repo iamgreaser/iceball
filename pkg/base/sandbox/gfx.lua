@@ -26,6 +26,11 @@ sb_ctl.gfx_map_stack = {idx = 0}
 
 -- Select sandbox to use for graphics and input.
 function sandbox.gfx_select(name)
+	if name == nil then
+		sb_ctl.gfx_select = nil
+		return
+	end
+
 	if not sb_list[name] then
 		error("invalid VM \""..tostring(name).."\" for gfx_select")
 	end

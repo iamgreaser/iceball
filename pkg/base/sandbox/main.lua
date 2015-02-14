@@ -120,6 +120,10 @@ function sandbox.new(name, fname, ...)
 	sb_wrap_audio(sb_list, sb_aux, sb_ctl, name)
 	sb_wrap_gfx(sb_list, sb_aux, sb_ctl, name)
 
+	function SG.sandbox.this()
+		return name
+	end
+
 	-- Do file
 	-- Return name
 	return name, (SG.loadfile(fname))(...)

@@ -1,42 +1,9 @@
-DIR_CHENMOD = "pkg/gm/chen/"
+do
 
 if client then
 	mdl_player_head = model_load({
 		lua={bdir=DIR_CHENMOD, name="mdl_chen_head.lua"},
 	}, {"lua"})
-end
-
-local chen_padding = {
-	":3", "^_^", "HONK", "MEOW", "HONK", "Yum!",
-}
-
-function chenpick(l)
-	return l[math.floor(math.random()*#l)+1]
-end
-
-function chenify_msg(msg)
-	local l = string.split(msg, " ")
-	local i
-	local maxchen = math.max(2, math.floor(math.random()*#l*0.8+1))
-
-	local docaps = true
-	for i=1,#l do
-		l[i] = l[i]:lower()
-		if docaps then
-			l[i] = l[i]:sub(1,1):upper() .. l[i]:sub(2)
-			docaps = false
-		end
-
-		if i == #l or math.random() < 0.25 then
-			l[i] = l[i].."!"
-			docaps = true
-		end
-	end
-	for i=1,maxchen do
-		table.insert(l, math.floor(math.random()*(#l+1)+1), chenpick(chen_padding))
-	end
-	table.insert(l, chenpick(chen_padding))
-	return table.concat(l, " ")
 end
 
 if teams[0] then
@@ -80,5 +47,7 @@ if server then
 		msg = chenify_msg(msg)
 		return s_pkt_chat_send_squad(neth, cli, plr, sec_current, msg, pkt, ...)
 	end
+end
+
 end
 
