@@ -70,6 +70,7 @@ function new_player(settings)
 	this.alive = false
 	this.spawned = false
 	this.zooming = false
+	this.inwater = false
 	this.mode = settings.mode or PLM_NORMAL
 
 	function teamfilt(tr, tg, tb)
@@ -784,7 +785,7 @@ function new_player(settings)
 				mvz = mvz * MODE_PSPEED_AIRSLOW
 				mvchange = mvchange * MODE_PSPEED_AIRSLOW_CHANGE
 			end
-			if inwater then
+			if this.inwater then
 				mvx = mvx * MODE_PSPEED_WATER
 				mvz = mvz * MODE_PSPEED_WATER
 			end
@@ -994,7 +995,7 @@ function new_player(settings)
 
 		this.tick_respawn(sec_current, sec_delta)
 
-		local inwater = (this.y > ylen-3)
+		this.inwater = (this.y > ylen-3)
 
 		if this.t_switch == true then
 			this.t_switch = sec_current + MODE_DELAY_TOOL_CHANGE
@@ -1023,7 +1024,7 @@ function new_player(settings)
 					this.t_step = sec_current + 0.5
 				end
 				if this.t_step < sec_current then
-					local freq_mod = (inwater and 0.25) or 1.0
+					local freq_mod = (this.inwater and 0.25) or 1.0
 					local tdiff = 0.01
 					if this.grounded then
 						client.wav_play_global(wav_steps[
