@@ -1,6 +1,7 @@
 do
 
 DIR_CHENMOD = "pkg/gm/chen/"
+DIR_PKG_IT = "pkg/gm/chen/"
 
 -- need string.split
 dofile("pkg/base/lib_util.lua")
