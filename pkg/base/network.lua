@@ -676,11 +676,15 @@ network.sys_handle_c2s(PKT_PLR_GUN_HIT, "BB", nwdec_plrset(function (neth, cli, 
 	if tplr then
 		if styp >= 1 and styp <= 3 then
 			local tool = plr.tools[plr.tool+1]
-			if tool.get_damage then
-				local dmg, dtype
-				dmg, dtype = tool.get_damage(styp, tplr)
-				if dmg then
-					tplr.wpn_damage(styp, dmg, plr, dtype)
+			if tool.hit_player ~= nil then
+				tool.hit_player(tplr, styp)
+			else
+				if tool.get_damage then
+					local dmg, dtype
+					dmg, dtype = tool.get_damage(styp, tplr)
+					if dmg then
+						tplr.wpn_damage(styp, dmg, plr, dtype)
+					end
 				end
 			end
 		end
