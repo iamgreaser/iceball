@@ -1218,7 +1218,10 @@ function new_player(settings)
 		-- slightly cheating here.
 		if this.alive then
 			client.camera_move_global(sya*0.4, 0, cya*0.4)
-			--client.camera_move_global(sya*-4, 0, cya*-4)
+			--client.camera_point_sky(-fwx, -fwy, -fwz, this.zoom, this.sx, this.sy, this.sz)
+			--client.camera_move_global(sya*4, 0, cya*4)
+			--client.camera_point_sky(0, 0, 1, this.zoom, this.sx, this.sy, this.sz)
+			--client.camera_move_global(0, 0, -4)
 
 			-- move camera back if we're in a wall
 			local dc = 0.5
