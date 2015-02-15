@@ -86,7 +86,9 @@ int platform_init(void)
 	//if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_NOPARACHUTE))
 	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE))
 		return error_sdl("SDL_Init");
-	//SDL_EnableUNICODE(1); //SDL2 this
+#ifndef USE_SDL2
+	SDL_EnableUNICODE(1);
+#endif
 
 #ifndef WIN32
 	signal(SIGPIPE, SIG_IGN);
@@ -343,9 +345,14 @@ int update_client_cont1(void)
 				break;
 			}
 			{
+#ifdef USE_SDL2
+				// TODO: convert to the correct layout
 				char ch = ev.key.keysym.sym;
-				// if ((ev.key.keysym & 0xFF80) == 0) //SDL2 this, needs testing
-					// ch = ev.key.keysym & 0x1FF;
+#else
+				char ch = 0;
+				if ((ev.key.keysym.unicode & 0xFF80) == 0)
+					ch = ev.key.keysym.unicode & 0x1FF;
+#endif
 
 				lua_pushinteger(lstate_client, ev.key.keysym.sym);
 				lua_pushboolean(lstate_client, (ev.type == SDL_KEYDOWN));
@@ -441,29 +448,34 @@ int update_client_cont1(void)
 				break;
 			}
 			break;
-		// case SDL_WindowEvent//ACTIVEEVENT: //SDL2 this
-			// // if( ev.active.state & SDL_APPACTIVE ||
-				// // ev.active.state & SDL_APPINPUTFOCUS )
-			// // {
-				// // lua_getglobal(lstate_client, "client");
-				// // lua_getfield(lstate_client, -1, "hook_window_activate");
-				// // lua_remove(lstate_client, -2);
-				// // if(lua_isnil(lstate_client, -1))
-				// // {
-					// // not hooked? ignore!
-					// // lua_pop(lstate_client, 1);
-					// // break;
-				// // }
-				// // lua_pushboolean(lstate_client, ev.active.gain == 1);
-				// // if(lua_pcall(lstate_client, 1, 0, 0) != 0)
-				// // {
-					// // printf("Lua Client Error (window_activate): %s\n", lua_tostring(lstate_client, -1));
-					// // lua_pop(lstate_client, 1);
-					// // quitflag = 1;
-					// // break;
-				// // }
-			// // }
-			// break;
+
+		// not really inclined to even let this work ever again
+		// it's been a pain in the arse ever since it was implemented
+#if 0
+		case SDL_ACTIVEEVENT:
+			if( ev.active.state & SDL_APPACTIVE ||
+				ev.active.state & SDL_APPINPUTFOCUS )
+			{
+				lua_getglobal(lstate_client, "client");
+				lua_getfield(lstate_client, -1, "hook_window_activate");
+				lua_remove(lstate_client, -2);
+				if(lua_isnil(lstate_client, -1))
+				{
+					not hooked? ignore!
+					lua_pop(lstate_client, 1);
+					break;
+				}
+				lua_pushboolean(lstate_client, ev.active.gain == 1);
+				if(lua_pcall(lstate_client, 1, 0, 0) != 0)
+				{
+					printf("Lua Client Error (window_activate): %s\n", lua_tostring(lstate_client, -1));
+					lua_pop(lstate_client, 1);
+					quitflag = 1;
+					break;
+				}
+			}
+			break;
+#endif
 		case SDL_QUIT:
 			quitflag = 1;
 			break;
