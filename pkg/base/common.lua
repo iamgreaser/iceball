@@ -122,7 +122,7 @@ MODE_TILT_SLOWDOWN = false -- TODO!
 MODE_TILT_DOWN_NOCLIMB = false -- TODO!
 
 MODE_DRUNKCAM_VELOCITY = false -- keep this off unless you want to throw up
-MODE_DRUNKCAM_LOCALTURN = true -- this is the one you're looking for.
+MODE_DRUNKCAM_LOCALTURN = false -- this is the one you're looking for.
 MODE_DRUNKCAM_CORRECTSPEED = 10.0
 
 MODE_DELAY_SPADE_DIG = 1.0
