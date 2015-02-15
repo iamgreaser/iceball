@@ -45,8 +45,13 @@ int icelua_fn_client_img_blit(lua_State *L)
 #ifdef DEDI
 	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
 #else
+#if USE_SDL2
+	render_blit_img(NULL, screen_width, screen_height, screen_width,
+		img, dx, dy, bw, bh, sx, sy, color, scalex, scaley);
+#else
 	render_blit_img((uint32_t*)screen->pixels, screen->w, screen->h, screen->pitch/4,
 		img, dx, dy, bw, bh, sx, sy, color, scalex, scaley);
+#endif
 #endif
 	
 	return 0;

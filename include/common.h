@@ -501,9 +501,12 @@ void icelua_deinit(void);
 extern camera_t tcam;
 extern map_t *clmap, *svmap;
 #ifndef DEDI
-extern SDL_Surface *screen;
+#if USE_SDL2
 extern SDL_Window *window;
 extern SDL_GLContext *gl_context;
+#else
+extern SDL_Surface *screen;
+#endif
 extern int screen_width, screen_height;
 extern int screen_cubeshift;
 extern int screen_fullscreen;

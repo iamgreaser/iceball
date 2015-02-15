@@ -22,9 +22,12 @@ map_t *clmap = NULL;
 map_t *svmap = NULL;
 
 #ifndef DEDI
+#ifdef USE_SDL2
 SDL_GLContext *gl_context = NULL; 
+SDL_Window *window = NULL;
+#else
 SDL_Surface *screen = NULL; 
-SDL_Window *window = NULL; //SDL2 this
+#endif
 char mk_app_title[128] = "iceball";
 #endif
 int screen_width = 800;
@@ -101,7 +104,11 @@ int video_init(void)
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	
 	if(!gl_vsync)
+#ifdef USE_SDL2
 		SDL_GL_SetSwapInterval(1);
+#else
+		SDL_GL_SetAttribute(SDL_GL_SWAP_CONTROL, 0);
+#endif
 
 	if (screen_antialiasing_level > 0)
 	{
@@ -109,10 +116,14 @@ int video_init(void)
 		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, screen_antialiasing_level);
 	}
 
-	// screen = SDL_SetVideoMode(screen_width, screen_height, 32, SDL_OPENGL
-		// | (screen_fullscreen ? SDL_FULLSCREEN : 0));
-	window = SDL_CreateWindow( "iceball", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 800, 600, SDL_WINDOW_OPENGL);
+#ifdef USE_SDL2
+	window = SDL_CreateWindow( "iceball", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screen_width, screen_height, SDL_WINDOW_OPENGL
+		| (screen_fullscreen ? SDL_WINDOW_FULLSCREEN : 0));
 	gl_context = SDL_GL_CreateContext(window);
+#else
+	screen = SDL_SetVideoMode(screen_width, screen_height, 32, SDL_OPENGL
+		| (screen_fullscreen ? SDL_FULLSCREEN : 0));
+#endif
 	
 	GLenum err_glew = glewInit();
 	if(err_glew != GLEW_OK)
@@ -127,8 +138,13 @@ int video_init(void)
 	}
 
 	//SDL_GL_DeleteContext(gl_context);
+#ifdef USE_SDL2
 	if (window == NULL)
 		error_sdl("SDL_CreateWindow");
+#else
+	if (screen == NULL)
+		error_sdl("SDL_SetVideoMode");
+#endif
 	
 	return 0;
 }
@@ -209,8 +225,11 @@ int update_client_contpre1(void)
 	{
 		char buf[128+32]; // topo how the hell did this not crash at 16 --GM
 		sprintf(buf, "%s | FPS: %d", mk_app_title, fps);
-		//SDL_WM_SetCaption(buf, NULL); //SDL2 this
+#ifdef USE_SDL2
 		SDL_SetWindowTitle(window, buf);
+#else
+		SDL_WM_SetCaption(buf, NULL);
+#endif
 		fps = 0;
 		frame_prev = platform_get_time_usec();
 	}
@@ -256,9 +275,15 @@ int update_client_cont1(void)
 	// SDL_LockSurface(screen);
 
 	//memset(screen->pixels, 0x51, screen->h*screen->pitch);
-	// render_cubemap((uint32_t*)screen->pixels,
-		// screen->w, screen->h, screen->pitch/4,
-		// &tcam, clmap);
+#ifdef USE_SDL2
+	render_cubemap(NULL,
+		screen_width, screen_height, screen_width,
+		&tcam, clmap);
+#else
+	render_cubemap((uint32_t*)screen->pixels,
+		screen->w, screen->h, screen->pitch/4,
+		&tcam, clmap);
+#endif
 
 	// apply Lua HUD / model stuff
 	lua_getglobal(lstate_client, "client");
@@ -277,9 +302,13 @@ int update_client_cont1(void)
 	// clean up stuff that may have happened in the scene
 	glDepthMask(GL_TRUE);
 
-	// SDL_UnlockSurface(screen);
+#ifdef USE_SDL2
 	SDL_GL_SwapWindow(window);
-	//SDL_Flip(screen);
+#else
+	//SDL_UnlockSurface(screen);
+	SDL_GL_SwapBuffers();
+	SDL_Flip(screen);
+#endif
 
 #ifdef WIN32
 	int msec_wait = 10*(int)(sec_wait*100.0f+0.5f);

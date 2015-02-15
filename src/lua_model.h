@@ -378,8 +378,13 @@ int icelua_fn_client_model_render_bone_global(lua_State *L)
 #ifdef DEDI
 	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
 #else
+#if USE_SDL2
+	render_pmf_bone(NULL, screen_width, screen_height, screen_width, &tcam,
+		bone, 0, px, py, pz, ry, rx, ry2, scale);
+#else
 	render_pmf_bone((uint32_t*)screen->pixels, screen->w, screen->h, screen->pitch/4, &tcam,
 		bone, 0, px, py, pz, ry, rx, ry2, scale);
+#endif
 #endif
 	
 	return 0;
@@ -416,8 +421,13 @@ int icelua_fn_client_model_render_bone_local(lua_State *L)
 #ifdef DEDI
 	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
 #else
+#if USE_SDL2
+	render_pmf_bone(NULL, screen_width, screen_height, screen_width, &tcam,
+		bone, 1, px, py, pz, ry, rx, ry2, scale);
+#else
 	render_pmf_bone((uint32_t*)screen->pixels, screen->w, screen->h, screen->pitch/4, &tcam,
 		bone, 1, px, py, pz, ry, rx, ry2, scale);
+#endif
 #endif
 	
 	return 0;

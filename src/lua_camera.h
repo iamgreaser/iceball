@@ -135,14 +135,18 @@ int icelua_fn_client_screen_get_dims(lua_State *L)
 #ifdef DEDI
 	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
 #else
+#ifndef USE_SDL2
 	if(screen == NULL)
 	{
+#endif
 		lua_pushinteger(L, screen_width);
 		lua_pushinteger(L, screen_height);
+#ifndef USE_SDL2
 	} else {
 		lua_pushinteger(L, screen->w);
 		lua_pushinteger(L, screen->h);
 	}
+#endif
 #endif
 	
 	return 2;
