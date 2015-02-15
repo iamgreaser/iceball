@@ -361,6 +361,33 @@ int update_client_cont1(void)
 				}
 			}
 			break;
+
+#ifdef USE_SDL2
+		case SDL_MOUSEWHEEL:
+			if(ev.wheel.y == 0) break;
+
+			// inform Lua client
+			lua_getglobal(lstate_client, "client");
+			lua_getfield(lstate_client, -1, "hook_mouse_button");
+			lua_remove(lstate_client, -2);
+			if(lua_isnil(lstate_client, -1))
+			{
+				// not hooked? ignore!
+				lua_pop(lstate_client, 1);
+				break;
+			}
+			lua_pushinteger(lstate_client, (ev.wheel.y < 0 ? 5 : 4));
+			lua_pushboolean(lstate_client, 1);
+			if(lua_pcall(lstate_client, 2, 0, 0) != 0)
+			{
+				printf("Lua Client Error (mouse_button): %s\n", lua_tostring(lstate_client, -1));
+				lua_pop(lstate_client, 1);
+				quitflag = 1;
+				break;
+			}
+			break;
+#endif
+
 		case SDL_MOUSEBUTTONUP:
 		case SDL_MOUSEBUTTONDOWN:
 			// inform Lua client
@@ -373,7 +400,15 @@ int update_client_cont1(void)
 				lua_pop(lstate_client, 1);
 				break;
 			}
+#ifdef USE_SDL2
+			// skip scroll wheel for backwards compatibility
+			if(ev.button.button >= 4)
+				lua_pushinteger(lstate_client, ev.button.button + 2);
+			else
+				lua_pushinteger(lstate_client, ev.button.button);
+#else
 			lua_pushinteger(lstate_client, ev.button.button);
+#endif
 			lua_pushboolean(lstate_client, (ev.type == SDL_MOUSEBUTTONDOWN));
 			if(lua_pcall(lstate_client, 2, 0, 0) != 0)
 			{
