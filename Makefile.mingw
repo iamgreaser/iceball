@@ -29,7 +29,7 @@ LIBS_Lua = -llua
 LIBS_zlib = -lz
 LIBS_sackit = -lsackit
 LIBS = -Lwinlibs $(LIBS_ENet) -lm -lmingw32 $(LIBS_Lua) $(LIBS_SDL) $(LIBS_zlib) $(LIBS_sackit) ./glew32.dll -lopengl32
-BINNAME = iceball-sdl12.exe
+BINNAME = iceball.exe
 RENDERER = gl
 
 OBJDIR = build/mingw32_gl
