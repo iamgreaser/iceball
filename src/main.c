@@ -22,7 +22,9 @@ map_t *clmap = NULL;
 map_t *svmap = NULL;
 
 #ifndef DEDI
-SDL_Surface *screen = NULL;
+SDL_GLContext *gl_context = NULL; 
+SDL_Surface *screen = NULL; 
+SDL_Window *window = NULL; //SDL2 this
 char mk_app_title[128] = "iceball";
 #endif
 int screen_width = 800;
@@ -81,7 +83,7 @@ int platform_init(void)
 	//if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_NOPARACHUTE))
 	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE))
 		return error_sdl("SDL_Init");
-	SDL_EnableUNICODE(1);
+	//SDL_EnableUNICODE(1); //SDL2 this
 
 #ifndef WIN32
 	signal(SIGPIPE, SIG_IGN);
@@ -93,15 +95,13 @@ int platform_init(void)
 
 int video_init(void)
 {
-	SDL_WM_SetCaption("iceball",NULL);
-
 	SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-
+	
 	if(!gl_vsync)
-		SDL_GL_SetAttribute(SDL_GL_SWAP_CONTROL, 0);
+		SDL_GL_SetSwapInterval(1);
 
 	if (screen_antialiasing_level > 0)
 	{
@@ -109,8 +109,11 @@ int video_init(void)
 		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, screen_antialiasing_level);
 	}
 
-	screen = SDL_SetVideoMode(screen_width, screen_height, 32, SDL_OPENGL
-		| (screen_fullscreen ? SDL_FULLSCREEN : 0));
+	// screen = SDL_SetVideoMode(screen_width, screen_height, 32, SDL_OPENGL
+		// | (screen_fullscreen ? SDL_FULLSCREEN : 0));
+	window = SDL_CreateWindow( "iceball", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 800, 600, SDL_WINDOW_OPENGL);
+	gl_context = SDL_GL_CreateContext(window);
+	
 	GLenum err_glew = glewInit();
 	if(err_glew != GLEW_OK)
 	{
@@ -123,9 +126,10 @@ int video_init(void)
 		return 1;
 	}
 
-	if(screen == NULL)
-		return error_sdl("SDL_SetVideoMode");
-
+	//SDL_GL_DeleteContext(gl_context);
+	if (window == NULL)
+		error_sdl("SDL_CreateWindow");
+	
 	return 0;
 }
 
@@ -205,7 +209,8 @@ int update_client_contpre1(void)
 	{
 		char buf[128+32]; // topo how the hell did this not crash at 16 --GM
 		sprintf(buf, "%s | FPS: %d", mk_app_title, fps);
-		SDL_WM_SetCaption(buf, NULL);
+		//SDL_WM_SetCaption(buf, NULL); //SDL2 this
+		SDL_SetWindowTitle(window, buf);
 		fps = 0;
 		frame_prev = platform_get_time_usec();
 	}
@@ -248,12 +253,12 @@ int update_client_cont1(void)
 
 	//printf("%.2f",);
 	// draw scene to cubemap
-	SDL_LockSurface(screen);
+	// SDL_LockSurface(screen);
 
 	//memset(screen->pixels, 0x51, screen->h*screen->pitch);
-	render_cubemap((uint32_t*)screen->pixels,
-		screen->w, screen->h, screen->pitch/4,
-		&tcam, clmap);
+	// render_cubemap((uint32_t*)screen->pixels,
+		// screen->w, screen->h, screen->pitch/4,
+		// &tcam, clmap);
 
 	// apply Lua HUD / model stuff
 	lua_getglobal(lstate_client, "client");
@@ -272,9 +277,9 @@ int update_client_cont1(void)
 	// clean up stuff that may have happened in the scene
 	glDepthMask(GL_TRUE);
 
-	SDL_UnlockSurface(screen);
-	SDL_GL_SwapBuffers();
-	SDL_Flip(screen);
+	// SDL_UnlockSurface(screen);
+	SDL_GL_SwapWindow(window);
+	//SDL_Flip(screen);
 
 #ifdef WIN32
 	int msec_wait = 10*(int)(sec_wait*100.0f+0.5f);
@@ -310,8 +315,8 @@ int update_client_cont1(void)
 			}
 			{
 				char ch = ev.key.keysym.sym;
-				if ((ev.key.keysym.unicode & 0xFF80) == 0)
-					ch = ev.key.keysym.unicode & 0x1FF;
+				// if ((ev.key.keysym & 0xFF80) == 0) //SDL2 this, needs testing
+					// ch = ev.key.keysym & 0x1FF;
 
 				lua_pushinteger(lstate_client, ev.key.keysym.sym);
 				lua_pushboolean(lstate_client, (ev.type == SDL_KEYDOWN));
@@ -372,29 +377,29 @@ int update_client_cont1(void)
 				break;
 			}
 			break;
-		case SDL_ACTIVEEVENT:
-			if( ev.active.state & SDL_APPACTIVE ||
-				ev.active.state & SDL_APPINPUTFOCUS )
-			{
-				lua_getglobal(lstate_client, "client");
-				lua_getfield(lstate_client, -1, "hook_window_activate");
-				lua_remove(lstate_client, -2);
-				if(lua_isnil(lstate_client, -1))
-				{
-					// not hooked? ignore!
-					lua_pop(lstate_client, 1);
-					break;
-				}
-				lua_pushboolean(lstate_client, ev.active.gain == 1);
-				if(lua_pcall(lstate_client, 1, 0, 0) != 0)
-				{
-					printf("Lua Client Error (window_activate): %s\n", lua_tostring(lstate_client, -1));
-					lua_pop(lstate_client, 1);
-					quitflag = 1;
-					break;
-				}
-			}
-			break;
+		// case SDL_WindowEvent//ACTIVEEVENT: //SDL2 this
+			// // if( ev.active.state & SDL_APPACTIVE ||
+				// // ev.active.state & SDL_APPINPUTFOCUS )
+			// // {
+				// // lua_getglobal(lstate_client, "client");
+				// // lua_getfield(lstate_client, -1, "hook_window_activate");
+				// // lua_remove(lstate_client, -2);
+				// // if(lua_isnil(lstate_client, -1))
+				// // {
+					// // not hooked? ignore!
+					// // lua_pop(lstate_client, 1);
+					// // break;
+				// // }
+				// // lua_pushboolean(lstate_client, ev.active.gain == 1);
+				// // if(lua_pcall(lstate_client, 1, 0, 0) != 0)
+				// // {
+					// // printf("Lua Client Error (window_activate): %s\n", lua_tostring(lstate_client, -1));
+					// // lua_pop(lstate_client, 1);
+					// // quitflag = 1;
+					// // break;
+				// // }
+			// // }
+			// break;
 		case SDL_QUIT:
 			quitflag = 1;
 			break;
@@ -771,7 +776,7 @@ int main_dbghelper(int argc, char *argv[])
 	if((!(boot_mode & 1)) || !net_connect()) {
 	if((!(boot_mode & 1)) || !video_init()) {
 	if((!(boot_mode & 1)) || !wav_init()) {
-	if((!(boot_mode & 1)) || !render_init(screen->w, screen->h)) {
+	if((!(boot_mode & 1)) || !render_init(800, 600)) {
 #endif
 		run_game();
 #ifndef DEDI

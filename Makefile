@@ -1,7 +1,7 @@
 # I personally don't care if you steal this makefile. --GM
 
 #-Wno-unused-but-set-variable $(CFLAGS_EXTRA)
-CFLAGS = -fno-strict-aliasing -g `sdl-config --cflags` -Wall -Wextra \
+CFLAGS = -fno-strict-aliasing -g `sdl2-config --cflags` -Wall -Wextra \
 	-Wno-unused-variable -Wno-unused-parameter \
 	$(CFLAGS_EXTRA) \
 	-Iinclude \
@@ -11,12 +11,12 @@ CFLAGS = -fno-strict-aliasing -g `sdl-config --cflags` -Wall -Wextra \
 	$(HEADERS_ENet) \
 	$(HEADERS_Lua)
 
-HEADERS_SDL = `sdl-config --cflags`
+HEADERS_SDL = `sdl2-config --cflags`
 HEADERS_ENet = `pkg-config libenet --cflags`
 HEADERS_Lua = `./findlua.sh --cflags`
 
 LDFLAGS = -g -I/usr/local/include $(LDFLAGS_EXTRA) 
-LIBS_SDL = `sdl-config --libs`
+LIBS_SDL = `sdl2-config --libs`
 LIBS_ENet = `pkg-config libenet --libs`
 LIBS_Lua = `./findlua.sh --libs`
 # Lua is not an acronym. Get used to typing it with lower case u/a.

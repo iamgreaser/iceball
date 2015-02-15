@@ -2,8 +2,8 @@
 
 # USAGE:
 # - Make a file called "winlibs".
-# - Stash SDL/Lua ar libs in winlibs/*.a.
-# - Stash SDL includes in winlibs/SDL/*.h.
+# - Stash SDL2/Lua ar libs in winlibs/*.a.
+# - Stash SDL2 includes in winlibs/SDL2/*.h.
 # - Stash Lua includes in winlibs/*.h.
 #   - lua.h, lualib.h, lauxlib.h, luaconf.h
 # - Stash sackit.h and libsackit.a in winlibs/.
@@ -14,7 +14,7 @@
 CFLAGS = -O2 -fno-strict-aliasing -g -Wall -Wextra \
 	-Wno-unused-variable -Wno-unused-parameter \
 	-Wno-unused-but-set-variable \
-	-Iwinlibs -Iwinlibs/SDL \
+	-Iwinlibs -Iwinlibs/SDL2 \
 	-DGL_BGRA=0x80E1 \
 	$(CFLAGS_EXTRA) \
 	-I $(INCDIR)
@@ -22,7 +22,7 @@ CFLAGS = -O2 -fno-strict-aliasing -g -Wall -Wextra \
 	#-msse2 -mfpmath=sse \
 
 LDFLAGS = -g $(LDFLAGS_EXTRA)
-LIBS_SDL = -lSDLmain -lSDL
+LIBS_SDL = -lSDL2main -lSDL2
 LIBS_ENet = -lenet -lwinmm -lws2_32
 LIBS_Lua = -llua
 # Lua is not an acronym. Get used to typing it with lower case u/a.
