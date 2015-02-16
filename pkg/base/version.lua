@@ -20,9 +20,9 @@
 -- Thanks. --GM
 
 VERSION_ENGINE = {
-	cmp={0,2,1,0,5},
-	num=8421376+5,
-	str="0.2.1-5",
+	cmp={0,2,1,0,6},
+	num=8421376+6,
+	str="0.2.1-6",
 }
 
 --error(""..common.version.num)
@@ -150,5 +150,7 @@ VERSION_BUGS = {
 {intro=4259840+1, fix=8421376+1, msg="VA API lacks support for blending"},
 {intro=nil, fix=8421376+2, msg="Lack of depth / stencil buffer mode selection support"},
 {intro=8421376+4, fix=8421376+5, msg="Crash on map_free after map_new"},
+{intro=8421376+2, fix=8421376+6, msg="Screen is red because stencil buffer bits were not set."},
+
 }
 
