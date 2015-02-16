@@ -109,6 +109,7 @@ extern "C" {
 
 #ifndef DEDI
 #include <SDL.h>
+#include <SDL_ttf.h>
 #include <GL/glew.h>
 #endif
 
@@ -156,6 +157,7 @@ enum
 	UD_MUS_IT,
 	UD_BIN,
 	UD_IMG_PNG,
+	UD_FONT_TTF,
 
 	UD_MAX_SUPPORTED,
 

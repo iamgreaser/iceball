@@ -503,6 +503,8 @@ const char *net_aux_gettype_str(int ftype)
 			return "bin";
 		case UD_IMG_PNG:
 			return "png";
+		case UD_FONT_TTF:
+			return "ttf";
 	}
 	
 	return NULL;

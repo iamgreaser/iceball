@@ -25,7 +25,7 @@ function football_new_building(...)
 	local this = s_new_building(...)
 
 	this.type = "Football stadium"
-	
+	img_football_texture = img_football_texture or this.football_texture
 	
 	local s_build = this.build_at
 	function this.build_at(x, y, z, width, length, height)

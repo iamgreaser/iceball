@@ -188,6 +188,7 @@ int icelua_fn_client_mk_set_title(lua_State *L)
 #include "lua_camera.h"
 #include "lua_gfx.h"
 #include "lua_image.h"
+#include "lua_ttf.h"
 #include "lua_input.h"
 #include "lua_json.h"
 #include "lua_map.h"
@@ -289,6 +290,8 @@ struct icelua_entry icelua_common[] = {
 	{icelua_fn_common_img_fill, "img_fill"},
 	{icelua_fn_common_img_free, "img_free"},
 	{icelua_fn_common_img_get_dims, "img_get_dims"},
+	{icelua_fn_common_font_load, "font_load"},
+	{icelua_fn_common_font_render_to_texture, "font_render_to_texture"},
 	{icelua_fn_common_json_parse, "json_parse"},
 	{icelua_fn_common_json_load, "json_load"},
 	{icelua_fn_common_json_write, "json_write"},

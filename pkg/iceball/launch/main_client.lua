@@ -88,9 +88,9 @@ common.img_fill(img_row_bkg, 0x99111111)
 local img_row_bkg_transparent = common.img_new(img_row_bkg_width, ch + 2)
 common.img_fill(img_row_bkg_transparent, 0x22111111)
 
-local img_splash = common.img_load("pkg/iceball/gfx/splash_logo.png", "png")
-local img_splash_width, img_splash_height
+local img_splash, img_splash_width, img_splash_height = common.img_load("pkg/iceball/gfx/splash_logo.png", "png")
 local img_splash_width, img_splash_height_scaled
+local splash_x, splash_y
 
 local splashtweenprogress_scale = 0.9
 local splashtweenprogress_y = 1.0
@@ -116,7 +116,7 @@ function client.hook_render()
 	end
 	img_splash_width_scaled = img_splash_width*splashtweenprogress_scale
 	img_splash_height_scaled = img_splash_height*splashtweenprogress_scale
-	local splash_x, splash_y
+
 	splash_x = (screen_width/2) - (img_splash_width_scaled/2)
 	splash_y = (screen_height/(2/splashtweenprogress_y)) - img_splash_height_scaled
 	client.img_blit(img_splash, splash_x, splash_y, img_splash_width_scaled, img_splash_height_scaled, 0, 0, 0xFFFFFFFF, splashtweenprogress_scale, splashtweenprogress_scale)

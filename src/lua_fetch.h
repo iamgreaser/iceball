@@ -43,6 +43,8 @@ int icelua_fnaux_fetch_gettype(lua_State *L, const char *ftype)
 		return UD_BIN;
 	else if(!strcmp(ftype, "png"))
 		return UD_IMG_PNG;
+	else if(!strcmp(ftype, "ttf"))
+		return UD_FONT_TTF;
 	else if(!strcmp(ftype, "log")) {
 		// TODO!
 		return luaL_error(L, "format not supported yet!");
@@ -118,6 +120,9 @@ int icelua_fnaux_fetch_immediate(lua_State *L, const char *ftype, const char *fn
 
 		lua_pushlightuserdata(L, mus);
 		return 1;
+	} else if(!strcmp(ftype, "ttf")) {
+		printf("HOW WOULD I RUDDY LOAD THIS THING !?");
+		return 0;
 	} else if(!strcmp(ftype, "bin")) {
 		int flen = 0;
 		char *d = net_fetch_file(fname, &flen);
@@ -368,6 +373,11 @@ int icelua_fn_common_fetch_poll(lua_State *L)
 			} break;
 
 			case UD_BIN: {
+				lua_pushlstring(L, to_client_local.cfetch_ubuf, to_client_local.cfetch_ulen);
+				ret = 1;
+			} break;
+			
+			case UD_FONT_TTF: {
 				lua_pushlstring(L, to_client_local.cfetch_ubuf, to_client_local.cfetch_ulen);
 				ret = 1;
 			} break;

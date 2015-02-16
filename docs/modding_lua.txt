@@ -172,7 +172,7 @@ obj = common.fetch_start(ftype, fname)
 	- "wav": wav sound
 	- "it": it music module
 	- "bin": raw data
-	- "ply": Stanford PLY model
+	- "ply": Stanford PLY model (PLY NOT SUPPORTED) - and unlikely to ever be
 	- "log": log data (TODO)
 	
 	for the server, this just loads the file from the disk.
@@ -554,6 +554,21 @@ client.img_blit_to(target, img, dx, dy, width = iwidth, height = iheight, sx = 0
 
 client.img_fill(img, color) @
 	fills an image with a solid colour
+
+common.font_load(fname, ptsize) @
+	fname
+		File name to load font from. (pkg/base/ttf/font.ttf)
+	ptsize
+		Point size (based on 72DPI) to load font as. This basically translates to pixel height.
+
+common.font_render_to_texture(font, text, colour = 0xFFFFFFFF) @
+	font
+		Point to loaded font [eg. local font = common.font_load(fname, ptsize)]
+	text
+		String to render
+	colour
+		Optionally colour it
+	note:  this  right now uses a "slow" render method with alpha and stuff(I think), will probably support faster modes later
 
 tab = common.json_parse(str) @
 	parses the JSON string "str"
