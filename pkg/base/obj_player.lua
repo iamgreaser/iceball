@@ -1232,6 +1232,7 @@ function new_player(settings)
 
 			if dt then
 				local offs = dt-dc - df
+				offs = offs * this.zoom
 				client.camera_move_global(sya*offs, 0, cya*offs)
 			end
 		else
