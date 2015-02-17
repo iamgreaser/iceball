@@ -452,34 +452,32 @@ int update_client_cont1(void)
 				break;
 			}
 			break;
-
-		// not really inclined to even let this work ever again
-		// it's been a pain in the arse ever since it was implemented
-#if 0
-		case SDL_ACTIVEEVENT:
-			if( ev.active.state & SDL_APPACTIVE ||
-				ev.active.state & SDL_APPINPUTFOCUS )
-			{
-				lua_getglobal(lstate_client, "client");
-				lua_getfield(lstate_client, -1, "hook_window_activate");
-				lua_remove(lstate_client, -2);
-				if(lua_isnil(lstate_client, -1))
-				{
-					not hooked? ignore!
-					lua_pop(lstate_client, 1);
+			
+		case SDL_WINDOWEVENT:
+			switch (ev.window.event) {
+				case SDL_WINDOWEVENT_FOCUS_GAINED || SDL_WINDOWEVENT_ENTER:
+					lua_getglobal(lstate_client, "client");
+					lua_getfield(lstate_client, -1, "hook_window_activate");
+					lua_remove(lstate_client, -2);
+					if(lua_isnil(lstate_client, -1))
+					{
+						//not hooked? ignore!
+						lua_pop(lstate_client, 1);
+						break;
+					}
+					lua_pushboolean(lstate_client, 1);
+					if(lua_pcall(lstate_client, 1, 0, 0) != 0)
+					{
+						printf("Lua Client Error (window_activate): %s\n", lua_tostring(lstate_client, -1));
+						lua_pop(lstate_client, 1);
+						quitflag = 1;
+						break;
+					}
 					break;
-				}
-				lua_pushboolean(lstate_client, ev.active.gain == 1);
-				if(lua_pcall(lstate_client, 1, 0, 0) != 0)
-				{
-					printf("Lua Client Error (window_activate): %s\n", lua_tostring(lstate_client, -1));
-					lua_pop(lstate_client, 1);
-					quitflag = 1;
+				default:
 					break;
-				}
 			}
 			break;
-#endif
 		case SDL_QUIT:
 			quitflag = 1;
 			break;
