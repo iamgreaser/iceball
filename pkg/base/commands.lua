@@ -16,14 +16,24 @@
 ]]
 
 commands = {}
-command_colour_error = 0xFFFF6666
-command_colour_usage = 0xFF6666FF
-command_colour_success = 0xFF66FF66
-command_colour_text = 0xFFDDDDFF
+command_color = {
+	error = 0xFFFF6666,
+	usage = 0xFF6666FF,
+	success = 0xFF66FF66,
+	text = 0xFFDDDDFF,
+}
 
 function command_deregister(command)
 	if commands[command] ~= nil then
 		commands[command] = nil
+	end
+end
+
+function command_msg(status, neth, msg)
+	if type(neth) == "string" then
+		irc.write(neth..": "..msg)
+	else
+		net_send(neth, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_color[status], msg))
 	end
 end
 
@@ -36,10 +46,10 @@ function command_register(settings)
 	} this.this = this
 	
 	function this.exec(player, plrid, neth, params, msg)
-		if this.permission == nil or player.has_permission(this.permission) then
+		if this.permission == nil or (not player) or player.has_permission(this.permission) then
 			this.func(player, plrid, neth, params, msg)
 		else
-			net_send(neth, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_error, "Error: You do not have permission for this command"))
+			command_msg("error", neth, "Error: You do not have permission for this command")
 		end
 	end
 	
@@ -52,12 +62,19 @@ function command_register_alias(command, alias)
 end
 
 function command_handle(player, plrid, neth, params, msg)
-	cmd = string.lower(params[1])
-	if commands[cmd] ~= nil then
-		table.remove(params, 1)
-		commands[cmd].exec(player, plrid, neth, params, msg)
-	else
-		net_send(neth, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_error, "Error: No such command"))
+	local status, emsg = pcall(function()
+		cmd = string.lower(params[1])
+		if commands[cmd] ~= nil then
+			table.remove(params, 1)
+			commands[cmd].exec(player, plrid, neth, params, msg)
+		else
+			command_msg("error", neth, "Error: No such command")
+		end
+	end)
+
+	if not status then
+		print("ERROR on running command:", emsg)
+		pcall(command_msg, "error", neth, emsg)
 	end
 end
 
@@ -70,11 +87,11 @@ command_register({
 			--TODO: List available commands
 		elseif table.getn(prms) == 1 then
 			if commands[prms[1]] == nil then
-				net_send(neth, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_error, "Error: No such command"))
-			elseif plr.has_permission(commands[prms[1]].permission) then
-				net_send(neth, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_usage, "Usage: "..commands[prms[1]].usage))
+				command_msg("error", neth, "Error: No such command")
+			elseif (not plr) or plr.has_permission(commands[prms[1]].permission) then
+				command_msg("usage", neth, "Usage: "..commands[prms[1]].usage)
 			else
-				net_send(neth, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_error, "Error: You do not have permission for this command"))
+				command_msg("error", neth, "Error: You do not have permission for this command")
 			end
 		else
 			this.func(plr, plrid, neth, "help")
@@ -111,7 +128,7 @@ command_register({
 			if target then
 				server.net_kick(target.neth, "requested!")
 			else
-				net_send(neth, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_error, "Error: Player not found"))
+				command_msg("error", neth, "Error: Player not found")
 			end
 		else
 			commands["help"].func(plr, plrid, neth, {"piano"})
@@ -141,8 +158,12 @@ command_register({
 	permission = "me",
 	usage = "/me <action>",
 	func = function(plr, plrid, neth, prms, msg)
-		if table.getn(prms) > 0 then
-			net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFFFFFFFF, "* "..plr.name.." "..string.sub(msg,5)))
+		if not plr then
+			-- IRC - ignore
+		elseif table.getn(prms) > 0 then
+			local m = "* "..plr.name.." "..string.sub(msg,5)
+			net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, 0xFFFFFFFF, m))
+			irc.write(m)
 		else
 			commands["help"].func(plr, plrid, neth, {"me"})
 		end 
@@ -169,7 +190,7 @@ command_register({
 			map_loaded = _map_loaded
 		end)
 		if not status then
-			net_send(neth, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_error, "Error while loading map: " .. err))
+			command_msg("error", neth, "Error while loading map: " .. err)
 			return
 		end
 		map_fname = prms[1]
@@ -195,7 +216,7 @@ command_register({
 			map_loaded = _map_loaded
 		end)
 		if not status then
-			net_send(neth, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_error, "Error while loading map: " .. err))
+			command_msg("error", neth, "Error while loading map: " .. err)
 			return
 		end
 		map_fname = prms[1]
@@ -209,7 +230,9 @@ command_register({
 	permission = "squad",
 	usage = "/squad <squad name> (Use \"none\" to leave your squad)",
 	func = function(plr, plrid, neth, prms, msg)
-		if table.getn(prms) > 0 then
+		if not plr then
+			-- IRC - ignore
+		elseif table.getn(prms) > 0 then
 			if prms[1] == "none" then
 				plr.squad = nil
 			else
@@ -228,7 +251,9 @@ command_register({
 	usage = "/kill",
 	func = function(plr, plrid, neth, prms, msg)
 		if table.getn(prms) == 0 then
-			plr.set_health_damage(0, 0xFF800000, plr.name.." shuffled off this mortal coil", plr)
+			if plr then
+				plr.set_health_damage(0, 0xFF800000, plr.name.." shuffled off this mortal coil", plr)
+			end
 		else
 			commands["help"].func(plr, plrid, neth, {"kill"})
 		end
@@ -240,7 +265,9 @@ command_register({
 	permission = "gmode",
 	usage = "/gmode #; where 1=normal, 2=spectate, 3=editor", 
 	func = function(plr, plrid, neth, prms, msg)
-		if table.getn(prms) == 1 then
+		if not plr then
+			-- IRC - ignore
+		elseif table.getn(prms) == 1 then
 			local n = math.floor(tonumber(prms[1]) or 0)
 			if n >= 1 and n <= 3 then
 				plr.mode = n
@@ -271,7 +298,7 @@ command_register({
 			if target then
 				target.drop_piano()
 			else
-				net_send(neth, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_error, "Error: Player not found"))
+				command_msg("error", neth, "Error: Player not found")
 			end
 		else
 			commands["help"].func(plr, plrid, neth, {"piano"})
@@ -300,7 +327,7 @@ command_register({
 				net_broadcast(nil, common.net_pack("BBffffff",
 					PKT_PLR_POS, plrid, x, y, z, 0.0, 0.0, 0.0))
 			else
-				net_send(neth, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_error, "Error: Player not found"))
+				command_msg("error", neth, "Error: Player not found")
 			end
 		elseif table.getn(prms) == 3 then
 			--NOTE: I protest that y is down/same way AoS was
@@ -334,7 +361,7 @@ command_register({
 				net_broadcast(nil, common.net_pack("BBffffff",
 					PKT_PLR_POS, plrid, x + 0.5, y, z + 0.5, 0.0, 0.0 ,0.0))
 			else
-				net_send(neth, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_error, "Error: Invalid coordinates"))
+				command_msg("error", neth, "Error: Invalid coordinates")
 			end
 		else
 			commands["help"].func(plr, plrid, neth, {"goto"})
@@ -353,7 +380,7 @@ command_register({
 				if miscents[i] ~= nil then
 					local tidx = miscents[i].team
 					local tname = (tidx and teams[tidx].name) or "Neutral"
-					net_send(neth, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_text, tname.." "..miscents[i].type..": "..miscents[i].x..", "..miscents[i].y..", "..miscents[i].z))
+					command_msg("text", neth, tname.." "..miscents[i].type..": "..miscents[i].x..", "..miscents[i].y..", "..miscents[i].z)
 				end
 			end
 		else
@@ -367,16 +394,18 @@ command_register({
 	permission = nil,
 	usage = "/login <group> <password>",
 	func = function(plr, plrid, neth, prms, msg)
-		if table.getn(prms) == 2 then
+		if not plr then
+			-- IRC - ignore
+		elseif table.getn(prms) == 2 then
 			local success = false
 			if permissions[prms[1]] ~= nil and prms[2] == permissions[prms[1]].password then
 				plr.add_permission_group(permissions[prms[1]].perms)
 				success = true
 			end
 			if success then
-				net_send(neth, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_success, "You have successfully logged in as "..prms[1]))
+				command_msg("success", neth, "You have successfully logged in as "..prms[1])
 			else
-				net_send(neth, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_error, "Could not log in to group "..prms[1].." with that password"))
+				command_msg("error", neth, "Could not log in to group "..prms[1].." with that password")
 			end
 		else
 			commands["help"].func(plr, plrid, neth, {"login"})
@@ -401,7 +430,7 @@ command_register({
 				end
 			end
 			if not target then
-				net_send(neth, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_error, "Error: Player not found"))
+				command_msg("error", neth, "Error: Player not found")
 				return
 			end
 			prms[2] = tostring(prms[2])
@@ -436,7 +465,7 @@ command_register({
 		if table.getn(prms) == 0 then
 			plr.clear_permissions()
 			plr.add_permission_group(permissions["default"].perms)
-			net_send(neth, common.net_pack("BIz", PKT_CHAT_ADD_TEXT, command_colour_success, "You have successfully logged out"))
+			command_msg("success", neth, "You have successfully logged out")
 		else
 			commands["help"].func(plr, plrid, neth, {"logout"})
 		end
