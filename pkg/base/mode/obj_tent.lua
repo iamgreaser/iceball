@@ -95,10 +95,43 @@ function new_tent(settings)
 		end
 	end
 
+	function this.should_glow()
+		return (players[players.current].team == this.team
+			and players[players.current].has_intel)
+	end
+
 	function this.render()
-		this.mdl_tent.render_global(
-			this.x, this.y, this.z,
-			0, 0, 0, 3)
+		if client.gfx_stencil_test and this.should_glow() then
+			client.gfx_stencil_test(true)
+
+			-- PASS 1: set to 1 for enlarged model
+			client.gfx_depth_mask(false)
+			client.gfx_stencil_func("0", 1, 255)
+			client.gfx_stencil_op("===")
+			this.mdl_tent.render_global(
+				this.x, this.y+0.5, this.z,
+				this.rotpos, 0, 0, 3*1.4)
+			client.gfx_depth_mask(true)
+
+			-- PASS 2: set to 0 for regular model
+			client.gfx_stencil_func("1", 0, 255)
+			client.gfx_stencil_op(";==")
+			this.mdl_tent.render_global(
+				this.x, this.y, this.z,
+				this.rotpos, 0, 0, 3)
+
+			-- PASS 3: draw red for stencil == 1; clear stencil
+			client.gfx_stencil_func("==", 1, 255)
+			client.gfx_stencil_op("000")
+			local iw, ih = common.img_get_dims(img_fsrect)
+			client.img_blit(img_fsrect, 0, 0, iw, ih, 0, 0, 0x7FFFFFFF)
+
+			client.gfx_stencil_test(false)
+		else
+			this.mdl_tent.render_global(
+				this.x, this.y, this.z,
+				0, 0, 0, 3)
+		end
 	end
 
 	function this.prespawn()

@@ -2208,22 +2208,29 @@ function new_player(settings)
 				if client.gfx_stencil_test and plr.team == this.team then
 					client.gfx_stencil_test(true)
 
-					-- PASS 1: set to 1 for invisible pixels
+					-- PASS 1: set to 1 for enlarged model
 					client.gfx_depth_mask(false)
-					client.gfx_stencil_func("1", 1, 255)
-					client.gfx_stencil_op(";=;")
+					client.gfx_stencil_func("0", 1, 255)
+					client.gfx_stencil_op("===")
+					local s_va_render_global = client.va_render_global
+					function client.va_render_global(va, px, py, pz, ry, rx, ry2, scale, ...)
+						scale = scale or 1.0
+						return s_va_render_global(va, px, py, pz, ry, rx, ry2, scale*1.4, ...)
+					end
 					plr.render()
+					client.va_render_global = s_va_render_global
 					client.gfx_depth_mask(true)
 
-					-- PASS 2: set to 0 for visible pixels
+					-- PASS 2: set to 0 for regular model
 					client.gfx_stencil_func("1", 0, 255)
-					client.gfx_stencil_op(";;=")
+					client.gfx_stencil_op("===")
 					plr.render()
 
 					-- PASS 3: draw red for stencil == 1; clear stencil
 					client.gfx_stencil_func("==", 1, 255)
 					client.gfx_stencil_op("000")
-					client.img_blit(img_fsrect, 0, 0)
+					local iw, ih = common.img_get_dims(img_fsrect)
+					client.img_blit(img_fsrect, 0, 0, iw, ih, 0, 0, 0x7FFFFFFF)
 
 					client.gfx_stencil_test(false)
 				else
