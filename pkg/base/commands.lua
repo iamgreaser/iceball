@@ -390,6 +390,35 @@ command_register({
 })
 
 command_register({
+	command = "who",
+	--permission = "irc",
+	usage = "/who",
+	func = function(plr, plrid, neth, prms, msg)
+		local s = ""
+		local pc = 0
+		for i=1,players.max do
+			if players[i] ~= nil then
+				pc = pc + 1
+
+				if s ~= "" then
+					s = s..", "
+				end
+
+				s = s .. (
+					"[" .. tostring(players[i].name) ..
+					" #".. tostring(i) ..
+					" T".. tostring(players[i].team) ..
+					"]")
+
+			end
+		end
+		s = tostring(pc) .. " players: " .. s
+		command_msg("text", neth, s)
+	end
+})
+
+
+command_register({
 	command = "login",
 	permission = nil,
 	usage = "/login <group> <password>",
