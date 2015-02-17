@@ -1,0 +1,4 @@
+{
+	"load": ["main.lua"],
+	"preload": ["pre.lua"]
+}
