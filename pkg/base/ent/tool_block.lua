@@ -206,7 +206,7 @@ return function (plr)
 		axs = math.sin(plr.angx)
 		axc = math.cos(plr.angx)
 
-		if plr.blx1 and (plr.alive or plr.respawning) and plr.blocks >= 1 then
+		if plr.team == players[players.current].team and plr.blx1 and (plr.alive or plr.respawning) and plr.blocks >= 1 then
 			local xlen,ylen,zlen = common.map_get_dims()
 			local err = true
 			local dist

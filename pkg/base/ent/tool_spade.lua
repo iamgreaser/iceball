@@ -194,7 +194,7 @@ return function (plr)
 
 	function this.render(px,py,pz,ya,xa,ya2)
 		ya = ya - math.pi/2
-		if plr.blx1 and (plr.alive or plr.respawning) and map_block_get(plr.blx2, plr.bly2, plr.blz2) then
+		if plr.team == players[players.current].team and plr.blx1 and (plr.alive or plr.respawning) and map_block_get(plr.blx2, plr.bly2, plr.blz2) then
 			this.mdl_cube_marker.render_global(
 						plr.blx2+0.55, plr.bly2+0.55, plr.blz2+0.55,
 						0.0, 0.0, 0.0, 24.0+math.abs(2*math.sin(rotpos*0.071)))
