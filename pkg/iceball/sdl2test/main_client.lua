@@ -53,7 +53,7 @@ dofile("pkg/iceball/lib/font.lua")
 -- local img_row_bkg_transparent = common.img_new(img_row_bkg_width, ch + 2)
 -- common.img_fill(img_row_bkg_transparent, 0x22111111)
 
-local img_splash = common.img_load("pkg/iceball/gfx/splash_logo.png", "png")
+local img_splash = common.img_load("pkg/iceball/gfx/man.png", "png")
 -- local img_splash_width, img_splash_height
 -- local img_splash_width, img_splash_height_scaled
 -- local splash_x, splash_y
@@ -61,15 +61,19 @@ local img_splash = common.img_load("pkg/iceball/gfx/splash_logo.png", "png")
 -- local splashtweenprogress_scale = 0.9
 -- local splashtweenprogress_y = 1.0
 
-local superdooper = common.font_load("pkg/base/ttf/propaganda.ttf", 16)
-
+local superdooper = common.font_load("pkg/base/ttf/propaganda.ttf", 52)
+local img = common.font_render_to_texture(superdooper, "This man marches for our freedom.", 0x11FF11)
+local img2 = common.font_render_to_texture(superdooper, "For our glory. Join the green army!", 0x11FF11)
 
 client.map_fog_set(16, 136, 189, 100)
 function client.hook_render()
 	-- font.render(0, ch*0, "Test text", 0xFFEEEEEE)
 	-- print(superdooper)
-	common.font_render_to_texture(superdooper, "hi")
-	client.img_blit(img_splash, 0, 0)
+	
+	client.img_blit(img_splash, 0, -125, 1816/1.41875, 2043/1.41875,  0, 0, 0xFFFFFFFF,1/1.41875,1/1.41875)
+	client.img_blit(img, 50, 0)
+	--client.img_blit(superdooper, 0, 0)
+	client.img_blit(img2, 70, 720)
 end
 
 function client.hook_tick(sec_current, sec_delta)
