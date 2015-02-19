@@ -77,6 +77,14 @@ local function update_page_buttons()
 	end
 end
 
+local function join_server(sid)
+	local idx = (page * 9) + sid
+	if idx <= #server_list then
+		local sv = server_list[idx]
+		client.mk_sys_execv("-c", sv.address, sv.port, arg_closure(argv))
+	end
+end
+
 -- Some hooks
 function client.hook_key(key, state, modif, uni)
 	if not state then
@@ -87,11 +95,9 @@ function client.hook_key(key, state, modif, uni)
 		elseif key == SDLK_ESCAPE then
 			client.hook_tick = nil
 		elseif key >= SDLK_1 and key <= SDLK_9 then
-			local idx = (key - SDLK_1) + 1
-			if idx <= #server_list then
-				local sv = server_list[idx]
-				client.mk_sys_execv("-c", sv.address, sv.port, arg_closure(argv))
-			end
+			join_server((key - SDLK_1) + 1)
+		elseif key >= SDLK_KP1 and key <= SDLK_KP9 then
+			join_server((key - SDLK_KP1) + 1)
 		elseif key == SDLK_r then
 			master_http = http_new {url = MASTER_URL}
 		elseif key == SDLK_LEFT then
@@ -265,7 +271,7 @@ function client.hook_tick(sec_current, sec_delta)
 			server_list = nil
 		elseif status ~= true then
 			print(status)
-			result = common.json_parse(status)
+			result = common.json_parse('{"version":2,"iceball_version":8421376,"servers":[{"map":"normandieplus10.vxl","name":"(Official) Intense CTF Server ","players_current":0,"version":"0.2.1-6","mode":"ctf","address":"46.105.52.79","port":20757,"players_max":64},{"map":"maple.vxl","name":"(Official) Testing Server","players_current":0,"version":"0.2.1-6","mode":"ctf","address":"198.143.136.161","port":20737,"players_max":64},{"map":"subnormandie1.icemap","name":"TDM server (BR)","players_current":0,"version":"0.2.1-5","mode":"tdm","address":"192.30.32.160","port":20737,"players_max":64},{"map":"subnormandie1.icemap","name":"(Official) Testing Server EU","players_current":0,"version":"0.2.1-6","mode":"ctf","address":"46.105.52.79","port":20737,"players_max":64},{"map":"classic(512,512)","name":"(Official) Classic CTF Server ","players_current":2,"version":"0.2.1-6","mode":"ctf","address":"46.105.52.79","port":20747,"players_max":64},{"map":"greece_small.icemap","name":"icecreams iceball server","players_current":0,"version":"0.2.1-6","mode":"r1ctf","address":"212.47.226.253","port":20737,"players_max":200},{"map":"greece_small.icemap","name":"icecreams iceball server","players_current":0,"version":"0.2.1-6","mode":"r1ctf","address":"212.47.226.253","port":20737,"players_max":200},{"map":"greece_small.icemap","name":"icecreams iceball server","players_current":0,"version":"0.2.1-6","mode":"r1ctf","address":"212.47.226.253","port":20737,"players_max":200},{"map":"greece_small.icemap","name":"icecreams iceball server","players_current":0,"version":"0.2.1-6","mode":"r1ctf","address":"212.47.226.253","port":20737,"players_max":200},{"map":"greece_small.icemap","name":"icecreams iceball server","players_current":0,"version":"0.2.1-6","mode":"r1ctf","address":"212.47.226.253","port":20737,"players_max":200},{"map":"greece_small.icemap","name":"icecreams iceball server","players_current":0,"version":"0.2.1-6","mode":"r1ctf","address":"212.47.226.253","port":20737,"players_max":200},{"map":"greece_small.icemap","name":"icecreams iceball server","players_current":0,"version":"0.2.1-6","mode":"r1ctf","address":"212.47.226.253","port":20737,"players_max":200},{"map":"greece_small.icemap","name":"icecreams iceball server","players_current":0,"version":"0.2.1-6","mode":"r1ctf","address":"212.47.226.253","port":20737,"players_max":200},{"map":"greece_small.icemap","name":"icecreams iceball server","players_current":0,"version":"0.2.1-6","mode":"r1ctf","address":"212.47.226.253","port":20737,"players_max":200},{"map":"greece_small.icemap","name":"icecreams iceball server","players_current":0,"version":"0.2.1-6","mode":"r1ctf","address":"212.47.226.253","port":20737,"players_max":200},{"map":"greece_small.icemap","name":"icecreams iceball server","players_current":0,"version":"0.2.1-6","mode":"r1ctf","address":"212.47.226.253","port":20737,"players_max":200},{"map":"greece_small.icemap","name":"icecreams iceball server","players_current":0,"version":"0.2.1-6","mode":"r1ctf","address":"212.47.226.253","port":20737,"players_max":200}]}')
 			latest_version = result and result.iceball_version
 			server_list = result and result.servers
 			master_http = nil
