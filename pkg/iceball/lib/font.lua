@@ -65,6 +65,14 @@ function font_mono_new(settings)
 			x = x + w
 		end
 	end
+	
+	function this.string_width(s)
+		return (this.iwidth / this.glyphmap.gcount) * string.len(s)
+	end
+	
+	function this.string_height(s)
+		return this.iheight
+	end
 
 	return this
 end

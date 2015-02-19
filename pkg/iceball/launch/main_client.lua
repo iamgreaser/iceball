@@ -32,6 +32,7 @@ argv = {...}
 -- Connect to master server
 dofile("pkg/iceball/lib/http.lua")
 server_list = true
+latest_version = nil
 master_http = http_new {url = MASTER_URL}
 if not master_http then
 	server_list = false
@@ -138,6 +139,24 @@ function client.hook_render()
 	elseif server_list == nil then
 		font.render(text_offset, ch*7, "Failed to fetch the server list.", 0xFFEEEEEE)
 	else
+		local version_string = nil
+		local version_colour = nil
+		if common.version.num < latest_version then
+			version_string = "Update available! ("..common.version.str..")"
+			version_colour = 0xFFE81515
+		else
+			version_string = "Up to date! ("..common.version.str..")"
+			version_colour = 0xFF86CF11
+		end
+		
+		font.render(
+			screen_width - font.string_width(version_string) - text_offset,
+			0,
+			version_string,
+			version_colour
+		)
+		
+		
 		for i=1,#server_list do
 			client.img_blit(img_row_bkg, text_offset-2, (ch+4)*(8+i-1) - 1)
 		
@@ -169,8 +188,9 @@ function client.hook_tick(sec_current, sec_delta)
 			server_list = nil
 		elseif status ~= true then
 			print(status)
-			server_list = common.json_parse(status)
-			server_list = server_list and server_list.servers
+			result = common.json_parse(status)
+			latest_version = result and result.iceball_version
+			server_list = result and result.servers
 			master_http = nil
 			server_refresh = sec_current
 		end
