@@ -114,9 +114,9 @@ function new_intel(settings)
 			client.gfx_depth_mask(false)
 			client.gfx_stencil_func("0", 1, 255)
 			client.gfx_stencil_op("===")
-			this.mdl_intel.render_global(
+			this.mdl_intel_outline.render_global(
 				this.x, this.y-0.9, this.z,
-				this.rotpos, 0, 0, 3*1.4)
+				this.rotpos, 0, 0, 3)
 			client.gfx_depth_mask(true)
 
 			-- PASS 2: set to 0 for regular model
@@ -277,6 +277,7 @@ function new_intel(settings)
 				return r,g,b
 			end
 		end})
+		this.mdl_intel_outline = mdl_intel({inscale=6.0})
 	end
 
 	this.prespawn()

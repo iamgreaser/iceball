@@ -35,7 +35,6 @@ function model_loaders.kv6(isfile, pkt, extra)
 	if not pkt then return nil end
 
 	local scale = extra.scale or 1.0
-	local ptsize = 1
 	local ptspacing = scale
 	if pkt:sub(1,4) ~= "Kvxl" then
 		error("not a KV6 model")
@@ -66,7 +65,7 @@ function model_loaders.kv6(isfile, pkt, extra)
 		local vpy = (math.floor(vis/32) % 2) ~= 0
 
 		l[i] = {
-			radius = ptsize,
+			--radius = ptsize,
 			x = nil, z = nil, y = (z-zpivot)*ptspacing,
 			r = r, g = g, b = b,
 			vnx = vnx, vny = vny, vnz = vnz,
@@ -118,6 +117,10 @@ function model_loaders.kv6(isfile, pkt, extra)
 			filt = settings.filt or nil,
 		} this.this = this
 
+		local inscale = settings.inscale or 1.0
+		local scale0 = scale*(0.5 - inscale/2)
+		local scale1 = scale*(0.5 + inscale/2)
+
 		-- apply filter
 		local srcl = l
 		local l = {}
@@ -142,12 +145,12 @@ function model_loaders.kv6(isfile, pkt, extra)
 
 		local vl = {}
 		for i=1,#l do
-			local x0 = l[i].x
-			local y0 = l[i].y
-			local z0 = l[i].z
-			local x1 = l[i].x+scale
-			local y1 = l[i].y+scale
-			local z1 = l[i].z+scale
+			local x0 = l[i].x+scale0
+			local y0 = l[i].y+scale0
+			local z0 = l[i].z+scale0
+			local x1 = l[i].x+scale1
+			local y1 = l[i].y+scale1
+			local z1 = l[i].z+scale1
 			local r  = l[i].r/255.0
 			local g  = l[i].g/255.0
 			local b  = l[i].b/255.0

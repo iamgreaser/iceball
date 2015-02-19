@@ -41,6 +41,11 @@ if client then
 		kv6={bdir=DIR_PKG_KV6, name="playerleg.kv6", scale=5.0/256.0},
 		pmf={bdir=DIR_PKG_PMF, name="player.pmf", bone=3},
 	}, {"kv6","pmf"})
+
+	mdl_player_head_outline = mdl_player_head {inscale=6.0}
+	mdl_player_body_outline = mdl_player_body {inscale=6.0}
+	mdl_player_arm_outline = mdl_player_arm {inscale=6.0}
+	mdl_player_leg_outline = mdl_player_leg {inscale=6.0}
 end
 
 function new_player(settings)
@@ -2215,7 +2220,8 @@ function new_player(settings)
 					local s_va_render_global = client.va_render_global
 					function client.va_render_global(va, px, py, pz, ry, rx, ry2, scale, ...)
 						scale = scale or 1.0
-						return s_va_render_global(va, px, py, pz, ry, rx, ry2, scale*1.4, ...)
+						scale = scale * 1.4
+						return s_va_render_global(va, px, py, pz, ry, rx, ry2, scale, ...)
 					end
 					plr.render()
 					client.va_render_global = s_va_render_global
