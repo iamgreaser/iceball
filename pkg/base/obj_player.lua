@@ -2307,6 +2307,9 @@ function new_player(settings)
 			this.cpal_rect.visible = true
 		end
 
+		if client.gfx_clear_depth then
+			client.gfx_clear_depth()
+		end
 		this.scene.draw()
 
 		if debug_enabled then
