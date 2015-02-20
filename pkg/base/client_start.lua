@@ -948,10 +948,12 @@ void main()
 
 	locpos = gl_ModelViewMatrix * wpos;
 
+	/*
 	// Wave effect!
 	// Ensure that we aren't doing this to an orthographic projection
 	if(gl_ProjectionMatrix[3][3] != 1.0)
 		locpos.y += sin((locpos.z/5.0 + time)*3.14159265358979*2.0)*0.2;
+	*/
 
 	gl_Position = gl_ProjectionMatrix * locpos;
 	gl_FrontColor = gl_Color;
