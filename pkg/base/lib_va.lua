@@ -156,64 +156,68 @@ function model_loaders.kv6(isfile, pkt, extra)
 			local b  = l[i].b/255.0
 
 			if l[i].vnx then
-				vl[1+#vl] = {x0,y0,z0,r*snx,g*snx,b*snx}
-				vl[1+#vl] = {x0,y1,z0,r*snx,g*snx,b*snx}
-				vl[1+#vl] = {x0,y0,z1,r*snx,g*snx,b*snx}
-				vl[1+#vl] = {x0,y0,z1,r*snx,g*snx,b*snx}
-				vl[1+#vl] = {x0,y1,z0,r*snx,g*snx,b*snx}
-				vl[1+#vl] = {x0,y1,z1,r*snx,g*snx,b*snx}
+				vl[1+#vl] = {x0,y0,z0,r*snx,g*snx,b*snx,-1,0,0}
+				vl[1+#vl] = {x0,y1,z0,r*snx,g*snx,b*snx,-1,0,0}
+				vl[1+#vl] = {x0,y0,z1,r*snx,g*snx,b*snx,-1,0,0}
+				vl[1+#vl] = {x0,y0,z1,r*snx,g*snx,b*snx,-1,0,0}
+				vl[1+#vl] = {x0,y1,z0,r*snx,g*snx,b*snx,-1,0,0}
+				vl[1+#vl] = {x0,y1,z1,r*snx,g*snx,b*snx,-1,0,0}
 			end
 
 			if l[i].vpx then
-				vl[1+#vl] = {x1,y0,z0,r*spx,g*spx,b*spx}
-				vl[1+#vl] = {x1,y0,z1,r*spx,g*spx,b*spx}
-				vl[1+#vl] = {x1,y1,z0,r*spx,g*spx,b*spx}
-				vl[1+#vl] = {x1,y1,z0,r*spx,g*spx,b*spx}
-				vl[1+#vl] = {x1,y0,z1,r*spx,g*spx,b*spx}
-				vl[1+#vl] = {x1,y1,z1,r*spx,g*spx,b*spx}
+				vl[1+#vl] = {x1,y0,z0,r*spx,g*spx,b*spx,1,0,0}
+				vl[1+#vl] = {x1,y0,z1,r*spx,g*spx,b*spx,1,0,0}
+				vl[1+#vl] = {x1,y1,z0,r*spx,g*spx,b*spx,1,0,0}
+				vl[1+#vl] = {x1,y1,z0,r*spx,g*spx,b*spx,1,0,0}
+				vl[1+#vl] = {x1,y0,z1,r*spx,g*spx,b*spx,1,0,0}
+				vl[1+#vl] = {x1,y1,z1,r*spx,g*spx,b*spx,1,0,0}
 			end
 
 			if l[i].vny then
-				vl[1+#vl] = {x0,y0,z0,r*sny,g*sny,b*sny}
-				vl[1+#vl] = {x0,y0,z1,r*sny,g*sny,b*sny}
-				vl[1+#vl] = {x1,y0,z0,r*sny,g*sny,b*sny}
-				vl[1+#vl] = {x1,y0,z0,r*sny,g*sny,b*sny}
-				vl[1+#vl] = {x0,y0,z1,r*sny,g*sny,b*sny}
-				vl[1+#vl] = {x1,y0,z1,r*sny,g*sny,b*sny}
+				vl[1+#vl] = {x0,y0,z0,r*sny,g*sny,b*sny,0,-1,0}
+				vl[1+#vl] = {x0,y0,z1,r*sny,g*sny,b*sny,0,-1,0}
+				vl[1+#vl] = {x1,y0,z0,r*sny,g*sny,b*sny,0,-1,0}
+				vl[1+#vl] = {x1,y0,z0,r*sny,g*sny,b*sny,0,-1,0}
+				vl[1+#vl] = {x0,y0,z1,r*sny,g*sny,b*sny,0,-1,0}
+				vl[1+#vl] = {x1,y0,z1,r*sny,g*sny,b*sny,0,-1,0}
 			end
 
 			if l[i].vpy then
-				vl[1+#vl] = {x0,y1,z0,r*spy,g*spy,b*spy}
-				vl[1+#vl] = {x1,y1,z0,r*spy,g*spy,b*spy}
-				vl[1+#vl] = {x0,y1,z1,r*spy,g*spy,b*spy}
-				vl[1+#vl] = {x0,y1,z1,r*spy,g*spy,b*spy}
-				vl[1+#vl] = {x1,y1,z0,r*spy,g*spy,b*spy}
-				vl[1+#vl] = {x1,y1,z1,r*spy,g*spy,b*spy}
+				vl[1+#vl] = {x0,y1,z0,r*spy,g*spy,b*spy,0,1,0}
+				vl[1+#vl] = {x1,y1,z0,r*spy,g*spy,b*spy,0,1,0}
+				vl[1+#vl] = {x0,y1,z1,r*spy,g*spy,b*spy,0,1,0}
+				vl[1+#vl] = {x0,y1,z1,r*spy,g*spy,b*spy,0,1,0}
+				vl[1+#vl] = {x1,y1,z0,r*spy,g*spy,b*spy,0,1,0}
+				vl[1+#vl] = {x1,y1,z1,r*spy,g*spy,b*spy,0,1,0}
 			end
 
 			if l[i].vnz then
-				vl[1+#vl] = {x0,y0,z0,r*snz,g*snz,b*snz}
-				vl[1+#vl] = {x1,y0,z0,r*snz,g*snz,b*snz}
-				vl[1+#vl] = {x0,y1,z0,r*snz,g*snz,b*snz}
-				vl[1+#vl] = {x0,y1,z0,r*snz,g*snz,b*snz}
-				vl[1+#vl] = {x1,y0,z0,r*snz,g*snz,b*snz}
-				vl[1+#vl] = {x1,y1,z0,r*snz,g*snz,b*snz}
+				vl[1+#vl] = {x0,y0,z0,r*snz,g*snz,b*snz,0,0,-1}
+				vl[1+#vl] = {x1,y0,z0,r*snz,g*snz,b*snz,0,0,-1}
+				vl[1+#vl] = {x0,y1,z0,r*snz,g*snz,b*snz,0,0,-1}
+				vl[1+#vl] = {x0,y1,z0,r*snz,g*snz,b*snz,0,0,-1}
+				vl[1+#vl] = {x1,y0,z0,r*snz,g*snz,b*snz,0,0,-1}
+				vl[1+#vl] = {x1,y1,z0,r*snz,g*snz,b*snz,0,0,-1}
 			end
 
 			if l[i].vpz then
-				vl[1+#vl] = {x0,y0,z1,r*spz,g*spz,b*spz}
-				vl[1+#vl] = {x0,y1,z1,r*spz,g*spz,b*spz}
-				vl[1+#vl] = {x1,y0,z1,r*spz,g*spz,b*spz}
-				vl[1+#vl] = {x1,y0,z1,r*spz,g*spz,b*spz}
-				vl[1+#vl] = {x0,y1,z1,r*spz,g*spz,b*spz}
-				vl[1+#vl] = {x1,y1,z1,r*spz,g*spz,b*spz}
+				vl[1+#vl] = {x0,y0,z1,r*spz,g*spz,b*spz,0,0,1}
+				vl[1+#vl] = {x0,y1,z1,r*spz,g*spz,b*spz,0,0,1}
+				vl[1+#vl] = {x1,y0,z1,r*spz,g*spz,b*spz,0,0,1}
+				vl[1+#vl] = {x1,y0,z1,r*spz,g*spz,b*spz,0,0,1}
+				vl[1+#vl] = {x0,y1,z1,r*spz,g*spz,b*spz,0,0,1}
+				vl[1+#vl] = {x1,y1,z1,r*spz,g*spz,b*spz,0,0,1}
 			end
 		end
 
 		-- make
 		--local i for i=1,#vl do vl[i][7] = 0.4 end
 		--this.va = common.va_make(vl, nil, "3v,4c")
-		this.va = common.va_make(vl, nil, "3v,3c")
+		if client.glsl_create then
+			this.va = common.va_make(vl, nil, "3v,3c,3n")
+		else
+			this.va = common.va_make(vl, nil, "3v,3c")
+		end
 
 		-- conserve memory
 		vl = {}

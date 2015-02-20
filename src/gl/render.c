@@ -34,10 +34,10 @@ GLfloat mtx_baseproj[16] = {
 	 0, 0,-0.1, 0,
 };
 
-const GLfloat vfinf_cube[3*6] = {
-	0, 1, 0,   0, 0, 1, 
-	0, 0, 1,   1, 0, 0, 
-	1, 0, 0,   0, 1, 0, 
+const GLfloat vfinf_cube[3*9] = {
+	0, 1, 0,   0, 0, 1,  1, 0, 0,
+	0, 0, 1,   1, 0, 0,  0, 1, 0,
+	1, 0, 0,   0, 1, 0,  0, 0, 1,
 };
 
 #if 0
@@ -469,12 +469,14 @@ void render_map_visible_chunks_draw(map_t *map, float fx, float fy, float fz, fl
 				// select pointers
 				if (chunk->vbo == 0)
 				{
-					glVertexPointer(3, GL_FLOAT, sizeof(float)*6, chunk->vbo_arr);
-					glColorPointer(3, GL_FLOAT, sizeof(float)*6, chunk->vbo_arr+3);
+					glVertexPointer(3, GL_FLOAT, sizeof(float)*9, chunk->vbo_arr);
+					glColorPointer(3, GL_FLOAT, sizeof(float)*9, chunk->vbo_arr+3);
+					glNormalPointer(GL_FLOAT, sizeof(float)*9, chunk->vbo_arr+6);
 				} else {
 					glBindBuffer(GL_ARRAY_BUFFER, chunk->vbo);
-					glVertexPointer(3, GL_FLOAT, sizeof(float)*6, (void *)(0));
-					glColorPointer(3, GL_FLOAT, sizeof(float)*6, (void *)(0 + sizeof(float)*3));
+					glVertexPointer(3, GL_FLOAT, sizeof(float)*9, (void *)(0));
+					glColorPointer(3, GL_FLOAT, sizeof(float)*9, (void *)(0 + sizeof(float)*3));
+					glNormalPointer(GL_FLOAT, sizeof(float)*9, (void *)(0 + sizeof(float)*6));
 				}
 
 				// draw
@@ -512,9 +514,11 @@ void render_map_visible_chunks_draw(map_t *map, float fx, float fy, float fz, fl
 
 						glEnableClientState(GL_VERTEX_ARRAY);
 						glEnableClientState(GL_COLOR_ARRAY);
+						glEnableClientState(GL_NORMAL_ARRAY);
 						glDrawArrays(GL_QUADS, 0, chunk->vbo_arr_len);
-						glDisableClientState(GL_VERTEX_ARRAY);
+						glDisableClientState(GL_NORMAL_ARRAY);
 						glDisableClientState(GL_COLOR_ARRAY);
+						glDisableClientState(GL_VERTEX_ARRAY);
 
 						if(chunk->oq)
 						{
@@ -640,7 +644,7 @@ void render_map_tesselate_visible_chunks(map_t *map, int camx, int camz)
 			if(chunk->vbo != 0)
 			{
 				glBindBuffer(GL_ARRAY_BUFFER, chunk->vbo);
-				glBufferData(GL_ARRAY_BUFFER, sizeof(float)*6*chunk->vbo_arr_len, chunk->vbo_arr, GL_STATIC_DRAW);
+				glBufferData(GL_ARRAY_BUFFER, sizeof(float)*9*chunk->vbo_arr_len, chunk->vbo_arr, GL_STATIC_DRAW);
 				glBindBuffer(GL_ARRAY_BUFFER, 0);
 			}
 
@@ -754,7 +758,7 @@ void render_update_vbo(float **arr, int *len, int *max, int newlen)
 			xlen = newlen + 10;
 	}
 
-	*arr = (float*)realloc(*arr, xlen*sizeof(float)*6);
+	*arr = (float*)realloc(*arr, xlen*sizeof(float)*9);
 	*max = xlen;
 }
 
@@ -764,9 +768,9 @@ void render_gl_cube_pmf(model_bone_t *bone, float x, float y, float z, float r, 
 	float ua,ub,uc;
 	float va,vb,vc;
 
-	render_update_vbo(&(bone->vbo_arr), &(bone->vbo_arr_len), &(bone->vbo_arr_max), bone->vbo_arr_len+4*6);
+	render_update_vbo(&(bone->vbo_arr), &(bone->vbo_arr_len), &(bone->vbo_arr_max), bone->vbo_arr_len+4*9);
 	float *arr = bone->vbo_arr;
-	arr += bone->vbo_arr_len*6;
+	arr += bone->vbo_arr_len*9;
 	bone->vbo_arr_len += 4*6;
 
 	for(i = 0; i < 3; i++)
@@ -774,17 +778,22 @@ void render_gl_cube_pmf(model_bone_t *bone, float x, float y, float z, float r, 
 		float s2 = ((int)cam_shading[i+0])/255.0f;
 		float s1 = ((int)cam_shading[i+3])/255.0f;
 		float cr,cg,cb;
+		float nx,ny,nz;
 
-		ua = vfinf_cube[i*6+0];
-		ub = vfinf_cube[i*6+1];
-		uc = vfinf_cube[i*6+2];
-		va = vfinf_cube[i*6+3];
-		vb = vfinf_cube[i*6+4];
-		vc = vfinf_cube[i*6+5];
+		ua = vfinf_cube[i*9+0];
+		ub = vfinf_cube[i*9+1];
+		uc = vfinf_cube[i*9+2];
+		va = vfinf_cube[i*9+3];
+		vb = vfinf_cube[i*9+4];
+		vc = vfinf_cube[i*9+5];
+		nx = -vfinf_cube[i*9+6];
+		ny = -vfinf_cube[i*9+7];
+		nz = -vfinf_cube[i*9+8];
 		
 #define ARR_ADD(vx,vy,vz) \
 		*(arr++) = vx; *(arr++) = vy; *(arr++) = vz; \
-		*(arr++) = cr; *(arr++) = cg; *(arr++) = cb;
+		*(arr++) = cr; *(arr++) = cg; *(arr++) = cb; \
+		*(arr++) = nx; *(arr++) = ny; *(arr++) = nz;
 
 		/* Quad 1 */
 		cr = r*s1; cg = g*s1, cb = b*s1;
@@ -792,6 +801,10 @@ void render_gl_cube_pmf(model_bone_t *bone, float x, float y, float z, float r, 
 		ARR_ADD(x+rad*ua,y+rad*ub,z+rad*uc);
 		ARR_ADD(x+rad*(ua+va),y+rad*(ub+vb),z+rad*(uc+vc));
 		ARR_ADD(x+rad*va,y+rad*vb,z+rad*vc);
+
+		nx = -nx;
+		ny = -ny;
+		nz = -nz;
 
 		/* Quad 2 */
 		cr = r*s2; cg = g*s2, cb = b*s2;
@@ -913,12 +926,16 @@ void render_gl_cube_map(map_t *map, map_chunk_t *chunk, float x, float y, float 
 
 	for(i = 0; i < 3; i++)
 	{
-		ua = vfinf_cube[i*6+0];
-		ub = vfinf_cube[i*6+1];
-		uc = vfinf_cube[i*6+2];
-		va = vfinf_cube[i*6+3];
-		vb = vfinf_cube[i*6+4];
-		vc = vfinf_cube[i*6+5];
+		float nx,ny,nz;
+		ua = vfinf_cube[i*9+0];
+		ub = vfinf_cube[i*9+1];
+		uc = vfinf_cube[i*9+2];
+		va = vfinf_cube[i*9+3];
+		vb = vfinf_cube[i*9+4];
+		vc = vfinf_cube[i*9+5];
+		nx = -vfinf_cube[i*9+6];
+		ny = -vfinf_cube[i*9+7];
+		nz = -vfinf_cube[i*9+8];
 
 		float s2 = ((int)cam_shading[i+0])/255.0f;
 		float s1 = ((int)cam_shading[i+3])/255.0f;
@@ -926,14 +943,15 @@ void render_gl_cube_map(map_t *map, map_chunk_t *chunk, float x, float y, float 
 	
 #define ARR_ADD(vx,vy,vz) \
 		*(arr++) = vx; *(arr++) = vy; *(arr++) = vz; \
-		*(arr++) = cr; *(arr++) = cg; *(arr++) = cb;
+		*(arr++) = cr; *(arr++) = cg; *(arr++) = cb; \
+		*(arr++) = nx; *(arr++) = ny; *(arr++) = nz;
 
 		/* check visibility of the face (is face exposed to air ?) */
 		if (render_map_get_block_at(map, x - ub, y - uc, z - ua) == 0)
 		{
 			render_update_vbo(&(chunk->vbo_arr), &(chunk->vbo_arr_len), &(chunk->vbo_arr_max), chunk->vbo_arr_len+4);
 			arr = chunk->vbo_arr;
-			arr += chunk->vbo_arr_len*6;
+			arr += chunk->vbo_arr_len*9;
 			chunk->vbo_arr_len += 4;
 
 			if (screen_smooth_lighting)
@@ -1041,12 +1059,16 @@ void render_gl_cube_map(map_t *map, map_chunk_t *chunk, float x, float y, float 
 			}
 		}
 
+		nx = -nx;
+		ny = -ny;
+		nz = -nz;
+
 		/* check visibility of the face (is face exposed to air ?) */
 		if (render_map_get_block_at(map, x + vc, y + va, z + vb) == 0)
 		{
 			render_update_vbo(&(chunk->vbo_arr), &(chunk->vbo_arr_len), &(chunk->vbo_arr_max), chunk->vbo_arr_len+4);
 			arr = chunk->vbo_arr;
-			arr += chunk->vbo_arr_len*6;
+			arr += chunk->vbo_arr_len*9;
 			chunk->vbo_arr_len += 4;
 
 			if (screen_smooth_lighting)
@@ -1317,26 +1339,30 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 		if(bone->vbo != 0)
 		{
 			glBindBuffer(GL_ARRAY_BUFFER, bone->vbo);
-			glBufferData(GL_ARRAY_BUFFER, sizeof(float)*6*bone->vbo_arr_len, bone->vbo_arr, GL_STATIC_DRAW);
+			glBufferData(GL_ARRAY_BUFFER, sizeof(float)*9*bone->vbo_arr_len, bone->vbo_arr, GL_STATIC_DRAW);
 			glBindBuffer(GL_ARRAY_BUFFER, 0);
 		}
 	}
 
 	if(bone->vbo == 0)
 	{
-		glVertexPointer(3, GL_FLOAT, sizeof(float)*6, bone->vbo_arr);
-		glColorPointer(3, GL_FLOAT, sizeof(float)*6, bone->vbo_arr+3);
+		glVertexPointer(3, GL_FLOAT, sizeof(float)*9, bone->vbo_arr);
+		glColorPointer(3, GL_FLOAT, sizeof(float)*9, bone->vbo_arr+3);
+		glNormalPointer(GL_FLOAT, sizeof(float)*9, bone->vbo_arr+6);
 	} else {
 		glBindBuffer(GL_ARRAY_BUFFER, bone->vbo);
-		glVertexPointer(3, GL_FLOAT, sizeof(float)*6, (void *)(0));
-		glColorPointer(3, GL_FLOAT, sizeof(float)*6, (void *)(0 + sizeof(float)*3));
+		glVertexPointer(3, GL_FLOAT, sizeof(float)*9, (void *)(0));
+		glColorPointer(3, GL_FLOAT, sizeof(float)*9, (void *)(0 + sizeof(float)*3));
+		glNormalPointer(GL_FLOAT, sizeof(float)*9, (void *)(0 + sizeof(float)*6));
 	}
 	glTexCoord2f(-1.0f, -1.0f);
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glEnableClientState(GL_COLOR_ARRAY);
+	glEnableClientState(GL_NORMAL_ARRAY);
 	glDrawArrays(GL_QUADS, 0, bone->vbo_arr_len);
-	glDisableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_NORMAL_ARRAY);
 	glDisableClientState(GL_COLOR_ARRAY);
+	glDisableClientState(GL_VERTEX_ARRAY);
 	if(bone->vbo != 0)
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -1459,7 +1485,7 @@ void render_vertex_array(uint32_t *pixels, int width, int height, int pitch, cam
 	{
 		glVertexPointer(va->vertex_size, GL_FLOAT, sizeof(float)*va->stride, va->data + sizeof(float)*va->vertex_offs);
 		if(va->color_offs != -1) glColorPointer(va->color_size, GL_FLOAT, sizeof(float)*va->stride, va->data+sizeof(float)*va->color_offs);
-		if(va->normal_offs != -1) glColorPointer(3, GL_FLOAT, sizeof(float)*va->stride, va->data+sizeof(float)*va->normal_offs);
+		if(va->normal_offs != -1) glNormalPointer(GL_FLOAT, sizeof(float)*va->stride, va->data+sizeof(float)*va->normal_offs);
 		if(va->texcoord_count >= 1)
 		for(i = 0; i < va->texcoord_count || i < img_count; i++)
 		{
@@ -1471,7 +1497,7 @@ void render_vertex_array(uint32_t *pixels, int width, int height, int pitch, cam
 		glBindBuffer(GL_ARRAY_BUFFER, va->vbo);
 		glVertexPointer(va->vertex_size, GL_FLOAT, sizeof(float)*va->stride, (void *)(0 + sizeof(float)*va->vertex_offs));
 		if(va->color_offs != -1) glColorPointer(va->color_size, GL_FLOAT, sizeof(float)*va->stride, (void *)(0 + sizeof(float)*va->color_offs));
-		if(va->normal_offs != -1) glColorPointer(3, GL_FLOAT, sizeof(float)*va->stride, (void *)(0 + sizeof(float)*va->normal_offs));
+		if(va->normal_offs != -1) glNormalPointer(GL_FLOAT, sizeof(float)*va->stride, (void *)(0 + sizeof(float)*va->normal_offs));
 		if(va->texcoord_count >= 1)
 		for(i = 0; i < va->texcoord_count || i < img_count; i++)
 		{

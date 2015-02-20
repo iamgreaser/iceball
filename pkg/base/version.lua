@@ -20,9 +20,9 @@
 -- Thanks. --GM
 
 VERSION_ENGINE = {
-	cmp={0,2,1,0,8},
-	num=8421376+8,
-	str="0.2.1-8",
+	cmp={0,2,1,0,9},
+	num=8421376+9,
+	str="0.2.1-9",
 }
 
 --error(""..common.version.num)
@@ -153,6 +153,8 @@ VERSION_BUGS = {
 {renderer="gl", intro=8421376+2, fix=8421376+6, msg="[OpenGL] Stencil bits not set properly, resulting in red screen on some drivers"},
 {renderer="gl", intro=nil, fix=8421376+7, msg="[OpenGL] Multitexturing not supported"},
 {renderer="gl", intro=nil, fix=8421376+8, msg="[OpenGL] GLSL shaders not supported"},
+{renderer="gl", intro=8421376+8, fix=8421376+9, msg="[OpenGL] Map and PMF normals not emitted for shaders"},
+{renderer="gl", intro=8421376+7, fix=8421376+9, msg="[OpenGL] Normal information for VAs overrides colour information by mistake"},
 
 }
 

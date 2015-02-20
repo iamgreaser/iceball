@@ -18,6 +18,12 @@
 print("pkg/base/client_start.lua starting")
 print(...)
 
+USE_GLSL = true
+
+if not client.glsl_create then
+	USE_GLSL = false
+end
+
 map_fname = nil
 frame_delay_ctr = 0.0001
 render_sec_current = nil
@@ -56,6 +62,25 @@ if user_config.frame_limit and user_config.frame_limit > 0.01 then
 		frame_delay_ctr = 0.0001
 	end
 	print("frame delay:", frame_delay_ctr)
+end
+
+if user_config.glsl_shaders == false then
+	USE_GLSL = false
+end
+
+if USE_GLSL then
+	local ver = client.gfx_glsl_available()
+	if ver == "2.0" then
+		USE_GLSL_20 = true
+		USE_GLSL_21 = false
+	elseif ver == "2.1" then
+		USE_GLSL_20 = true
+		USE_GLSL_21 = true
+	else
+		-- For now assume we have GL 2.1 or higher.
+		USE_GLSL_20 = true
+		USE_GLSL_21 = true
+	end
 end
 
 -- speed through stuff
@@ -935,18 +960,25 @@ if VA_TEST then
 	]]
 end
 
-if client.glsl_create then
+if USE_GLSL_20 then
 shader_pass, result = client.glsl_create([=[
 // Vertex shader
 
+varying vec4 wpos;
+varying vec4 inorm;
 varying vec4 locpos;
 uniform float time;
 
 void main()
 {
-	vec4 wpos = gl_Vertex;
+	wpos = gl_Vertex;
 
 	locpos = gl_ModelViewMatrix * wpos;
+
+	vec4 t_norm = gl_ModelViewMatrix * vec4(gl_Normal, 0.0);
+	t_norm.w = 0.0;
+	t_norm = normalize(t_norm);
+	inorm = -t_norm;
 
 	/*
 	// Wave effect!
@@ -963,7 +995,11 @@ void main()
 ]=], [=[
 // Fragment shader
 
+varying vec4 wpos;
+varying vec4 inorm;
 varying vec4 locpos;
+
+uniform vec4 sun;
 
 uniform sampler2D tex0;
 
@@ -979,8 +1015,23 @@ void main()
 		color *= tcolor;
 	}
 
-	gl_FragColor = color * (1.0 - fog_strength)
-		+ gl_Fog.color * fog_strength;
+	if(gl_ProjectionMatrix[3][3] == 1.0)
+	{
+		// Skip lighting on orthographics
+		gl_FragColor = color;
+
+	} else {
+		float diff = max(0.0, dot(normalize(locpos), inorm));
+
+		// Slightly amplify the light
+		//diff = 0.2 + 0.8*diff;
+		diff = 0.5 + 1.1*diff;
+
+		color = vec4(vec3(color.rgb * diff), color.a);
+
+		gl_FragColor = color * (1.0 - fog_strength)
+			+ gl_Fog.color * fog_strength;
+	}
 }
 ]=])
 print(shader_pass, result)
@@ -990,6 +1041,8 @@ function client.hook_render()
 	local sec_current = render_sec_current
 	if shader_pass then
 		client.glsl_use(shader_pass)
+		client.glsl_set_uniform_f(client.glsl_get_uniform_loc(shader_pass, "sun"),
+			0, 1, 0, 0)
 		client.glsl_set_uniform_f(client.glsl_get_uniform_loc(shader_pass, "time"), sec_current or 0.0)
 		client.glsl_set_uniform_i(client.glsl_get_uniform_loc(shader_pass, "tex0"), 0)
 	end
