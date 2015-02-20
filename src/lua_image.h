@@ -45,6 +45,9 @@ int icelua_fn_client_img_blit(lua_State *L)
 #ifdef DEDI
 	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
 #else
+	if(screen == NULL)
+		return luaL_error(L, "cannot blit without a screen!");
+
 	render_blit_img((uint32_t*)screen->pixels, screen->w, screen->h, screen->pitch/4,
 		img, dx, dy, bw, bh, sx, sy, color, scalex, scaley);
 #endif

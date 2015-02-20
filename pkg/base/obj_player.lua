@@ -1708,8 +1708,8 @@ function new_player(settings)
 			end
 		end
 		local function feed_update(options)
-			this.chat_text.ctab = chat_text.render()
 			this.kill_text.ctab = chat_killfeed.render()
+			this.chat_text.ctab = chat_text.render()
 		end
 		local function enemy_name_update(options)
 			local sya = math.sin(this.angy)

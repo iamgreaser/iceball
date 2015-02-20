@@ -961,7 +961,7 @@ if VA_TEST then
 end
 
 if USE_GLSL_20 then
-shader_pass, result = client.glsl_create([=[
+shader_misc, result = client.glsl_create([=[
 // Vertex shader
 
 varying vec4 wpos;
@@ -979,13 +979,6 @@ void main()
 	t_norm.w = 0.0;
 	t_norm = normalize(t_norm);
 	inorm = -t_norm;
-
-	/*
-	// Wave effect!
-	// Ensure that we aren't doing this to an orthographic projection
-	if(gl_ProjectionMatrix[3][3] != 1.0)
-		locpos.y += sin((locpos.z/5.0 + time)*3.14159265358979*2.0)*0.2;
-	*/
 
 	gl_Position = gl_ProjectionMatrix * locpos;
 	gl_FrontColor = gl_Color;
@@ -1034,17 +1027,106 @@ void main()
 	}
 }
 ]=])
-print(shader_pass, result)
+print(shader_misc, result)
+
+shader_world, result = client.glsl_create([=[
+// Vertex shader
+
+varying vec4 wpos;
+varying vec4 inorm;
+varying vec4 locpos;
+uniform float time;
+
+void main()
+{
+	wpos = gl_Vertex;
+
+	locpos = gl_ModelViewMatrix * wpos;
+
+	vec4 t_norm = gl_ModelViewMatrix * vec4(gl_Normal, 0.0);
+	t_norm.w = 0.0;
+	t_norm = normalize(t_norm);
+	inorm = -t_norm;
+
+	gl_Position = gl_ProjectionMatrix * locpos;
+	gl_FrontColor = gl_Color;
+}
+
+]=], [=[
+// Fragment shader
+
+varying vec4 wpos;
+varying vec4 inorm;
+varying vec4 locpos;
+
+uniform vec4 sun;
+
+void main()
+{
+	float fog_strength = min(1, length(locpos.xyz) / gl_Fog.end);
+	fog_strength *= fog_strength;
+
+	vec4 color = gl_Color;
+
+	float diff = max(0.0, dot(normalize(locpos), inorm));
+
+	// Slightly amplify the light
+	//diff = 0.2 + 0.8*diff;
+	diff = 0.5 + 1.1*diff;
+
+	color = vec4(vec3(color.rgb * diff), color.a);
+
+	gl_FragColor = color * (1.0 - fog_strength)
+		+ gl_Fog.color * fog_strength;
+}
+]=])
+
+shader_img, result = client.glsl_create([=[
+// Vertex shader
+
+void main()
+{
+	// use ProjectionMatrix otherwise text printing breaks
+	gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;
+	//gl_Position = gl_ModelViewMatrix * gl_Vertex;
+	gl_FrontColor = gl_Color;
+	gl_TexCoord[0] = gl_MultiTexCoord0;
+}
+
+]=], [=[
+// Fragment shader
+
+uniform sampler2D tex0;
+
+void main()
+{
+	vec4 color = gl_Color;
+	vec4 tcolor = texture2D(tex0, gl_TexCoord[0].st);
+	color *= tcolor;
+	gl_FragColor = color;
+}
+
+]=])
+print(shader_img, result)
 end
 
 function client.hook_render()
 	local sec_current = render_sec_current
-	if shader_pass then
-		client.glsl_use(shader_pass)
-		client.glsl_set_uniform_f(client.glsl_get_uniform_loc(shader_pass, "sun"),
+	if shader_misc then
+		client.glsl_use(shader_misc)
+		client.glsl_set_uniform_f(client.glsl_get_uniform_loc(shader_misc, "sun"),
 			0, 1, 0, 0)
-		client.glsl_set_uniform_f(client.glsl_get_uniform_loc(shader_pass, "time"), sec_current or 0.0)
-		client.glsl_set_uniform_i(client.glsl_get_uniform_loc(shader_pass, "tex0"), 0)
+		client.glsl_set_uniform_f(client.glsl_get_uniform_loc(shader_misc, "time"), sec_current or 0.0)
+		client.glsl_set_uniform_i(client.glsl_get_uniform_loc(shader_misc, "tex0"), 0)
+	end
+
+	local s_img_blit = client.img_blit
+	if shader_img then
+		function client.img_blit(...)
+			client.glsl_use(shader_img)
+			s_img_blit(...)
+			client.glsl_use(shader_misc)
+		end
 	end
 
 	local i
@@ -1090,6 +1172,14 @@ function client.hook_render()
 	end
 	if VA_TEST and sec_current then
 		client.va_render_local(va_test, -0.8, 0.35, 1, sec_current, sec_current*0.8, sec_current*0.623, 0.1, img_overview)
+	end
+
+	client.img_blit = s_img_blit
+	if shader_world then
+		client.glsl_use(shader_world)
+		client.glsl_set_uniform_f(client.glsl_get_uniform_loc(shader_world, "sun"),
+			0, 1, 0, 0)
+		client.glsl_set_uniform_f(client.glsl_get_uniform_loc(shader_world, "time"), sec_current or 0.0)
 	end
 end
 
