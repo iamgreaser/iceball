@@ -1245,6 +1245,7 @@ void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t
 	glFogf(GL_FOG_START, cdist/2.0f);
 	glFogf(GL_FOG_END, cdist);
 	glFogfv(GL_FOG_COLOR, fog);
+	glTexCoord2f(-1.0f, -1.0f);
 
 	cx = camera->mpx;
 	cy = camera->mpy;
@@ -1330,6 +1331,7 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 		glVertexPointer(3, GL_FLOAT, sizeof(float)*6, (void *)(0));
 		glColorPointer(3, GL_FLOAT, sizeof(float)*6, (void *)(0 + sizeof(float)*3));
 	}
+	glTexCoord2f(-1.0f, -1.0f);
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glEnableClientState(GL_COLOR_ARRAY);
 	glDrawArrays(GL_QUADS, 0, bone->vbo_arr_len);
@@ -1452,6 +1454,7 @@ void render_vertex_array(uint32_t *pixels, int width, int height, int pitch, cam
 	glClientActiveTexture(GL_TEXTURE0);
 	glActiveTexture(GL_TEXTURE0);
 
+	glTexCoord2f(-1.0f, -1.0f);
 	if(va->vbo == 0)
 	{
 		glVertexPointer(va->vertex_size, GL_FLOAT, sizeof(float)*va->stride, va->data + sizeof(float)*va->vertex_offs);

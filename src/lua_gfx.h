@@ -1,5 +1,3 @@
-
-// client functions
 /*
     This file is part of Iceball.
 

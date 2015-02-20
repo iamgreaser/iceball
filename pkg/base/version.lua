@@ -20,9 +20,9 @@
 -- Thanks. --GM
 
 VERSION_ENGINE = {
-	cmp={0,2,1,0,7},
-	num=8421376+7,
-	str="0.2.1-7",
+	cmp={0,2,1,0,8},
+	num=8421376+8,
+	str="0.2.1-8",
 }
 
 --error(""..common.version.num)
@@ -150,8 +150,9 @@ VERSION_BUGS = {
 {intro=4259840+1, fix=8421376+1, msg="VA API lacks support for blending"},
 {intro=nil, fix=8421376+2, msg="Lack of depth / stencil buffer mode selection support"},
 {intro=8421376+4, fix=8421376+5, msg="Crash on map_free after map_new"},
-{intro=8421376+2, fix=8421376+6, msg="Stencil bits not set properly, resulting in red screen on some drivers"},
-{intro=nil, fix=8421376+7, msg="Multitexturing not supported"},
+{renderer="gl", intro=8421376+2, fix=8421376+6, msg="[OpenGL] Stencil bits not set properly, resulting in red screen on some drivers"},
+{renderer="gl", intro=nil, fix=8421376+7, msg="[OpenGL] Multitexturing not supported"},
+{renderer="gl", intro=nil, fix=8421376+8, msg="[OpenGL] GLSL shaders not supported"},
 
 }
 

@@ -280,6 +280,46 @@ tex_units = client.gfx_tex_available() @
 	will eventually use GL_MAX_TEXTURE_IMAGE_UNITS_ARB
 	once shader support is in place
 
+glver = client.gfx_glsl_available() @
+	returns if GLSL shaders are available
+
+	return values:
+	- "2.1" if at least GL 2.1
+	- "2.0" if GL 2.0
+	- nil otherwise
+
+shader, result = client.glsl_create(vertex_src_string, fragment_src_string) @
+	creates a shader
+	
+	returns a shader handle in "shader" on success
+	returns nil on failure
+
+	shaders are garbage collected, so watch out!
+	
+	"result" is just the shader compiler output
+
+client.glsl_use(shader) @
+	uses a shader
+
+	pass nil if you want to switch to default GL 1 behaviour
+	
+	note, fog is disabled while using a shader
+	this does NOT mean that the far plane is extended for you!
+
+idx = client.glsl_get_uniform_loc(shader, name) @
+	gets the location of a uniform value given a shader
+
+	returns nil on failure
+
+client.glsl_set_uniform_f(uniform_idx, val1[, val2[, val3[, val4]]]) @
+	sets a float uniform
+
+client.glsl_set_uniform_i(uniform_idx, val1[, val2[, val3[, val4]]]) @
+	sets an int uniform
+
+client.glsl_set_uniform_ui(uniform_idx, val1[, val2[, val3[, val4]]]) @
+	sets an unsigned int uniform
+
 map = common.map_load(fname, fmt = "auto") @
 	loads a map, either "vxl" or "icemap"
 	use "auto" to autodetect

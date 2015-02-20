@@ -934,8 +934,64 @@ if VA_TEST then
 	}, nil, "3v,3c,2t")
 	]]
 end
+
+if client.glsl_create then
+shader_pass, result = client.glsl_create([=[
+// Vertex shader
+
+varying vec4 locpos;
+uniform float time;
+
+void main()
+{
+	vec4 wpos = gl_Vertex;
+
+	locpos = gl_ModelViewMatrix * wpos;
+
+	// Wave effect!
+	// Ensure that we aren't doing this to an orthographic projection
+	if(gl_ProjectionMatrix[3][3] != 1.0)
+		locpos.y += sin((locpos.z/5.0 + time)*3.14159265358979*2.0)*0.2;
+
+	gl_Position = gl_ProjectionMatrix * locpos;
+	gl_FrontColor = gl_Color;
+	gl_TexCoord[0] = gl_MultiTexCoord0;
+}
+
+]=], [=[
+// Fragment shader
+
+varying vec4 locpos;
+
+uniform sampler2D tex0;
+
+void main()
+{
+	float fog_strength = min(1, length(locpos.xyz) / gl_Fog.end);
+	fog_strength *= fog_strength;
+
+	vec4 color = gl_Color;
+	if(gl_TexCoord[0].s >= -0.1)
+	{
+		vec4 tcolor = texture2D(tex0, gl_TexCoord[0].st);
+		color *= tcolor;
+	}
+
+	gl_FragColor = color * (1.0 - fog_strength)
+		+ gl_Fog.color * fog_strength;
+}
+]=])
+print(shader_pass, result)
+end
+
 function client.hook_render()
 	local sec_current = render_sec_current
+	if shader_pass then
+		client.glsl_use(shader_pass)
+		client.glsl_set_uniform_f(client.glsl_get_uniform_loc(shader_pass, "time"), sec_current or 0.0)
+		client.glsl_set_uniform_i(client.glsl_get_uniform_loc(shader_pass, "tex0"), 0)
+	end
+
 	local i
 	for i=tracers.head,tracers.tail do
 		local tc = tracers[i]

@@ -187,6 +187,7 @@ int icelua_fn_client_mk_set_title(lua_State *L)
 #include "lua_bin.h"
 #include "lua_camera.h"
 #include "lua_gfx.h"
+#include "lua_glsl.h"
 #include "lua_image.h"
 #include "lua_input.h"
 #include "lua_json.h"
@@ -234,6 +235,13 @@ struct icelua_entry icelua_client[] = {
 	{icelua_fn_client_gfx_stencil_op, "gfx_stencil_op"},
 	{icelua_fn_client_gfx_stencil_func, "gfx_stencil_func"},
 	{icelua_fn_client_gfx_tex_available, "gfx_tex_available"},
+	{icelua_fn_client_gfx_glsl_available, "gfx_glsl_available"},
+	{icelua_fn_client_glsl_create, "glsl_create"},
+	{icelua_fn_client_glsl_use, "glsl_use"},
+	{icelua_fn_client_glsl_get_uniform_loc, "glsl_get_uniform_loc"},
+	{icelua_fn_client_glsl_set_uniform_f, "glsl_set_uniform_f"},
+	{icelua_fn_client_glsl_set_uniform_i, "glsl_set_uniform_i"},
+	{icelua_fn_client_glsl_set_uniform_ui, "glsl_set_uniform_ui"},
 	{icelua_fn_client_model_render_bone_global, "model_render_bone_global"},
 	{icelua_fn_client_model_render_bone_local, "model_render_bone_local"},
 	{icelua_fn_client_img_blit, "img_blit"},
