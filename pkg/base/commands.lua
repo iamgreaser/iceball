@@ -171,6 +171,21 @@ command_register({
 })
 
 command_register({
+	command = "fog",
+	permission = "resetgame",
+	usage = "/fog r g b",
+	func = function(plr, plrid, neth, prms, msg)
+		if table.getn(prms) == 3 then
+			fog_set(tonumber(prms[1]),
+				tonumber(prms[2]),
+				tonumber(prms[3]))
+		else
+			commands["help"].func(plr, plrid, neth, {"fog"})
+		end
+	end
+})
+
+command_register({
 	command = "resetgame",
 	permission = "resetgame",
 	usage = "/resetgame",

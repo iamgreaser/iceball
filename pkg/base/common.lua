@@ -317,6 +317,21 @@ do
 	end
 end
 
+if server then
+	local fog_r, fog_g, fog_b = 192, 238, 255
+
+	function fog_set(r, g, b)
+		fog_r = math.floor(math.max(0, math.min(255, r)))
+		fog_g = math.floor(math.max(0, math.min(255, g)))
+		fog_b = math.floor(math.max(0, math.min(255, b)))
+		net_broadcast(nil, common.net_pack("BBBB", PKT_FOG_COLOR, fog_r, fog_g, fog_b))
+	end
+
+	function fog_send_to(neth)
+		net_send(neth, common.net_pack("BBBB", PKT_FOG_COLOR, fog_r, fog_g, fog_b))
+	end
+end
+
 damage_blk = {}
 players = {max = MODE_PLAYERS_MAX, current = 1}
 miscents = {}
