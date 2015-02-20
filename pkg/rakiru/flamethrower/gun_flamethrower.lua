@@ -23,11 +23,12 @@ if client then
 	wav_flamethrower_shot = skin_load("wav", "flamethrower-shot.wav", DIR_FLAMETHROWER)
 
 	weapon_models[thisid] = model_load({
-		pmf = {
+		kv6 = {
 			bdir = DIR_FLAMETHROWER,
-			name = "flamethrower.pmf",
+			name = "flamethrower.kv6",
+			scale = 2.0/128.0,
 		},
-	}, {"pmf"})
+	}, {"kv6"})
 end
 
 weapon_names[thisid] = "MOTHERFUCKING FLAMETHROWER"  -- TODO: Be serious
