@@ -1344,7 +1344,7 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 void render_vertex_array(uint32_t *pixels, int width, int height, int pitch, camera_t *cam_base,
 	va_t *va, int islocal,
 	float px, float py, float pz, float ry, float rx, float ry2, float scale,
-	img_t *img, int do_blend, char sfactor, char dfactor, float alpha)
+	img_t **img, int do_blend, char sfactor, char dfactor, float alpha, int img_count)
 {
 	int i;
 
@@ -1372,31 +1372,37 @@ void render_vertex_array(uint32_t *pixels, int width, int height, int pitch, cam
 		}
 	}
 
-	if(img != NULL)
+	for(i = 0; i < img_count; i++)
+	if(img[i] != NULL)
 	{
 		int iw, ih;
-		iw = img->head.width;
-		ih = img->head.height;
+		iw = img[i]->head.width;
+		ih = img[i]->head.height;
 		expandtex_gl(&iw, &ih);
 
+		glClientActiveTexture(GL_TEXTURE0 + i);
+		glActiveTexture(GL_TEXTURE0 + i);
 		glEnable(GL_TEXTURE_2D);
-		if(img->tex_dirty)
+		if(img[i]->tex_dirty)
 		{
-			if(img->tex == 0)
-				glGenTextures(1, &(img->tex));
+			if(img[i]->tex == 0)
+				glGenTextures(1, &(img[i]->tex));
 			
-			glBindTexture(GL_TEXTURE_2D, img->tex);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iw, ih, 0, GL_BGRA, GL_UNSIGNED_BYTE, img->pixels);
+			glBindTexture(GL_TEXTURE_2D, img[i]->tex);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iw, ih, 0, GL_BGRA, GL_UNSIGNED_BYTE, img[i]->pixels);
 			// BILINEAR FILTERING IS FOR PLEBS
 			// (just kidding, I may add support for it later)
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-			img->tex_dirty = 0;
+			img[i]->tex_dirty = 0;
 		} else {
-			glBindTexture(GL_TEXTURE_2D, img->tex);
+			glBindTexture(GL_TEXTURE_2D, img[i]->tex);
 		}
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 	}
+	glClientActiveTexture(GL_TEXTURE0);
+	glActiveTexture(GL_TEXTURE0);
 
 	if(do_blend)
 	{
@@ -1437,33 +1443,80 @@ void render_vertex_array(uint32_t *pixels, int width, int height, int pitch, cam
 		glColor3f(1.0f, 1.0f, 1.0f);
 	}
 
-	glTexCoord2f(0.0f, 0.0f);
+	for(i = 0; i < va->texcoord_count; i++)
+	{
+		glClientActiveTexture(GL_TEXTURE0 + i);
+		glActiveTexture(GL_TEXTURE0 + i);
+		glTexCoord2f(0.0f, 0.0f);
+	}
+	glClientActiveTexture(GL_TEXTURE0);
+	glActiveTexture(GL_TEXTURE0);
+
 	if(va->vbo == 0)
 	{
-		glVertexPointer(3, GL_FLOAT, sizeof(float)*va->stride, va->data);
+		glVertexPointer(va->vertex_size, GL_FLOAT, sizeof(float)*va->stride, va->data + sizeof(float)*va->vertex_offs);
 		if(va->color_offs != -1) glColorPointer(va->color_size, GL_FLOAT, sizeof(float)*va->stride, va->data+sizeof(float)*va->color_offs);
-		if(va->texcoord_offs != -1) glTexCoordPointer(2, GL_FLOAT, sizeof(float)*va->stride, va->data+sizeof(float)*va->texcoord_offs);
+		if(va->normal_offs != -1) glColorPointer(3, GL_FLOAT, sizeof(float)*va->stride, va->data+sizeof(float)*va->normal_offs);
+		if(va->texcoord_count >= 1)
+		for(i = 0; i < va->texcoord_count || i < img_count; i++)
+		{
+			glClientActiveTexture(GL_TEXTURE0 + i);
+			glActiveTexture(GL_TEXTURE0 + i);
+			glTexCoordPointer(va->texcoord_size[i%va->texcoord_count], GL_FLOAT, sizeof(float)*va->stride, va->data+sizeof(float)*va->texcoord_offs[i%va->texcoord_count]);
+		}
 	} else {
 		glBindBuffer(GL_ARRAY_BUFFER, va->vbo);
-		glVertexPointer(3, GL_FLOAT, sizeof(float)*va->stride, (void *)(0));
+		glVertexPointer(va->vertex_size, GL_FLOAT, sizeof(float)*va->stride, (void *)(0 + sizeof(float)*va->vertex_offs));
 		if(va->color_offs != -1) glColorPointer(va->color_size, GL_FLOAT, sizeof(float)*va->stride, (void *)(0 + sizeof(float)*va->color_offs));
-		if(va->texcoord_offs != -1) glTexCoordPointer(3, GL_FLOAT, sizeof(float)*va->stride, (void *)(0 + sizeof(float)*va->texcoord_offs));
+		if(va->normal_offs != -1) glColorPointer(3, GL_FLOAT, sizeof(float)*va->stride, (void *)(0 + sizeof(float)*va->normal_offs));
+		if(va->texcoord_count >= 1)
+		for(i = 0; i < va->texcoord_count || i < img_count; i++)
+		{
+			glClientActiveTexture(GL_TEXTURE0 + i);
+			glActiveTexture(GL_TEXTURE0 + i);
+			glTexCoordPointer(va->texcoord_size[i%va->texcoord_count], GL_FLOAT, sizeof(float)*va->stride, ((void *)0+sizeof(float)*va->texcoord_offs[i%va->texcoord_count]));
+		}
 	}
+	glClientActiveTexture(GL_TEXTURE0);
+	glActiveTexture(GL_TEXTURE0);
 	glEnableClientState(GL_VERTEX_ARRAY);
 	if(va->color_offs != -1) glEnableClientState(GL_COLOR_ARRAY);
-	if(va->texcoord_offs != -1) glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	if(va->normal_offs != -1) glEnableClientState(GL_NORMAL_ARRAY);
+	if(va->texcoord_count >= 1)
+	for(i = 0; i < va->texcoord_count || i < img_count; i++)
+	{
+		glClientActiveTexture(GL_TEXTURE0 + i);
+		glActiveTexture(GL_TEXTURE0 + i);
+		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	}
+	glClientActiveTexture(GL_TEXTURE0);
+	glActiveTexture(GL_TEXTURE0);
 	glDrawArrays(GL_TRIANGLES, 0, va->data_len);
-	if(va->texcoord_offs != -1) glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	if(va->texcoord_count >= 1)
+	for(i = 0; i < va->texcoord_count || i < img_count; i++)
+	{
+		glClientActiveTexture(GL_TEXTURE0 + i);
+		glActiveTexture(GL_TEXTURE0 + i);
+		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	}
+	glClientActiveTexture(GL_TEXTURE0);
+	glActiveTexture(GL_TEXTURE0);
+	if(va->normal_offs != -1) glDisableClientState(GL_NORMAL_ARRAY);
 	if(va->color_offs != -1) glDisableClientState(GL_COLOR_ARRAY);
 	glDisableClientState(GL_VERTEX_ARRAY);
 	if(va->vbo != 0)
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	if(img != NULL)
+	for(i = 0; i < img_count; i++)
+	if(img[i] != NULL)
 	{
+		glClientActiveTexture(GL_TEXTURE0 + i);
+		glActiveTexture(GL_TEXTURE0 + i);
 		glBindTexture(GL_TEXTURE_2D, 0);
 		glDisable(GL_TEXTURE_2D);
 	}
+	glClientActiveTexture(GL_TEXTURE0);
+	glActiveTexture(GL_TEXTURE0);
 
 	glPopMatrix();
 	glDisable(GL_BLEND);

@@ -29,6 +29,7 @@
 	"frame_limit": 100,
 	"fog": 0.0,
 	"invert_y": false,
+	"fast_load_screen": false,
 
 	"skins" : {
 

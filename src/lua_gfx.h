@@ -149,3 +149,18 @@ int icelua_fn_client_gfx_stencil_func(lua_State *L)
 	return 0;
 }
 
+int icelua_fn_client_gfx_tex_available(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 0, 0);
+
+#ifndef DEDI
+	lua_pushinteger(L, (gl_max_texunits > VA_MAX_IMG
+		? VA_MAX_IMG
+		: gl_max_texunits));
+	return 1;
+#else
+	return 0;
+#endif
+}
+
+

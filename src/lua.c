@@ -233,6 +233,7 @@ struct icelua_entry icelua_client[] = {
 	{icelua_fn_client_gfx_stencil_test, "gfx_stencil_test"},
 	{icelua_fn_client_gfx_stencil_op, "gfx_stencil_op"},
 	{icelua_fn_client_gfx_stencil_func, "gfx_stencil_func"},
+	{icelua_fn_client_gfx_tex_available, "gfx_tex_available"},
 	{icelua_fn_client_model_render_bone_global, "model_render_bone_global"},
 	{icelua_fn_client_model_render_bone_local, "model_render_bone_local"},
 	{icelua_fn_client_img_blit, "img_blit"},
