@@ -1029,13 +1029,19 @@ function new_player(settings)
 					this.t_step = sec_current + 0.5
 				end
 				if this.t_step < sec_current then
-					local freq_mod = (this.inwater and 0.25) or 1.0
+					local stepsound, soundselect
+					if this.inwater then
+						soundselect = math.floor(math.random()*#wav_water_steps)+1
+						stepsound = wav_water_steps[soundselect]
+					else
+						soundselect = math.floor(math.random()*#wav_steps)+1
+						stepsound = wav_steps[soundselect]
+					end
 					local tdiff = 0.01
 					if this.grounded then
-						client.wav_play_global(wav_steps[
-							math.floor(math.random()*#wav_steps)+1],
+						client.wav_play_global(stepsound,
 								this.x, this.y, this.z,
-								1.0, freq_mod)
+								1.0, 1.0)
 						tdiff = 0.5
 					end
 					this.t_step = this.t_step + tdiff
