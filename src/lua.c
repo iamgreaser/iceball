@@ -588,6 +588,12 @@ int icelua_init(void)
 			if(v > 0) gl_chunks_tesselated_per_frame = v;
 			lua_pop(Lc, 1);
 
+			lua_getfield(Lc, -1, "gl_shaders");
+			v = lua_toboolean(Lc, -1);
+			if(v >= 0) gl_shaders = v;
+			lua_pop(Lc, 1);
+
+
 			lua_getfield(Lc, -1, "fullscreen");
 			v = lua_toboolean(Lc, -1);
 			if(!lua_isnil(Lc, -1)) screen_fullscreen = v;

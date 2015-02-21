@@ -469,14 +469,26 @@ void render_map_visible_chunks_draw(map_t *map, float fx, float fy, float fz, fl
 				// select pointers
 				if (chunk->vbo == 0)
 				{
-					glVertexPointer(3, GL_FLOAT, sizeof(float)*9, chunk->vbo_arr);
-					glColorPointer(3, GL_FLOAT, sizeof(float)*9, chunk->vbo_arr+3);
-					glNormalPointer(GL_FLOAT, sizeof(float)*9, chunk->vbo_arr+6);
+					if(gl_shaders)
+					{
+						glVertexPointer(3, GL_FLOAT, sizeof(float)*9, chunk->vbo_arr);
+						glColorPointer(3, GL_FLOAT, sizeof(float)*9, chunk->vbo_arr+3);
+						glNormalPointer(GL_FLOAT, sizeof(float)*9, chunk->vbo_arr+6);
+					} else {
+						glVertexPointer(3, GL_FLOAT, sizeof(float)*6, chunk->vbo_arr);
+						glColorPointer(3, GL_FLOAT, sizeof(float)*6, chunk->vbo_arr+3);
+					}
 				} else {
 					glBindBuffer(GL_ARRAY_BUFFER, chunk->vbo);
-					glVertexPointer(3, GL_FLOAT, sizeof(float)*9, (void *)(0));
-					glColorPointer(3, GL_FLOAT, sizeof(float)*9, (void *)(0 + sizeof(float)*3));
-					glNormalPointer(GL_FLOAT, sizeof(float)*9, (void *)(0 + sizeof(float)*6));
+					if(gl_shaders)
+					{
+						glVertexPointer(3, GL_FLOAT, sizeof(float)*9, (void *)(0));
+						glColorPointer(3, GL_FLOAT, sizeof(float)*9, (void *)(0 + sizeof(float)*3));
+						glNormalPointer(GL_FLOAT, sizeof(float)*9, (void *)(0 + sizeof(float)*6));
+					} else {
+						glVertexPointer(3, GL_FLOAT, sizeof(float)*6, (void *)(0));
+						glColorPointer(3, GL_FLOAT, sizeof(float)*6, (void *)(0 + sizeof(float)*3));
+					}
 				}
 
 				// draw
@@ -644,7 +656,13 @@ void render_map_tesselate_visible_chunks(map_t *map, int camx, int camz)
 			if(chunk->vbo != 0)
 			{
 				glBindBuffer(GL_ARRAY_BUFFER, chunk->vbo);
-				glBufferData(GL_ARRAY_BUFFER, sizeof(float)*9*chunk->vbo_arr_len, chunk->vbo_arr, GL_STATIC_DRAW);
+				if(gl_shaders)
+				{
+					glBufferData(GL_ARRAY_BUFFER, sizeof(float)*9*chunk->vbo_arr_len, chunk->vbo_arr, GL_STATIC_DRAW);
+				} else {
+					glBufferData(GL_ARRAY_BUFFER, sizeof(float)*6*chunk->vbo_arr_len, chunk->vbo_arr, GL_STATIC_DRAW);
+
+				}
 				glBindBuffer(GL_ARRAY_BUFFER, 0);
 			}
 
@@ -758,7 +776,12 @@ void render_update_vbo(float **arr, int *len, int *max, int newlen)
 			xlen = newlen + 10;
 	}
 
-	*arr = (float*)realloc(*arr, xlen*sizeof(float)*9);
+	if(gl_shaders)
+	{
+		*arr = (float*)realloc(*arr, xlen*sizeof(float)*9);
+	} else {
+		*arr = (float*)realloc(*arr, xlen*sizeof(float)*6);
+	}
 	*max = xlen;
 }
 
@@ -768,9 +791,19 @@ void render_gl_cube_pmf(model_bone_t *bone, float x, float y, float z, float r, 
 	float ua,ub,uc;
 	float va,vb,vc;
 
-	render_update_vbo(&(bone->vbo_arr), &(bone->vbo_arr_len), &(bone->vbo_arr_max), bone->vbo_arr_len+4*9);
+	if(gl_shaders)
+	{
+		render_update_vbo(&(bone->vbo_arr), &(bone->vbo_arr_len), &(bone->vbo_arr_max), bone->vbo_arr_len+4*9);
+	} else {
+		render_update_vbo(&(bone->vbo_arr), &(bone->vbo_arr_len), &(bone->vbo_arr_max), bone->vbo_arr_len+4*6);
+	}
 	float *arr = bone->vbo_arr;
-	arr += bone->vbo_arr_len*9;
+	if(gl_shaders)
+	{
+		arr += bone->vbo_arr_len*9;
+	} else {
+		arr += bone->vbo_arr_len*6;
+	}
 	bone->vbo_arr_len += 4*6;
 
 	for(i = 0; i < 3; i++)
@@ -793,7 +826,7 @@ void render_gl_cube_pmf(model_bone_t *bone, float x, float y, float z, float r, 
 #define ARR_ADD(vx,vy,vz) \
 		*(arr++) = vx; *(arr++) = vy; *(arr++) = vz; \
 		*(arr++) = cr; *(arr++) = cg; *(arr++) = cb; \
-		*(arr++) = nx; *(arr++) = ny; *(arr++) = nz;
+		if(gl_shaders){*(arr++) = nx; *(arr++) = ny; *(arr++) = nz;}
 
 		/* Quad 1 */
 		cr = r*s1; cg = g*s1, cb = b*s1;
@@ -944,14 +977,19 @@ void render_gl_cube_map(map_t *map, map_chunk_t *chunk, float x, float y, float 
 #define ARR_ADD(vx,vy,vz) \
 		*(arr++) = vx; *(arr++) = vy; *(arr++) = vz; \
 		*(arr++) = cr; *(arr++) = cg; *(arr++) = cb; \
-		*(arr++) = nx; *(arr++) = ny; *(arr++) = nz;
+		if(gl_shaders){*(arr++) = nx; *(arr++) = ny; *(arr++) = nz;}
 
 		/* check visibility of the face (is face exposed to air ?) */
 		if (render_map_get_block_at(map, x - ub, y - uc, z - ua) == 0)
 		{
 			render_update_vbo(&(chunk->vbo_arr), &(chunk->vbo_arr_len), &(chunk->vbo_arr_max), chunk->vbo_arr_len+4);
 			arr = chunk->vbo_arr;
-			arr += chunk->vbo_arr_len*9;
+			if(gl_shaders)
+			{
+				arr += chunk->vbo_arr_len*9;
+			} else {
+				arr += chunk->vbo_arr_len*6;
+			}
 			chunk->vbo_arr_len += 4;
 
 			if (screen_smooth_lighting)
@@ -1068,7 +1106,12 @@ void render_gl_cube_map(map_t *map, map_chunk_t *chunk, float x, float y, float 
 		{
 			render_update_vbo(&(chunk->vbo_arr), &(chunk->vbo_arr_len), &(chunk->vbo_arr_max), chunk->vbo_arr_len+4);
 			arr = chunk->vbo_arr;
-			arr += chunk->vbo_arr_len*9;
+			if(gl_shaders)
+			{
+				arr += chunk->vbo_arr_len*9;
+			} else {
+				arr += chunk->vbo_arr_len*6;
+			}
 			chunk->vbo_arr_len += 4;
 
 			if (screen_smooth_lighting)
@@ -1339,28 +1382,46 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 		if(bone->vbo != 0)
 		{
 			glBindBuffer(GL_ARRAY_BUFFER, bone->vbo);
-			glBufferData(GL_ARRAY_BUFFER, sizeof(float)*9*bone->vbo_arr_len, bone->vbo_arr, GL_STATIC_DRAW);
+			if(gl_shaders)
+			{
+				glBufferData(GL_ARRAY_BUFFER, sizeof(float)*9*bone->vbo_arr_len, bone->vbo_arr, GL_STATIC_DRAW);
+			} else {
+				glBufferData(GL_ARRAY_BUFFER, sizeof(float)*6*bone->vbo_arr_len, bone->vbo_arr, GL_STATIC_DRAW);
+
+			}
 			glBindBuffer(GL_ARRAY_BUFFER, 0);
 		}
 	}
 
 	if(bone->vbo == 0)
 	{
-		glVertexPointer(3, GL_FLOAT, sizeof(float)*9, bone->vbo_arr);
-		glColorPointer(3, GL_FLOAT, sizeof(float)*9, bone->vbo_arr+3);
-		glNormalPointer(GL_FLOAT, sizeof(float)*9, bone->vbo_arr+6);
+		if(gl_shaders)
+		{
+			glVertexPointer(3, GL_FLOAT, sizeof(float)*9, bone->vbo_arr);
+			glColorPointer(3, GL_FLOAT, sizeof(float)*9, bone->vbo_arr+3);
+			glNormalPointer(GL_FLOAT, sizeof(float)*9, bone->vbo_arr+6);
+		} else {
+			glVertexPointer(3, GL_FLOAT, sizeof(float)*6, bone->vbo_arr);
+			glColorPointer(3, GL_FLOAT, sizeof(float)*6, bone->vbo_arr+3);
+		}
 	} else {
 		glBindBuffer(GL_ARRAY_BUFFER, bone->vbo);
-		glVertexPointer(3, GL_FLOAT, sizeof(float)*9, (void *)(0));
-		glColorPointer(3, GL_FLOAT, sizeof(float)*9, (void *)(0 + sizeof(float)*3));
-		glNormalPointer(GL_FLOAT, sizeof(float)*9, (void *)(0 + sizeof(float)*6));
+		if(gl_shaders)
+		{
+			glVertexPointer(3, GL_FLOAT, sizeof(float)*9, (void *)(0));
+			glColorPointer(3, GL_FLOAT, sizeof(float)*9, (void *)(0 + sizeof(float)*3));
+			glNormalPointer(GL_FLOAT, sizeof(float)*9, (void *)(0 + sizeof(float)*6));
+		} else {
+			glVertexPointer(3, GL_FLOAT, sizeof(float)*6, (void *)(0));
+			glColorPointer(3, GL_FLOAT, sizeof(float)*6, (void *)(0 + sizeof(float)*3));
+		}
 	}
 	glTexCoord2f(-1.0f, -1.0f);
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glEnableClientState(GL_COLOR_ARRAY);
-	glEnableClientState(GL_NORMAL_ARRAY);
+	if(gl_shaders) glEnableClientState(GL_NORMAL_ARRAY);
 	glDrawArrays(GL_QUADS, 0, bone->vbo_arr_len);
-	glDisableClientState(GL_NORMAL_ARRAY);
+	if(gl_shaders) glDisableClientState(GL_NORMAL_ARRAY);
 	glDisableClientState(GL_COLOR_ARRAY);
 	glDisableClientState(GL_VERTEX_ARRAY);
 	if(bone->vbo != 0)

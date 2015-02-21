@@ -70,7 +70,11 @@ end
 
 if USE_GLSL then
 	local ver = client.gfx_glsl_available()
-	if ver == "2.0" then
+	if ver == nil then
+		USE_GLSL = false
+		USE_GLSL_20 = false
+		USE_GLSL_21 = false
+	elseif ver == "2.0" then
 		USE_GLSL_20 = true
 		USE_GLSL_21 = false
 	elseif ver == "2.1" then

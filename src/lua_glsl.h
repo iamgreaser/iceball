@@ -43,9 +43,9 @@ int icelua_fn_client_gfx_glsl_available(lua_State *L)
 	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
 #else
 	// we could possibly be a bit more accurate with this?
-	if(GL_VERSION_2_1)
+	if(gl_shaders && (GL_VERSION_2_1))
 		lua_pushstring(L, "2.1");
-	else if(GL_VERSION_2_0)
+	else if(gl_shaders && (GL_VERSION_2_0))
 		lua_pushstring(L, "2.0");
 	else
 		lua_pushnil(L);
@@ -64,6 +64,8 @@ int icelua_fn_client_glsl_create(lua_State *L)
 	GLint success = GL_FALSE;
 	GLuint prog;
 	
+	if(!gl_shaders)
+		return luaL_error(L, "shaders disabled in config!");
 	if(!(GL_VERSION_2_0))
 		return luaL_error(L, "shaders not supported on your GPU!");
 
@@ -143,6 +145,8 @@ int icelua_fn_client_glsl_use(lua_State *L)
 	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
 #else
 	
+	if(!gl_shaders)
+		return luaL_error(L, "shaders disabled in config!");
 	if(!(GL_VERSION_2_0))
 		return luaL_error(L, "shaders not supported on your GPU!");
 
@@ -170,6 +174,8 @@ int icelua_fn_client_glsl_get_uniform_loc(lua_State *L)
 	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
 #else
 	
+	if(!gl_shaders)
+		return luaL_error(L, "shaders disabled in config!");
 	if(!(GL_VERSION_2_0))
 		return luaL_error(L, "shaders not supported on your GPU!");
 
@@ -198,6 +204,8 @@ int icelua_fn_client_glsl_set_uniform_f(lua_State *L)
 	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
 #else
 	
+	if(!gl_shaders)
+		return luaL_error(L, "shaders disabled in config!");
 	if(!(GL_VERSION_2_0))
 		return luaL_error(L, "shaders not supported on your GPU!");
 
@@ -241,6 +249,8 @@ int icelua_fn_client_glsl_set_uniform_i(lua_State *L)
 	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
 #else
 	
+	if(!gl_shaders)
+		return luaL_error(L, "shaders disabled in config!");
 	if(!(GL_VERSION_2_0))
 		return luaL_error(L, "shaders not supported on your GPU!");
 
@@ -284,6 +294,8 @@ int icelua_fn_client_glsl_set_uniform_ui(lua_State *L)
 	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
 #else
 	
+	if(!gl_shaders)
+		return luaL_error(L, "shaders disabled in config!");
 	if(!(GL_VERSION_2_0))
 		return luaL_error(L, "shaders not supported on your GPU!");
 
