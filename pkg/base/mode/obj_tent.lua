@@ -105,6 +105,7 @@ function new_tent(settings)
 			client.gfx_stencil_test(true)
 
 			-- PASS 1: set to 1 for enlarged model
+			if shader_white then shader_white.push() end
 			client.gfx_depth_mask(false)
 			client.gfx_stencil_func("0", 1, 255)
 			client.gfx_stencil_op("===")
@@ -112,13 +113,16 @@ function new_tent(settings)
 				this.x, this.y, this.z,
 				this.rotpos, 0, 0, 3)
 			client.gfx_depth_mask(true)
+			if shader_white then shader_white.pop() end
 
 			-- PASS 2: set to 0 for regular model
+			if shader_world then shader_world.push() end
 			client.gfx_stencil_func("1", 0, 255)
 			client.gfx_stencil_op(";==")
 			this.mdl_tent.render_global(
 				this.x, this.y, this.z,
 				this.rotpos, 0, 0, 3)
+			if shader_world then shader_world.pop() end
 
 			-- PASS 3: draw red for stencil == 1; clear stencil
 			client.gfx_stencil_func("==", 1, 255)

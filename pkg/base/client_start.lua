@@ -967,7 +967,7 @@ if VA_TEST then
 end
 
 if USE_GLSL_20 then
-shader_misc, result = shader_new{vert=[=[
+shader_misc, result = shader_new{name="misc", vert=[=[
 // Vertex shader
 
 varying vec4 cpos;
@@ -997,7 +997,6 @@ varying vec4 wnorm;
 varying float fogmul;
 
 uniform vec4 sun;
-uniform float saturation;
 
 uniform sampler2D tex0;
 
@@ -1023,7 +1022,7 @@ void main()
 
 		// Diffuse
 		float diff = max(0.0, dot(-camto, wnorm));
-		diff = 0.5 + 2.0*diff*diff; // Exaggerated
+		diff = 0.3 + 1.5*diff; // Exaggerated
 
 		// Specular
 		// disabling until it makes sense
@@ -1040,19 +1039,13 @@ void main()
 		color = max(vec4(0.0), min(vec4(1.0), color));
 		//color = vec4(0.5+0.5*sin(3.141593*(color.rgb-0.5)), color.a);
 
-		// Saturation fix
-		float savg = (color.r + color.g + color.b)/3.0;
-		color.rgb -= savg;
-		color.rgb *= saturation;
-		color.rgb += savg;
-
 		gl_FragColor = color * (1.0 - fog_strength)
 			+ gl_Fog.color * fog_strength;
 	}
 }
 ]=]}
 
-shader_world, result = shader_new{vert=[=[
+shader_world, result = shader_new{name="world", vert=[=[
 // Vertex shader
 
 varying vec4 cpos;
@@ -1081,7 +1074,6 @@ varying vec4 wnorm;
 varying float fogmul;
 
 uniform vec4 sun;
-uniform float saturation;
 
 void main()
 {
@@ -1093,7 +1085,7 @@ void main()
 
 	// Diffuse
 	float diff = max(0.0, dot(-camto, wnorm));
-	diff = 0.5 + 2.0*diff*diff; // Exaggerated
+	diff = 0.3 + 1.5*diff; // Exaggerated
 
 	// Specular
 	// disabling until it makes sense
@@ -1109,24 +1101,47 @@ void main()
 	color = max(vec4(0.0), min(vec4(1.0), color));
 	//color = vec4(0.5+0.5*sin(3.141593*(color.rgb-0.5)), color.a);
 
-	// Saturation fix
-	float savg = (color.r + color.g + color.b)/3.0;
-	float smin = min(min(color.r, color.g), color.b);
-	float smax = max(max(color.r, color.g), color.b);
-	float sboost = (
-		smax-smin < 0.001
-		? 1.0
-		: min(savg/(savg-smin), (1.0-savg)/(smax-savg)));
-	color.rgb -= savg;
-	color.rgb *= saturation;//sboost;
-	color.rgb += savg;
-
 	gl_FragColor = color * (1.0 - fog_strength)
 		+ gl_Fog.color * fog_strength;
 }
 ]=]}
 
-shader_img, result = shader_new{vert=[=[
+shader_white, result = shader_new{name="white", vert=[=[
+// Vertex shader
+
+void main()
+{
+	gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;
+}
+
+]=], frag=[=[
+// Fragment shader
+
+void main()
+{
+	gl_FragColor = vec4(1.0);
+}
+]=]}
+
+shader_simple, result = shader_new{name="simple", vert=[=[
+// Vertex shader
+
+void main()
+{
+	gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;
+	gl_FrontColor = gl_Color;
+}
+
+]=], frag=[=[
+// Fragment shader
+
+void main()
+{
+	gl_FragColor = gl_Color;
+}
+]=]}
+
+shader_img, result = shader_new{name="img", vert=[=[
 // Vertex shader
 
 void main()
@@ -1158,7 +1173,6 @@ if shader_world then
 	shader_world.push()
 end
 
-color_saturation = 1.2
 function client.hook_render()
 	local sec_current = render_sec_current
 
@@ -1173,7 +1187,6 @@ function client.hook_render()
 			1.0/math.sqrt(4.0),
 			0)
 		shader_misc.set_uniform_f("time", sec_current or 0.0)
-		shader_misc.set_uniform_f("saturation", color_saturation)
 		shader_misc.set_uniform_i("tex0", 0)
 		shader_misc.push()
 	end
@@ -1243,7 +1256,6 @@ function client.hook_render()
 			1.0/math.sqrt(4.0),
 			0)
 		shader_world.set_uniform_f("time", sec_current or 0.0)
-		shader_world.set_uniform_f("saturation", color_saturation)
 		shader_world.push()
 	end
 end

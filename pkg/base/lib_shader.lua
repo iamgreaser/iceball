@@ -40,13 +40,14 @@ end
 
 function shader_new(settings)
 	local this = {
+		name = settings.name or "???",
 		vert = settings.vert or error("must provide vert shader source"),
 		frag = settings.frag or error("must provide frag shader source"),
 		unif = {},
 	}
 
 	this.prog, this.result = client.glsl_create(this.vert, this.frag)
-	print("Shader", this.prog, this.result)
+	print("*** Shader", this.name, this.prog, this.result)
 
 	if not this.prog then
 		return nil, this.result
