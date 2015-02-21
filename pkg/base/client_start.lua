@@ -81,6 +81,12 @@ if USE_GLSL then
 		USE_GLSL_20 = true
 		USE_GLSL_21 = true
 	end
+
+	dofile("pkg/base/lib_shader.lua")
+else
+	function shader_new() return nil, "Shaders not supported by this GPU" end
+	function shader_push_nil() end
+	function shader_pop_nil() end
 end
 
 -- speed through stuff
@@ -961,7 +967,7 @@ if VA_TEST then
 end
 
 if USE_GLSL_20 then
-shader_misc, result = client.glsl_create([=[
+shader_misc, result = shader_new{vert=[=[
 // Vertex shader
 
 varying vec4 cpos;
@@ -982,7 +988,7 @@ void main()
 	gl_TexCoord[0] = gl_MultiTexCoord0;
 }
 
-]=], [=[
+]=], frag=[=[
 // Fragment shader
 
 varying vec4 cpos;
@@ -991,6 +997,7 @@ varying vec4 wnorm;
 varying float fogmul;
 
 uniform vec4 sun;
+uniform float saturation;
 
 uniform sampler2D tex0;
 
@@ -1027,16 +1034,26 @@ void main()
 		*/
 
 		//color = vec4(vec3(color.rgb * diff) + vec3(1.0)*spec, color.a);
-		color = vec4(vec3(color.rgb * diff), color.a);
+		diff = diff * (1.0 - fog_strength);
+		diff = min(1.5, diff);
+		color = vec4(color.rgb * diff, color.a);
+		color = max(vec4(0.0), min(vec4(1.0), color));
+		//color = vec4(0.5+0.5*sin(3.141593*(color.rgb-0.5)), color.a);
+
+		// Saturation fix
+		float savg = (color.r + color.g + color.b)/3.0;
+		color.rgb -= savg;
+		color.rgb *= saturation;
+		color.rgb += savg;
 
 		gl_FragColor = color * (1.0 - fog_strength)
 			+ gl_Fog.color * fog_strength;
 	}
 }
-]=])
-print(shader_misc, result)
+]=]}
 
-shader_world, result = client.glsl_create([=[
+shader_world, result = shader_new{vert=[=[
+#version 120
 // Vertex shader
 
 varying vec4 cpos;
@@ -1056,7 +1073,8 @@ void main()
 	gl_FrontColor = gl_Color;
 }
 
-]=], [=[
+]=], frag=[=[
+#version 120
 // Fragment shader
 
 varying vec4 cpos;
@@ -1065,6 +1083,7 @@ varying vec4 wnorm;
 varying float fogmul;
 
 uniform vec4 sun;
+uniform float saturation;
 
 void main()
 {
@@ -1086,16 +1105,30 @@ void main()
 	spec = pow(spec, 32.0)*0.6;
 	*/
 
-	//color = vec4(vec3(color.rgb * diff) + vec3(1.0)*spec, color.a);
-	color = vec4(vec3(color.rgb * diff), color.a);
+	diff = diff * (1.0 - fog_strength);
+	diff = min(1.5, diff);
+	color = vec4(color.rgb * diff, color.a);
+	color = max(vec4(0.0), min(vec4(1.0), color));
+	//color = vec4(0.5+0.5*sin(3.141593*(color.rgb-0.5)), color.a);
+
+	// Saturation fix
+	float savg = (color.r + color.g + color.b)/3.0;
+	float smin = min(min(color.r, color.g), color.b);
+	float smax = max(max(color.r, color.g), color.b);
+	float sboost = (
+		smax-smin < 0.001
+		? 1.0
+		: min(savg/(savg-smin), (1.0-savg)/(smax-savg)));
+	color.rgb -= savg;
+	color.rgb *= saturation;//sboost;
+	color.rgb += savg;
 
 	gl_FragColor = color * (1.0 - fog_strength)
 		+ gl_Fog.color * fog_strength;
 }
-]=])
-print(shader_world, result)
+]=]}
 
-shader_img, result = client.glsl_create([=[
+shader_img, result = shader_new{vert=[=[
 // Vertex shader
 
 void main()
@@ -1107,7 +1140,7 @@ void main()
 	gl_TexCoord[0] = gl_MultiTexCoord0;
 }
 
-]=], [=[
+]=], frag=[=[
 // Fragment shader
 
 uniform sampler2D tex0;
@@ -1120,29 +1153,39 @@ void main()
 	gl_FragColor = color;
 }
 
-]=])
-print(shader_img, result)
+]=]}
 end
 
+if shader_world then
+	shader_world.push()
+end
+
+color_saturation = 1.2
 function client.hook_render()
 	local sec_current = render_sec_current
+
+	if shader_world then
+		shader_world.pop()
+	end
+
 	if shader_misc then
-		client.glsl_use(shader_misc)
-		client.glsl_set_uniform_f(client.glsl_get_uniform_loc(shader_misc, "sun"),
+		shader_misc.set_uniform_f("sun", 
 			1.0/math.sqrt(4.0),
 			math.sqrt(2.0)/math.sqrt(4.0),
 			1.0/math.sqrt(4.0),
 			0)
-		client.glsl_set_uniform_f(client.glsl_get_uniform_loc(shader_misc, "time"), sec_current or 0.0)
-		client.glsl_set_uniform_i(client.glsl_get_uniform_loc(shader_misc, "tex0"), 0)
+		shader_misc.set_uniform_f("time", sec_current or 0.0)
+		shader_misc.set_uniform_f("saturation", color_saturation)
+		shader_misc.set_uniform_i("tex0", 0)
+		shader_misc.push()
 	end
 
 	local s_img_blit = client.img_blit
 	if shader_img then
 		function client.img_blit(...)
-			client.glsl_use(shader_img)
+			shader_img.push()
 			s_img_blit(...)
-			client.glsl_use(shader_misc)
+			shader_img.pop()
 		end
 	end
 
@@ -1191,15 +1234,19 @@ function client.hook_render()
 		client.va_render_local(va_test, -0.8, 0.35, 1, sec_current, sec_current*0.8, sec_current*0.623, 0.1, img_overview)
 	end
 
+	if shader_misc then
+		shader_misc.pop()
+	end
 	client.img_blit = s_img_blit
 	if shader_world then
-		client.glsl_use(shader_world)
-		client.glsl_set_uniform_f(client.glsl_get_uniform_loc(shader_world, "sun"),
+		shader_world.set_uniform_f("sun",
 			1.0/math.sqrt(4.0),
 			math.sqrt(2.0)/math.sqrt(4.0),
 			1.0/math.sqrt(4.0),
 			0)
-		client.glsl_set_uniform_f(client.glsl_get_uniform_loc(shader_world, "time"), sec_current or 0.0)
+		shader_world.set_uniform_f("time", sec_current or 0.0)
+		shader_world.set_uniform_f("saturation", color_saturation)
+		shader_world.push()
 	end
 end
 

@@ -325,13 +325,13 @@ function gui_create_fixwidth_font(image, char_width, char_height, indexing_fn, s
 			this.va = common.va_make(l, this.va, "3v,4c,2t")
 			client.gfx_depth_mask(false)
 			if USE_GLSL_20 and shader_img then
-				client.glsl_use(shader_img)
+				shader_img.push()
 				client.va_render_local(this.va, 0, 0, 0, 0, 0, 0, 1, this.image, "ah")
-				client.glsl_use(shader_misc)
+				shader_img.pop()
 			else
-				if USE_GLSL_20 then client.glsl_use(nil) end
+				if USE_GLSL_20 and shader_push_nil then shader_push_nil() end
 				client.va_render_local(this.va, 0, 0, 0, 0, 0, 0, 1, this.image, "ah")
-				if USE_GLSL_20 then client.glsl_use(shader_misc) end
+				if USE_GLSL_20 and shader_push_nil then shader_pop_nil() end
 			end
 			client.gfx_depth_mask(true)
 		else
