@@ -964,23 +964,20 @@ if USE_GLSL_20 then
 shader_misc, result = client.glsl_create([=[
 // Vertex shader
 
+varying vec4 cpos;
 varying vec4 wpos;
-varying vec4 inorm;
-varying vec4 locpos;
+varying vec4 wnorm;
+varying float fogmul;
 uniform float time;
 
 void main()
 {
 	wpos = gl_Vertex;
+	cpos = (gl_ModelViewMatrixInverse * vec4(0.0, 0.0, 0.0, 1.0));
+	wnorm = vec4(normalize(gl_Normal), 0.0);
+	fogmul = 1.0 / (length(gl_ModelViewMatrixInverse * vec4(0.0, 0.0, -1.0, 0.0)) * gl_Fog.end);
 
-	locpos = gl_ModelViewMatrix * wpos;
-
-	vec4 t_norm = gl_ModelViewMatrix * vec4(gl_Normal, 0.0);
-	t_norm.w = 0.0;
-	t_norm = normalize(t_norm);
-	inorm = -t_norm;
-
-	gl_Position = gl_ProjectionMatrix * locpos;
+	gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * wpos;
 	gl_FrontColor = gl_Color;
 	gl_TexCoord[0] = gl_MultiTexCoord0;
 }
@@ -988,9 +985,10 @@ void main()
 ]=], [=[
 // Fragment shader
 
+varying vec4 cpos;
 varying vec4 wpos;
-varying vec4 inorm;
-varying vec4 locpos;
+varying vec4 wnorm;
+varying float fogmul;
 
 uniform vec4 sun;
 
@@ -998,7 +996,7 @@ uniform sampler2D tex0;
 
 void main()
 {
-	float fog_strength = min(1, length(locpos.xyz) / gl_Fog.end);
+	float fog_strength = min(1.0, length((wpos - cpos).xyz) * fogmul);
 	fog_strength *= fog_strength;
 
 	vec4 color = gl_Color;
@@ -1014,12 +1012,21 @@ void main()
 		gl_FragColor = color;
 
 	} else {
-		float diff = max(0.0, dot(normalize(locpos), inorm));
+		vec4 camto = vec4(normalize((wpos - cpos).xyz), 0.0);
 
-		// Slightly amplify the light
-		//diff = 0.2 + 0.8*diff;
-		diff = 0.5 + 1.1*diff;
+		// Diffuse
+		float diff = max(0.0, dot(-camto, wnorm));
+		diff = 0.5 + 2.0*diff*diff; // Exaggerated
 
+		// Specular
+		// disabling until it makes sense
+		/*
+		vec4 specdir = normalize(2.0*dot(wnorm, -sun)*wnorm - -sun);
+		float spec = max(0.0, dot(-camto, specdir));
+		spec = pow(spec, 32.0)*0.6;
+		*/
+
+		//color = vec4(vec3(color.rgb * diff) + vec3(1.0)*spec, color.a);
 		color = vec4(vec3(color.rgb * diff), color.a);
 
 		gl_FragColor = color * (1.0 - fog_strength)
@@ -1032,54 +1039,61 @@ print(shader_misc, result)
 shader_world, result = client.glsl_create([=[
 // Vertex shader
 
+varying vec4 cpos;
 varying vec4 wpos;
-varying vec4 inorm;
-varying vec4 locpos;
+varying vec4 wnorm;
+varying float fogmul;
 uniform float time;
 
 void main()
 {
 	wpos = gl_Vertex;
+	cpos = (gl_ModelViewMatrixInverse * vec4(0.0, 0.0, 0.0, 1.0));
+	wnorm = vec4(normalize(gl_Normal), 0.0);
+	fogmul = 1.0 / (length(gl_ModelViewMatrixInverse * vec4(0.0, 0.0, -1.0, 0.0)) * gl_Fog.end);
 
-	locpos = gl_ModelViewMatrix * wpos;
-
-	vec4 t_norm = gl_ModelViewMatrix * vec4(gl_Normal, 0.0);
-	t_norm.w = 0.0;
-	t_norm = normalize(t_norm);
-	inorm = -t_norm;
-
-	gl_Position = gl_ProjectionMatrix * locpos;
+	gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * wpos;
 	gl_FrontColor = gl_Color;
 }
 
 ]=], [=[
 // Fragment shader
 
+varying vec4 cpos;
 varying vec4 wpos;
-varying vec4 inorm;
-varying vec4 locpos;
+varying vec4 wnorm;
+varying float fogmul;
 
 uniform vec4 sun;
 
 void main()
 {
-	float fog_strength = min(1, length(locpos.xyz) / gl_Fog.end);
+	float fog_strength = min(1.0, length((wpos - cpos).xyz) * fogmul);
 	fog_strength *= fog_strength;
 
 	vec4 color = gl_Color;
+	vec4 camto = vec4(normalize((wpos - cpos).xyz), 0.0);
 
-	float diff = max(0.0, dot(normalize(locpos), inorm));
+	// Diffuse
+	float diff = max(0.0, dot(-camto, wnorm));
+	diff = 0.5 + 2.0*diff*diff; // Exaggerated
 
-	// Slightly amplify the light
-	//diff = 0.2 + 0.8*diff;
-	diff = 0.5 + 1.1*diff;
+	// Specular
+	// disabling until it makes sense
+	/*
+	vec4 specdir = normalize(2.0*dot(wnorm, -sun)*wnorm - -sun);
+	float spec = max(0.0, dot(-camto, specdir));
+	spec = pow(spec, 32.0)*0.6;
+	*/
 
+	//color = vec4(vec3(color.rgb * diff) + vec3(1.0)*spec, color.a);
 	color = vec4(vec3(color.rgb * diff), color.a);
 
 	gl_FragColor = color * (1.0 - fog_strength)
 		+ gl_Fog.color * fog_strength;
 }
 ]=])
+print(shader_world, result)
 
 shader_img, result = client.glsl_create([=[
 // Vertex shader
@@ -1115,7 +1129,10 @@ function client.hook_render()
 	if shader_misc then
 		client.glsl_use(shader_misc)
 		client.glsl_set_uniform_f(client.glsl_get_uniform_loc(shader_misc, "sun"),
-			0, 1, 0, 0)
+			1.0/math.sqrt(4.0),
+			math.sqrt(2.0)/math.sqrt(4.0),
+			1.0/math.sqrt(4.0),
+			0)
 		client.glsl_set_uniform_f(client.glsl_get_uniform_loc(shader_misc, "time"), sec_current or 0.0)
 		client.glsl_set_uniform_i(client.glsl_get_uniform_loc(shader_misc, "tex0"), 0)
 	end
@@ -1178,7 +1195,10 @@ function client.hook_render()
 	if shader_world then
 		client.glsl_use(shader_world)
 		client.glsl_set_uniform_f(client.glsl_get_uniform_loc(shader_world, "sun"),
-			0, 1, 0, 0)
+			1.0/math.sqrt(4.0),
+			math.sqrt(2.0)/math.sqrt(4.0),
+			1.0/math.sqrt(4.0),
+			0)
 		client.glsl_set_uniform_f(client.glsl_get_uniform_loc(shader_world, "time"), sec_current or 0.0)
 	end
 end
