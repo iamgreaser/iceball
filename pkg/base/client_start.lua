@@ -1053,7 +1053,6 @@ void main()
 ]=]}
 
 shader_world, result = shader_new{vert=[=[
-#version 120
 // Vertex shader
 
 varying vec4 cpos;
@@ -1074,7 +1073,6 @@ void main()
 }
 
 ]=], frag=[=[
-#version 120
 // Fragment shader
 
 varying vec4 cpos;
