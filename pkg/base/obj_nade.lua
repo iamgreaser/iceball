@@ -17,8 +17,9 @@
 
 if client then
 	mdl_nade = model_load({
+		kv6={bdir=DIR_PKG_KV6, name="nade.kv6", scale=6.0/128.0},
 		pmf={bdir=DIR_PKG_PMF, name="nade.pmf"},
-	}, {"pmf"})
+	}, {"kv6","pmf"})
 	mdl_nade_inst = mdl_nade {}
 end
 
