@@ -121,7 +121,15 @@ clsave/pub/user.json:
 	If you have an old/budget graphics card/chip, 60 is a good value.
 	(If you have a GMA 3150, get a real GPU.)
 	Maximum fog distance is determined by the server in pkg/base/common.lua,
-	and is usually 127.5. This value will be clamped by the code given by the server.
+	and is usually 127.5.
+	This value will be clamped by the code given by the server.
+
+	"fast_load_screen" is mostly to assist with development.
+	Set to true if you want to not draw anything on the loading screen.
+
+	"glsl_shaders" enables GLSL shaders.
+	Note, if your GPU doesn't support OpenGL 2.0 or higher,
+	these will be unavailable!
 
 	"skins" is explained later in this document.
 

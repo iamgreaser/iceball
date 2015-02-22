@@ -35,7 +35,6 @@ function model_loaders.kv6(isfile, pkt, extra)
 	if not pkt then return nil end
 
 	local scale = extra.scale or 1.0
-	local ptsize = 1
 	local ptspacing = scale
 	if pkt:sub(1,4) ~= "Kvxl" then
 		error("not a KV6 model")
@@ -66,7 +65,7 @@ function model_loaders.kv6(isfile, pkt, extra)
 		local vpy = (math.floor(vis/32) % 2) ~= 0
 
 		l[i] = {
-			radius = ptsize,
+			--radius = ptsize,
 			x = nil, z = nil, y = (z-zpivot)*ptspacing,
 			r = r, g = g, b = b,
 			vnx = vnx, vny = vny, vnz = vnz,
@@ -118,6 +117,10 @@ function model_loaders.kv6(isfile, pkt, extra)
 			filt = settings.filt or nil,
 		} this.this = this
 
+		local inscale = settings.inscale or 1.0
+		local scale0 = scale*(0.5 - inscale/2)
+		local scale1 = scale*(0.5 + inscale/2)
+
 		-- apply filter
 		local srcl = l
 		local l = {}
@@ -142,75 +145,79 @@ function model_loaders.kv6(isfile, pkt, extra)
 
 		local vl = {}
 		for i=1,#l do
-			local x0 = l[i].x
-			local y0 = l[i].y
-			local z0 = l[i].z
-			local x1 = l[i].x+scale
-			local y1 = l[i].y+scale
-			local z1 = l[i].z+scale
+			local x0 = l[i].x+scale0
+			local y0 = l[i].y+scale0
+			local z0 = l[i].z+scale0
+			local x1 = l[i].x+scale1
+			local y1 = l[i].y+scale1
+			local z1 = l[i].z+scale1
 			local r  = l[i].r/255.0
 			local g  = l[i].g/255.0
 			local b  = l[i].b/255.0
 
 			if l[i].vnx then
-				vl[1+#vl] = {x0,y0,z0,r*snx,g*snx,b*snx}
-				vl[1+#vl] = {x0,y1,z0,r*snx,g*snx,b*snx}
-				vl[1+#vl] = {x0,y0,z1,r*snx,g*snx,b*snx}
-				vl[1+#vl] = {x0,y0,z1,r*snx,g*snx,b*snx}
-				vl[1+#vl] = {x0,y1,z0,r*snx,g*snx,b*snx}
-				vl[1+#vl] = {x0,y1,z1,r*snx,g*snx,b*snx}
+				vl[1+#vl] = {x0,y0,z0,r*snx,g*snx,b*snx,-1,0,0}
+				vl[1+#vl] = {x0,y1,z0,r*snx,g*snx,b*snx,-1,0,0}
+				vl[1+#vl] = {x0,y0,z1,r*snx,g*snx,b*snx,-1,0,0}
+				vl[1+#vl] = {x0,y0,z1,r*snx,g*snx,b*snx,-1,0,0}
+				vl[1+#vl] = {x0,y1,z0,r*snx,g*snx,b*snx,-1,0,0}
+				vl[1+#vl] = {x0,y1,z1,r*snx,g*snx,b*snx,-1,0,0}
 			end
 
 			if l[i].vpx then
-				vl[1+#vl] = {x1,y0,z0,r*spx,g*spx,b*spx}
-				vl[1+#vl] = {x1,y0,z1,r*spx,g*spx,b*spx}
-				vl[1+#vl] = {x1,y1,z0,r*spx,g*spx,b*spx}
-				vl[1+#vl] = {x1,y1,z0,r*spx,g*spx,b*spx}
-				vl[1+#vl] = {x1,y0,z1,r*spx,g*spx,b*spx}
-				vl[1+#vl] = {x1,y1,z1,r*spx,g*spx,b*spx}
+				vl[1+#vl] = {x1,y0,z0,r*spx,g*spx,b*spx,1,0,0}
+				vl[1+#vl] = {x1,y0,z1,r*spx,g*spx,b*spx,1,0,0}
+				vl[1+#vl] = {x1,y1,z0,r*spx,g*spx,b*spx,1,0,0}
+				vl[1+#vl] = {x1,y1,z0,r*spx,g*spx,b*spx,1,0,0}
+				vl[1+#vl] = {x1,y0,z1,r*spx,g*spx,b*spx,1,0,0}
+				vl[1+#vl] = {x1,y1,z1,r*spx,g*spx,b*spx,1,0,0}
 			end
 
 			if l[i].vny then
-				vl[1+#vl] = {x0,y0,z0,r*sny,g*sny,b*sny}
-				vl[1+#vl] = {x0,y0,z1,r*sny,g*sny,b*sny}
-				vl[1+#vl] = {x1,y0,z0,r*sny,g*sny,b*sny}
-				vl[1+#vl] = {x1,y0,z0,r*sny,g*sny,b*sny}
-				vl[1+#vl] = {x0,y0,z1,r*sny,g*sny,b*sny}
-				vl[1+#vl] = {x1,y0,z1,r*sny,g*sny,b*sny}
+				vl[1+#vl] = {x0,y0,z0,r*sny,g*sny,b*sny,0,-1,0}
+				vl[1+#vl] = {x0,y0,z1,r*sny,g*sny,b*sny,0,-1,0}
+				vl[1+#vl] = {x1,y0,z0,r*sny,g*sny,b*sny,0,-1,0}
+				vl[1+#vl] = {x1,y0,z0,r*sny,g*sny,b*sny,0,-1,0}
+				vl[1+#vl] = {x0,y0,z1,r*sny,g*sny,b*sny,0,-1,0}
+				vl[1+#vl] = {x1,y0,z1,r*sny,g*sny,b*sny,0,-1,0}
 			end
 
 			if l[i].vpy then
-				vl[1+#vl] = {x0,y1,z0,r*spy,g*spy,b*spy}
-				vl[1+#vl] = {x1,y1,z0,r*spy,g*spy,b*spy}
-				vl[1+#vl] = {x0,y1,z1,r*spy,g*spy,b*spy}
-				vl[1+#vl] = {x0,y1,z1,r*spy,g*spy,b*spy}
-				vl[1+#vl] = {x1,y1,z0,r*spy,g*spy,b*spy}
-				vl[1+#vl] = {x1,y1,z1,r*spy,g*spy,b*spy}
+				vl[1+#vl] = {x0,y1,z0,r*spy,g*spy,b*spy,0,1,0}
+				vl[1+#vl] = {x1,y1,z0,r*spy,g*spy,b*spy,0,1,0}
+				vl[1+#vl] = {x0,y1,z1,r*spy,g*spy,b*spy,0,1,0}
+				vl[1+#vl] = {x0,y1,z1,r*spy,g*spy,b*spy,0,1,0}
+				vl[1+#vl] = {x1,y1,z0,r*spy,g*spy,b*spy,0,1,0}
+				vl[1+#vl] = {x1,y1,z1,r*spy,g*spy,b*spy,0,1,0}
 			end
 
 			if l[i].vnz then
-				vl[1+#vl] = {x0,y0,z0,r*snz,g*snz,b*snz}
-				vl[1+#vl] = {x1,y0,z0,r*snz,g*snz,b*snz}
-				vl[1+#vl] = {x0,y1,z0,r*snz,g*snz,b*snz}
-				vl[1+#vl] = {x0,y1,z0,r*snz,g*snz,b*snz}
-				vl[1+#vl] = {x1,y0,z0,r*snz,g*snz,b*snz}
-				vl[1+#vl] = {x1,y1,z0,r*snz,g*snz,b*snz}
+				vl[1+#vl] = {x0,y0,z0,r*snz,g*snz,b*snz,0,0,-1}
+				vl[1+#vl] = {x1,y0,z0,r*snz,g*snz,b*snz,0,0,-1}
+				vl[1+#vl] = {x0,y1,z0,r*snz,g*snz,b*snz,0,0,-1}
+				vl[1+#vl] = {x0,y1,z0,r*snz,g*snz,b*snz,0,0,-1}
+				vl[1+#vl] = {x1,y0,z0,r*snz,g*snz,b*snz,0,0,-1}
+				vl[1+#vl] = {x1,y1,z0,r*snz,g*snz,b*snz,0,0,-1}
 			end
 
 			if l[i].vpz then
-				vl[1+#vl] = {x0,y0,z1,r*spz,g*spz,b*spz}
-				vl[1+#vl] = {x0,y1,z1,r*spz,g*spz,b*spz}
-				vl[1+#vl] = {x1,y0,z1,r*spz,g*spz,b*spz}
-				vl[1+#vl] = {x1,y0,z1,r*spz,g*spz,b*spz}
-				vl[1+#vl] = {x0,y1,z1,r*spz,g*spz,b*spz}
-				vl[1+#vl] = {x1,y1,z1,r*spz,g*spz,b*spz}
+				vl[1+#vl] = {x0,y0,z1,r*spz,g*spz,b*spz,0,0,1}
+				vl[1+#vl] = {x0,y1,z1,r*spz,g*spz,b*spz,0,0,1}
+				vl[1+#vl] = {x1,y0,z1,r*spz,g*spz,b*spz,0,0,1}
+				vl[1+#vl] = {x1,y0,z1,r*spz,g*spz,b*spz,0,0,1}
+				vl[1+#vl] = {x0,y1,z1,r*spz,g*spz,b*spz,0,0,1}
+				vl[1+#vl] = {x1,y1,z1,r*spz,g*spz,b*spz,0,0,1}
 			end
 		end
 
 		-- make
 		--local i for i=1,#vl do vl[i][7] = 0.4 end
 		--this.va = common.va_make(vl, nil, "3v,4c")
-		this.va = common.va_make(vl, nil, "3v,3c")
+		if client.glsl_create then
+			this.va = common.va_make(vl, nil, "3v,3c,3n")
+		else
+			this.va = common.va_make(vl, nil, "3v,3c")
+		end
 
 		-- conserve memory
 		vl = {}

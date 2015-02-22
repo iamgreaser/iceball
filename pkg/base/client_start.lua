@@ -18,6 +18,12 @@
 print("pkg/base/client_start.lua starting")
 print(...)
 
+USE_GLSL = true
+
+if not client.glsl_create then
+	USE_GLSL = false
+end
+
 map_fname = nil
 frame_delay_ctr = 0.0001
 render_sec_current = nil
@@ -56,6 +62,35 @@ if user_config.frame_limit and user_config.frame_limit > 0.01 then
 		frame_delay_ctr = 0.0001
 	end
 	print("frame delay:", frame_delay_ctr)
+end
+
+if user_config.glsl_shaders == false then
+	USE_GLSL = false
+end
+
+if USE_GLSL then
+	local ver = client.gfx_glsl_available()
+	if ver == nil then
+		USE_GLSL = false
+		USE_GLSL_20 = false
+		USE_GLSL_21 = false
+	elseif ver == "2.0" then
+		USE_GLSL_20 = true
+		USE_GLSL_21 = false
+	elseif ver == "2.1" then
+		USE_GLSL_20 = true
+		USE_GLSL_21 = true
+	else
+		-- For now assume we have GL 2.1 or higher.
+		USE_GLSL_20 = true
+		USE_GLSL_21 = true
+	end
+
+	dofile("pkg/base/lib_shader.lua")
+else
+	function shader_new() return nil, "Shaders not supported by this GPU" end
+	function shader_push_nil() end
+	function shader_pop_nil() end
 end
 
 -- speed through stuff
@@ -934,8 +969,241 @@ if VA_TEST then
 	}, nil, "3v,3c,2t")
 	]]
 end
+
+if USE_GLSL_20 then
+shader_misc, result = shader_new{name="misc", vert=[=[
+// Vertex shader
+
+varying vec4 cpos;
+varying vec4 wpos;
+varying vec4 wnorm;
+varying float fogmul;
+uniform float time;
+
+void main()
+{
+	wpos = gl_Vertex;
+	cpos = (gl_ModelViewMatrixInverse * vec4(0.0, 0.0, 0.0, 1.0));
+	wnorm = vec4(normalize(gl_Normal), 0.0);
+	fogmul = 1.0 / (length(gl_ModelViewMatrixInverse * vec4(0.0, 0.0, -1.0, 0.0)) * gl_Fog.end);
+
+	gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * wpos;
+	gl_FrontColor = gl_Color;
+	gl_TexCoord[0] = gl_MultiTexCoord0;
+}
+
+]=], frag=[=[
+// Fragment shader
+
+varying vec4 cpos;
+varying vec4 wpos;
+varying vec4 wnorm;
+varying float fogmul;
+
+uniform vec4 sun;
+
+uniform sampler2D tex0;
+
+void main()
+{
+	float fog_strength = min(1.0, length((wpos - cpos).xyz) * fogmul);
+	fog_strength *= fog_strength;
+
+	vec4 color = gl_Color;
+	if(gl_TexCoord[0].s >= -0.1)
+	{
+		vec4 tcolor = texture2D(tex0, gl_TexCoord[0].st);
+		color *= tcolor;
+	}
+
+	if(gl_ProjectionMatrix[3][3] == 1.0)
+	{
+		// Skip lighting on orthographics
+		gl_FragColor = color;
+
+	} else {
+		vec4 camto = vec4(normalize((wpos - cpos).xyz), 0.0);
+
+		// Diffuse
+		float diff = max(0.0, dot(-camto, wnorm));
+		diff = 0.3 + 1.5*diff; // Exaggerated
+
+		// Specular
+		// disabling until it makes sense
+		/*
+		vec4 specdir = normalize(2.0*dot(wnorm, -sun)*wnorm - -sun);
+		float spec = max(0.0, dot(-camto, specdir));
+		spec = pow(spec, 32.0)*0.6;
+		*/
+
+		//color = vec4(vec3(color.rgb * diff) + vec3(1.0)*spec, color.a);
+		diff = diff * (1.0 - fog_strength);
+		diff = min(1.5, diff);
+		color = vec4(color.rgb * diff, color.a);
+		color = max(vec4(0.0), min(vec4(1.0), color));
+		//color = vec4(0.5+0.5*sin(3.141593*(color.rgb-0.5)), color.a);
+
+		gl_FragColor = color * (1.0 - fog_strength)
+			+ gl_Fog.color * fog_strength;
+	}
+}
+]=]}
+
+shader_world, result = shader_new{name="world", vert=[=[
+// Vertex shader
+
+varying vec4 cpos;
+varying vec4 wpos;
+varying vec4 wnorm;
+varying float fogmul;
+uniform float time;
+
+void main()
+{
+	wpos = gl_Vertex;
+	cpos = (gl_ModelViewMatrixInverse * vec4(0.0, 0.0, 0.0, 1.0));
+	wnorm = vec4(normalize(gl_Normal), 0.0);
+	fogmul = 1.0 / (length(gl_ModelViewMatrixInverse * vec4(0.0, 0.0, -1.0, 0.0)) * gl_Fog.end);
+
+	gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * wpos;
+	gl_FrontColor = gl_Color;
+}
+
+]=], frag=[=[
+// Fragment shader
+
+varying vec4 cpos;
+varying vec4 wpos;
+varying vec4 wnorm;
+varying float fogmul;
+
+uniform vec4 sun;
+
+void main()
+{
+	float fog_strength = min(1.0, length((wpos - cpos).xyz) * fogmul);
+	fog_strength *= fog_strength;
+
+	vec4 color = gl_Color;
+	vec4 camto = vec4(normalize((wpos - cpos).xyz), 0.0);
+
+	// Diffuse
+	float diff = max(0.0, dot(-camto, wnorm));
+	diff = 0.3 + 1.5*diff; // Exaggerated
+
+	// Specular
+	// disabling until it makes sense
+	/*
+	vec4 specdir = normalize(2.0*dot(wnorm, -sun)*wnorm - -sun);
+	float spec = max(0.0, dot(-camto, specdir));
+	spec = pow(spec, 32.0)*0.6;
+	*/
+
+	diff = diff * (1.0 - fog_strength);
+	diff = min(1.5, diff);
+	color = vec4(color.rgb * diff, color.a);
+	color = max(vec4(0.0), min(vec4(1.0), color));
+	//color = vec4(0.5+0.5*sin(3.141593*(color.rgb-0.5)), color.a);
+
+	gl_FragColor = color * (1.0 - fog_strength)
+		+ gl_Fog.color * fog_strength;
+}
+]=]}
+
+shader_white, result = shader_new{name="white", vert=[=[
+// Vertex shader
+
+void main()
+{
+	gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;
+}
+
+]=], frag=[=[
+// Fragment shader
+
+void main()
+{
+	gl_FragColor = vec4(1.0);
+}
+]=]}
+
+shader_simple, result = shader_new{name="simple", vert=[=[
+// Vertex shader
+
+void main()
+{
+	gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;
+	gl_FrontColor = gl_Color;
+}
+
+]=], frag=[=[
+// Fragment shader
+
+void main()
+{
+	gl_FragColor = gl_Color;
+}
+]=]}
+
+shader_img, result = shader_new{name="img", vert=[=[
+// Vertex shader
+
+void main()
+{
+	// use ProjectionMatrix otherwise text printing breaks
+	gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;
+	//gl_Position = gl_ModelViewMatrix * gl_Vertex;
+	gl_FrontColor = gl_Color;
+	gl_TexCoord[0] = gl_MultiTexCoord0;
+}
+
+]=], frag=[=[
+// Fragment shader
+
+uniform sampler2D tex0;
+
+void main()
+{
+	vec4 color = gl_Color;
+	vec4 tcolor = texture2D(tex0, gl_TexCoord[0].st);
+	color *= tcolor;
+	gl_FragColor = color;
+}
+
+]=]}
+end
+
+if shader_world then
+	shader_world.push()
+end
+
 function client.hook_render()
 	local sec_current = render_sec_current
+
+	if shader_world then
+		shader_world.pop()
+	end
+
+	if shader_misc then
+		shader_misc.set_uniform_f("sun", 
+			1.0/math.sqrt(4.0),
+			math.sqrt(2.0)/math.sqrt(4.0),
+			1.0/math.sqrt(4.0),
+			0)
+		shader_misc.set_uniform_f("time", sec_current or 0.0)
+		shader_misc.set_uniform_i("tex0", 0)
+		shader_misc.push()
+	end
+
+	local s_img_blit = client.img_blit
+	if shader_img then
+		function client.img_blit(...)
+			shader_img.push()
+			s_img_blit(...)
+			shader_img.pop()
+		end
+	end
+
 	local i
 	for i=tracers.head,tracers.tail do
 		local tc = tracers[i]
@@ -979,6 +1247,20 @@ function client.hook_render()
 	end
 	if VA_TEST and sec_current then
 		client.va_render_local(va_test, -0.8, 0.35, 1, sec_current, sec_current*0.8, sec_current*0.623, 0.1, img_overview)
+	end
+
+	if shader_misc then
+		shader_misc.pop()
+	end
+	client.img_blit = s_img_blit
+	if shader_world then
+		shader_world.set_uniform_f("sun",
+			1.0/math.sqrt(4.0),
+			math.sqrt(2.0)/math.sqrt(4.0),
+			1.0/math.sqrt(4.0),
+			0)
+		shader_world.set_uniform_f("time", sec_current or 0.0)
+		shader_world.push()
 	end
 end
 

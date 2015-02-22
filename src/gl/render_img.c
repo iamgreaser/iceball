@@ -56,7 +56,11 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 		return;
 	}
 	
+<<<<<<< HEAD
 	if(pixels != NULL)
+=======
+	if(screen == NULL || pixels != screen->pixels)
+>>>>>>> master
 	{
 		expandtex_gl(&width, &height);
 		pitch = width;

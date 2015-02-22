@@ -132,6 +132,7 @@ class HTTPClient:
 		l = self.server.get_ib_fields()
 		return "text/plain", json.dumps({
 			"version": HB_VERSION,
+			"iceball_version": IB_VERSION,
 			"servers": l}) 
 
 	def push_bad_http(self, ver):

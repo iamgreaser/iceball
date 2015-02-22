@@ -102,10 +102,46 @@ function new_intel(settings)
 		end
 	end
 
+	function this.should_glow()
+		return players[players.current].team ~= this.team
+	end
+
 	function this.render()
-		return this.mdl_intel.render_global(
-			this.x, this.y-0.9, this.z,
-			this.rotpos, 0, 0, 3)
+		if client.gfx_stencil_test and this.should_glow() then
+			client.gfx_stencil_test(true)
+
+			-- PASS 1: set to 1 for enlarged model
+			if shader_white then shader_white.push() end
+			client.gfx_depth_mask(false)
+			client.gfx_stencil_func("0", 1, 255)
+			client.gfx_stencil_op("===")
+			this.mdl_intel_outline.render_global(
+				this.x, this.y-0.9, this.z,
+				this.rotpos, 0, 0, 3)
+			client.gfx_depth_mask(true)
+			if shader_white then shader_white.pop() end
+
+			-- PASS 2: set to 0 for regular model
+			if shader_world then shader_world.push() end
+			client.gfx_stencil_func("1", 0, 255)
+			client.gfx_stencil_op(";==")
+			this.mdl_intel.render_global(
+				this.x, this.y-0.9, this.z,
+				this.rotpos, 0, 0, 3)
+			if shader_world then shader_world.pop() end
+
+			-- PASS 3: draw red for stencil == 1; clear stencil
+			client.gfx_stencil_func("==", 1, 255)
+			client.gfx_stencil_op("000")
+			local iw, ih = common.img_get_dims(img_fsrect)
+			client.img_blit(img_fsrect, 0, 0, iw, ih, 0, 0, 0x7FFFFFFF)
+
+			client.gfx_stencil_test(false)
+		else
+			return this.mdl_intel.render_global(
+				this.x, this.y-0.9, this.z,
+				this.rotpos, 0, 0, 3)
+		end
 	end
 
 	function this.render_backpack()
@@ -121,7 +157,7 @@ function new_intel(settings)
 
 		return this.mdl_intel.render_global(
 			rpx, rpy, rpz,
-			math.pi/2, math.pi/2, this.player.angy-math.pi/2, 1)
+			0*math.pi/2, 0*math.pi/2, this.player.angy-math.pi/2, 1)
 	end
 
 	function this.intel_drop()
@@ -245,6 +281,7 @@ function new_intel(settings)
 				return r,g,b
 			end
 		end})
+		this.mdl_intel_outline = mdl_intel({inscale=6.0})
 	end
 
 	this.prespawn()

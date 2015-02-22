@@ -270,6 +270,56 @@ client.gfx_stencil_test(enable) @
 
 	this is reset to FALSE by the start of each frame
 
+tex_units = client.gfx_tex_available() @
+	returns the number of texture units available
+
+	note, this will be clamped by the engine limit,
+	which is currently 8
+
+	uses GL_MAX_TEXTURE_UNITS_ARB
+	will eventually use GL_MAX_TEXTURE_IMAGE_UNITS_ARB
+	once shader support is in place
+
+glver = client.gfx_glsl_available() @
+	returns if GLSL shaders are available
+
+	return values:
+	- "2.1" if at least GL 2.1
+	- "2.0" if GL 2.0
+	- nil otherwise
+
+shader, result = client.glsl_create(vertex_src_string, fragment_src_string) @
+	creates a shader
+	
+	returns a shader handle in "shader" on success
+	returns nil on failure
+
+	shaders are garbage collected, so watch out!
+	
+	"result" is just the shader compiler output
+
+client.glsl_use(shader) @
+	uses a shader
+
+	pass nil if you want to switch to default GL 1 behaviour
+	
+	note, fog is disabled while using a shader
+	this does NOT mean that the far plane is extended for you!
+
+idx = client.glsl_get_uniform_loc(shader, name) @
+	gets the location of a uniform value given a shader
+
+	returns nil on failure
+
+client.glsl_set_uniform_f(uniform_idx, val1[, val2[, val3[, val4]]]) @
+	sets a float uniform
+
+client.glsl_set_uniform_i(uniform_idx, val1[, val2[, val3[, val4]]]) @
+	sets an int uniform
+
+client.glsl_set_uniform_ui(uniform_idx, val1[, val2[, val3[, val4]]]) @
+	sets an unsigned int uniform
+
 map = common.map_load(fname, fmt = "auto") @
 	loads a map, either "vxl" or "icemap"
 	use "auto" to autodetect
@@ -721,16 +771,26 @@ common.udp_close(udpsockfd) @
 
 va = common.va_make(vlist, oldva = nil, format = "3v,3c") @
 	makes a vertex array of triangles
-	vlist is a list of lists of floats in one of these formats:
+	vlist is a list of lists of floats in a format like this:
 	- {{x,y,z,r,g,b}, ...} ("3v,3c" since 0.2a-1, format arg unsupported there!)
 	- {{x,y,z,r,g,b,u,v}, ...} ("3v,3c,2t" since 0.2a-2)
 	- {{x,y,z,r,g,b,a}, ...} ("3v,4c" since 0.2.1-1)
 	- {{x,y,z,r,g,b,a,u,v}, ...} ("3v,4c,2t" since 0.2.1-1)
 	- {{x,y,z,u,v}, ...} ("3v,2t" since 0.2a-2)
 
-	more formats may come soon!
+	anything else requires 0.2.1-7
 
-	if you don't follow the formats this can throw an error,
+	here are the formats you can use:
+	- 2v,3v,4v - vertex - must have exactly one
+	- 3c,4c - colour - must have at most one
+	- 3n - normal - must have at most one
+	- 1t,2t,3t,4t - texcoord - must have at most 8
+	- 1a,2a,3a,4a - vertex attribute - must have at most 32
+
+	(note for 0.1.2-7: attributes aren't actually supported,
+	but they *are* parsed. wait for shader support before using them!)
+
+	if you don't follow your given format this can throw an error,
 	so WATCH OUT.
 
 	oldva, when set, replaces an existing VA with new data,
@@ -739,7 +799,10 @@ va = common.va_make(vlist, oldva = nil, format = "3v,3c") @
 client.va_render_global(va, px, py, pz, ry, rx, ry2, scale, tex = nil, afmt = nil, alpha = 1.0) @
 	draws a vertex array relative to the world
 
-	tex must be a power-of-two texture
+	tex must be a power-of-two texture, or nil,
+	or a list of either of those two
+
+	current max for a texture list is 8
 
 	afmt consists of two characters, or is nil
 	note, if afmt is nil, blending is disabled!

@@ -129,6 +129,7 @@ do
 		"BUILD_BOX",
 		"PLR_GUN_SHOT",
 		"NEW_MAP",
+		"FOG_COLOR"
 	}
 	local i,p
 	for i,p in pairs(pktlist) do
@@ -442,6 +443,10 @@ network.sys_handle_s2c(PKT_NEW_MAP, "", function (neth, cli, plr, sec_current, p
 		end
 	end
 end)
+network.sys_handle_s2c(PKT_FOG_COLOR, "BBB", function (neth, cli, plr, sec_current, r, g, b, pkt)
+	local xr, xg, xb, fdist = client.map_fog_get()
+	client.map_fog_set(r, g, b, fdist)
+end)
 
 -- C2S packets
 network.sys_handle_c2s(PKT_KEEPALIVE, "B", function () end)
@@ -617,6 +622,7 @@ end, function (neth, cli, plr, sec_current, tidx, wpn, name, pkt)
 	else
 		plr = players[cli.plrid]
 		print("* "..name.." joined team "..tidx..".")
+		fog_send_to(neth)
 		
 		-- relay other players to this player
 		local i

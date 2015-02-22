@@ -32,6 +32,7 @@ argv = {...}
 -- Connect to master server
 dofile("pkg/iceball/lib/http.lua")
 server_list = true
+latest_version = nil
 master_http = http_new {url = MASTER_URL}
 if not master_http then
 	server_list = false
@@ -54,6 +55,36 @@ end
 dofile("pkg/iceball/lib/font.lua")
 dofile("pkg/iceball/lib/sdlkey.lua")
 
+-- Some other stuff that needs done early
+local page = 0
+local page_prev_active = false
+local page_next_active = false
+
+local function update_page_buttons()
+	if not server_list then
+		page = 0
+	end
+	
+	if page > 0 then
+		page_prev_active = true
+	else
+		page_prev_active = false
+	end
+	if server_list and page < math.ceil(#server_list / 9) - 1 then
+		page_next_active = true
+	else
+		page_next_active = false
+	end
+end
+
+local function join_server(sid)
+	local idx = (page * 9) + sid
+	if idx <= #server_list then
+		local sv = server_list[idx]
+		client.mk_sys_execv("-c", sv.address, sv.port, arg_closure(argv))
+	end
+end
+
 -- Some hooks
 function client.hook_key(key, state, modif, uni)
 	if not state then
@@ -64,13 +95,23 @@ function client.hook_key(key, state, modif, uni)
 		elseif key == SDLK_ESCAPE then
 			client.hook_tick = nil
 		elseif key >= SDLK_1 and key <= SDLK_9 then
-			local idx = (key - SDLK_1) + 1
-			if idx <= #server_list then
-				local sv = server_list[idx]
-				client.mk_sys_execv("-c", sv.address, sv.port, arg_closure(argv))
-			end
+			join_server((key - SDLK_1) + 1)
+		elseif key >= SDLK_KP1 and key <= SDLK_KP9 then
+			join_server((key - SDLK_KP1) + 1)
 		elseif key == SDLK_r then
 			master_http = http_new {url = MASTER_URL}
+		elseif key == SDLK_LEFT then
+			if page > 0 then
+				page = page - 1
+				update_page_buttons()
+			end
+		elseif key == SDLK_RIGHT then
+			if server_list then
+				if page < math.ceil(#server_list / 9) - 1 then
+					page = page + 1
+					update_page_buttons()
+				end
+			end
 		end
 	end
 end
@@ -88,7 +129,19 @@ common.img_fill(img_row_bkg, 0x99111111)
 local img_row_bkg_transparent = common.img_new(img_row_bkg_width, ch + 2)
 common.img_fill(img_row_bkg_transparent, 0x22111111)
 
+<<<<<<< HEAD
 local img_splash, img_splash_width, img_splash_height = common.img_load("pkg/iceball/gfx/splash_logo.png", "png")
+=======
+local img_button_bkg_width = 120
+local img_button_bkg_height = ch + 2
+local img_button_bkg = common.img_new(img_button_bkg_width, img_button_bkg_height)
+common.img_fill(img_button_bkg, 0x99111111)
+local img_button_bkg_transparent = common.img_new(img_button_bkg_width, img_button_bkg_height)
+common.img_fill(img_button_bkg_transparent, 0x22111111)
+
+local img_splash = common.img_load("pkg/iceball/gfx/splash_logo.png", "png")
+local img_splash_width, img_splash_height
+>>>>>>> master
 local img_splash_width, img_splash_height_scaled
 local splash_x, splash_y
 
@@ -138,21 +191,75 @@ function client.hook_render()
 	elseif server_list == nil then
 		font.render(text_offset, ch*7, "Failed to fetch the server list.", 0xFFEEEEEE)
 	else
-		for i=1,#server_list do
+		-- Draw version string
+		local version_string = nil
+		local version_colour = nil
+		if common.version.num < latest_version then
+			version_string = "Update available! ("..common.version.str..")"
+			version_colour = 0xFFE81515
+		else
+			version_string = "Up to date! ("..common.version.str..")"
+			version_colour = 0xFF86CF11
+		end
+		
+		font.render(
+			screen_width - font.string_width(version_string) - text_offset,
+			0,
+			version_string,
+			version_colour
+		)
+		
+		-- Draw server list
+		local empty_start = 10
+		for i=1,9 do
+			local sid = page * 9 + i
+			if sid > #server_list then
+				empty_start = i
+				break
+			end
+			
 			client.img_blit(img_row_bkg, text_offset-2, (ch+4)*(8+i-1) - 1)
 		
-			local sv = server_list[i]
-			font.render(text_offset, (ch+4)*(8+i-1), i..": "..sv.name
+			local sv = server_list[sid]
+			font.render(text_offset, (ch+4)*(8+i-1), sid..": "..sv.name
 				.." - "..sv.players_current.."/"..sv.players_max
 				.." - "..sv.mode
 				.." - "..sv.map, 0xFFEEEEEE)
 			
 		end
 --		common.img_fill(img_row_bkg, 0x22111111)
-		for i=#server_list+1,9 do
+		for i=empty_start,9 do
 			client.img_blit(img_row_bkg_transparent, text_offset-2, (ch+4)*(8+i-1) - 1)
 		end
 		--common.img_fill(img_row_bkg, 0x99111111)
+		
+		-- Draw prev/next buttons
+		local button_pos_x = screen_width - text_offset - 2 - img_button_bkg_width
+		local button_pos_y = (ch+4)*17 - 1
+		local label_offset = (img_button_bkg_width / 2) - (font.string_width("<") / 2)
+		if page_next_active then
+			client.img_blit(img_button_bkg, button_pos_x, button_pos_y)
+		else
+			client.img_blit(img_button_bkg_transparent, button_pos_x, button_pos_y)
+		end
+		font.render(
+			button_pos_x + label_offset,
+			button_pos_y,
+			">",
+			0xFFEEEEEE
+		)
+		button_pos_x = button_pos_x - 2 - img_button_bkg_width
+		if page_prev_active then
+			client.img_blit(img_button_bkg, button_pos_x, button_pos_y)
+		else
+			client.img_blit(img_button_bkg_transparent, button_pos_x, button_pos_y)
+		end
+		font.render(
+			button_pos_x + label_offset,
+			button_pos_y,
+			"<",
+			0xFFEEEEEE
+		)
 	end
 	
 	end
@@ -169,10 +276,12 @@ function client.hook_tick(sec_current, sec_delta)
 			server_list = nil
 		elseif status ~= true then
 			print(status)
-			server_list = common.json_parse(status)
-			server_list = server_list and server_list.servers
+			result = common.json_parse(status)
+			latest_version = result and result.iceball_version
+			server_list = result and result.servers
 			master_http = nil
 			server_refresh = sec_current
+			update_page_buttons()
 		end
 	elseif AUTO_REFRESH_RATE and server_refresh + AUTO_REFRESH_RATE < sec_current then
 		master_http = http_new {url = MASTER_URL}

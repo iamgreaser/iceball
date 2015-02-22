@@ -23,7 +23,7 @@
 #define VERSION_X 2
 #define VERSION_Y 1
 #define VERSION_A 0
-#define VERSION_Z 5
+#define VERSION_Z 11
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!
@@ -163,6 +163,7 @@ enum
 
 	UD_IMG,
 	UD_VA,
+	UD_SHADER,
 
 	UD_MAX
 };
@@ -247,12 +248,23 @@ struct model
 	model_bone_t *bones[];
 };
 
+#define VA_MAX_IMG 8
+#define VA_MAX_TC 1
+#define VA_MAX_ATTR 32
 typedef struct va
 {
 	int udtype;
+	int vertex_offs;
+	int vertex_size;
 	int color_offs;
-	int texcoord_offs;
 	int color_size;
+	int normal_offs;
+	int texcoord_offs[VA_MAX_TC];
+	int texcoord_size[VA_MAX_TC];
+	int texcoord_count;
+	int attr_offs[VA_MAX_ATTR];
+	int attr_size[VA_MAX_ATTR];
+	int attr_count;
 	int stride;
 	int data_len; // measured in points
 	float *data;
@@ -261,6 +273,15 @@ typedef struct va
 	int vbo_dirty;
 #endif
 } va_t;
+
+typedef struct shader
+{
+	int udtype;
+#ifndef DEDI
+	GLuint sh_v, sh_f;
+	GLuint prog;
+#endif
+} shader_t;
 
 PACK_START
 // source: http://paulbourke.net/dataformats/tga/
@@ -524,6 +545,8 @@ extern int gl_chunk_size;
 extern int gl_visible_chunks;
 extern int gl_chunks_tesselated_per_frame;
 extern int gl_occlusion_cull;
+extern int gl_max_texunits;
+extern int gl_shaders;
 #endif
 extern int mk_compat_mode;
 extern int force_redraw;
@@ -618,7 +641,7 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 void render_vertex_array(uint32_t *pixels, int width, int height, int pitch, camera_t *cam_base,
 	va_t *bone, int islocal,
 	float px, float py, float pz, float ry, float rx, float ry2, float scale,
-	img_t *tex, int do_blend, char sfactor, char dfactor, float alpha);
+	img_t **img, int do_blend, char sfactor, char dfactor, float alpha, int img_count);
 int render_init(int width, int height);
 void render_deinit(void);
 void render_init_visible_chunks(map_t *map, int starting_chunk_coordinate_x, int starting_chunk_coordinate_z);

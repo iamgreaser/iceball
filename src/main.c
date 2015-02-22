@@ -47,6 +47,8 @@ int gl_vsync = 1;
 int gl_frustum_cull = 1;
 int gl_occlusion_cull = 1;
 int gl_flip_quads = 0;
+int gl_max_texunits = 1;
+int gl_shaders = 1;
 
 int force_redraw = 1;
 
@@ -108,6 +110,11 @@ int video_init(void)
 	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+<<<<<<< HEAD
+=======
+
+	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+>>>>>>> master
 	
 	if(!gl_vsync)
 #ifdef USE_SDL2
@@ -129,20 +136,28 @@ int video_init(void)
 #else
 	screen = SDL_SetVideoMode(screen_width, screen_height, 32, SDL_OPENGL
 		| (screen_fullscreen ? SDL_FULLSCREEN : 0));
+<<<<<<< HEAD
 #endif
 	
+=======
+	if(screen == NULL)
+		return error_sdl("SDL_SetVideoMode");
+
+>>>>>>> master
 	GLenum err_glew = glewInit();
 	if(err_glew != GLEW_OK)
 	{
 		fprintf(stderr, "GLEW failed to init: %s\n", glewGetErrorString(err_glew));
 		return 1;
 	}
-	if(!GL_ARB_texture_non_power_of_two)
+
+	if(!(GL_VERSION_1_3))
 	{
-		fprintf(stderr, "ERROR: GL_ARB_texture_non_power_of_two not supported by your GPU. Get a better GPU.\n");
+		fprintf(stderr, "ERROR: OpenGL 1.3 required (we sometimes use multitexturing). Get a better GPU.\n");
 		return 1;
 	}
 
+<<<<<<< HEAD
 	//SDL_GL_DeleteContext(gl_context);
 #ifdef USE_SDL2
 	if (window == NULL)
@@ -152,6 +167,10 @@ int video_init(void)
 		error_sdl("SDL_SetVideoMode");
 #endif
 	
+=======
+	glGetIntegerv(GL_MAX_TEXTURE_UNITS_ARB, &gl_max_texunits);
+
+>>>>>>> master
 	return 0;
 }
 

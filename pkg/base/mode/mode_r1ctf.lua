@@ -22,6 +22,11 @@ local s_new_tent = new_tent
 local function f_new_tent(...)
 	local this = s_new_tent(...)
 
+	function this.should_glow()
+		return (players[players.current].team ~= this.team
+			and players[players.current].has_intel)
+	end
+
 	local s_player_in_range = this.player_in_range
 	function this.player_in_range(plr, sec_current, ...)
 		local ret = s_player_in_range(plr, sec_current, ...)

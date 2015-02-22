@@ -132,7 +132,9 @@ function ircbot_conn_new(settings)
 					net_broadcast(nil, common.net_pack("BIz", PKT_CHAT_ADD_TEXT,
 						this.chat_color, "<"..m.nick.."> "..rmsg))
 				elseif msg:sub(1,this.cmd_prefix:len()) == this.cmd_prefix then
-					-- TODO: parse commands
+					local msg = m.params[2]
+					local params = string.split(string.sub(msg,2), " ")
+					command_handle(nil, nil, m.nick, params, msg)
 				end
 			end
 		end

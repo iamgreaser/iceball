@@ -41,6 +41,11 @@ if client then
 		kv6={bdir=DIR_PKG_KV6, name="playerleg.kv6", scale=5.0/256.0},
 		pmf={bdir=DIR_PKG_PMF, name="player.pmf", bone=3},
 	}, {"kv6","pmf"})
+
+	mdl_player_head_outline = mdl_player_head {inscale=6.0}
+	mdl_player_body_outline = mdl_player_body {inscale=6.0}
+	mdl_player_arm_outline = mdl_player_arm {inscale=6.0}
+	mdl_player_leg_outline = mdl_player_leg {inscale=6.0}
 end
 
 function new_player(settings)
@@ -1024,13 +1029,19 @@ function new_player(settings)
 					this.t_step = sec_current + 0.5
 				end
 				if this.t_step < sec_current then
-					local freq_mod = (this.inwater and 0.25) or 1.0
+					local stepsound, soundselect
+					if this.inwater then
+						soundselect = math.floor(math.random()*#wav_water_steps)+1
+						stepsound = wav_water_steps[soundselect]
+					else
+						soundselect = math.floor(math.random()*#wav_steps)+1
+						stepsound = wav_steps[soundselect]
+					end
 					local tdiff = 0.01
 					if this.grounded then
-						client.wav_play_global(wav_steps[
-							math.floor(math.random()*#wav_steps)+1],
+						client.wav_play_global(stepsound,
 								this.x, this.y, this.z,
-								1.0, freq_mod)
+								1.0, 1.0)
 						tdiff = 0.5
 					end
 					this.t_step = this.t_step + tdiff
@@ -1232,6 +1243,7 @@ function new_player(settings)
 
 			if dt then
 				local offs = dt-dc - df
+				offs = offs * this.zoom
 				client.camera_move_global(sya*offs, 0, cya*offs)
 			end
 		else
@@ -1702,8 +1714,8 @@ function new_player(settings)
 			end
 		end
 		local function feed_update(options)
-			this.chat_text.ctab = chat_text.render()
 			this.kill_text.ctab = chat_killfeed.render()
+			this.chat_text.ctab = chat_text.render()
 		end
 		local function enemy_name_update(options)
 			local sya = math.sin(this.angy)
@@ -2207,22 +2219,30 @@ function new_player(settings)
 				if client.gfx_stencil_test and plr.team == this.team then
 					client.gfx_stencil_test(true)
 
-					-- PASS 1: set to 1 for invisible pixels
+					-- PASS 1: set to 1 for enlarged model
 					client.gfx_depth_mask(false)
-					client.gfx_stencil_func("1", 1, 255)
-					client.gfx_stencil_op(";=;")
+					client.gfx_stencil_func("0", 1, 255)
+					client.gfx_stencil_op("===")
+					local s_va_render_global = client.va_render_global
+					function client.va_render_global(va, px, py, pz, ry, rx, ry2, scale, ...)
+						scale = scale or 1.0
+						scale = scale * 1.4
+						return s_va_render_global(va, px, py, pz, ry, rx, ry2, scale, ...)
+					end
 					plr.render()
+					client.va_render_global = s_va_render_global
 					client.gfx_depth_mask(true)
 
-					-- PASS 2: set to 0 for visible pixels
+					-- PASS 2: set to 0 for regular model
 					client.gfx_stencil_func("1", 0, 255)
-					client.gfx_stencil_op(";;=")
+					client.gfx_stencil_op("===")
 					plr.render()
 
 					-- PASS 3: draw red for stencil == 1; clear stencil
 					client.gfx_stencil_func("==", 1, 255)
 					client.gfx_stencil_op("000")
-					client.img_blit(img_fsrect, 0, 0)
+					local iw, ih = common.img_get_dims(img_fsrect)
+					client.img_blit(img_fsrect, 0, 0, iw, ih, 0, 0, 0x7FFFFFFF)
 
 					client.gfx_stencil_test(false)
 				else
@@ -2293,6 +2313,9 @@ function new_player(settings)
 			this.cpal_rect.visible = true
 		end
 
+		if client.gfx_clear_depth then
+			client.gfx_clear_depth()
+		end
 		this.scene.draw()
 
 		if debug_enabled then

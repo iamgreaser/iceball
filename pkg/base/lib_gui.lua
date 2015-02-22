@@ -17,6 +17,9 @@
 
 if client then
 
+-- img_blit_to segfaults prior to 0.2.1
+GUI_USE_VA_PRINT = (common.version.num >= 8421376+10)
+
 dofile("pkg/base/lib_util.lua")
 
 -- load images
@@ -68,6 +71,17 @@ function gui_index_digit(idx) return digit_map[idx] end
 
 -- create a new fixed-width font using the bitmap image, character width and height, and char indexing function
 function gui_create_fixwidth_font(image, char_width, char_height, indexing_fn, shadow)
+	if GUI_USE_VA_PRINT then
+		local src_image = image
+		local w, h = client.img_get_dims(src_image)
+		local i
+		i = 64 while i < w do i = i * 2 end w = i
+		i = 64 while i < h do i = i * 2 end h = i
+		image = client.img_new(w, h)
+		-- segfault happens 
+		client.img_blit_to(image, src_image, 0, 0)
+	end
+
 	local this = {image=image, width=char_width, height=char_height,
 		indexing_fn=indexing_fn, shadow=shadow}
 
@@ -242,12 +256,92 @@ function gui_create_fixwidth_font(image, char_width, char_height, indexing_fn, s
 	-- print text with topleft at x, y, color c, string str
 	function this.print(x, y, c, str, buffer)
 		this.calc_shadow(c)
-		for i=1,#str do
-			local idx = this.indexing_fn(string.byte(str, i))
-			this._blit(buffer, x, y, idx, c)
-			x = x + this.width
+		if GUI_USE_VA_PRINT and buffer == nil then
+			local i
+			local iw, ih = client.img_get_dims(this.image)
+			local sw, sh = client.screen_get_dims()
+			local xscale = 2/sw
+			local yscale = 2/sw
+			local xadv = xscale
+			local yadv = yscale
+			local wmul = 1/iw
+			local hmul = 1/ih
+			local v0 = this.height/ih
+			local v1 = 0.0
+
+			x = (x-sw/2)*xscale
+			y = (y-sh/2)*yscale
+			local y0 = y + yscale*this.height
+			local y1 = y
+			local z0 = 1.0
+			local a0,r0,g0,b0 = common.argb_merged_to_split(c)
+			local a1,r1,g1,b1 = common.argb_merged_to_split(this.shadow)
+			r0 = r0/255
+			g0 = g0/255
+			b0 = b0/255
+			a0 = a0/255
+			r1 = r1/255
+			g1 = g1/255
+			b1 = b1/255
+			a1 = a1/255
+			local l = {}
+			local la = {}
+			for i=1,#str do
+				local idx = this.indexing_fn(string.byte(str, i))
+				idx = idx*this.width
+				local u0 = (idx+0)*wmul
+				local u1 = (idx+this.width)*wmul
+
+				local x0 = x
+				local x1 = x + xscale*this.width
+				x = x1
+
+				la[1+#la] = {-x0,y0,z0,r0,g0,b0,a0,u0,v0}
+				la[1+#la] = {-x1,y0,z0,r0,g0,b0,a0,u1,v0}
+				la[1+#la] = {-x0,y1,z0,r0,g0,b0,a0,u0,v1}
+				la[1+#la] = {-x0,y1,z0,r0,g0,b0,a0,u0,v1}
+				la[1+#la] = {-x1,y0,z0,r0,g0,b0,a0,u1,v0}
+				la[1+#la] = {-x1,y1,z0,r0,g0,b0,a0,u1,v1}
+				x0 = x0 + xadv
+				x1 = x1 + xadv
+				y0 = y0 + yadv
+				y1 = y1 + yadv
+				l[1+#l] = {-x0,y0,z0,r1,g1,b1,a1,u0,v0}
+				l[1+#l] = {-x1,y0,z0,r1,g1,b1,a1,u1,v0}
+				l[1+#l] = {-x0,y1,z0,r1,g1,b1,a1,u0,v1}
+				l[1+#l] = {-x0,y1,z0,r1,g1,b1,a1,u0,v1}
+				l[1+#l] = {-x1,y0,z0,r1,g1,b1,a1,u1,v0}
+				l[1+#l] = {-x1,y1,z0,r1,g1,b1,a1,u1,v1}
+				y0 = y0 - yadv
+				y1 = y1 - yadv
+
+			end
+
+			local i
+			for i=1,#la do
+				l[1+#l] = la[i]
+			end
+
+			this.va = common.va_make(l, this.va, "3v,4c,2t")
+			client.gfx_depth_mask(false)
+			if USE_GLSL_20 and shader_img then
+				shader_img.push()
+				client.va_render_local(this.va, 0, 0, 0, 0, 0, 0, 1, this.image, "ah")
+				shader_img.pop()
+			else
+				if USE_GLSL_20 and shader_push_nil then shader_push_nil() end
+				client.va_render_local(this.va, 0, 0, 0, 0, 0, 0, 1, this.image, "ah")
+				if USE_GLSL_20 and shader_push_nil then shader_pop_nil() end
+			end
+			client.gfx_depth_mask(true)
+		else
+			local i
+			for i=1,#str do
+				local idx = this.indexing_fn(string.byte(str, i))
+				this._blit(buffer, x, y, idx, c)
+				x = x + this.width
+			end
 		end
-		local i
 	end
 
 	-- print a selection of precomputed text

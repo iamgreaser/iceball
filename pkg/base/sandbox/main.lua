@@ -172,6 +172,8 @@ if client then
 			client.hook_tick = nil
 		end
 		sb_ctl.gfx_api_prerender()
+
+		return retacc
 	end
 
 	function client.hook_key(...)

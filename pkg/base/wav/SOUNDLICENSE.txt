@@ -1,0 +1,44 @@
+Sounds:
+beep.wav
+bounce.wav
+build.wav
+chat.wav
+cock.wav
+death.wav
+debris.wav
+empty.wav
+explode.wav
+fallhurt.wav
+footstep1.wav
+footstep2.wav
+footstep3.wav
+footstep4.wav
+grenadebounce.wav
+hitground.wav
+hitplayer.wav
+horn.wav
+intro.wav
+jump.wav
+land.wav
+pickup.wav
+pin.wav
+semireload.wav
+semishoot.wav
+shotgunreload.wav
+shotgunshoot.wav
+smgreload.wav
+smgshoot.wav
+switch.wav
+wade1.wav
+wade2.wav
+wade3.wav
+wade4.wav
+waterexplode.wav
+waterjump.wav
+waterland.wav
+whack.wav
+woosh.wav
+
+Are licensed by Creative Commons BY-SA 3.0 and were created by KiLlEr10312
+Rifle and shotgun sounds by Aeyon
+SMG sounds by BanananaHead

@@ -20,9 +20,9 @@
 -- Thanks. --GM
 
 VERSION_ENGINE = {
-	cmp={0,2,1,0,5},
-	num=8421376+5,
-	str="0.2.1-5",
+	cmp={0,2,1,0,11},
+	num=8421376+11,
+	str="0.2.1-11",
 }
 
 --error(""..common.version.num)
@@ -150,5 +150,12 @@ VERSION_BUGS = {
 {intro=4259840+1, fix=8421376+1, msg="VA API lacks support for blending"},
 {intro=nil, fix=8421376+2, msg="Lack of depth / stencil buffer mode selection support"},
 {intro=8421376+4, fix=8421376+5, msg="Crash on map_free after map_new"},
+{renderer="gl", intro=8421376+2, fix=8421376+6, msg="[OpenGL] Stencil bits not set properly, resulting in red screen on some drivers"},
+{renderer="gl", intro=nil, fix=8421376+7, msg="[OpenGL] Multitexturing not supported"},
+{renderer="gl", intro=nil, fix=8421376+8, msg="[OpenGL] GLSL shaders not supported"},
+{renderer="gl", intro=8421376+8, fix=8421376+9, msg="[OpenGL] Map and PMF normals not emitted for shaders"},
+{renderer="gl", intro=8421376+7, fix=8421376+9, msg="[OpenGL] Normal information for VAs overrides colour information by mistake"},
+{intro=nil, fix=8421376+10, msg="Segfault when blitting without a screen, even image-to-image"},
+
 }
 

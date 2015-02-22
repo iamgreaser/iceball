@@ -60,8 +60,13 @@ return function (plr)
 	function this.click(button, state, ...)
 		if button == 3 then
 			-- RMB
-			this.firing_double = state
-			this.firing = this.firing or state
+			if this.ammo_clip > 0 then
+				this.firing_double = state
+				this.firing = this.firing or state
+			else
+				this.firing = false
+				this.firing_double = false
+			end
 		else
 			return s_click(button, state, ...)
 		end

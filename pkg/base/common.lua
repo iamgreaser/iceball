@@ -174,24 +174,28 @@ if client then
 	wav_grif = skin_load("wav", "grif.wav", DIR_PKG_WAV)
 	wav_hammer = skin_load("wav", "hammer.wav", DIR_PKG_WAV)
 	wav_swish = skin_load("wav", "swish.wav", DIR_PKG_WAV)
-	wav_jump_up = skin_load("wav", "jump-up.wav", DIR_PKG_WAV)
-	wav_jump_down = skin_load("wav", "jump-down.wav", DIR_PKG_WAV)
+	wav_jump_up = skin_load("wav", "jump.wav", DIR_PKG_WAV)
+	wav_jump_down = skin_load("wav", "land.wav", DIR_PKG_WAV)
 	wav_pin = skin_load("wav", "pin.wav", DIR_PKG_WAV)
 	wav_kapiano = skin_load("wav", "kapiano.wav", DIR_PKG_WAV)
 	wav_nade_boom = skin_load("wav", "nade-boom.wav", DIR_PKG_WAV)
 	wav_pop = skin_load("wav", "pop.wav", DIR_PKG_WAV)
 	wav_steps = {}
+	wav_water_steps = {}
 	wav_ouches = {}
 	wav_splats = {}
 	local i
-	for i=1,8 do
+	for i=1,4 do
 		wav_steps[i] = skin_load("wav", "step"..i..".wav", DIR_PKG_WAV)
+	end
+	for i=1,4 do
+		wav_water_steps[i] = skin_load("wav", "wade"..i..".wav", DIR_PKG_WAV)
 	end
 	for i=1,3 do
 		wav_ouches[i] = skin_load("wav", "ouch"..i..".wav", DIR_PKG_WAV)
 	end
 	for i=1,1 do
-		wav_splats[i] = skin_load("wav", "splat"..i..".wav", DIR_PKG_WAV)
+		wav_splats[i] = skin_load("wav", "death"..i..".wav", DIR_PKG_WAV)
 	end
 end
 
@@ -314,6 +318,21 @@ do
 			local cb = b + math.floor(((255-b)*j)/4)
 			cpalette[#cpalette+1] = {cr,cg,cb}
         end
+	end
+end
+
+if server then
+	local fog_r, fog_g, fog_b = 192, 238, 255
+
+	function fog_set(r, g, b)
+		fog_r = math.floor(math.max(0, math.min(255, r)))
+		fog_g = math.floor(math.max(0, math.min(255, g)))
+		fog_b = math.floor(math.max(0, math.min(255, b)))
+		net_broadcast(nil, common.net_pack("BBBB", PKT_FOG_COLOR, fog_r, fog_g, fog_b))
+	end
+
+	function fog_send_to(neth)
+		net_send(neth, common.net_pack("BBBB", PKT_FOG_COLOR, fog_r, fog_g, fog_b))
 	end
 end
 
