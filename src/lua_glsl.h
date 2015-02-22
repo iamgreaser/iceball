@@ -56,7 +56,9 @@ int icelua_fn_client_gfx_glsl_available(lua_State *L)
 
 int icelua_fn_client_glsl_create(lua_State *L)
 {
-	int top = icelua_assert_stack(L, 2, 2);
+	int top = icelua_assert_stack(L, 2, 3);
+	int i;
+	int len;
 
 #ifdef DEDI
 	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
@@ -72,6 +74,8 @@ int icelua_fn_client_glsl_create(lua_State *L)
 	const char *srcv = lua_tostring(L, 1);
 	const char *srcf = lua_tostring(L, 2);
 	char *shaderinf = malloc(64<<10);
+	if(top >= 3 && !lua_istable(L, 3))
+		return luaL_error(L, "expected list for attr_array");
 
 	luaL_Buffer b;
 
@@ -96,6 +100,22 @@ int icelua_fn_client_glsl_create(lua_State *L)
 	prog = glCreateProgram();
 	glAttachShader(prog, sh_v);
 	glAttachShader(prog, sh_f);
+
+	if(top >= 3)
+	{
+		len = lua_objlen(L, 3);
+		for(i = 0; i < len; i++)
+		{
+			lua_pushinteger(L, i+1);
+			lua_gettable(L, 3);
+			const char *name = lua_tostring(L, -1);
+			lua_pop(L, 1);
+			if(name != NULL)
+				glBindAttribLocation(prog, i+1, name);
+		}
+
+	}
+
 	glLinkProgram(prog);
 	glGetProgramInfoLog(prog, (64<<10)-1, NULL, shaderinf);
 	luaL_addstring(&b, "Program link information:\n");

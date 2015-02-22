@@ -288,8 +288,10 @@ glver = client.gfx_glsl_available() @
 	- "2.0" if GL 2.0
 	- nil otherwise
 
-shader, result = client.glsl_create(vertex_src_string, fragment_src_string) @
+shader, result = client.glsl_create(vertex_src_string, fragment_src_string, attr_array = {}) @
 	creates a shader
+
+	attr_array is a list of strings to bind to attributes
 	
 	returns a shader handle in "shader" on success
 	returns nil on failure

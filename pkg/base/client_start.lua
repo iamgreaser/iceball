@@ -971,7 +971,8 @@ if VA_TEST then
 end
 
 if USE_GLSL_20 then
-shader_misc, result = shader_new{name="misc", vert=[=[
+shader_misc, result = shader_new{name="misc",
+vert=[=[
 // Vertex shader
 
 varying vec4 cpos;

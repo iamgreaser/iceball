@@ -1557,6 +1557,14 @@ void render_vertex_array(uint32_t *pixels, int width, int height, int pitch, cam
 			glActiveTexture(GL_TEXTURE0 + i);
 			glTexCoordPointer(va->texcoord_size[i%va->texcoord_count], GL_FLOAT, sizeof(float)*va->stride, va->data+va->texcoord_offs[i%va->texcoord_count]);
 		}
+
+		if(gl_shaders)
+		for(i = 0; i < va->attr_count; i++)
+		{
+			glVertexAttribPointer(i+1, va->attr_size[i], GL_FLOAT, GL_FALSE,
+				sizeof(float)*va->stride, va->data+va->attr_offs[i]);
+		}
+
 	} else {
 		glBindBuffer(GL_ARRAY_BUFFER, va->vbo);
 		glVertexPointer(va->vertex_size, GL_FLOAT, sizeof(float)*va->stride, (void *)(0 + sizeof(float)*va->vertex_offs));
@@ -1568,6 +1576,13 @@ void render_vertex_array(uint32_t *pixels, int width, int height, int pitch, cam
 			glClientActiveTexture(GL_TEXTURE0 + i);
 			glActiveTexture(GL_TEXTURE0 + i);
 			glTexCoordPointer(va->texcoord_size[i%va->texcoord_count], GL_FLOAT, sizeof(float)*va->stride, ((void *)0+sizeof(float)*va->texcoord_offs[i%va->texcoord_count]));
+		}
+
+		if(gl_shaders)
+		for(i = 0; i < va->attr_count; i++)
+		{
+			glVertexAttribPointer(i+1, va->attr_size[i], GL_FLOAT, GL_FALSE,
+				sizeof(float)*va->stride, ((float *)0) + va->attr_offs[i]);
 		}
 	}
 	glClientActiveTexture(GL_TEXTURE0);
@@ -1584,7 +1599,16 @@ void render_vertex_array(uint32_t *pixels, int width, int height, int pitch, cam
 	}
 	glClientActiveTexture(GL_TEXTURE0);
 	glActiveTexture(GL_TEXTURE0);
+
+	if(gl_shaders)
+		for(i = 0; i < va->attr_count; i++)
+			glEnableVertexAttribArray(i+1);
+
 	glDrawArrays(GL_TRIANGLES, 0, va->data_len);
+
+	if(gl_shaders)
+		for(i = 0; i < va->attr_count; i++)
+			glDisableVertexAttribArray(i+1);
 	if(va->texcoord_count >= 1)
 	for(i = 0; i < va->texcoord_count || i < img_count; i++)
 	{
@@ -1594,6 +1618,7 @@ void render_vertex_array(uint32_t *pixels, int width, int height, int pitch, cam
 	}
 	glClientActiveTexture(GL_TEXTURE0);
 	glActiveTexture(GL_TEXTURE0);
+
 	if(va->normal_offs != -1) glDisableClientState(GL_NORMAL_ARRAY);
 	if(va->color_offs != -1) glDisableClientState(GL_COLOR_ARRAY);
 	glDisableClientState(GL_VERTEX_ARRAY);

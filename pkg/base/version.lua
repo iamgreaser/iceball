@@ -20,9 +20,9 @@
 -- Thanks. --GM
 
 VERSION_ENGINE = {
-	cmp={0,2,1,0,13},
-	num=8421376+13,
-	str="0.2.1-13",
+	cmp={0,2,1,0,14},
+	num=8421376+14,
+	str="0.2.1-14",
 }
 
 --error(""..common.version.num)
@@ -156,7 +156,8 @@ VERSION_BUGS = {
 {renderer="gl", intro=8421376+8, fix=8421376+9, msg="[OpenGL] Map and PMF normals not emitted for shaders"},
 {renderer="gl", intro=8421376+7, fix=8421376+9, msg="[OpenGL] Normal information for VAs overrides colour information by mistake"},
 {intro=nil, fix=8421376+10, msg="Segfault when blitting without a screen, even image-to-image"},
-{renderer="gl", intro=nil, fix=8421376+12, msg="VAs broken when VBOs disabled"},
+{renderer="gl", intro=nil, fix=8421376+12, msg="[OpenGL] VAs broken when VBOs disabled"},
+{renderer="gl", intro=nil, fix=8421376+14, msg="[OpenGL] Vertex attributes not supported in shaders"},
 
 }
 
