@@ -21,6 +21,7 @@ int icesackit_bufoffs = 0;
 int icesackit_freq = 0;
 sackit_playback_t *icesackit_pb = NULL;
 float icesackit_vol = 1.0f;
+float icesackit_mvol = 1.0f;
 
 typedef struct wavfmt {
 	uint16_t codec, chns;
@@ -76,7 +77,7 @@ void wav_fn_mixer_s16he_stereo(void *buf, int len)
 			for(i = 0; i < sirem*2; i++)
 			{
 				int q = u[i+icesackit_bufoffs*2];
-				q = (icesackit_vol*q);
+				q = (icesackit_mvol*icesackit_vol*q);
 				if(q > 0x7FFF) q = 0x7FFF;
 				if(q < -0x8000) q = -0x8000;
 				*(v++) = (int16_t)q;

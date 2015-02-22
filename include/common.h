@@ -23,7 +23,7 @@
 #define VERSION_X 2
 #define VERSION_Y 1
 #define VERSION_A 0
-#define VERSION_Z 12
+#define VERSION_Z 13
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!
@@ -658,6 +658,7 @@ void cam_point_dir_sky(camera_t *model, float dx, float dy, float dz, float sx, 
 extern sackit_playback_t *icesackit_pb;
 extern int icesackit_bufoffs;
 extern float icesackit_vol;
+extern float icesackit_mvol;
 wav_t *wav_parse(char *buf, int len);
 wav_t *wav_load(const char *fname);
 void wav_kill(wav_t *wav);

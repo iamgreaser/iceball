@@ -43,6 +43,7 @@
 		"freq": 44100,
 		"bufsize": 2048,
 		
+		"mus_volume": 1.0,
 		"volume": 1.0
 	},
 

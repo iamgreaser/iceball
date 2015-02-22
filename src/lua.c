@@ -621,6 +621,11 @@ int icelua_init(void)
 			if(v >= 0) wav_bufsize = v;
 			lua_pop(Lc, 1);
 
+			lua_getfield(Lc, -1, "mus_volume");
+			f = lua_tonumber(Lc, -1);
+			if(!lua_isnil(Lc, -1)) icesackit_mvol = f;
+			lua_pop(Lc, 1);
+
 			lua_getfield(Lc, -1, "volume");
 			f = lua_tonumber(Lc, -1);
 			if(!lua_isnil(Lc, -1)) wav_gvol = f;
