@@ -34,7 +34,7 @@ LIB_LIST = LIB_LIST or {
 	DIR_PKG_LIB.."/lib_sdlkey.lua",
 	DIR_PKG_LIB.."/lib_util.lua",
 	DIR_PKG_LIB.."/lib_vector.lua",
-	
+
 	DIR_PKG_LIB.."/obj_player.lua",
 	DIR_PKG_LIB.."/obj_nade.lua",
 	DIR_PKG_LIB.."/obj_particle.lua",
@@ -70,7 +70,7 @@ MODE_PLAYERS_MAX = 64
 MODE_MAX_FOG = 127.5
 MODE_DEFAULT_FOG = 60
 -- v This extends the fog distance a bit for gl users, to match the softgm renderer at the screen centre.
-MODE_FOG_GL_EXTEND = true 
+MODE_FOG_GL_EXTEND = true
 
 MODE_AUTOCLIMB = true
 MODE_AIRJUMP = false
@@ -170,7 +170,7 @@ if client then
 	wav_rifle_shot = skin_load("wav", "rifle-shot.wav", DIR_PKG_WAV)
 	wav_rifle_reload = skin_load("wav", "rifle-reload.wav", DIR_PKG_WAV)
 	wav_whoosh = skin_load("wav", "whoosh.wav", DIR_PKG_WAV)
-	wav_buld = skin_load("wav", "buld.wav", DIR_PKG_WAV)
+	wav_build = skin_load("wav", "buld.wav", DIR_PKG_WAV)
 	wav_grif = skin_load("wav", "grif.wav", DIR_PKG_WAV)
 	wav_hammer = skin_load("wav", "hammer.wav", DIR_PKG_WAV)
 	wav_swish = skin_load("wav", "swish.wav", DIR_PKG_WAV)
@@ -207,7 +207,7 @@ do
 		weapon_cid = ret+1
 		return ret
 	end
-	
+
 	function weapon_resetlist()
 		weapon_cid = 1
 		weapons = {}
@@ -358,15 +358,15 @@ bhealth = {head = 1, tail = 0, time = 0, map = {}}
 
 function bhealth_clear(x,y,z,repaint)
 	local map = bhealth.map
-	
+
 	local bh = map[x] and map[x][y] and map[x][y][z]
-	
+
 	if bh then
 		if repaint then
 			map_block_paint(bh.x,bh.y,bh.z,
 				bh.c[1],bh.c[2],bh.c[3],bh.c[4])
 		end
-		
+
 		map[x][y][z] = nil
 	end
 end
@@ -378,9 +378,9 @@ function bhealth_damage(x,y,z,amt,plr)
 		c = map_block_get(x,y,z)
 	end
 	if not c then return end
-	
+
 	local map = bhealth.map
-	
+
 	map[x] = map[x] or {}
 	map[x][y] = map[x][y] or {}
 	map[x][y][z] = map[x][y][z] or {
@@ -391,10 +391,10 @@ function bhealth_damage(x,y,z,amt,plr)
 		x = x, y = y, z = z,
 	}
 	local blk = map[x][y][z]
-	
+
 	blk.time = bhealth.time + MODE_BLOCK_REGEN_TIME
 	blk.damage = blk.damage + amt
-	
+
 	if server and blk.damage >= MODE_BLOCK_HEALTH then
 		if map_block_break(x,y,z) then
 			net_broadcast(nil, common.net_pack("BHHH",
@@ -405,33 +405,33 @@ function bhealth_damage(x,y,z,amt,plr)
 				if oblocks > MODE_BLOCKS_MAX then
 					oblocks = MODE_BLOCKS_MAX
 				end
-				
+
 				plr.set_blocks(oblocks)
 			end
 		end
 	end
-	
+
 	local c = blk.c
 	local darkfac = 0.8*MODE_BLOCK_HEALTH
 	local light = darkfac/(darkfac + blk.damage)
-	
+
 	map_block_paint(x,y,z,c[1],
 		math.floor(c[2]*light+0.5),
 		math.floor(c[3]*light+0.5),
 		math.floor(c[4]*light+0.5))
-	
+
 	bhealth.tail = bhealth.tail + 1
 	bhealth[bhealth.tail] = {x=x,y=y,z=z,time=blk.time}
-	
+
 	blk.qidx = bhealth.tail
-	
+
 	if client then
 		local block_particlecount = (math.random() * 20 + 10)*1 -- disabling particles to help fix rot
 		--[[
 		local mdl = new_particle_model(
 			math.floor(c[2]*light+0.5),
 			math.floor(c[3]*light+0.5),
-			math.floor(c[4]*light+0.5)) 
+			math.floor(c[4]*light+0.5))
 		]]
 		block_part_mdl = block_part_mdl or new_particle_model(148, 148, 148)
 
@@ -458,30 +458,29 @@ function bhealth_prune(time)
 		local bhi = bhealth[bhealth.head]
 		if time >= bhi.time then
 			bhealth[bhealth.head] = nil
-			
+
 			--print("bhi", bhi.x,bhi.y,bhi.z,bhi.time,time)
-			
+
 			local map = bhealth.map
 			local bh = map[bhi.x] and map[bhi.x][bhi.y] and map[bhi.x][bhi.y][bhi.z]
-			
+
 			if bh and bh.qidx == bhealth.head then
 				map_block_paint(bh.x,bh.y,bh.z,
 					bh.c[1],bh.c[2],bh.c[3],bh.c[4])
 				bhealth.map[bh.x][bh.y][bh.z] = nil
 			end
-			
+
 			bhealth.head = bhealth.head + 1
 		else
 			break
 		end
 	end
 	map_cache_end()
-	
+
 	if bhealth.head > bhealth.tail then
 		bhealth.head = 1
 		bhealth.tail = 0
 	end
-	
+
 	bhealth.time = time
 end
-

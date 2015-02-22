@@ -95,9 +95,10 @@ int icelua_fn_client_va_render_global(lua_State *L)
 #ifdef DEDI
 	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
 #else
-#if USE_SDL2
+#ifdef USE_SDL2
 	render_vertex_array(NULL, screen_width, screen_height, screen_width, &tcam,
-		va, 0, px, py, pz, ry, rx, ry2, scale, img, (bmode != NULL), sfactor, dfactor, alpha);
+		va, 0, px, py, pz, ry, rx, ry2, scale, img, (bmode != NULL), sfactor, dfactor, alpha,
+		img_count);
 #else
 	render_vertex_array((uint32_t*)screen->pixels, screen->w, screen->h, screen->pitch/4, &tcam,
 		va, 0, px, py, pz, ry, rx, ry2, scale, img, (bmode != NULL), sfactor, dfactor, alpha,
@@ -170,9 +171,10 @@ int icelua_fn_client_va_render_local(lua_State *L)
 #ifdef DEDI
 	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
 #else
-#if USE_SDL2
+#ifdef USE_SDL2
 	render_vertex_array(NULL, screen_width, screen_height, screen_width, &tcam,
-		va, 1, px, py, pz, ry, rx, ry2, scale, img, (bmode != NULL), sfactor, dfactor, alpha);
+		va, 1, px, py, pz, ry, rx, ry2, scale, img, (bmode != NULL), sfactor, dfactor, alpha,
+		img_count);
 #else
 	render_vertex_array((uint32_t*)screen->pixels, screen->w, screen->h, screen->pitch/4, &tcam,
 		va, 1, px, py, pz, ry, rx, ry2, scale, img, (bmode != NULL), sfactor, dfactor, alpha,
@@ -338,5 +340,3 @@ int icelua_fn_common_va_make(lua_State *L)
 
 	return 1;
 }
-
-

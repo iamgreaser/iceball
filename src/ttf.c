@@ -17,16 +17,43 @@
 
 #include "common.h"
 
-// TODO: optionally could handle some extra stuff from here, maybe font sizing/resizing?
+img_t *font_ttf_render_to_texture(TTF_Font *font, const char *text, uint32_t color, lua_State *L)
+{
+	SDL_Color sdl_clr = {(color>>16)&255,(color>>8)&255,(color)&255, (color>>24)&255};
 
-// TTF_Font *font_ttf_load(const char *fname, lua_State *L)
-// {
-	// int flen;
-	// char *buf = net_fetch_file(fname, &flen);
-	// if(buf == NULL)
-		// return NULL;
-	// TTF_Font *ret = TTF_OpenFontRW(SDL_RWFromMem(buf, sizeof(buf), 1, 16);
-	// free(buf);
-	// return ret;
-// }
+	SDL_Surface *font_rendered_surface = TTF_RenderText_Blended(font, text, sdl_clr);
 
+	int w = font_rendered_surface->w;
+	int h = font_rendered_surface->h;
+	lua_getglobal(L, "common");
+	lua_getfield(L, -1, "img_new");
+	lua_remove(L, -2);
+	lua_pushnumber(L, w);
+	lua_pushnumber(L, h);
+	lua_call(L, 2, 1);
+	//loads the return of the function - an empty image onto the stack
+	//since it's on top of the stack the return value will be it so we can work it
+	img_t *img = (img_t *)lua_touserdata(L, -1);
+
+	int iw = img->head.width;
+	int ih = img->head.height;
+	#ifndef DEDI
+		expandtex_gl(&iw, &ih);
+	#endif
+	int x;
+	int y;
+	for (x=0; x<w; x++){
+		for (y=0; y<h; y++){
+			//int bpp = font_rendered_surface->format->BytesPerPixel; //always 4 in our case
+			//but just for reference ^
+			uint32_t  *p = (Uint8 *)font_rendered_surface->pixels + y * font_rendered_surface->pitch + x * 4;
+
+			img->pixels[y * iw +x]=*(uint32_t*)p;
+		}
+	}
+	SDL_FreeSurface(font_rendered_surface);
+
+	//aand get if off the stack again, because pointers
+	img = (img_t *)lua_touserdata(L, -1);
+	return img;
+}

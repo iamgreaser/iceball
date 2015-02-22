@@ -218,7 +218,7 @@ network.sys_handle_s2c(PKT_PLR_RM, "B", function (neth, cli, plr, sec_current, p
 end)
 network.sys_handle_s2c(PKT_BLK_ADD, "HHHBBBB", function (neth, cli, plr, sec_current, x,y,z,cb,cg,cr,ct, pkt)
 	bhealth_clear(x,y,z,false)
-	client.wav_play_global(wav_buld,x+0.5,y+0.5,z+0.5)
+	client.wav_play_global(wav_build,x+0.5,y+0.5,z+0.5)
 	map_block_set(x,y,z,ct,cr,cg,cb)
 end)
 network.sys_handle_s2c(PKT_BLK_RM1, "HHH", function (neth, cli, plr, sec_current, x, y, z, pkt)

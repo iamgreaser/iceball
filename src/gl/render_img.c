@@ -55,12 +55,12 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 	{
 		return;
 	}
-	
-<<<<<<< HEAD
+
+#ifdef USE_SDL2
 	if(pixels != NULL)
-=======
+#else
 	if(screen == NULL || pixels != screen->pixels)
->>>>>>> master
+#endif
 	{
 		expandtex_gl(&width, &height);
 		pitch = width;
@@ -77,7 +77,7 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 	{
 		if(src->tex == 0)
 			glGenTextures(1, &(src->tex));
-		
+
 		glBindTexture(GL_TEXTURE_2D, src->tex);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iw, ih, 0, GL_BGRA, GL_UNSIGNED_BYTE, src->pixels);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -99,7 +99,7 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 	glLoadIdentity();
 	glTranslatef(-1.0f, 1.0f, 0.0f);
 	glScalef(2.0f/width, -2.0f/height, 1.0f);
-	
+
 	float dx1 = dx;
 	float dy1 = dy;
 	float dx2 = dx+bw;
@@ -112,7 +112,7 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 
 	sx2 /= scalex;
 	sy2 /= scaley;
-	
+
 	glColor4f(((color>>16)&255)/255.0f,((color>>8)&255)/255.0f,((color)&255)/255.0f,((color>>24)&255)/255.0f);
 	glBegin(GL_QUADS);
 		glTexCoord2f(sx1, sy1); glVertex3f(dx1, dy1, 1.0f);
@@ -120,13 +120,13 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 		glTexCoord2f(sx2, sy2); glVertex3f(dx2, dy2, 1.0f);
 		glTexCoord2f(sx2, sy1); glVertex3f(dx2, dy1, 1.0f);
 	glEnd();
-	
+
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
 	glDisable(GL_BLEND);
-	glBindTexture(GL_TEXTURE_2D, 0);		
+	glBindTexture(GL_TEXTURE_2D, 0);
 	glDisable(GL_TEXTURE_2D);
 	glEnable(GL_DEPTH_TEST);
 }
@@ -147,7 +147,7 @@ void render_blit_img_toimg(uint32_t *pixels, int width, int height, int pitch,
 	int iscalex, iscaley;
 	iscalex = 0x10000/scalex;
 	iscaley = 0x10000/scaley;
-	
+
 	// clip blit width/height
 	if(bw/scalex > src->head.width-sx)
 		bw = (src->head.width-sx)*scalex;
@@ -165,13 +165,13 @@ void render_blit_img_toimg(uint32_t *pixels, int width, int height, int pitch,
 		dy += -sy*scaley;
 		sy = 0;
 	}
-	
+
 	// drop if completely out of range
 	if(dx >= width || dy >= height)
 		return;
 	if(dx+bw <= 0 || dy+bh <= 0)
 		return;
-	
+
 	// top-left clip
 	if(dx < 0)
 	{
@@ -185,17 +185,17 @@ void render_blit_img_toimg(uint32_t *pixels, int width, int height, int pitch,
 		bh -= -dy/scaley;
 		dy = 0;
 	}
-	
+
 	// bottom-right clip
 	if(dx+bw > width)
 		bw = width-dx;
 	if(dy+bh > height)
 		bh = height-dy;
-	
+
 	// drop if width/height sucks
 	if(bw <= 0 || bh <= 0)
 		return;
-	
+
 	// get pointers
 	int iw, ih;
 	iw = src->head.width;
@@ -210,28 +210,28 @@ void render_blit_img_toimg(uint32_t *pixels, int width, int height, int pitch,
 
 	int xctr, yctr;
 	yctr = 0;
-	
+
 	//printf("[%i %i] [%i %i] %016llX %016llX %i %i %08X\n"
 	//	, bw, bh, dx, dy, (long long)ps, (long long)pd, dpitch, spitch, color);
-	
+
 #ifdef __SSE2__
 	// TODO: improve prefetching
-	
+
 	// from the Intel 64 and IA-32 Architectures Optimization Manual:
 	//
 	// Assembly/Compiler Coding Rule 76. (M impact, H generality) Align data to
 	// 32-byte boundary when possible. Prefer store alignment over load alignment.
-	
+
 	if(bw >= 16 && scalex == 1.0f)
 	{
 		const __m128i xmmconst_0 = _mm_setzero_si128();
 		const __m128i xmmconst_256 = _mm_set1_epi16(256);
 		const __m128i xmmconst_roundcolor = _mm_set_epi16(8,8,8,8,8,8,8,8);
 		const __m128i xmmconst_incalpha = _mm_set_epi16(127,0x7FFF,0x7FFF,0x7FFF,127,0x7FFF,0x7FFF,0x7FFF);
-		
+
 		// set base color
 		__m128i xmm_bcol = _mm_unpacklo_epi8(_mm_set_epi32(0,0,color,color),xmmconst_0);
-		
+
 		for(y = 0; y < bh; y++)
 		{
 			// strip mine
@@ -239,7 +239,7 @@ void render_blit_img_toimg(uint32_t *pixels, int width, int height, int pitch,
 				_mm_prefetch(ps+x, _MM_HINT_T0);
 			for(x = 0; x < bw; x += 8)
 				_mm_prefetch(pd+x, _MM_HINT_T0);
-			
+
 			// do the left part first
 			// TODO: look for a mask instruction
 			uint32_t *fs = ps;
@@ -247,7 +247,7 @@ void render_blit_img_toimg(uint32_t *pixels, int width, int height, int pitch,
 			{
 				uint32_t s = *(fs++);
 				uint32_t d = *pd;
-				
+
 				// apply base color
 				// DANGER! BRACKETITIS!
 				if(color != 0xFFFFFFFF)
@@ -256,31 +256,31 @@ void render_blit_img_toimg(uint32_t *pixels, int width, int height, int pitch,
 					| ((((s>>8)&0xFF00)*(((color>>16)&0xFF)+1))&0xFF0000)
 					| ((((s>>8)&0xFF0000)*(((color>>24)&0xFF)+1))&0xFF000000)
 				);
-				
+
 				uint32_t alpha = (s >> 24);
 				if(alpha >= 0x80) alpha++;
 				uint32_t ialpha = 0x100 - alpha;
-				
+
 				uint32_t sa = s & 0x00FF00FF;
 				uint32_t sb = (s & 0xFF00FF00)>>8;
 				uint32_t da = d & 0x00FF00FF;
 				uint32_t db = (d & 0xFF00FF00)>>8;
-				
+
 				sa *= alpha;
 				sb *= alpha;
 				da *= ialpha;
 				db *= ialpha;
-				
+
 				uint32_t va = ((sa + da)>>8) & 0x00FF00FF;
 				uint32_t vb = (sb + db) & 0xFF00FF00;
 				uint32_t vv = va+vb;
-				
+
 				//if(((uint64_t)pd) < 0x00000000FFFFFFFFL)
 				//	printf("%i %i %08X\n", alpha, ialpha, vv);
-				
+
 				*(pd++) = vv;
 			}
-			
+
 			// do the middle
 			// NOTE: i don't have AVX2 so don't expect an AVX2 version.
 			for(; x < bw-4; x+=4)
@@ -288,13 +288,13 @@ void render_blit_img_toimg(uint32_t *pixels, int width, int height, int pitch,
 				__m128i xmm_src = _mm_loadu_si128((__m128i *)fs);
 				fs += 4;
 				__m128i xmm_dst = _mm_load_si128((__m128i *)pd);
-				
+
 				// unpack
 				__m128i xmm_src0 = _mm_unpacklo_epi8(xmm_src,xmmconst_0);
 				__m128i xmm_dst0 = _mm_unpacklo_epi8(xmm_dst,xmmconst_0);
 				__m128i xmm_src1 = _mm_unpackhi_epi8(xmm_src,xmmconst_0);
 				__m128i xmm_dst1 = _mm_unpackhi_epi8(xmm_dst,xmmconst_0);
-				
+
 				// apply base color
 				xmm_src0 = _mm_mulhi_epi16(
 					_mm_add_epi16(_mm_slli_epi16(xmm_src0, 4), xmmconst_roundcolor),
@@ -302,41 +302,41 @@ void render_blit_img_toimg(uint32_t *pixels, int width, int height, int pitch,
 				xmm_src1 = _mm_mulhi_epi16(
 					_mm_add_epi16(_mm_slli_epi16(xmm_src1, 4), xmmconst_roundcolor),
 					_mm_add_epi16(_mm_slli_epi16(xmm_bcol, 4), xmmconst_roundcolor));
-				
+
 				// increase alpha a bit
 				xmm_src0 = _mm_sub_epi16(xmm_src0,
 					_mm_cmpgt_epi16(xmm_src0,xmmconst_incalpha));
 				xmm_src1 = _mm_sub_epi16(xmm_src1,
 					_mm_cmpgt_epi16(xmm_src1,xmmconst_incalpha));
-				
+
 				// get src alpha
 				/*
 				OK this is getting really really annoying.
 				Let's do a diagram of what the hell I need to do.
-				
+
 				A1 R1 G1 B1 A0 R0 G0 B0
-				
+
 				unpack high / unpack low
-				
+
 				A1 A1 R1 R1 G1 G1 B1 B1 /  A0 A0 R0 R0 G0 G0 B0 B0
-				
+
 				shuffle correctly
-				
+
 				A1 A1 A1 A1 A0 A0 A0 A0
-				
+
 				*/
-				
+
 				__m128i xmm_src0_alpha = xmm_src0;
 				__m128i xmm_src1_alpha = xmm_src1;
 				__m128i xmm_src0_alpha0 = _mm_unpackhi_epi16(xmm_src0_alpha,xmm_src0_alpha);
 				__m128i xmm_src0_alpha1 = _mm_unpacklo_epi16(xmm_src0_alpha,xmm_src0_alpha);
 				__m128i xmm_src1_alpha0 = _mm_unpackhi_epi16(xmm_src1_alpha,xmm_src1_alpha);
 				__m128i xmm_src1_alpha1 = _mm_unpacklo_epi16(xmm_src1_alpha,xmm_src1_alpha);
-				
+
 				xmm_src0_alpha = (__m128i)_mm_shuffle_ps((__m128)xmm_src0_alpha1,(__m128)xmm_src0_alpha0,0xFF);
 				xmm_src1_alpha = (__m128i)_mm_shuffle_ps((__m128)xmm_src1_alpha1,(__m128)xmm_src1_alpha0,0xFF);
-				
-				
+
+
 				// Found some instructions which should speed this up.
 				// NOTE: actually runs at the same damn speed... maybe even worse.
 				// Using older method for now.
@@ -346,11 +346,11 @@ void render_blit_img_toimg(uint32_t *pixels, int width, int height, int pitch,
 				xmm_src0_alpha = _mm_shufflehi_epi16(xmm_src0_alpha, 0xFF);
 				xmm_src1_alpha = _mm_shufflehi_epi16(xmm_src1_alpha, 0xFF);
 				*/
-				
+
 				// get inverse alpha
 				__m128i xmm_ialpha0 = _mm_sub_epi16(xmmconst_256,xmm_src0_alpha);
 				__m128i xmm_ialpha1 = _mm_sub_epi16(xmmconst_256,xmm_src1_alpha);
-				
+
 				// ALPHA BLAND
 				xmm_src0_alpha = _mm_slli_epi16(xmm_src0_alpha, 4);
 				xmm_ialpha0 = _mm_slli_epi16(xmm_ialpha0, 4);
@@ -360,27 +360,27 @@ void render_blit_img_toimg(uint32_t *pixels, int width, int height, int pitch,
 				xmm_ialpha1 = _mm_slli_epi16(xmm_ialpha1, 4);
 				xmm_src1 = _mm_slli_epi16(xmm_src1, 4);
 				xmm_dst1 = _mm_slli_epi16(xmm_dst1, 4);
-				
+
 				__m128i xmm_combo0 = _mm_add_epi16(
 					_mm_mulhi_epi16(xmm_src0_alpha, xmm_src0),
 					_mm_mulhi_epi16(xmm_ialpha0, xmm_dst0));
 				__m128i xmm_combo1 = _mm_add_epi16(
 					_mm_mulhi_epi16(xmm_src1_alpha, xmm_src1),
 					_mm_mulhi_epi16(xmm_ialpha1, xmm_dst1));
-				
+
 				// pack back!
 				__m128i xmm_combo = _mm_packus_epi16(xmm_combo0, xmm_combo1);
 				_mm_store_si128((__m128i *)pd, xmm_combo);
-				
+
 				pd += 4;
 			}
-			
+
 			// finish off with the right part
 			for(; x < bw; x++)
 			{
 				uint32_t s = *(fs++);
 				uint32_t d = *pd;
-				
+
 				// apply base color
 				// DANGER! BRACKETITIS!
 				if(color != 0xFFFFFFFF)
@@ -389,29 +389,29 @@ void render_blit_img_toimg(uint32_t *pixels, int width, int height, int pitch,
 					| ((((s>>8)&0xFF00)*(((color>>16)&0xFF)+1))&0xFF0000)
 					| ((((s>>8)&0xFF0000)*(((color>>24)&0xFF)+1))&0xFF000000)
 				);
-				
+
 				uint32_t alpha = (s >> 24);
 				if(alpha >= 0x80) alpha++;
 				uint32_t ialpha = 0x100 - alpha;
-				
+
 				uint32_t sa = s & 0x00FF00FF;
 				uint32_t sb = s & 0x0000FF00;
 				uint32_t da = d & 0x00FF00FF;
 				uint32_t db = d & 0x0000FF00;
-				
+
 				sa *= alpha;
 				sb *= alpha;
 				da *= ialpha;
 				db *= ialpha;
-				
+
 				//printf("%i %i\n", alpha, ialpha);
-				
+
 				uint32_t va = ((sa + da)>>8) & 0x00FF00FF;
 				uint32_t vb = ((sb + db)>>8) & 0x0000FF00;
-				
+
 				*(pd++) = va + vb;
 			}
-			
+
 			yctr += iscaley;
 			ps += spitch*(yctr>>16);
 			yctr &= 0xFFFF;
@@ -428,7 +428,7 @@ void render_blit_img_toimg(uint32_t *pixels, int width, int height, int pitch,
 				uint32_t s = ps[xctr>>16];
 				uint32_t d = *pd;
 				xctr += iscalex;
-				
+
 				// apply base color
 				// DANGER! BRACKETITIS!
 				if(color != 0xFFFFFFFF)
@@ -437,31 +437,31 @@ void render_blit_img_toimg(uint32_t *pixels, int width, int height, int pitch,
 					| ((((s>>8)&0xFF00)*(((color>>16)&0xFF)+1))&0xFF0000)
 					| ((((s>>8)&0xFF0000)*(((color>>24)&0xFF)+1))&0xFF000000)
 				);
-				
+
 				uint32_t alpha = (s >> 24);
 				if(alpha >= 0x80) alpha++;
 				uint32_t ialpha = 0x100 - alpha;
-				
+
 				uint32_t sa = s & 0x00FF00FF;
 				uint32_t sb = (s & 0xFF00FF00)>>8;
 				uint32_t da = d & 0x00FF00FF;
 				uint32_t db = (d & 0xFF00FF00)>>8;
-				
+
 				sa *= alpha;
 				sb *= alpha;
 				da *= ialpha;
 				db *= ialpha;
-				
+
 				uint32_t va = ((sa + da)>>8) & 0x00FF00FF;
 				uint32_t vb = (sb + db) & 0xFF00FF00;
 				uint32_t vv = va+vb;
-				
+
 				//if(((uint64_t)pd) < 0x00000000FFFFFFFFL)
 				//	printf("%i %i %08X\n", alpha, ialpha, vv);
-				
+
 				*(pd++) = vv;
 			}
-			
+
 			yctr += iscaley;
 			ps += spitch*(yctr>>16);
 			yctr &= 0xFFFF;
@@ -479,7 +479,7 @@ void render_blit_img_toimg(uint32_t *pixels, int width, int height, int pitch,
 			uint32_t s = ps[xctr>>16];
 			uint32_t d = *pd;
 			xctr += iscalex;
-			
+
 			// apply base color
 			// DANGER! BRACKETITIS!
 			if(color != 0xFFFFFFFF)
@@ -488,31 +488,31 @@ void render_blit_img_toimg(uint32_t *pixels, int width, int height, int pitch,
 				| ((((s>>8)&0xFF00)*(((color>>16)&0xFF)+1))&0xFF0000)
 				| ((((s>>8)&0xFF0000)*(((color>>24)&0xFF)+1))&0xFF000000)
 			);
-			
+
 			uint32_t alpha = (s >> 24);
 			if(alpha >= 0x80) alpha++;
 			uint32_t ialpha = 0x100 - alpha;
-			
+
 			uint32_t sa = s & 0x00FF00FF;
 			uint32_t sb = (s & 0xFF00FF00)>>8;
 			uint32_t da = d & 0x00FF00FF;
 			uint32_t db = (d & 0xFF00FF00)>>8;
-			
+
 			sa *= alpha;
 			sb *= alpha;
 			da *= ialpha;
 			db *= ialpha;
-			
+
 			uint32_t va = ((sa + da)>>8) & 0x00FF00FF;
 			uint32_t vb = (sb + db) & 0xFF00FF00;
 			uint32_t vv = va+vb;
-			
+
 			//if(((uint64_t)pd) < 0x00000000FFFFFFFFL)
 			//	printf("%i %i %08X\n", alpha, ialpha, vv);
-			
+
 			*(pd++) = vv;
 		}
-		
+
 		yctr += iscaley;
 		ps += spitch*(yctr>>16);
 		yctr &= 0xFFFF;
@@ -520,4 +520,3 @@ void render_blit_img_toimg(uint32_t *pixels, int width, int height, int pitch,
 	}
 #endif
 }
-

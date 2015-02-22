@@ -1,6 +1,6 @@
 # I personally don't care if you steal this makefile. --GM
 
-TOOLS = 
+TOOLS =
 
 ifndef RENDERER
 RENDERER = gl
@@ -18,7 +18,7 @@ OBJS = \
 	$(OBJDIR)/png.o \
 	$(OBJDIR)/lua.o $(OBJDIR)/network.o \
 	$(OBJDIR)/path.o $(OBJDIR)/json.o \
-	$(OBJDIR)/wav.o
+	$(OBJDIR)/wav.o $(OBJDIR)/ttf.o
 
 # TODO: make the renderer part not depend on, say, render_img.o
 
@@ -47,4 +47,3 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c $(INCLUDES)
 
 
 .PHONY: all clean
-

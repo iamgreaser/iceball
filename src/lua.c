@@ -101,7 +101,7 @@ int icelua_fn_client_mk_sys_execv(lua_State *L)
 #if 1
 	//if(main_oldcwd != NULL)
 	//	_chdir(main_oldcwd);
-	
+
 	char cwd[2048] = "";
 	GetModuleFileName(NULL, cwd, 2047);
 	char *v = cwd + strlen(cwd) - 1;
@@ -115,7 +115,7 @@ int icelua_fn_client_mk_sys_execv(lua_State *L)
 		v--;
 	}
 	arglist[0] = v;
-	
+
 	for (i = 0; i <= top; i++)
 	{
 		int new_size = strlen(arglist[i]) + 3;
@@ -299,7 +299,7 @@ struct icelua_entry icelua_common[] = {
 	{icelua_fn_common_img_fill, "img_fill"},
 	{icelua_fn_common_img_free, "img_free"},
 	{icelua_fn_common_img_get_dims, "img_get_dims"},
-	{icelua_fn_common_font_load, "font_load"},
+	{icelua_fn_common_font_ttf_load, "font_ttf_load"},
 	{icelua_fn_common_font_render_to_texture, "font_render_to_texture"},
 	{icelua_fn_common_json_parse, "json_parse"},
 	{icelua_fn_common_json_load, "json_load"},
@@ -462,7 +462,7 @@ void icelua_pushversion(lua_State *L, const char *tabname)
 	lua_pushstring(L, vbuf);
 	lua_setfield(L, -2, "str");
 
-	lua_pushinteger(L, 
+	lua_pushinteger(L,
 		(((((((VERSION_W<<5) + VERSION_X
 		)<<7) + VERSION_Y
 		)<<5) + VERSION_A
@@ -504,7 +504,7 @@ int icelua_init(void)
 #ifndef DEDI
 		if(!json_load(Lc, "clsave/config.json"))
 		{
-			// set video stuff 
+			// set video stuff
 			lua_getfield(Lc, -1, "video");
 
 			lua_getfield(Lc, -1, "width");
@@ -605,7 +605,7 @@ int icelua_init(void)
 			// drop table
 			lua_pop(Lc, 1);
 
-			// set audio stuff 
+			// set audio stuff
 			lua_getfield(Lc, -1, "audio");
 
 			lua_getfield(Lc, -1, "freq");
@@ -626,7 +626,7 @@ int icelua_init(void)
 			// drop table
 			lua_pop(Lc, 1);
 
-			// set security stuff 
+			// set security stuff
 			lua_getfield(Lc, -1, "security");
 
 			lua_getfield(Lc, -1, "bin_storage_allowed");
@@ -836,4 +836,3 @@ void icelua_deinit(void)
 {
 	// TODO!
 }
-

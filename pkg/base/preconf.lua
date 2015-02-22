@@ -40,6 +40,7 @@ DIR_PKG_LIB = DIR_PKG_LIB or DIR_PKG_ROOT
 DIR_PKG_PMF = DIR_PKG_PMF or DIR_PKG_ROOT.."/pmf"
 DIR_PKG_KV6 = DIR_PKG_KV6 or DIR_PKG_ROOT.."/kv6"
 DIR_PKG_GFX = DIR_PKG_GFX or DIR_PKG_ROOT.."/gfx"
+DIR_PKG_TTF = DIR_PKG_TTF or DIR_PKG_ROOT.."/ttf"
 DIR_PKG_WAV = DIR_PKG_WAV or DIR_PKG_ROOT.."/wav"
 DIR_PKG_IT = DIR_PKG_IT or DIR_PKG_ROOT.."/it"
 DIR_PKG_MAP = DIR_PKG_MAP or "pkg/maps"
@@ -79,3 +80,5 @@ function model_load(mdict, prio, sdir)
 	return nil
 end
 
+FONT_DEFAULT = "OpenSans-regular"
+dofile("pkg/base/lib_font.lua")

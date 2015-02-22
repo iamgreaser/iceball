@@ -357,7 +357,7 @@ function server.hook_tick(sec_current, sec_delta)
 
 		for i=1,#miscents do
 			miscents[i].tick(moment, tickrate)
-		end				
+		end
 		server_tick_accum = server_tick_accum - tickrate
 	end
 
@@ -501,4 +501,3 @@ fastload_pack_client()
 print("Starting heartbeat server...")
 heartbeat_init()
 print("pkg/base/main_server.lua loaded.")
-

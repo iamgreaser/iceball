@@ -491,7 +491,7 @@ enum
 // dsp.c
 float interp_linear(float y0, float y1, float x);
 float interp_cubic(float y0, float y1, float y2, float y3, float x);
-float interp_hermite6p(float y0, float y1, float y2, float y3, 
+float interp_hermite6p(float y0, float y1, float y2, float y3,
 		float y4, float y5, float x);
 float frequency2wavelength(int rate, float frequency);
 float wavelength2frequency(int rate, float wavelength);
@@ -507,6 +507,9 @@ void img_free(img_t *img);
 void img_gc_set(lua_State *L);
 img_t *img_parse_tga(int len, const char *data, lua_State *L);
 img_t *img_load_tga(const char *fname, lua_State *L);
+
+//ttf.c
+img_t *font_ttf_render_to_texture(TTF_Font *font, const char *text, uint32_t color, lua_State *L);
 
 // json.c
 int json_parse(lua_State *L, const char *p);
@@ -524,7 +527,7 @@ void icelua_deinit(void);
 extern camera_t tcam;
 extern map_t *clmap, *svmap;
 #ifndef DEDI
-#if USE_SDL2
+#ifdef USE_SDL2
 extern SDL_Window *window;
 extern SDL_GLContext *gl_context;
 #else
@@ -679,4 +682,3 @@ void wav_chn_kill(wavchn_t *chn);
 int wav_init(void);
 void wav_deinit(void);
 #endif
-

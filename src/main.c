@@ -23,10 +23,10 @@ map_t *svmap = NULL;
 
 #ifndef DEDI
 #ifdef USE_SDL2
-SDL_GLContext *gl_context = NULL; 
+SDL_GLContext *gl_context = NULL;
 SDL_Window *window = NULL;
 #else
-SDL_Surface *screen = NULL; 
+SDL_Surface *screen = NULL;
 #endif
 char mk_app_title[128] = "iceball";
 #endif
@@ -91,11 +91,13 @@ int platform_init(void)
 #ifndef USE_SDL2
 	SDL_EnableUNICODE(1);
 #endif
+#ifdef USE_SDL2
 	//#ifdef USE_TTF
 	if (TTF_Init() != 0){
 		return error_sdl("TTF_Init");;
 	}
 	//#endif
+#endif
 #ifndef WIN32
 	signal(SIGPIPE, SIG_IGN);
 	signal(SIGINT, SIG_DFL);
@@ -110,12 +112,8 @@ int video_init(void)
 	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-<<<<<<< HEAD
-=======
-
 	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
->>>>>>> master
-	
+
 	if(!gl_vsync)
 #ifdef USE_SDL2
 		SDL_GL_SetSwapInterval(1);
@@ -136,14 +134,11 @@ int video_init(void)
 #else
 	screen = SDL_SetVideoMode(screen_width, screen_height, 32, SDL_OPENGL
 		| (screen_fullscreen ? SDL_FULLSCREEN : 0));
-<<<<<<< HEAD
 #endif
-	
-=======
+#ifndef USE_SDL2
 	if(screen == NULL)
 		return error_sdl("SDL_SetVideoMode");
-
->>>>>>> master
+#endif
 	GLenum err_glew = glewInit();
 	if(err_glew != GLEW_OK)
 	{
@@ -157,7 +152,6 @@ int video_init(void)
 		return 1;
 	}
 
-<<<<<<< HEAD
 	//SDL_GL_DeleteContext(gl_context);
 #ifdef USE_SDL2
 	if (window == NULL)
@@ -166,11 +160,8 @@ int video_init(void)
 	if (screen == NULL)
 		error_sdl("SDL_SetVideoMode");
 #endif
-	
-=======
 	glGetIntegerv(GL_MAX_TEXTURE_UNITS_ARB, &gl_max_texunits);
 
->>>>>>> master
 	return 0;
 }
 
@@ -471,7 +462,7 @@ int update_client_cont1(void)
 				break;
 			}
 			break;
-			
+
 		case SDL_WINDOWEVENT:
 			switch (ev.window.event) {
 				case SDL_WINDOWEVENT_FOCUS_GAINED || SDL_WINDOWEVENT_ENTER:

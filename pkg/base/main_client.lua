@@ -58,9 +58,9 @@ print("pkg/base/main_client.lua starting")
 
 dofile("pkg/base/version.lua")
 
-local wav_buld = skin_load("wav", "buld.wav", DIR_PKG_WAV)
-local wav_buld_frq = math.pow(0.5,3.0)
-local wav_buld_inc = math.pow(2.0,0.5/12.0)
+local wav_build = skin_load("wav", "buld.wav", DIR_PKG_WAV)
+local wav_build_frq = math.pow(0.5,3.0)
+local wav_build_inc = math.pow(2.0,0.5/12.0)
 
 local wav_mus = nil
 local mus_main = nil
@@ -74,7 +74,7 @@ local bug_str
 local function bug_str_gen()
 	local i
 	local s = ""
-	
+
 	for i=1,#VERSION_BUGS do
 		local bug = VERSION_BUGS[i]
 		if ((not bug.intro) or bug.intro <= cver.num) and
@@ -83,7 +83,7 @@ local function bug_str_gen()
 			s = s.."- "..bug.msg.."\n"
 		end
 	end
-	
+
 	return (s ~= "" and "\nCLIENT ISSUES:\n"..s) or ""
 end
 
@@ -93,7 +93,7 @@ if cver.num == 2 and common.img_fill then
 		num=3,
 		str="0.0-3",
 	}
-	VERSION_BUGS[#VERSION_BUGS+1] = 
+	VERSION_BUGS[#VERSION_BUGS+1] =
 		{intro=nil, fix=nil, msg="Triplefox forgot to bump the version number in this build"}
 end
 
@@ -156,7 +156,7 @@ map_img_seen = false
 
 do
 	local scriptcache = {}
-	
+
 	local fnlist = {}
 	local last_keepalive = common.time()
 	function load_screen_fetch(ftype, fname)
@@ -175,10 +175,10 @@ do
 				scene.root.add_child(map_img)
 			end
 		end
-		
+
 		local cname = ftype.."!"..fname
 		local cacheable = ftype ~= "map" and ftype ~= "icemap" and ftype ~= "vxl"
-		
+
 		if cacheable and scriptcache[cname] then
 			fnlist[#fnlist+1] = fname.." [CACHED]"
 			return scriptcache[cname]
@@ -189,64 +189,64 @@ do
 			fnlist[#fnlist+1] = fname.." [FASTLOAD]"
 			return fl
 		end
-		
-		client.wav_play_local(wav_buld, 0, 0, 0, 0.3, wav_buld_frq)
-		wav_buld_frq = wav_buld_frq * wav_buld_inc
-		
+
+		client.wav_play_local(wav_build, 0, 0, 0, 0.3, wav_build_frq)
+		wav_build_frq = wav_build_frq * wav_build_inc
+
 		fnlist[#fnlist+1] = fname
-		
+
 		local map,r,g,b,dist
 		map = common.map_get()
 		r,g,b,dist = client.map_fog_get()
-		
+
 		local old_tick = client.hook_tick
 		local old_render = client.hook_render
 		local old_key = client.hook_key
 		local old_mouse_button = client.hook_mouse_button
 		local old_mouse_motion = client.hook_mouse_motion
-		
+
 		function client.hook_key(sym, uni, state, modif)
 			-- TODO!
 		end
-		
+
 		function client.hook_mouse_button(button, state)
 			-- TODO!
 		end
-		
+
 		function client.hook_mouse_motion(x, y, dx, dy)
 			-- TODO!
 		end
-		
+
 		common.map_set(nil)
 		client.map_fog_set(85, 85, 85, 127.5)
 		local csize, usize, amount
 		local obj = common.fetch_start(ftype, fname)
-		
+
 		local loadstr = "Fetching..."
-		
+
 		function client.hook_render()
 			if scene then
 				scene.draw()
 			end
-			
+
 			if chn_mus and not client.wav_chn_exists(chn_mus) then
 				chn_mus = client.wav_play_local(wav_mus)
 			end
-			
+
 			local i
 			local koffs = math.max(#fnlist-10,1)
 			for i=koffs,#fnlist do
 				font_mini.print(2, 2+(i-koffs)*8, 0xFFFFFFFF, "LOAD: "..fnlist[i])
 			end
 			font_mini.print(2, screen_height-10, 0xFFFFFFFF, loadstr)
-			
+
 			font_mini.print(2, 2+(12)*8, 0xFFFFFFFF, "Version: "..cver.str.." - renderer: "..(client.renderer or "<unknown>"))
 			local l = string.split(vernotes,"\n")
 			for i=1,#l do
 				font_mini.print(2, 2+(i+14)*8, 0xFFFFFFFF, l[i])
 			end
 		end
-		
+
 		function client.hook_tick(sec_current, sec_delta)
 			if scene ~= nil then
 				scene.pump_listeners(sec_delta, {})
@@ -255,7 +255,7 @@ do
 			--print("tick called.")
 			return 0.005
 		end
-		
+
 		csize = nil
 		usize = nil
 		amount = 0.0
@@ -270,7 +270,7 @@ do
 				end
 				--print("obj:", obj, csize, usize, amount)
 				if obj ~= false then break end
-				
+
 				if fnlist[#fnlist] == "*MAP" then
 					rgb = 85 + amount * 170.0
 					client.map_fog_set(rgb, rgb, rgb, 127.5)
@@ -283,7 +283,7 @@ do
 					loading_img.x = 3*screen_width/2
 					map_img.x = screen_width/2
 				end
-				
+
 				if csize then
 					loadstr = "Fetching... "
 						..(math.floor(amount*100.0))
@@ -297,23 +297,23 @@ do
 				end
 			end
 		end
-		
+
 		client.hook_tick = old_tick
 		client.hook_render = old_render
 		client.hook_key = old_key
 		client.hook_mouse_button = old_mouse_button
 		client.hook_mouse_motion = old_mouse_motion
-		
+
 		common.map_set(map)
 		if client.camera_shading_set then
 			client.camera_shading_set(0.8,0.6,0.7,0.8,1.0,0.9)
 		end
 		client.map_fog_set(r,g,b,dist)
-		
+
 		if cacheable then
 			scriptcache[cname] = obj
 		end
-		
+
 		return obj
 	end
 end
@@ -349,4 +349,3 @@ function client.hook_tick()
 end
 
 print("pkg/base/main_client.lua loaded.")
-

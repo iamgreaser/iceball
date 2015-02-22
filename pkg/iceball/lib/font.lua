@@ -1,86 +1,56 @@
---[[
-Copyright (c) 2014 Team Sparkle
+fonts = {["Heya, dongs!"] = {[15] = {"SUPERDONGS!!"} } }
+--font_prototype = {"font" = {[16] = {fontdata}}}
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+--fontname should look like this: "filename:x" where x is the index (starting from 0)
+--example: "propaganda:2" if there is a propaganda.ttf with 3 styles
+function common.font_load(fontname, ptsize)
+  local font_index = 0
+  colon_index = fontname:match'^.*():'
+  if colon_index and colon_index ~= #fontname then
+      font_index =fontname:sub(colon_index+1, #fontname)
+      font_index = math.floor(tonumber(font_index) or error("Could not cast to number.'"))
+  end
 
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
+  if not DIR_PKG_TTF then
+    error("Variable DIR_PKG_TTF not set, can not continue!")
+  end
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-]]
-
-function glyphmap_linear(start, stop, default)
-	local l = {}
-
-	local i
-	local offs = 0
-	for i=start,stop do
-		l[i] = offs 
-		offs = offs + 1
-	end
-
-	l.gcount = (stop-start)+1
-	l.default = default
-	return l
+  local filename = DIR_PKG_TTF.."/"..fontname..".ttf"
+  local font = common.font_ttf_load(filename, ptsize)
+  return font
 end
 
-function font_mono_new(settings)
-	local this = {
-		img = common.img_load(settings.fname, "png"),
-		glyphmap = settings.glyphmap,
-	}
+--ptsize = 16
+function common.font_get(fontname, ptsize)
+  if fonts[fontname] then
+    if fonts[fontname][ptsize] then
+      return fonts[fontname][ptsize]
+    end
+  end
 
-	this.iwidth, this.iheight = common.img_get_dims(this.img)
-
-	function this.render(x, y, s, c, destimg)
-		c = c or 0xFFFFFFFF
-
-		local w = this.iwidth / this.glyphmap.gcount
-		local h = this.iheight
-
-		local i
-		for i=1,#s do
-			local offs = this.glyphmap[s:byte(i)]
-			offs = offs or this.glyphmap.default
-			offs = offs or 0
-			offs = offs * w
-
-			if destimg then
-				client.img_blit_to(destimg, this.img, x, y, w, h, offs, 0, c)
-			else
-				client.img_blit(this.img, x, y, w, h, offs, 0, c)
-			end
-
-			x = x + w
-		end
-	end
-	
-	function this.string_width(s)
-		return (this.iwidth / this.glyphmap.gcount) * string.len(s)
-	end
-	
-	function this.string_height(s)
-		return this.iheight
-	end
-
-	return this
+  fonts[fontname] = {}
+  fonts[fontname][ptsize] = {}
+  local font = common.font_load(fontname, ptsize)
+  fonts[fontname][ptsize] = font
+  return fonts[fontname][ptsize]
 end
 
-font_dejavu_bold = {
-	[18] = font_mono_new {
-		fname = "pkg/iceball/gfx/dejavu-18-bold.png",
-		glyphmap = glyphmap_linear(32, 126, ("?"):byte()-32),
-	},
-}
+do
+  common.font_get(FONT_DEFAULT, 16)
+end
 
+if client then
+
+--ptsize = 16, font = "OpenSans-Regular"
+function client.font_render_text(x, y, text, color, ptsize, fontname)
+  if not FONT_DEFAULT or not fonts then
+    error("Variable FONT_DEFAULT not set, can not continue!")
+  end
+  if not client then
+    error("Function render_text is client-only!")
+  end
+  local ttf_font = common.font_get(fontname, ptsize)
+  local image = client.font_render_to_texture(ttf_font, text, color)
+  client.img_blit(image, x, y)
+end
+end

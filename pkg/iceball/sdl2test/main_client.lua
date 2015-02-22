@@ -14,7 +14,8 @@
     You should have received a copy of the GNU Lesser General Public License
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
-
+FONT_DEFAULT = "OpenSans-Regular"
+DIR_PKG_TTF = "pkg/base/ttf"
 -- Some libraries
 dofile("pkg/iceball/lib/font.lua")
 -- dofile("pkg/iceball/lib/sdlkey.lua") --SDL2 this
@@ -61,22 +62,24 @@ local img_splash = common.img_load("pkg/iceball/gfx/man.png", "png")
 -- local splashtweenprogress_scale = 0.9
 -- local splashtweenprogress_y = 1.0
 
-local superdooper = common.font_load("pkg/base/ttf/propaganda.ttf", 52)
-local img = common.font_render_to_texture(superdooper, "This man marches for our freedom.", 0x11FF11)
-local img2 = common.font_render_to_texture(superdooper, "For our glory. Join the green army!", 0x11FF11)
-
+-- local superdooper = common.font_ttf_load("propaganda", 52)
+-- local img = client.font_render_to_texture(superdooper, "This man marches for our freedom.", 0x11FF11)
+-- local img2 = client.font_render_to_texture(superdooper, "For our glory. Join the green army!", 0x11FF11)
+-- client.font_render_text(70, 300, "THIS IS A FONT API TEST TEXT", 0x11FF11, 16, FONT_DEFAULT)
 client.map_fog_set(16, 136, 189, 100)
+glob_font = common.font_ttf_load(DIR_PKG_TTF.."/"..FONT_DEFAULT..".ttf", 16)
+print(glob_font)
 function client.hook_render()
 	-- font.render(0, ch*0, "Test text", 0xFFEEEEEE)
 	-- print(superdooper)
-	
-	client.img_blit(img_splash, 0, -125, 1816/1.41875, 2043/1.41875,  0, 0, 0xFFFFFFFF,1/1.41875,1/1.41875)
-	client.img_blit(img, 50, 0)
-	--client.img_blit(superdooper, 0, 0)
-	client.img_blit(img2, 70, 720)
+
+	-- client.img_blit(img_splash, 0, -125, 1816/1.41875, 2043/1.41875,  0, 0, 0xFFFFFFFF,1/1.41875,1/1.41875)
+	-- client.img_blit(img, 50, 0)
+	-- --client.img_blit(superdooper, 0, 0)
+	-- client.img_blit(img2, 70, 720)
+	client.font_render_text(70, 300, "THIS IS A FONT API TEST TEXT", 0xd20011, 16, FONT_DEFAULT)
 end
 
 function client.hook_tick(sec_current, sec_delta)
 	return 0.01
 end
-
