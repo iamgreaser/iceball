@@ -23,7 +23,7 @@
 #define VERSION_X 2
 #define VERSION_Y 1
 #define VERSION_A 0
-#define VERSION_Z 11
+#define VERSION_Z 12
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!
@@ -534,6 +534,7 @@ extern int gl_quality;
 extern int gl_vsync;
 extern int gl_frustum_cull;
 extern int gl_flip_quads;
+extern int gl_expand_quads;
 extern int gl_chunk_size;
 extern int gl_visible_chunks;
 extern int gl_chunks_tesselated_per_frame;

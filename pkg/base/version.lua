@@ -20,9 +20,9 @@
 -- Thanks. --GM
 
 VERSION_ENGINE = {
-	cmp={0,2,1,0,11},
-	num=8421376+11,
-	str="0.2.1-11",
+	cmp={0,2,1,0,12},
+	num=8421376+12,
+	str="0.2.1-12",
 }
 
 --error(""..common.version.num)
@@ -156,6 +156,7 @@ VERSION_BUGS = {
 {renderer="gl", intro=8421376+8, fix=8421376+9, msg="[OpenGL] Map and PMF normals not emitted for shaders"},
 {renderer="gl", intro=8421376+7, fix=8421376+9, msg="[OpenGL] Normal information for VAs overrides colour information by mistake"},
 {intro=nil, fix=8421376+10, msg="Segfault when blitting without a screen, even image-to-image"},
+{renderer="gl", intro=nil, fix=8421376+12, msg="VAs broken when VBOs disabled"},
 
 }
 

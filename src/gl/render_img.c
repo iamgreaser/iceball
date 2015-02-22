@@ -48,6 +48,7 @@ void render_blit_img_toimg(uint32_t *pixels, int width, int height, int pitch,
 	img_t *src, int dx, int dy, int bw, int bh, int sx, int sy, uint32_t color,
 	float scalex, float scaley);
 
+GLuint vbo_img = 0;
 void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 	img_t *src, int dx, int dy, int bw, int bh, int sx, int sy, uint32_t color, float scalex, float scaley)
 {
@@ -110,12 +111,51 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 	sy2 /= scaley;
 	
 	glColor4f(((color>>16)&255)/255.0f,((color>>8)&255)/255.0f,((color)&255)/255.0f,((color>>24)&255)/255.0f);
+	GLfloat va[6*5] = {
+		sx1, sy1, dx1, dy1, 1.0f,
+		sx1, sy2, dx1, dy2, 1.0f,
+		sx2, sy1, dx2, dy1, 1.0f,
+		sx2, sy1, dx2, dy1, 1.0f,
+		sx1, sy2, dx1, dy2, 1.0f,
+		sx2, sy2, dx2, dy2, 1.0f,
+
+	};
+	if(vbo_img == 0 && GL_ARB_vertex_buffer_object && gl_use_vbo)
+	{
+		glGenBuffers(1, &(vbo_img));
+
+	}
+
+	if(vbo_img != 0)
+	{
+		glBindBuffer(GL_ARRAY_BUFFER, vbo_img);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*5*6, va, GL_STATIC_DRAW);
+		glVertexPointer(3, GL_FLOAT, sizeof(GLfloat)*5, ((GLfloat *)0) + 2);
+		glTexCoordPointer(2, GL_FLOAT, sizeof(GLfloat)*5, ((GLfloat *)0) + 0);
+
+	} else {
+		glVertexPointer(3, GL_FLOAT, sizeof(GLfloat)*5, va + 2);
+		glTexCoordPointer(2, GL_FLOAT, sizeof(GLfloat)*5, va + 0);
+	}
+
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	glDisableClientState(GL_VERTEX_ARRAY);
+
+	if(vbo_img != 0)
+	{
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+	}
+	/*
 	glBegin(GL_QUADS);
 		glTexCoord2f(sx1, sy1); glVertex3f(dx1, dy1, 1.0f);
 		glTexCoord2f(sx1, sy2); glVertex3f(dx1, dy2, 1.0f);
 		glTexCoord2f(sx2, sy2); glVertex3f(dx2, dy2, 1.0f);
 		glTexCoord2f(sx2, sy1); glVertex3f(dx2, dy1, 1.0f);
 	glEnd();
+	*/
 	
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();

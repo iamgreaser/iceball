@@ -42,6 +42,7 @@ int gl_vsync = 1;
 int gl_frustum_cull = 1;
 int gl_occlusion_cull = 1;
 int gl_flip_quads = 0;
+int gl_expand_quads = 0;
 int gl_max_texunits = 1;
 int gl_shaders = 1;
 
