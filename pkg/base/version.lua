@@ -20,9 +20,9 @@
 -- Thanks. --GM
 
 VERSION_ENGINE = {
-	cmp={0,2,1,0,14},
-	num=8421376+14,
-	str="0.2.1-14",
+	cmp={0,2,1,0,15},
+	num=8421376+15,
+	str="0.2.1-15",
 }
 
 --error(""..common.version.num)
@@ -158,6 +158,8 @@ VERSION_BUGS = {
 {intro=nil, fix=8421376+10, msg="Segfault when blitting without a screen, even image-to-image"},
 {renderer="gl", intro=nil, fix=8421376+12, msg="[OpenGL] VAs broken when VBOs disabled"},
 {renderer="gl", intro=nil, fix=8421376+14, msg="[OpenGL] Vertex attributes not supported in shaders"},
+{intro=nil, fix=8421376+15, msg="map_render not supported"},
+{intro=8421376+15, fix=nil, msg="map_render support incomplete"},
 
 }
 

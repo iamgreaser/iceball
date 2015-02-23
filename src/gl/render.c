@@ -101,6 +101,8 @@ int render_mod ( int x , int y )
 
 uint32_t render_shade(uint32_t color, int face)
 {
+	if(!map_enable_side_shading) return color;
+
 	uint32_t fc = cam_shading[face];
 	return (((((color&0x00FF00FF)*fc)>>8)&0x00FF00FF))
 		|((((((color>>8)&0x00FF00FF)*fc))&0xFF00FF00))|0x01000000;
@@ -809,8 +811,8 @@ void render_gl_cube_pmf(model_bone_t *bone, float x, float y, float z, float r, 
 
 	for(i = 0; i < 3; i++)
 	{
-		float s2 = ((int)cam_shading[i+0])/255.0f;
-		float s1 = ((int)cam_shading[i+3])/255.0f;
+		float s2 = (map_enable_side_shading ? ((int)cam_shading[i+0])/255.0f : 1.0f);
+		float s1 = (map_enable_side_shading ? ((int)cam_shading[i+3])/255.0f : 1.0f);
 		float cr,cg,cb;
 		float nx,ny,nz;
 
@@ -978,8 +980,8 @@ void render_gl_cube_map(map_t *map, map_chunk_t *chunk, float x, float y, float 
 		ny = -vfinf_cube[i*9+7];
 		nz = -vfinf_cube[i*9+8];
 
-		float s2 = ((int)cam_shading[i+0])/255.0f;
-		float s1 = ((int)cam_shading[i+3])/255.0f;
+		float s2 = (map_enable_side_shading ? ((int)cam_shading[i+0])/255.0f : 1.0f);
+		float s1 = (map_enable_side_shading ? ((int)cam_shading[i+3])/255.0f : 1.0f);
 		float cr,cg,cb;
 	
 #define ARR_ADD(vx,vy,vz) \
@@ -995,7 +997,7 @@ void render_gl_cube_map(map_t *map, map_chunk_t *chunk, float x, float y, float 
 			arr += chunk->vbo_arr_len*vals_per_point;
 			chunk->vbo_arr_len += points_per_quad;
 
-			if (screen_smooth_lighting)
+			if (map_enable_ao && screen_smooth_lighting)
 			{
 				average_light_vertex1 = render_get_average_light(
 					map,
@@ -1116,7 +1118,7 @@ void render_gl_cube_map(map_t *map, map_chunk_t *chunk, float x, float y, float 
 			arr += chunk->vbo_arr_len*vals_per_point;
 			chunk->vbo_arr_len += points_per_quad;
 
-			if (screen_smooth_lighting)
+			if (map_enable_ao && screen_smooth_lighting)
 			{
 				average_light_vertex1 = render_get_average_light(
 					map, 
@@ -1285,14 +1287,16 @@ void render_pillar(map_t *map, map_chunk_t *chunk, int x, int z)
 	}
 }
 
-void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t *camera, map_t *map)
+void render_clear(camera_t *camera)
 {
-	int x,y,z;
-	float cx,cy,cz;
-
 	float fog[4] = {
 		((fog_color>>16)&255)/255.0,((fog_color>>8)&255)/255.0,((fog_color)&255)/255.0,1
 	};
+
+	float cx,cy,cz;
+	cx = camera->mpx;
+	cy = camera->mpy;
+	cz = camera->mpz;
 
 	float cfx,cfy,cfz;
 	cfx = camera->mzx;
@@ -1303,6 +1307,7 @@ void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t
 
 	float cdist = fog_distance/sqrtf(2.0f*cfd2);
 	zfar = cdist;
+
 	render_init(lwidth, lheight);
 	glClearColor(fog[0], fog[1], fog[2], 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -1318,10 +1323,6 @@ void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t
 	glFogfv(GL_FOG_COLOR, fog);
 	glTexCoord2f(-1.0f, -1.0f);
 
-	cx = camera->mpx;
-	cy = camera->mpy;
-	cz = camera->mpz;
-
 	GLfloat mtx_mv[16] = {
 		camera->mxx, camera->myx, camera->mzx, 0,
 		camera->mxy, camera->myy, camera->mzy, 0,
@@ -1332,10 +1333,35 @@ void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t
 	glMatrixMode(GL_MODELVIEW);
 	glLoadMatrixf(mtx_mv);
 	glTranslatef(-cx,-cy,-cz);
-	
+}
+
+void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t *camera, map_t *map)
+{
+	int x,y,z;
+	float cx,cy,cz;
+
+	cx = camera->mpx;
+	cy = camera->mpy;
+	cz = camera->mpz;
+
 	if(map == NULL)
 		return;
 	
+	if(map->fog_distance != fog_distance
+		|| map->enable_side_shading != map_enable_side_shading
+		|| map->enable_ao != map_enable_ao
+		|| map->visible_chunks_arr == NULL)
+	{
+		map->fog_distance = fog_distance;
+		map->enable_side_shading = map_enable_side_shading;
+		map->enable_ao = map_enable_ao;
+		render_init_visible_chunks(map, 0, 0);
+	}
+
+	float cfx,cfy,cfz;
+	cfx = camera->mzx;
+	cfy = camera->mzy;
+	cfz = camera->mzz;
 	render_map_visible_chunks_draw(map, cfx, cfy, cfz, cx, cy, cz);
 }
 

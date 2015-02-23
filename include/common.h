@@ -23,7 +23,7 @@
 #define VERSION_X 2
 #define VERSION_Y 1
 #define VERSION_A 0
-#define VERSION_Z 14
+#define VERSION_Z 15
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!
@@ -396,6 +396,9 @@ typedef struct map
 	int udtype;
 	int xlen, ylen, zlen;
 #ifndef DEDI
+	int enable_side_shading;
+	int enable_ao;
+	float fog_distance;
 	/* circular array of visible map chunks */
 	map_chunk_t *visible_chunks_arr;
 	/* current virtual center position in the circular array */
@@ -528,6 +531,9 @@ extern int screen_cubeshift;
 extern int screen_fullscreen;
 extern int screen_antialiasing_level;
 extern int screen_smooth_lighting;
+extern int map_enable_autorender;
+extern int map_enable_ao;
+extern int map_enable_side_shading;
 extern int gl_expand_textures;
 extern int gl_use_vbo;
 extern int gl_quality;
@@ -628,6 +634,7 @@ extern float fog_distance;
 extern uint32_t fog_color;
 extern uint32_t cam_shading[6];
 void render_vxl_redraw(camera_t *camera, map_t *map);
+void render_clear(camera_t *camera);
 void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t *camera, map_t *map);
 void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_t *cam_base,
 	model_bone_t *bone, int islocal,

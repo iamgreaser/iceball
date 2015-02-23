@@ -322,6 +322,18 @@ client.glsl_set_uniform_i(uniform_idx, val1[, val2[, val3[, val4]]]) @
 client.glsl_set_uniform_ui(uniform_idx, val1[, val2[, val3[, val4]]]) @
 	sets an unsigned int uniform
 
+client.map_enable_autorender(enabled) @
+	enable drawing of the map at the start of each frame
+	enabled by default
+
+client.map_enable_ao(enabled) @
+	enable built-in ambient occlusion (unless smoothlighting is off)
+	enabled by default
+
+client.map_enable_side_shading(enabled) @
+	enable built-in voxlap-style side shading
+	enabled by default
+
 map = common.map_load(fname, fmt = "auto") @
 	loads a map, either "vxl" or "icemap"
 	use "auto" to autodetect
@@ -346,6 +358,16 @@ common.map_free(map) @
 	ALSO DON'T DO THIS TO THE CURRENT "SET" MAP
 	
 	TODO: clean up all models on game kill
+
+client.map_render(map, px, py, pz, tex = nil, afmt = nil, alpha = 1.0) @
+	render a map at global position px, py, pz
+
+	see client.va_render_global for the meanings of the other arguments
+
+	NOTE: at the moment it's probably not safe to render two of the same map
+	unless the px,py,pz offset is small
+
+	NOTE #2: tex, afmt, alpha are currently unsupported
 
 common.map_set(map) @
 	sets the "current" map to "map"

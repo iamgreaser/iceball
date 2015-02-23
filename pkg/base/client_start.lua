@@ -1178,8 +1178,19 @@ if shader_world then
 	shader_world.push()
 end
 
+if client.map_render then
+	client.map_enable_autorender(false)
+	if USE_GLSL and shader_world then
+		client.map_enable_side_shading(false)
+	end
+end
+
 function client.hook_render()
 	local sec_current = render_sec_current
+
+	if client.map_render and map_loaded then
+		client.map_render(map_loaded, 0, 0, 0)
+	end
 
 	if shader_world then
 		shader_world.pop()
