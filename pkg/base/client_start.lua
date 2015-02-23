@@ -1195,9 +1195,7 @@ shader_postproc, result = shader_new{name="postproc", vert=[=[
 
 void main()
 {
-	// use ProjectionMatrix otherwise text printing breaks
 	gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;
-	//gl_Position = gl_ModelViewMatrix * gl_Vertex;
 	gl_FrontColor = gl_Color;
 	gl_TexCoord[0] = gl_MultiTexCoord0;
 }
@@ -1213,40 +1211,63 @@ float getdepth(float buf)
 {
 	const float f = 127.5;
 	const float n = 0.05;
-	// TODO: get this right
-	// (yes! it's hardcoded for fog=127.5 zoom=1.0!)
+	// TODO: fetch correct fog and zoom
 
-	// z = (f+n)/(f-n)*K + 1
-	// w = -(2*f*n)/(f-n)
-	// z = (f+n)/(f-n)*K + (f-n)/(f-n)
-	// z = ((f+n)*K + (f-n))/(f-n)
-	// z/w = ((f+n)*K + (f-n))/-(2*f*n)
-	// Q = ((f+n)*K + (f-n))/-(2*f*n)
-	// -2*f*n*Q = ((f+n)*K + (f-n))
-	// -2*f*n*Q = (f+n)*K + (f-n)
-	// -2*f*n*Q-(f-n) = (f+n)*K
-	// (-2*f*n*Q-(f-n))/(f+n) = K
-	//return (f+n)/(-2.0*f*n*buf+(n-f));
+	// d = (Az+B)/(Cz+D)
+	// d(Cz+D) = (Az+B)
+	// Czd+Dd = Az+B
+	// Czd-Az = B-Dd
+	// z(Cd-A) = B-Dd
+	// z = (B-Dd)/(Cd-A)
+	const float A = (f+n)/(f-n);
+	const float B = -(2.0*f*n)/(f-n);
+	const float C = 1.0;
+	const float D = 0.0;
 
-	return (f-n)/buf+n;
+	return (B-D*buf)/(C*buf-A);
+
+	//return (f-n)/buf+n;
+	//return (f-n)/(2.0-buf)+n;
+}
+
+float get_lum(vec4 c)
+{
+	return (c.r+c.g+c.b)/3.0;
 }
 
 void main()
 {
 	vec4 color = gl_Color;
-	float db = getdepth(texture2D(tex1, gl_TexCoord[0].st).x);
-	float d0 = getdepth(texture2D(tex1, gl_TexCoord[0].st + soffs*vec2( 2.0, 0.0)).x);
-	float d1 = getdepth(texture2D(tex1, gl_TexCoord[0].st + soffs*vec2( 0.0, 2.0)).x);
-	float d2 = getdepth(texture2D(tex1, gl_TexCoord[0].st + soffs*vec2(-2.0, 0.0)).x);
-	float d3 = getdepth(texture2D(tex1, gl_TexCoord[0].st + soffs*vec2( 0.0,-2.0)).x);
+	float dbval = texture2D(tex1, gl_TexCoord[0].st).x;
+	if(dbval >= 0.99999) discard;
+	float db = getdepth(dbval);
+	float dxn2 = getdepth(texture2D(tex1, gl_TexCoord[0].st + soffs*vec2(-2.0, 0.0)).x);
+	float dxn1 = getdepth(texture2D(tex1, gl_TexCoord[0].st + soffs*vec2(-1.0, 0.0)).x);
+	float dxp1 = getdepth(texture2D(tex1, gl_TexCoord[0].st + soffs*vec2( 1.0, 0.0)).x);
+	float dxp2 = getdepth(texture2D(tex1, gl_TexCoord[0].st + soffs*vec2( 2.0, 0.0)).x);
+	float dyn2 = getdepth(texture2D(tex1, gl_TexCoord[0].st + soffs*vec2( 0.0,-2.0)).x);
+	float dyn1 = getdepth(texture2D(tex1, gl_TexCoord[0].st + soffs*vec2( 0.0,-1.0)).x);
+	float dyp1 = getdepth(texture2D(tex1, gl_TexCoord[0].st + soffs*vec2( 0.0, 1.0)).x);
+	float dyp2 = getdepth(texture2D(tex1, gl_TexCoord[0].st + soffs*vec2( 0.0, 2.0)).x);
 	vec4 tcolor = texture2D(tex0, gl_TexCoord[0].st);
-	d0 = abs(d0 - db);
-	d1 = abs(d1 - db);
-	d2 = abs(d2 - db);
-	d3 = abs(d3 - db);
-	float dgap = max(max(d0, d1), max(d2, d3));
+	dxn2 = (dxn2 - dxn1);
+	dxp2 = (dxp2 - dxp1);
+	dyn2 = (dyn2 - dyn1);
+	dyp2 = (dyp2 - dyp1);
+	dxn1 = (dxn1 - db);
+	dxp1 = (dxp1 - db);
+	dyn1 = (dyn1 - db);
+	dyp1 = (dyp1 - db);
+	float mingradx = abs(min(min(dxn1, dxp1),min(dxn2, dxp2)));
+	float maxgradx = abs(max(max(dxn1, dxp1),max(dxn2, dxp2)));
+	float mingrady = abs(min(min(dyn1, dyp1),min(dyn2, dyp2)));
+	float maxgrady = abs(max(max(dyn1, dyp1),max(dyn2, dyp2)));
+	float dgapx = abs((mingradx+0.01)/(maxgradx+0.01));
+	float dgapy = abs((mingrady+0.01)/(maxgrady+0.01));
+	float dgap = 1.0/min(dgapx, dgapy);
 	color *= tcolor;
-	if(dgap > 0.1) color = vec4(0.0);
+	float dthres = 2.1;
+	if(dgap > dthres) color = vec4(0.0);
 	color.a = 1.0;
 	gl_FragColor = color;
 }
@@ -1343,6 +1364,12 @@ function client.hook_render()
 
 	local s_gfx_clear_depth = client.gfx_clear_depth
 	if fbo_world then
+		--[[
+		client.fbo_use(nil)
+		client.gfx_clear_color()
+		client.fbo_use(fbo_world)
+		]]
+
 		function client.gfx_clear_depth(...)
 			client.fbo_use(nil)
 			local shader = shader_postproc or shader_img or shader_misc
@@ -1354,8 +1381,9 @@ function client.hook_render()
 			end
 			s_img_blit(fbo_world, 0, 0)
 			if shader then shader.pop() end
-			client.gfx_clear_detph = s_gfx_clear_depth
-			return s_gfx_clear_depth(...)
+			client.gfx_clear_depth = s_gfx_clear_depth
+			s_gfx_clear_depth(...)
+			--client.fbo_use(fbo_world)
 		end
 	end
 
@@ -1367,7 +1395,7 @@ function client.hook_render()
 	end
 
 	if client.gfx_clear_depth ~= s_gfx_clear_depth then
-		--client.gfx_clear_depth()
+		client.gfx_clear_depth()
 	end
 	client.gfx_clear_depth = s_gfx_clear_depth
 
