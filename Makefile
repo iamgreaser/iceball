@@ -16,7 +16,7 @@ HEADERS_ENet = `pkg-config libenet --cflags`
 HEADERS_Lua = `./findlua.sh --cflags`
 
 LDFLAGS = -g -I/usr/local/include $(LDFLAGS_EXTRA) 
-LIBS_SDL = `sdl2-config --libs`
+LIBS_SDL = `sdl2-config --libs` -lSDL2_ttf
 LIBS_ENet = `pkg-config libenet --libs`
 LIBS_Lua = `./findlua.sh --libs`
 # Lua is not an acronym. Get used to typing it with lower case u/a.
