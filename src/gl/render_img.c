@@ -59,18 +59,32 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 	
 	if(screen == NULL || pixels != screen->pixels)
 	{
+		if(src->udtype != UD_IMG)
+		{
+			printf("ABORT: Trying to blit an FBO to an img_t!\n");
+			fflush(stdout);
+			abort();
+		}
+
 		expandtex_gl(&width, &height);
 		pitch = width;
 		return render_blit_img_toimg(pixels,width,height,pitch,src,dx,dy,bw,bh,sx,sy,color,scalex,scaley);
 	}
 
 	int iw, ih;
-	iw = src->head.width;
-	ih = src->head.height;
-	expandtex_gl(&iw, &ih);
+	if(src->udtype == UD_IMG)
+	{
+		iw = src->head.width;
+		ih = src->head.height;
+		expandtex_gl(&iw, &ih);
+	} else {
+		fbo_t *fbo = (fbo_t *)src;
+		iw = fbo->width;
+		ih = fbo->height;
+	}
 
 	glEnable(GL_TEXTURE_2D);
-	if(src->tex_dirty)
+	if(src->udtype == UD_IMG && src->tex_dirty)
 	{
 		if(src->tex == 0)
 			glGenTextures(1, &(src->tex));
@@ -83,6 +97,15 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 		src->tex_dirty = 0;
 	} else {
 		glBindTexture(GL_TEXTURE_2D, src->tex);
+		if(src->udtype == UD_FBO)
+		{
+			glClientActiveTexture(GL_TEXTURE1);
+			glActiveTexture(GL_TEXTURE1);
+			glEnable(GL_TEXTURE_2D);
+			glBindTexture(GL_TEXTURE_2D, ((fbo_t *)src)->dstex);
+			glClientActiveTexture(GL_TEXTURE0);
+			glActiveTexture(GL_TEXTURE0);
+		}
 	}
 
 	glDisable(GL_DEPTH_TEST);
@@ -109,6 +132,12 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 
 	sx2 /= scalex;
 	sy2 /= scaley;
+
+	if(src->udtype == UD_FBO)
+	{
+		sy1 = 1.0f - sy1;
+		sy2 = 1.0f - sy2;
+	}
 	
 	glColor4f(((color>>16)&255)/255.0f,((color>>8)&255)/255.0f,((color)&255)/255.0f,((color>>24)&255)/255.0f);
 	GLfloat va[6*5] = {
@@ -164,6 +193,15 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 	glDisable(GL_BLEND);
 	glBindTexture(GL_TEXTURE_2D, 0);		
 	glDisable(GL_TEXTURE_2D);
+	if(src->udtype == UD_FBO)
+	{
+		glClientActiveTexture(GL_TEXTURE1);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glDisable(GL_TEXTURE_2D);
+		glClientActiveTexture(GL_TEXTURE0);
+		glActiveTexture(GL_TEXTURE0);
+	}
 	glEnable(GL_DEPTH_TEST);
 }
 

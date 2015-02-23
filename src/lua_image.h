@@ -29,13 +29,15 @@ int icelua_fn_client_img_blit(lua_State *L)
 	if(lua_islightuserdata(L, 1) || !lua_isuserdata(L, 1))
 		return luaL_error(L, "not an image");
 	img_t *img = (img_t *)lua_touserdata(L, 1);
-	if(img == NULL || img->udtype != UD_IMG)
+	if(img == NULL || (img->udtype != UD_IMG && img->udtype != UD_FBO))
 		return luaL_error(L, "not an image");
 	
+	int width = (img->udtype == UD_FBO ? ((fbo_t *)img)->width : img->head.width);
+	int height = (img->udtype == UD_FBO ? ((fbo_t *)img)->height : img->head.height);
 	dx = lua_tointeger(L, 2);
 	dy = lua_tointeger(L, 3);
-	bw = (top < 4 ? img->head.width : lua_tointeger(L, 4));
-	bh = (top < 5 ? img->head.height : lua_tointeger(L, 5));
+	bw = (top < 4 ? width : lua_tointeger(L, 4));
+	bh = (top < 5 ? height : lua_tointeger(L, 5));
 	sx = (top < 6 ? 0 : lua_tointeger(L, 6));
 	sy = (top < 7 ? 0 : lua_tointeger(L, 7));
 	color = (top < 8 ? 0xFFFFFFFF : (uint32_t)lua_tointeger(L, 8));

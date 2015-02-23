@@ -1494,14 +1494,20 @@ void render_vertex_array(uint32_t *pixels, int width, int height, int pitch, cam
 	if(img[i] != NULL)
 	{
 		int iw, ih;
-		iw = img[i]->head.width;
-		ih = img[i]->head.height;
-		expandtex_gl(&iw, &ih);
+		if(img[i]->udtype == UD_FBO)
+		{
+			iw = ((fbo_t *)(img[i]))->width;
+			ih = ((fbo_t *)(img[i]))->height;
+		} else {
+			iw = img[i]->head.width;
+			ih = img[i]->head.height;
+			expandtex_gl(&iw, &ih);
+		}
 
 		glClientActiveTexture(GL_TEXTURE0 + i);
 		glActiveTexture(GL_TEXTURE0 + i);
 		glEnable(GL_TEXTURE_2D);
-		if(img[i]->tex_dirty)
+		if(img[i]->udtype == UD_IMG && img[i]->tex_dirty)
 		{
 			if(img[i]->tex == 0)
 				glGenTextures(1, &(img[i]->tex));
@@ -1666,8 +1672,7 @@ void render_vertex_array(uint32_t *pixels, int width, int height, int pitch, cam
 	glDisable(GL_BLEND);
 }
 
-
-int render_init(int width, int height)
+void render_resize(int width, int height)
 {
 	glMatrixMode(GL_PROJECTION);
 	mtx_baseproj[10] = (zfar + znear)/(zfar - znear);
@@ -1679,10 +1684,15 @@ int render_init(int width, int height)
 	else
 		glScalef(((float)height)/((float)width),1.0f,1.0f);
 	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
 
 	lwidth = width;
 	lheight = height;
+}
+
+int render_init(int width, int height)
+{
+	render_resize(width, height);
+	glLoadIdentity();
 
 	if (gl_quality > 0)
 	{

@@ -20,9 +20,9 @@
 -- Thanks. --GM
 
 VERSION_ENGINE = {
-	cmp={0,2,1,0,15},
-	num=8421376+15,
-	str="0.2.1-15",
+	cmp={0,2,1,0,16},
+	num=8421376+16,
+	str="0.2.1-16",
 }
 
 --error(""..common.version.num)
@@ -160,6 +160,8 @@ VERSION_BUGS = {
 {renderer="gl", intro=nil, fix=8421376+14, msg="[OpenGL] Vertex attributes not supported in shaders"},
 {intro=nil, fix=8421376+15, msg="map_render not supported"},
 {intro=8421376+15, fix=nil, msg="map_render support incomplete"},
+{intro=nil, fix=8421376+16, msg="FBOs not supported"},
+{intro=8421376+16, fix=nil, msg="FBO support incomplete"},
 
 }
 

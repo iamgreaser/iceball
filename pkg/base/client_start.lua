@@ -19,9 +19,14 @@ print("pkg/base/client_start.lua starting")
 print(...)
 
 USE_GLSL = true
+USE_FBO = true
 
 if not client.glsl_create then
 	USE_GLSL = false
+end
+
+if not client.gfx_fbo_available then
+	USE_FBO = false
 end
 
 map_fname = nil
@@ -91,6 +96,18 @@ else
 	function shader_new() return nil, "Shaders not supported by this GPU" end
 	function shader_push_nil() end
 	function shader_pop_nil() end
+end
+
+if USE_FBO then
+	print("FBO availability:", client.gfx_fbo_available())
+	if not client.gfx_fbo_available() then
+		USE_FBO = false
+	end
+end
+
+if USE_FBO then
+	fbo_world = client.fbo_create(screen_width, screen_height, true)
+	print("FBO:", fbo_world)
 end
 
 -- speed through stuff
@@ -1172,6 +1189,69 @@ void main()
 }
 
 ]=]}
+
+shader_postproc, result = shader_new{name="postproc", vert=[=[
+// Vertex shader
+
+void main()
+{
+	// use ProjectionMatrix otherwise text printing breaks
+	gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;
+	//gl_Position = gl_ModelViewMatrix * gl_Vertex;
+	gl_FrontColor = gl_Color;
+	gl_TexCoord[0] = gl_MultiTexCoord0;
+}
+
+]=], frag=[=[
+// Fragment shader
+
+uniform sampler2D tex0;
+uniform sampler2D tex1;
+uniform vec2 soffs;
+
+float getdepth(float buf)
+{
+	const float f = 127.5;
+	const float n = 0.05;
+	// TODO: get this right
+	// (yes! it's hardcoded for fog=127.5 zoom=1.0!)
+
+	// z = (f+n)/(f-n)*K + 1
+	// w = -(2*f*n)/(f-n)
+	// z = (f+n)/(f-n)*K + (f-n)/(f-n)
+	// z = ((f+n)*K + (f-n))/(f-n)
+	// z/w = ((f+n)*K + (f-n))/-(2*f*n)
+	// Q = ((f+n)*K + (f-n))/-(2*f*n)
+	// -2*f*n*Q = ((f+n)*K + (f-n))
+	// -2*f*n*Q = (f+n)*K + (f-n)
+	// -2*f*n*Q-(f-n) = (f+n)*K
+	// (-2*f*n*Q-(f-n))/(f+n) = K
+	//return (f+n)/(-2.0*f*n*buf+(n-f));
+
+	return (f-n)/buf+n;
+}
+
+void main()
+{
+	vec4 color = gl_Color;
+	float db = getdepth(texture2D(tex1, gl_TexCoord[0].st).x);
+	float d0 = getdepth(texture2D(tex1, gl_TexCoord[0].st + soffs*vec2( 2.0, 0.0)).x);
+	float d1 = getdepth(texture2D(tex1, gl_TexCoord[0].st + soffs*vec2( 0.0, 2.0)).x);
+	float d2 = getdepth(texture2D(tex1, gl_TexCoord[0].st + soffs*vec2(-2.0, 0.0)).x);
+	float d3 = getdepth(texture2D(tex1, gl_TexCoord[0].st + soffs*vec2( 0.0,-2.0)).x);
+	vec4 tcolor = texture2D(tex0, gl_TexCoord[0].st);
+	d0 = abs(d0 - db);
+	d1 = abs(d1 - db);
+	d2 = abs(d2 - db);
+	d3 = abs(d3 - db);
+	float dgap = max(max(d0, d1), max(d2, d3));
+	color *= tcolor;
+	if(dgap > 0.1) color = vec4(0.0);
+	color.a = 1.0;
+	gl_FragColor = color;
+}
+
+]=]}
 end
 
 if shader_world then
@@ -1187,6 +1267,13 @@ end
 
 function client.hook_render()
 	local sec_current = render_sec_current
+
+	if fbo_world then
+		client.fbo_use(fbo_world)
+		client.gfx_clear_color()
+		client.gfx_clear_depth()
+		client.gfx_clear_stencil()
+	end
 
 	if client.map_render and map_loaded then
 		client.map_render(map_loaded, 0, 0, 0)
@@ -1241,7 +1328,7 @@ function client.hook_render()
 			x,y,z,
 			0.0, -tc.xa, tc.ya, 1)
 	end
-	
+
 	for i=nades.head,nades.tail do
 		if nades[i] then nades[i].render() end
 	end
@@ -1254,12 +1341,35 @@ function client.hook_render()
 		borders[i].render()
 	end
 
+	local s_gfx_clear_depth = client.gfx_clear_depth
+	if fbo_world then
+		function client.gfx_clear_depth(...)
+			client.fbo_use(nil)
+			local shader = shader_postproc or shader_img or shader_misc
+			if shader then
+				shader.set_uniform_i("tex0", 0)
+				shader.set_uniform_i("tex1", 1)
+				shader.set_uniform_f("soffs", 1.0/screen_width, 1.0/screen_height)
+				shader.push()
+			end
+			s_img_blit(fbo_world, 0, 0)
+			if shader then shader.pop() end
+			client.gfx_clear_detph = s_gfx_clear_depth
+			return s_gfx_clear_depth(...)
+		end
+	end
+
 	if players and players[players.current] then
 		players[players.current].show_hud()
 	end
 	if VA_TEST and sec_current then
 		client.va_render_local(va_test, -0.8, 0.35, 1, sec_current, sec_current*0.8, sec_current*0.623, 0.1, img_overview)
 	end
+
+	if client.gfx_clear_depth ~= s_gfx_clear_depth then
+		--client.gfx_clear_depth()
+	end
+	client.gfx_clear_depth = s_gfx_clear_depth
 
 	if shader_misc then
 		shader_misc.pop()

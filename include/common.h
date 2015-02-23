@@ -23,7 +23,7 @@
 #define VERSION_X 2
 #define VERSION_Y 1
 #define VERSION_A 0
-#define VERSION_Z 15
+#define VERSION_Z 16
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!
@@ -162,6 +162,7 @@ enum
 	UD_IMG,
 	UD_VA,
 	UD_SHADER,
+	UD_FBO,
 
 	UD_MAX
 };
@@ -280,6 +281,17 @@ typedef struct shader
 	GLuint prog;
 #endif
 } shader_t;
+
+typedef struct fbo
+{
+	int udtype;
+#ifndef DEDI
+	GLuint ctex, dstex;
+	GLuint handle;
+#endif
+	int width, height;
+} fbo_t;
+
 
 PACK_START
 // source: http://paulbourke.net/dataformats/tga/
@@ -536,6 +548,7 @@ extern int map_enable_ao;
 extern int map_enable_side_shading;
 extern int gl_expand_textures;
 extern int gl_use_vbo;
+extern int gl_use_fbo;
 extern int gl_quality;
 extern int gl_vsync;
 extern int gl_frustum_cull;
@@ -643,6 +656,7 @@ void render_vertex_array(uint32_t *pixels, int width, int height, int pitch, cam
 	va_t *bone, int islocal,
 	float px, float py, float pz, float ry, float rx, float ry2, float scale,
 	img_t **img, int do_blend, char sfactor, char dfactor, float alpha, int img_count);
+void render_resize(int width, int height);
 int render_init(int width, int height);
 void render_deinit(void);
 void render_init_visible_chunks(map_t *map, int starting_chunk_coordinate_x, int starting_chunk_coordinate_z);

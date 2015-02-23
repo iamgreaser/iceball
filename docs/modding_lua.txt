@@ -218,10 +218,20 @@ client.gfx_alpha_test(enable) @
 
 	this is reset to true by the start of each frame
 
+client.gfx_clear_color() @
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	clears the screen (or FBO if we're using that)
+
 client.gfx_clear_depth() @
 	glClear(GL_DEPTH_BUFFER_BIT);
 
 	clears the depth buffer AKA z buffer
+
+client.gfx_clear_stencil() @
+	glClear(GL_STENCIL_BUFFER_BIT);
+
+	clears the stencil buffer
 
 client.gfx_depth_mask(enable) @
 	glDepthMask(enable ? GL_TRUE : GL_FALSE);
@@ -270,6 +280,16 @@ client.gfx_stencil_test(enable) @
 
 	this is reset to FALSE by the start of each frame
 
+client.gfx_viewport(x, y, width, height) @
+	glViewport(x, y, width, height);
+
+	sets up the drawing region
+	note, this also corrects the projection matrix
+
+	WARNING: (x,y) denotes the *bottom*-left of the "screen"!
+
+	this is reset to full screen by the start of each frame
+
 tex_units = client.gfx_tex_available() @
 	returns the number of texture units available
 
@@ -279,6 +299,30 @@ tex_units = client.gfx_tex_available() @
 	uses GL_MAX_TEXTURE_UNITS_ARB
 	will eventually use GL_MAX_TEXTURE_IMAGE_UNITS_ARB
 	once shader support is in place
+
+success = client.gfx_fbo_available() @
+	returns if FBOs are available
+
+fbo = client.fbo_create(w, h, use_stencil) @
+	creates a new FBO with color/depth/stencil information
+	returns nil on failure
+
+	if use_stencil is set, create a GL_DEPTH_STENCIL_ATTACHMENT,
+	otherwise just a GL_DEPTH_ATTACHMENT.
+
+	WARNING: this also clears the current FBO status
+	so if you're using an FBO, you'll have to call fbo_use again!
+	(it does the equivalent of client.fbo_use(nil))
+	(why are you creating FBOs once you get around to actually using them anyway?)
+
+	FBO note: the width and height you get will NOT be expanded;
+	that is, a 320x200 FBO really IS 320x200,
+	rather than 512x256.
+
+client.fbo_use(fbo) @
+	uses the given FBO
+
+	"fbo" can be nil, in which case it uses the screen
 
 glver = client.gfx_glsl_available() @
 	returns if GLSL shaders are available
@@ -608,6 +652,7 @@ width, height = common.img_get_dims(img) @
 
 client.img_blit(img, dx, dy, width = iwidth, height = iheight, sx = 0, sy = 0, color = 0xFFFFFFFF, scalex = 1.0, scaley = 1.0) @
 	blits an image onto screen position dx, dy
+	(img can also be an FBO here)
 	
 	"color" indicates a base 0xAARRGGBB colour to use
 	

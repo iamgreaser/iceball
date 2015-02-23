@@ -57,6 +57,18 @@ int icelua_fn_client_gfx_depth_test(lua_State *L)
 	return 0;
 }
 
+int icelua_fn_client_gfx_clear_color(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 0, 0);
+
+#ifdef DEDI
+	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
+#else
+	glClear(GL_COLOR_BUFFER_BIT);
+#endif
+	return 0;
+}
+
 int icelua_fn_client_gfx_clear_depth(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 0, 0);
@@ -65,6 +77,18 @@ int icelua_fn_client_gfx_clear_depth(lua_State *L)
 	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
 #else
 	glClear(GL_DEPTH_BUFFER_BIT);
+#endif
+	return 0;
+}
+
+int icelua_fn_client_gfx_clear_stencil(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 0, 0);
+
+#ifdef DEDI
+	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
+#else
+	glClear(GL_STENCIL_BUFFER_BIT);
 #endif
 	return 0;
 }
@@ -142,6 +166,25 @@ int icelua_fn_client_gfx_stencil_func(lua_State *L)
 		return luaL_error(L, "invalid stencil func \"%s\"", func);
 
 	glStencilFunc(rfunc, ref, mask);
+#endif
+
+	return 0;
+}
+
+int icelua_fn_client_gfx_viewport(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 4, 4);
+
+	int x = lua_tointeger(L, 1);
+	int y = lua_tointeger(L, 2);
+	int width = lua_tointeger(L, 3);
+	int height = lua_tointeger(L, 4);
+
+#ifdef DEDI
+	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
+#else
+	glViewport(x, y, width, height);
+	render_resize(width, height);
 #endif
 
 	return 0;
