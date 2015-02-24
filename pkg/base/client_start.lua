@@ -1254,12 +1254,27 @@ void main()
 	vec4 color = gl_Color;
 	vec2 tc = gl_TexCoord[0].st;
 	float dbval = texture2D(tex1, tc).x;
-	float db = getdepth(dbval);
-	float dxn2 = getdepth(texture2D(tex1, tc + soffs*vec2(-2.0, 0.0)).x);
-	float dxp2 = getdepth(texture2D(tex1, tc + soffs*vec2( 2.0, 0.0)).x);
-	float dyn2 = getdepth(texture2D(tex1, tc + soffs*vec2( 0.0,-2.0)).x);
-	float dyp2 = getdepth(texture2D(tex1, tc + soffs*vec2( 0.0, 2.0)).x);
 	vec4 tcolor = texture2D(tex0, tc);
+	/*
+	if(dbval > 0.9999)
+	{
+		vec3 c = abs(tcolor.rgb - gl_Fog.color.rgb);
+		if(max(max(c.r,c.g),c.b) < 0.01)
+			discard;
+	}
+	*/
+
+	float db = getdepth(dbval);
+	/*
+	float doffs = (1.0/db < (1.0/soffs.y)/40.0
+		? 2.0
+		: 1.0);
+	*/
+	float doffs = 1.0;
+	float dxn2 = getdepth(texture2D(tex1, tc + soffs*doffs*vec2(-1.0, 0.0)).x);
+	float dxp2 = getdepth(texture2D(tex1, tc + soffs*doffs*vec2( 1.0, 0.0)).x);
+	float dyn2 = getdepth(texture2D(tex1, tc + soffs*doffs*vec2( 0.0,-1.0)).x);
+	float dyp2 = getdepth(texture2D(tex1, tc + soffs*doffs*vec2( 0.0, 1.0)).x);
 	dxn2 = -(dxn2 - db);
 	dxp2 = (dxp2 - db);
 	dyn2 = -(dyn2 - db);
@@ -1405,8 +1420,11 @@ function client.hook_render()
 				shader.push()
 			end
 			s_img_blit(fbo_world, 0, 0)
+			client.img_blit = s_img_blit
 			if shader then shader.pop() end
 			client.gfx_clear_depth = s_gfx_clear_depth
+			--client.fbo_use(fbo_world)
+			--client.gfx_clear_color()
 			s_gfx_clear_depth(...)
 			--client.fbo_use(fbo_world)
 		end
