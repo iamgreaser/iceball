@@ -1206,9 +1206,14 @@ void main()
 uniform sampler2D tex0;
 uniform sampler2D tex1;
 uniform vec2 soffs;
+uniform float time;
+uniform float fog;
+uniform float depth_A;
+uniform float depth_B;
 
 float getdepth(float buf)
 {
+	/*
 	const float f = 127.5;
 	const float n = 0.05;
 	// TODO: fetch correct fog and zoom
@@ -1219,37 +1224,72 @@ float getdepth(float buf)
 	// Czd-Az = B-Dd
 	// z(Cd-A) = B-Dd
 	// z = (B-Dd)/(Cd-A)
+
+	// Note, commented code is correct
+	//const float A = (f+n)/(f-n);
+	//const float B = -(2.0*f*n)/(f-n);
+	//const float C = 1.0;
+	//return B/(C*buf-A);
+	//return (B/C)/(buf-(A/C)); // saves a calculation step
+
 	const float A = (f+n)/(f-n);
 	const float B = -(2.0*f*n)/(f-n);
-	const float C = 1.0;
-	const float D = 0.0;
+	return B/(buf-A);
+	*/
 
-	return (B-D*buf)/(C*buf-A);
+	// Hypothetically faster when f,n not precalced
+	/*
+	const float A = (f+n);
+	const float B = -(2.0*f*n);
+	return B/((f-n)*buf-A);
+	*/
 
-	//return (f-n)/buf+n;
-	//return (f-n)/(2.0-buf)+n;
-}
-
-float get_lum(vec4 c)
-{
-	return (c.r+c.g+c.b)/3.0;
+	return depth_B/(buf-depth_A);
 }
 
 void main()
 {
 	vec4 color = gl_Color;
-	float dbval = texture2D(tex1, gl_TexCoord[0].st).x;
-	if(dbval >= 0.99999) discard;
+	vec2 tc = gl_TexCoord[0].st;
+	// Ripple shader test, commented out because we aren't using it
+	/*
+	tc = tc*2.0-1.0;
+	tc.x *= 800.0/600.0;
+	float tclen = length(tc);
+	float ripple = sin((tclen*tclen*5.0 - time*2.0)*2.0*3.14159)*max(0.0,1.0-tclen*tclen);
+	tc += (ripple*0.5+0.5)*normalize(tc)*0.03;
+	tc.x /= 800.0/600.0;
+	tc = tc*0.5+0.5;
+	*/
+
+	// Just in case you needed focal blur...
+	/*
+	tc = tc*2.0-1.0;
+	tc += vec2(
+		sin(pow(gl_FragCoord.x*30.0, 3.0) + pow(gl_FragCoord.y*20.0, 2.0)),
+		cos(pow(gl_FragCoord.y*30.0, 3.0) - pow(gl_FragCoord.x*20.0, 2.0)))
+			*getdepth(texture2D(tex1, gl_TexCoord[0].st).x)*0.03/fog;
+	tc = tc*0.5+0.5;
+	*/
+
+	float dbval = texture2D(tex1, tc).x;
+	//if(dbval >= 0.99999) discard;
 	float db = getdepth(dbval);
-	float dxn2 = getdepth(texture2D(tex1, gl_TexCoord[0].st + soffs*vec2(-2.0, 0.0)).x);
-	float dxn1 = getdepth(texture2D(tex1, gl_TexCoord[0].st + soffs*vec2(-1.0, 0.0)).x);
-	float dxp1 = getdepth(texture2D(tex1, gl_TexCoord[0].st + soffs*vec2( 1.0, 0.0)).x);
-	float dxp2 = getdepth(texture2D(tex1, gl_TexCoord[0].st + soffs*vec2( 2.0, 0.0)).x);
-	float dyn2 = getdepth(texture2D(tex1, gl_TexCoord[0].st + soffs*vec2( 0.0,-2.0)).x);
-	float dyn1 = getdepth(texture2D(tex1, gl_TexCoord[0].st + soffs*vec2( 0.0,-1.0)).x);
-	float dyp1 = getdepth(texture2D(tex1, gl_TexCoord[0].st + soffs*vec2( 0.0, 1.0)).x);
-	float dyp2 = getdepth(texture2D(tex1, gl_TexCoord[0].st + soffs*vec2( 0.0, 2.0)).x);
-	vec4 tcolor = texture2D(tex0, gl_TexCoord[0].st);
+	float dxn1 = getdepth(texture2D(tex1, tc + soffs*vec2(-1.0, 0.0)).x);
+	float dxp1 = getdepth(texture2D(tex1, tc + soffs*vec2( 1.0, 0.0)).x);
+	float dxn2 = getdepth(texture2D(tex1, tc + soffs*vec2(-2.0, 0.0)).x);
+	float dxp2 = getdepth(texture2D(tex1, tc + soffs*vec2( 2.0, 0.0)).x);
+	float dyn1 = getdepth(texture2D(tex1, tc + soffs*vec2( 0.0,-1.0)).x);
+	float dyp1 = getdepth(texture2D(tex1, tc + soffs*vec2( 0.0, 1.0)).x);
+	float dyn2 = getdepth(texture2D(tex1, tc + soffs*vec2( 0.0,-2.0)).x);
+	float dyp2 = getdepth(texture2D(tex1, tc + soffs*vec2( 0.0, 2.0)).x);
+	/*
+	float dup1 = getdepth(texture2D(tex1, tc + soffs*vec2( 1.0, 1.0)).x);
+	float dun1 = getdepth(texture2D(tex1, tc + soffs*vec2(-1.0,-1.0)).x);
+	float ddp1 = getdepth(texture2D(tex1, tc + soffs*vec2( 1.0,-1.0)).x);
+	float ddn1 = getdepth(texture2D(tex1, tc + soffs*vec2(-1.0, 1.0)).x);
+	*/
+	vec4 tcolor = texture2D(tex0, tc);
 	dxn2 = (dxn2 - dxn1);
 	dxp2 = (dxp2 - dxp1);
 	dyn2 = (dyn2 - dyn1);
@@ -1258,18 +1298,43 @@ void main()
 	dxp1 = (dxp1 - db);
 	dyn1 = (dyn1 - db);
 	dyp1 = (dyp1 - db);
+	/*
+	dup1 = (dup1 - db);
+	dun1 = (dun1 - db);
+	ddp1 = (ddp1 - db);
+	ddn1 = (ddn1 - db);
+	*/
 	float mingradx = abs(min(min(dxn1, dxp1),min(dxn2, dxp2)));
 	float maxgradx = abs(max(max(dxn1, dxp1),max(dxn2, dxp2)));
 	float mingrady = abs(min(min(dyn1, dyp1),min(dyn2, dyp2)));
 	float maxgrady = abs(max(max(dyn1, dyp1),max(dyn2, dyp2)));
+	/*
+	float mingradu = abs(min(dun1, dup1));
+	float maxgradu = abs(max(dun1, dup1));
+	float mingradd = abs(min(ddn1, ddp1));
+	float maxgradd = abs(max(ddn1, ddp1));
+	*/
 	float dgapx = abs((mingradx+0.01)/(maxgradx+0.01));
 	float dgapy = abs((mingrady+0.01)/(maxgrady+0.01));
+	/*
+	float dgapu = abs((mingradu+0.01)/(maxgradu+0.01));
+	float dgapd = abs((mingradd+0.01)/(maxgradd+0.01));
+	*/
+	//float dgap = 1.0/min(min(dgapu, dgapd), min(dgapx, dgapy));
 	float dgap = 1.0/min(dgapx, dgapy);
 	color *= tcolor;
-	float dthres = 2.1;
-	if(dgap > dthres) color = vec4(0.0);
+	const float dthres_min = 1.9;
+	const float dthres_max = 2.2;
+	const float dthres_delta = dthres_max/dthres_min;
+	float distamp = length((tc*2.0-1.0)*(soffs.x/soffs)); // TODO: get correct FOV
+	float realdist = db*length(vec2(1.0, distamp));
+	float fog_strength = min(1.0, realdist/fog);
+	fog_strength *= fog_strength;
+	if(dgap > dthres_min) color *= max(0.0, 1.0-(dgap-dthres_min)/dthres_delta);
+	//color *= 1.0+ripple*0.2;
 	color.a = 1.0;
-	gl_FragColor = color;
+	gl_FragColor = color * (1.0 - fog_strength)
+		+ gl_Fog.color * fog_strength;
 }
 
 ]=]}
@@ -1377,6 +1442,20 @@ function client.hook_render()
 				shader.set_uniform_i("tex0", 0)
 				shader.set_uniform_i("tex1", 1)
 				shader.set_uniform_f("soffs", 1.0/screen_width, 1.0/screen_height)
+				shader.set_uniform_f("time", sec_current or 0)
+
+				local _r, _g, _b, f = client.map_fog_get()
+				local zoom = (players
+					and players.current
+					and players[players.current]
+					and players[players.current].zoom)
+						or 1.0
+
+				--f = f / zoom
+				local n = 0.05 -- / zoom
+				shader.set_uniform_f("fog", f)
+				shader.set_uniform_f("depth_A", (f+n)/(f-n))
+				shader.set_uniform_f("depth_B", -(2.0*f*n)/(f-n))
 				shader.push()
 			end
 			s_img_blit(fbo_world, 0, 0)
