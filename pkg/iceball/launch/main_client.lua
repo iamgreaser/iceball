@@ -126,6 +126,8 @@ local text_offset = ch+ch --cha cha cha! \o/
 local img_row_bkg_width = screen_width - 2*text_offset
 local img_row_bkg = common.img_new(img_row_bkg_width, ch + 2)
 common.img_fill(img_row_bkg, 0x99111111)
+local img_row_official_bkg = common.img_new(img_row_bkg_width, ch + 2)
+common.img_fill(img_row_official_bkg, 0x99555500)
 local img_row_bkg_transparent = common.img_new(img_row_bkg_width, ch + 2)
 common.img_fill(img_row_bkg_transparent, 0x22111111)
 
@@ -213,9 +215,15 @@ function client.hook_render()
 				break
 			end
 			
-			client.img_blit(img_row_bkg, text_offset-2, (ch+4)*(8+i-1) - 1)
-		
 			local sv = server_list[sid]
+			
+			if sv.official then
+				-- TODO: Maybe make this a column or something? Could have columns for official and favourites
+				client.img_blit(img_row_official_bkg, text_offset-2, (ch+4)*(8+i-1) - 1)
+			else
+				client.img_blit(img_row_bkg, text_offset-2, (ch+4)*(8+i-1) - 1)
+			end
+		
 			font.render(text_offset, (ch+4)*(8+i-1), sid..": "..sv.name
 				.." - "..sv.players_current.."/"..sv.players_max
 				.." - "..sv.mode
