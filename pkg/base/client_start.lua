@@ -1244,94 +1244,40 @@ float getdepth(float buf)
 	return B/((f-n)*buf-A);
 	*/
 
-	return depth_B/(buf-depth_A);
+	//return depth_B/(buf-depth_A);
+	// get 1/z
+	return (buf-depth_A)/depth_B;
 }
 
 void main()
 {
 	vec4 color = gl_Color;
 	vec2 tc = gl_TexCoord[0].st;
-	// Ripple shader test, commented out because we aren't using it
-	/*
-	tc = tc*2.0-1.0;
-	tc.x *= 800.0/600.0;
-	float tclen = length(tc);
-	float ripple = sin((tclen*tclen*5.0 - time*2.0)*2.0*3.14159)*max(0.0,1.0-tclen*tclen);
-	tc += (ripple*0.5+0.5)*normalize(tc)*0.03;
-	tc.x /= 800.0/600.0;
-	tc = tc*0.5+0.5;
-	*/
-
-	// Just in case you needed focal blur...
-	/*
-	tc = tc*2.0-1.0;
-	tc += vec2(
-		sin(pow(gl_FragCoord.x*30.0, 3.0) + pow(gl_FragCoord.y*20.0, 2.0)),
-		cos(pow(gl_FragCoord.y*30.0, 3.0) - pow(gl_FragCoord.x*20.0, 2.0)))
-			*getdepth(texture2D(tex1, gl_TexCoord[0].st).x)*0.03/fog;
-	tc = tc*0.5+0.5;
-	*/
-
 	float dbval = texture2D(tex1, tc).x;
-	//if(dbval >= 0.99999) discard;
 	float db = getdepth(dbval);
-	float dxn1 = getdepth(texture2D(tex1, tc + soffs*vec2(-1.0, 0.0)).x);
-	float dxp1 = getdepth(texture2D(tex1, tc + soffs*vec2( 1.0, 0.0)).x);
 	float dxn2 = getdepth(texture2D(tex1, tc + soffs*vec2(-2.0, 0.0)).x);
 	float dxp2 = getdepth(texture2D(tex1, tc + soffs*vec2( 2.0, 0.0)).x);
-	float dyn1 = getdepth(texture2D(tex1, tc + soffs*vec2( 0.0,-1.0)).x);
-	float dyp1 = getdepth(texture2D(tex1, tc + soffs*vec2( 0.0, 1.0)).x);
 	float dyn2 = getdepth(texture2D(tex1, tc + soffs*vec2( 0.0,-2.0)).x);
 	float dyp2 = getdepth(texture2D(tex1, tc + soffs*vec2( 0.0, 2.0)).x);
-	/*
-	float dup1 = getdepth(texture2D(tex1, tc + soffs*vec2( 1.0, 1.0)).x);
-	float dun1 = getdepth(texture2D(tex1, tc + soffs*vec2(-1.0,-1.0)).x);
-	float ddp1 = getdepth(texture2D(tex1, tc + soffs*vec2( 1.0,-1.0)).x);
-	float ddn1 = getdepth(texture2D(tex1, tc + soffs*vec2(-1.0, 1.0)).x);
-	*/
 	vec4 tcolor = texture2D(tex0, tc);
-	dxn2 = (dxn2 - dxn1);
-	dxp2 = (dxp2 - dxp1);
-	dyn2 = (dyn2 - dyn1);
-	dyp2 = (dyp2 - dyp1);
-	dxn1 = (dxn1 - db);
-	dxp1 = (dxp1 - db);
-	dyn1 = (dyn1 - db);
-	dyp1 = (dyp1 - db);
-	/*
-	dup1 = (dup1 - db);
-	dun1 = (dun1 - db);
-	ddp1 = (ddp1 - db);
-	ddn1 = (ddn1 - db);
-	*/
-	float mingradx = abs(min(min(dxn1, dxp1),min(dxn2, dxp2)));
-	float maxgradx = abs(max(max(dxn1, dxp1),max(dxn2, dxp2)));
-	float mingrady = abs(min(min(dyn1, dyp1),min(dyn2, dyp2)));
-	float maxgrady = abs(max(max(dyn1, dyp1),max(dyn2, dyp2)));
-	/*
-	float mingradu = abs(min(dun1, dup1));
-	float maxgradu = abs(max(dun1, dup1));
-	float mingradd = abs(min(ddn1, ddp1));
-	float maxgradd = abs(max(ddn1, ddp1));
-	*/
-	float dgapx = abs((mingradx+0.01)/(maxgradx+0.01));
-	float dgapy = abs((mingrady+0.01)/(maxgrady+0.01));
-	/*
-	float dgapu = abs((mingradu+0.01)/(maxgradu+0.01));
-	float dgapd = abs((mingradd+0.01)/(maxgradd+0.01));
-	*/
-	//float dgap = 1.0/min(min(dgapu, dgapd), min(dgapx, dgapy));
-	float dgap = 1.0/min(dgapx, dgapy);
+	dxn2 = -(dxn2 - db);
+	dxp2 = (dxp2 - db);
+	dyn2 = -(dyn2 - db);
+	dyp2 = (dyp2 - db);
+	float minpurex = min(dxn2, dxp2);
+	float maxpurex = max(dxn2, dxp2);
+	float minpurey = min(dyn2, dyp2);
+	float maxpurey = max(dyn2, dyp2);
 	color *= tcolor;
-	const float dthres_min = 1.9;
-	const float dthres_max = 2.2;
-	const float dthres_delta = dthres_max/dthres_min;
+	const float dpurethres_min = 0.0006;
+	const float dpurethres_max = 0.0020;
+	const float dpurethres_delta = dpurethres_max-dpurethres_min;
+	float dpuregap = max(maxpurex - minpurex, maxpurey - minpurey)*(1.0/db);
 	float distamp = length((tc*2.0-1.0)*(soffs.x/soffs)); // TODO: get correct FOV
-	float realdist = db*length(vec2(1.0, distamp));
+	float realdist = (1.0/db)*length(vec2(1.0, distamp));
 	float fog_strength = min(1.0, realdist/fog);
 	fog_strength *= fog_strength;
-	if(dgap > dthres_min) color *= max(0.0, 1.0-(dgap-dthres_min)/dthres_delta);
-	//color *= 1.0+ripple*0.2;
+	if(dpuregap > dpurethres_min) color *= max(0.0, 1.0-(dpuregap-dpurethres_min)/dpurethres_delta);
 	color.a = 1.0;
 	gl_FragColor = color * (1.0 - fog_strength)
 		+ gl_Fog.color * fog_strength;

@@ -151,7 +151,7 @@ int icelua_fn_client_fbo_use(lua_State *L)
 	if(lua_isnil(L, 1))
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glFinish();
+		//glFinish();
 		return 0;
 	}
 
@@ -160,7 +160,7 @@ int icelua_fn_client_fbo_use(lua_State *L)
 		return luaL_error(L, "not an FBO");
 
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo->handle);
-	glFinish();
+	//glFinish();
 
 	return 0;
 #endif
