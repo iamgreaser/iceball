@@ -16,7 +16,7 @@
 # along with Iceball.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import errno, heapq, json, random, socket, struct, sys, time
+import errno, heapq, json, operator, random, socket, struct, sys, time
 
 CONN_PORT = int(sys.argv[1])
 
@@ -52,6 +52,25 @@ IB_VERSION = calc_ib_version(*IB_VERSION_CMP)
 IB_VERSION_MASK = ~((1<<10)-1)
 # if you wish to ignore "A" version as well, use this instead:
 # IB_VERSION_MASK = ~((1<<(10+5))-1)
+
+PRIORITY_DEFAULT = 0
+PRIORITY_SERVERS = {}
+
+try:
+	with open("server-priorities.json", "r") as fp:
+		p = json.load(fp)
+		for k, v in p["servers"].iteritems():
+			if not isinstance(k, (str, unicode)) or not isinstance(v, int):
+				print 'Invalid entry in server-priorities.json - skipping: "%s", "%s"' % (k, v)
+				break
+		else:
+			PRIORITY_SERVERS = p["servers"]
+		PRIORITY_DEFAULT = p.get("default_priority", PRIORITY_DEFAULT)
+		del p
+except IOError:
+	print "Could not read server-priorities.json - skipping"
+except AttributeError:
+	print "Error in server-priorities.json - skipping"
 
 def stripnul(s):
 	idx = s.find("\x00")
@@ -384,6 +403,8 @@ class HServer:
 			if d:
 				l.append(d)
 
+		l.sort(key=operator.itemgetter("priority"), reverse=True)
+
 		return l
 
 class HClient:
@@ -445,6 +466,8 @@ class HClient:
 				d["map"] = stripnul(msg[:30])
 
 				d["version"] = ib_version_str(ibver)
+
+				d["priority"] = PRIORITY_SERVERS.get("%s:%s" % (d["address"], d["port"]), PRIORITY_DEFAULT)
 
 				self.ibdata_queued = d
 				self.ibdata_cookie = struct.pack("<I", random.randint(0,0xFFFFFFFF))
