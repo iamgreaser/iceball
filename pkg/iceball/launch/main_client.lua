@@ -52,6 +52,9 @@ function arg_closure(arg_array, offset)
 end
 
 -- Some libraries
+dofile("pkg/iceball/lib/loader.lua")
+DIR_PKG_TTF = "pkg/base/ttf"
+FONT_DEFAULT = "OpenSans-Regular"
 dofile("pkg/iceball/lib/font.lua")
 dofile("pkg/iceball/lib/sdlkey.lua")
 
@@ -64,7 +67,7 @@ local function update_page_buttons()
 	if not server_list then
 		page = 0
 	end
-	
+
 	if page > 0 then
 		page_prev_active = true
 	else
@@ -119,19 +122,20 @@ end
 --render pre-load
 local screen_width, screen_height = client.screen_get_dims()
 
-local font = font_dejavu_bold[18]
-local ch = font.iheight
+-- local font = font_dejavu_bold[18]
+local ch = 23--common.font_get_height(common.font_get(FONT_DEFAULT, 16))
 local text_offset = ch+ch --cha cha cha! \o/
+
+local img_splash, img_splash_width, img_splash_height = common.img_load("pkg/iceball/gfx/splash_logo.png", "png")
 
 local img_row_bkg_width = screen_width - 2*text_offset
 local img_row_bkg = common.img_new(img_row_bkg_width, ch + 2)
 common.img_fill(img_row_bkg, 0x99111111)
+local img_row_official_bkg = common.img_new(img_row_bkg_width, ch + 2)
+common.img_fill(img_row_official_bkg, 0x99555500)
 local img_row_bkg_transparent = common.img_new(img_row_bkg_width, ch + 2)
 common.img_fill(img_row_bkg_transparent, 0x22111111)
 
-<<<<<<< HEAD
-local img_splash, img_splash_width, img_splash_height = common.img_load("pkg/iceball/gfx/splash_logo.png", "png")
-=======
 local img_button_bkg_width = 120
 local img_button_bkg_height = ch + 2
 local img_button_bkg = common.img_new(img_button_bkg_width, img_button_bkg_height)
@@ -139,9 +143,6 @@ common.img_fill(img_button_bkg, 0x99111111)
 local img_button_bkg_transparent = common.img_new(img_button_bkg_width, img_button_bkg_height)
 common.img_fill(img_button_bkg_transparent, 0x22111111)
 
-local img_splash = common.img_load("pkg/iceball/gfx/splash_logo.png", "png")
-local img_splash_width, img_splash_height
->>>>>>> master
 local img_splash_width, img_splash_height_scaled
 local splash_x, splash_y
 
@@ -154,7 +155,7 @@ function client.hook_render()
 	if not img_splash_width then
 		img_splash_width, img_splash_height = common.img_get_dims(img_splash)
 	end
-	
+
 	if splashtweenprogress_scale > 0.25 then
 		if splashtweenprogress_scale > 0.85 then
 			splashtweenprogress_scale = splashtweenprogress_scale - 0.001 --would be nice to do this with frame delta time
@@ -174,41 +175,41 @@ function client.hook_render()
 	splash_y = (screen_height/(2/splashtweenprogress_y)) - img_splash_height_scaled
 	client.img_blit(img_splash, splash_x, splash_y, img_splash_width_scaled, img_splash_height_scaled, 0, 0, 0xFFFFFFFF, splashtweenprogress_scale, splashtweenprogress_scale)
 	--splash sequence end
-	
+
 	if splashtweenprogress_scale <= 0.5 then --don't draw the rest until the splash finishes
-	
-	
-	font.render(text_offset, ch*0, "Press L for a local server on port 20737", 0xFFEEEEEE)
-	font.render(text_offset, ch*1, "Press Escape to quit", 0xFFEEEEEE)
-	font.render(text_offset, ch*2, "Press C to change your settings", 0xFFEEEEEE)
-	font.render(text_offset, ch*3, "Press R to update the server list", 0xFFEEEEEE)
-	font.render(text_offset, ch*4, "Press a number to join a server", 0xFFEEEEEE)
-	font.render(text_offset, ch*6, "Server list:", 0xFFEEEEEE)
+
+
+	client.font_render_text(text_offset, ch*0, "Press L for a local server on port 20737", 0xEEEEEE, 16, FONT_DEFAULT)
+	client.font_render_text(text_offset, ch*1, "Press Escape to quit", 0xEEEEEE, 16, FONT_DEFAULT)
+	client.font_render_text(text_offset, ch*2, "Press C to change your settings", 0xEEEEEE, 16, FONT_DEFAULT)
+	client.font_render_text(text_offset, ch*3, "Press R to update the server list", 0xEEEEEE, 16, FONT_DEFAULT)
+	client.font_render_text(text_offset, ch*4, "Press a number to join a server", 0xEEEEEE, 16, FONT_DEFAULT)
+	client.font_render_text(text_offset, ch*6, "Server list:", 0xEEEEEE, 16, FONT_DEFAULT)
 
 	local i
 	if server_list == true then
-		font.render(text_offset, ch*7, "Fetching...", 0xFFEEEEEE)
+		client.font_render_text(text_offset, ch*7, "Fetching...", 0xEEEEEE, 16, FONT_DEFAULT)
 	elseif server_list == nil then
-		font.render(text_offset, ch*7, "Failed to fetch the server list.", 0xFFEEEEEE)
+		client.font_render_text(text_offset, ch*7, "Failed to fetch the server list.", 0xEEEEEE, 16, FONT_DEFAULT)
 	else
 		-- Draw version string
 		local version_string = nil
 		local version_colour = nil
 		if common.version.num < latest_version then
 			version_string = "Update available! ("..common.version.str..")"
-			version_colour = 0xFFE81515
+			version_colour = 0xE81515
 		else
 			version_string = "Up to date! ("..common.version.str..")"
-			version_colour = 0xFF86CF11
+			version_colour = 0x86CF11
 		end
-		
-		font.render(
-			screen_width - font.string_width(version_string) - text_offset,
+
+		client.font_render_text(
+			screen_width - 200 - text_offset,
 			0,
 			version_string,
-			version_colour
+			version_colour, 16, FONT_DEFAULT
 		)
-		
+
 		-- Draw server list
 		local empty_start = 10
 		for i=1,9 do
@@ -217,36 +218,42 @@ function client.hook_render()
 				empty_start = i
 				break
 			end
-			
-			client.img_blit(img_row_bkg, text_offset-2, (ch+4)*(8+i-1) - 1)
-		
+
 			local sv = server_list[sid]
-			font.render(text_offset, (ch+4)*(8+i-1), sid..": "..sv.name
+
+			if sv.official then
+				-- TODO: Maybe make this a column or something? Could have columns for official and favourites
+				client.img_blit(img_row_official_bkg, text_offset-2, (ch+4)*(8+i-1) - 1)
+			else
+				client.img_blit(img_row_bkg, text_offset-2, (ch+4)*(8+i-1) - 1)
+			end
+
+			client.font_render_text(text_offset, (ch+4)*(8+i-1), sid..": "..sv.name
 				.." - "..sv.players_current.."/"..sv.players_max
 				.." - "..sv.mode
-				.." - "..sv.map, 0xFFEEEEEE)
-			
+				.." - "..sv.map, 0xEEEEEE, 16, FONT_DEFAULT)
+
 		end
 --		common.img_fill(img_row_bkg, 0x22111111)
 		for i=empty_start,9 do
 			client.img_blit(img_row_bkg_transparent, text_offset-2, (ch+4)*(8+i-1) - 1)
 		end
 		--common.img_fill(img_row_bkg, 0x99111111)
-		
+
 		-- Draw prev/next buttons
 		local button_pos_x = screen_width - text_offset - 2 - img_button_bkg_width
 		local button_pos_y = (ch+4)*17 - 1
-		local label_offset = (img_button_bkg_width / 2) - (font.string_width("<") / 2)
+		local label_offset = (img_button_bkg_width / 2) - 10--(font.string_width("<") / 2)
 		if page_next_active then
 			client.img_blit(img_button_bkg, button_pos_x, button_pos_y)
 		else
 			client.img_blit(img_button_bkg_transparent, button_pos_x, button_pos_y)
 		end
-		font.render(
+		client.font_render_text(
 			button_pos_x + label_offset,
 			button_pos_y,
 			">",
-			0xFFEEEEEE
+			0xEEEEEE, 16, FONT_DEFAULT
 		)
 		button_pos_x = button_pos_x - 2 - img_button_bkg_width
 		if page_prev_active then
@@ -254,14 +261,14 @@ function client.hook_render()
 		else
 			client.img_blit(img_button_bkg_transparent, button_pos_x, button_pos_y)
 		end
-		font.render(
+		client.font_render_text(
 			button_pos_x + label_offset,
 			button_pos_y,
 			"<",
-			0xFFEEEEEE
+			0xEEEEEE, 16, FONT_DEFAULT
 		)
 	end
-	
+
 	end
 end
 
@@ -286,7 +293,6 @@ function client.hook_tick(sec_current, sec_delta)
 	elseif AUTO_REFRESH_RATE and server_refresh + AUTO_REFRESH_RATE < sec_current then
 		master_http = http_new {url = MASTER_URL}
 	end
-	
+
 	return 0.01
 end
-

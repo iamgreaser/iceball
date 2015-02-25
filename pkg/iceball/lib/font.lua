@@ -9,6 +9,7 @@ function common.font_load(fontname, ptsize)
   if colon_index and colon_index ~= #fontname then
       font_index =fontname:sub(colon_index+1, #fontname)
       font_index = math.floor(tonumber(font_index) or error("Could not cast to number.'"))
+      fontname = fontname:sub(1, colon_index-1)
   end
 
   if not DIR_PKG_TTF then
@@ -16,7 +17,7 @@ function common.font_load(fontname, ptsize)
   end
 
   local filename = DIR_PKG_TTF.."/"..fontname..".ttf"
-  local font = common.font_ttf_load(filename, ptsize)
+  local font = common.font_ttf_load(filename, ptsize, font_index)
   return font
 end
 
@@ -32,7 +33,7 @@ function common.font_get(fontname, ptsize)
   -- fonts[fontname][ptsize] = {}
   local font = common.font_load(fontname, ptsize)
   fonts[fontname][ptsize] = font
-  return font
+  return common.font_get(fontname, ptsize)
 end
 
 do
@@ -43,7 +44,7 @@ do
 end
 
 if client then
-  
+
 --ptsize = 16, font = "OpenSans-Regular"
 function client.font_render_text(x, y, text, color, ptsize, fontname)
   if not FONT_DEFAULT or not fonts then
