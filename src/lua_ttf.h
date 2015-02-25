@@ -16,23 +16,59 @@
 */
 
 // client functions
-int icelua_fn_common_font_render_to_texture(lua_State *L)
+int icelua_fn_client_font_render_to_texture(lua_State *L)
 {
-	int top = icelua_assert_stack(L, 2, 3);
+	int top = icelua_assert_stack(L, 2, 5);
+
+	img_t *img;
 
 	TTF_Font *font = (TTF_Font *)lua_touserdata(L, 1);
-	if (font == NULL)
-		return luaL_error(L, "font must be not null");
+	if (font == NULL) //this is considered normal behaviour in case of fetching
+	{
+		lua_getglobal(L, "common");
+		lua_getfield(L, -1, "img_new");
+		lua_remove(L, -2);
+		lua_pushnumber(L, 2); //2x2 transparent image
+		lua_pushnumber(L, 2);
+		lua_call(L, 2, 1);
+		//loads the return of the function - an empty image onto the stack
+		//since it's on top of the stack the return value will be it so we can work it
+		img = (img_t *)lua_touserdata(L, -1);
+		return 1;
+	}
 
 	const char *text = lua_tostring(L, 2);
 
 	uint32_t color = (top < 3 ? 0xFFFFFF : (uint32_t)lua_tointeger(L, 3));
-	//
-	// img_t *img = (img_t*)font_ttf_render_to_texture(font, text, color, L);
-	// // lua_pushlightuserdata(L, img); //FIX THIS
-	SDL_Color sdl_clr = {(color>>16)&255,(color>>8)&255,(color)&255, (color>>24)&255};
 
-	SDL_Surface *font_rendered_surface = TTF_RenderText_Blended(font, text, sdl_clr);
+	if (top == 4 || top == 5)
+	{
+		uint32_t shadow_color = (uint32_t)lua_tointeger(L, 4);
+
+		uint32_t shadow_size = (top < 5 ? 1 : (uint32_t)lua_tointeger(L, 5));
+
+		TTF_SetFontOutline(font, shadow_size);
+		color = shadow_color;
+	}
+
+	SDL_Color text_sdl_clr = {(color>>16)&255,(color>>8)&255,(color)&255};
+
+	SDL_Surface *font_rendered_surface = TTF_RenderText_Blended(font, text, text_sdl_clr);
+
+	if(font_rendered_surface == NULL)
+	{
+		printf("TTF render error: %s\n", TTF_GetError());
+		lua_getglobal(L, "common");
+		lua_getfield(L, -1, "img_new");
+		lua_remove(L, -2);
+		lua_pushnumber(L, 2); //2x2 transparent image
+		lua_pushnumber(L, 2);
+		lua_call(L, 2, 1);
+
+		img = (img_t *)lua_touserdata(L, -1);
+		printf("Warning: Recovered from TTF render error, no text rendered!\n");
+		return 1;
+	}
 
 	int w = font_rendered_surface->w;
 	int h = font_rendered_surface->h;
@@ -44,7 +80,7 @@ int icelua_fn_common_font_render_to_texture(lua_State *L)
 	lua_call(L, 2, 1);
 	//loads the return of the function - an empty image onto the stack
 	//since it's on top of the stack the return value will be it so we can work it
-	img_t *img = (img_t *)lua_touserdata(L, -1);
+	img = (img_t *)lua_touserdata(L, -1);
 
 	int iw = img->head.width;
 	int ih = img->head.height;
@@ -63,6 +99,10 @@ int icelua_fn_common_font_render_to_texture(lua_State *L)
 		}
 	}
 	SDL_FreeSurface(font_rendered_surface);
+	if (top == 4 || top == 5)
+	{
+		TTF_SetFontOutline(font, 0);
+	}
 	return 1;
 }
 
@@ -97,10 +137,27 @@ int icelua_fn_common_font_ttf_load(lua_State *L)
 
 	if(font == NULL)
 	{
-		printf("\n%s\n", TTF_GetError());
+		printf("TTF error: %s\n", TTF_GetError());
 		return luaL_error(L, "Font load error!");
 	}
 
 	lua_pushlightuserdata(L, font);
+	return 1;
+}
+
+int icelua_fn_common_font_get_height(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 1, 1);
+	TTF_Font *font = (TTF_Font *)lua_touserdata(L, 1);
+
+	if(font == NULL)
+	{
+		printf("TTF get height font error: %s\n", TTF_GetError());
+		return 0;
+	}
+
+	int height = TTF_FontHeight(font);
+
+	lua_pushnumber(L, height);
 	return 1;
 }

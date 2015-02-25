@@ -18,7 +18,7 @@
 -- flags we need to add in early
 MODE_NUB_KICKONJOIN = false
 
--- skins allowed 
+-- skins allowed
 SKIN_ENABLE_SRC = {"pmf", "kv6", "tga", "png", "wav", "it"}
 --SKIN_ENABLE_SRC = {}
 SKIN_ENABLE = {}
@@ -80,5 +80,5 @@ function model_load(mdict, prio, sdir)
 	return nil
 end
 
-FONT_DEFAULT = "OpenSans-regular"
+FONT_DEFAULT = "OpenSans-Regular"
 dofile("pkg/base/lib_font.lua")

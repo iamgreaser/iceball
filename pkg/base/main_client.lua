@@ -15,7 +15,7 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
-SANDBOX_CLIENT = true
+SANDBOX_CLIENT = false
 
 if common.version.num < 8388608 then
 	error("You need Iceball version 0.2 or later to connect to this server.")
@@ -236,14 +236,14 @@ do
 			local i
 			local koffs = math.max(#fnlist-10,1)
 			for i=koffs,#fnlist do
-				font_mini.print(2, 2+(i-koffs)*8, 0xFFFFFFFF, "LOAD: "..fnlist[i])
+				client.font_render_text(2, 2+(i-koffs)*24, "LOAD: "..fnlist[i], 0xFFFFFF, 24, FONT_DEFAULT, 0x000000, 0, 1, 1)
 			end
-			font_mini.print(2, screen_height-10, 0xFFFFFFFF, loadstr)
+			client.font_render_text(2, screen_height-24-2-4, loadstr, 0xFFFFFF, 24, FONT_DEFAULT, 0x000000, 0, 1, 1)
 
-			font_mini.print(2, 2+(12)*8, 0xFFFFFFFF, "Version: "..cver.str.." - renderer: "..(client.renderer or "<unknown>"))
+			client.font_render_text(2, 2+(12)*24, "Version: "..cver.str.." - renderer: "..(client.renderer or "<unknown>"), 0xFFFFFF, 24, FONT_DEFAULT, 0x000000, 0, 1, 1)
 			local l = string.split(vernotes,"\n")
 			for i=1,#l do
-				font_mini.print(2, 2+(i+14)*8, 0xFFFFFFFF, l[i])
+				client.font_render_text(2, 2+(i+14)*24, l[i], 0xFFFFFF, 24, FONT_DEFAULT, 0x000000, 0, 1, 1)
 			end
 		end
 
@@ -347,5 +347,5 @@ function client.hook_tick()
 	end
 	return 0.005
 end
-
+if not fonts[FONT_DEFAULT] then common.font_get(FONT_DEFAULT, 24) end
 print("pkg/base/main_client.lua loaded.")

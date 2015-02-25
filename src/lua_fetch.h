@@ -120,10 +120,7 @@ int icelua_fnaux_fetch_immediate(lua_State *L, const char *ftype, const char *fn
 
 		lua_pushlightuserdata(L, mus);
 		return 1;
-	} else if(!strcmp(ftype, "ttf")) {
-		printf("HOW WOULD I RUDDY LOAD THIS THING !?");
-		return 0;
-	} else if(!strcmp(ftype, "bin")) {
+	} else if(!strcmp(ftype, "bin") || !strcmp(ftype, "ttf")) {
 		int flen = 0;
 		char *d = net_fetch_file(fname, &flen);
 		if(d == NULL)
@@ -376,7 +373,7 @@ int icelua_fn_common_fetch_poll(lua_State *L)
 				lua_pushlstring(L, to_client_local.cfetch_ubuf, to_client_local.cfetch_ulen);
 				ret = 1;
 			} break;
-			
+
 			case UD_FONT_TTF: {
 				lua_pushlstring(L, to_client_local.cfetch_ubuf, to_client_local.cfetch_ulen);
 				ret = 1;
@@ -466,4 +463,3 @@ int icelua_fn_common_fetch_block(lua_State *L)
 	}
 	// end
 }
-

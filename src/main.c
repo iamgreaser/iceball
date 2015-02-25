@@ -92,11 +92,10 @@ int platform_init(void)
 	SDL_EnableUNICODE(1);
 #endif
 #ifdef USE_SDL2
-	//#ifdef USE_TTF
-	if (TTF_Init() != 0){
-		return error_sdl("TTF_Init");;
+	if(!TTF_WasInit() && TTF_Init()!=0) {
+    printf("TTF_Init: %s\n", TTF_GetError());
+		return error_sdl("TTF_Init");
 	}
-	//#endif
 #endif
 #ifndef WIN32
 	signal(SIGPIPE, SIG_IGN);

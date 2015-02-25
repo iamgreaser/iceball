@@ -1,4 +1,4 @@
-fonts = {["Heya, dongs!"] = {[15] = {"SUPERDONGS!!"} } }
+fonts = { }
 --font_prototype = {"font" = {[16] = {fontdata}}}
 
 --fontname should look like this: "filename:x" where x is the index (starting from 0)
@@ -29,18 +29,21 @@ function common.font_get(fontname, ptsize)
   end
 
   fonts[fontname] = {}
-  fonts[fontname][ptsize] = {}
+  -- fonts[fontname][ptsize] = {}
   local font = common.font_load(fontname, ptsize)
   fonts[fontname][ptsize] = font
-  return fonts[fontname][ptsize]
+  return font
 end
 
 do
-  common.font_get(FONT_DEFAULT, 16)
+	if not DIR_PKG_TTF then
+		DIR_PKG_TTF = client.base_dir.."/ttf"
+	end
+
 end
 
 if client then
-
+  
 --ptsize = 16, font = "OpenSans-Regular"
 function client.font_render_text(x, y, text, color, ptsize, fontname)
   if not FONT_DEFAULT or not fonts then

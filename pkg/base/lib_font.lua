@@ -16,51 +16,74 @@
 ]]
 --TODO: move this to the engine
 
-fonts = {}
---font_prototype = {"font",{[16] = {fontdata}}}
+fonts = { }
+--font_prototype = {"font" = {[16] = {fontdata}}}
 
---fontname should look like this: "filename:x" where x is the index
+--fontname should look like this: "filename:x" where x is the index (starting from 0)
 --example: "propaganda:2" if there is a propaganda.ttf with 3 styles
 function common.font_load(fontname, ptsize)
-  font_index = 0
+  local font_index = 0
   colon_index = fontname:match'^.*():'
   if colon_index and colon_index ~= #fontname then
-      font_index = tonumber(fontname:sub(colon_index+1, #fontname))
+      font_index =fontname:sub(colon_index+1, #fontname)
+      font_index = math.floor(tonumber(font_index) or error("Could not cast to number.'"))
+      fontname = fontname:sub(1, colon_index-1)
   end
 
   if not DIR_PKG_TTF then
     error("Variable DIR_PKG_TTF not set, can not continue!")
   end
 
-  filename = DIR_PKG_TTF.."/"..fontname..".ttf"
-  return common.font_ttf_load(filename, ptsize, font_index)
+  local filename = DIR_PKG_TTF.."/"..fontname..".ttf"
+  local font = common.font_ttf_load(filename, ptsize, font_index)
+  return font
 end
 
 --ptsize = 16
-function common.font_ttf_get(fontname, ptsize)
+function common.font_get(fontname, ptsize)
   if fonts[fontname] then
     if fonts[fontname][ptsize] then
       return fonts[fontname][ptsize]
     end
   end
 
+  fonts[fontname] = {}
+  -- fonts[fontname][ptsize] = {}
   local font = common.font_load(fontname, ptsize)
   fonts[fontname][ptsize] = font
-  return fonts[fontname].font
+  return common.font_get(fontname, ptsize)
+end
+
+do
+	if not DIR_PKG_TTF then
+		DIR_PKG_TTF = client.base_dir.."/ttf"
+	end
 end
 
 if client then
---ptsize = 16, font = "OpenSans-regular"
-function client.font_render_text(x, y, text, color, ptsize, fontname)
+do
+  -- common.font_get(FONT_DEFAULT, 16)
+end
+
+--ptsize = 16, font = "OpenSans-Regular"
+function client.font_render_text(x, y, text, color, ptsize, fontname, shadow_color, shadow_size, shadow_x_translate, shadow_y_translate)
   if not FONT_DEFAULT or not fonts then
     error("Variable FONT_DEFAULT not set, can not continue!")
   end
   if not client then
-    luaerror("Function render_text is client-only!")
+    error("Function render_text is client-only!")
   end
-  local ttf_font = common.font_ttf_get(fontname, ptsize)
-  local image = font_ttf_render_to_texture(ttf_font, text, color)
-  client.img_blit (image, x, y)
-end
+  local ttf_font = common.font_get(fontname, ptsize)
+  local image
+  if shadow_color ~= nil then
+    image_shadow = client.font_render_to_texture(ttf_font, text, color, shadow_color, shadow_size)
+    client.img_blit(image_shadow, x + shadow_x_translate, y + shadow_y_translate)
 
+    image = client.font_render_to_texture(ttf_font, text, color)
+    client.img_blit(image, x, y)
+  else
+    image = client.font_render_to_texture(ttf_font, text, color)
+    client.img_blit(image, x, y)
+  end
+end
 end
