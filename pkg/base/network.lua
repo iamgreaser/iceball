@@ -549,7 +549,13 @@ network.sys_handle_c2s(PKT_CHAT_SEND, "z", nwdec_plrset(function (neth, cli, plr
 			or msg:lower():find("your not") or msg:lower():find("your real") 
 			or msg:lower():find("your da") or msg:lower():find("your a ") 
 			or msg:lower():find("your the") or msg:lower():find("your an ")
-			or msg:lower():find("ur mom") or msg:lower():find("ur mum") then
+			or msg:lower():find("ur mom") or msg:lower():find("ur mum")
+			or ((((msg:lower():find("please") or msg:lower():find("now"))
+				and msg:lower():find("leave"))
+			or msg:lower():find("go away")) and not (plr and
+				(plr.has_permission("ban") or plr.has_permission("kick")
+					or plr.has_permission("piano"))))
+			or msg:lower():find("no kill") then
 			plr.drop_piano()
 		end
 	end
