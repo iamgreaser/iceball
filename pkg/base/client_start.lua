@@ -118,6 +118,7 @@ if FAST_LOCAL_INIT and sandbox then sandbox.gfx_select(nil) end
 dofile("pkg/base/lib_va.lua")
 dofile("pkg/base/common.lua")
 dofile("pkg/base/border.lua")
+dofile("pkg/base/lib_crosshair.lua")
 
 tracers = {head = 1, tail = 0, time = 0}
 
@@ -388,8 +389,7 @@ window_activated = true
 show_scores = false
 
 -- load images
-img_crosshair = client.img_load("pkg/base/gfx/crosshair.tga")
-img_crosshairhit = client.img_load("pkg/base/gfx/crosshairhit.tga")
+img_crosshair, img_crosshairhit = crosshair_generate_images(user_config.crosshair)
 img_chevron = client.img_load("pkg/base/gfx/chevron.tga")
 
 -- load kv6 models
