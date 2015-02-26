@@ -220,6 +220,7 @@ struct icelua_entry icelua_client[] = {
 	{icelua_fn_client_map_enable_autorender, "map_enable_autorender"},
 	{icelua_fn_client_map_enable_ao, "map_enable_ao"},
 	{icelua_fn_client_map_enable_side_shading, "map_enable_side_shading"},
+	{icelua_fn_client_map_set_render_format, "map_set_render_format"},
 	{icelua_fn_client_map_render, "map_render"},
 	{icelua_fn_client_map_fog_get, "map_fog_get"},
 	{icelua_fn_client_map_fog_set, "map_fog_set"},

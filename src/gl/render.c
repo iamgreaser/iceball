@@ -288,6 +288,27 @@ void render_init_visible_chunks(map_t *map, int starting_chunk_coordinate_x, int
 	map->visible_chunks_vcenter_z = (int) map->visible_chunks_len/2;
 }
 
+void render_init_va_format(map_t *map)
+{
+	if(gl_shaders)
+	{
+		map->stride = 9;
+		map->vertex_offs = 0; map->vertex_size = 3;
+		map->color_offs = 3; map->color_size = 3;
+		map->normal_offs = 6; map->normal_size = 3;
+		map->tc0_offs = 0; map->tc0_size = 0;
+	} else {
+		map->stride = 6;
+		map->vertex_offs = 0; map->vertex_size = 3;
+		map->color_offs = 3; map->color_size = 3;
+		map->normal_offs = 0; map->normal_size = 0;
+		map->tc0_offs = 0; map->tc0_size = 0;
+	}
+
+	render_init_visible_chunks(map, 0, 0);
+
+}
+
 void render_shift_visible_chunks(map_t *map, int camera_chunk_coordinate_x, int camera_chunk_coordinate_z)
 {
 	int position_shift_x, position_shift_z;
@@ -469,28 +490,20 @@ void render_map_visible_chunks_draw(map_t *map, float fx, float fy, float fz, fl
 				}
 
 				// select pointers
+				glColor3f(1.0f, 1.0f, 1.0f);
+				glNormal3f(0.0f,-1.0f, 0.0f);
 				if (chunk->vbo == 0)
 				{
-					if(gl_shaders)
-					{
-						glVertexPointer(3, GL_FLOAT, sizeof(float)*9, chunk->vbo_arr);
-						glColorPointer(3, GL_FLOAT, sizeof(float)*9, chunk->vbo_arr+3);
-						glNormalPointer(GL_FLOAT, sizeof(float)*9, chunk->vbo_arr+6);
-					} else {
-						glVertexPointer(3, GL_FLOAT, sizeof(float)*6, chunk->vbo_arr);
-						glColorPointer(3, GL_FLOAT, sizeof(float)*6, chunk->vbo_arr+3);
-					}
+					if(map->vertex_size >= 1) glVertexPointer(map->vertex_size, GL_FLOAT, sizeof(float)*map->stride, chunk->vbo_arr + map->vertex_offs);
+					if(map->color_size >= 1) glColorPointer(map->color_size, GL_FLOAT, sizeof(float)*map->stride, chunk->vbo_arr + map->color_offs);
+					if(map->normal_size >= 1) glNormalPointer(GL_FLOAT, sizeof(float)*map->stride, chunk->vbo_arr + map->normal_offs);
+					if(map->tc0_size >= 1) glTexCoordPointer(map->tc0_size, GL_FLOAT, sizeof(float)*map->stride, chunk->vbo_arr + map->tc0_offs);
 				} else {
 					glBindBuffer(GL_ARRAY_BUFFER, chunk->vbo);
-					if(gl_shaders)
-					{
-						glVertexPointer(3, GL_FLOAT, sizeof(float)*9, (void *)(0));
-						glColorPointer(3, GL_FLOAT, sizeof(float)*9, (void *)(0 + sizeof(float)*3));
-						glNormalPointer(GL_FLOAT, sizeof(float)*9, (void *)(0 + sizeof(float)*6));
-					} else {
-						glVertexPointer(3, GL_FLOAT, sizeof(float)*6, (void *)(0));
-						glColorPointer(3, GL_FLOAT, sizeof(float)*6, (void *)(0 + sizeof(float)*3));
-					}
+					if(map->vertex_size >= 1) glVertexPointer(map->vertex_size, GL_FLOAT, sizeof(float)*map->stride, ((float *)0) + map->vertex_offs);
+					if(map->color_size >= 1) glColorPointer(map->color_size, GL_FLOAT, sizeof(float)*map->stride, ((float *)0) + map->color_offs);
+					if(map->normal_size >= 1) glNormalPointer(GL_FLOAT, sizeof(float)*map->stride, ((float *)0) + map->normal_offs);
+					if(map->tc0_size >= 1) glTexCoordPointer(map->tc0_size, GL_FLOAT, sizeof(float)*map->stride, ((float *)0) + map->tc0_offs);
 				}
 
 				// draw
@@ -526,16 +539,18 @@ void render_map_visible_chunks_draw(map_t *map, float fx, float fy, float fz, fl
 							glBeginQuery(GL_SAMPLES_PASSED, chunk->oq);
 						}
 
-						glEnableClientState(GL_VERTEX_ARRAY);
-						glEnableClientState(GL_COLOR_ARRAY);
-						glEnableClientState(GL_NORMAL_ARRAY);
+						if(map->vertex_size >= 1) glEnableClientState(GL_VERTEX_ARRAY);
+						if(map->color_size >= 1) glEnableClientState(GL_COLOR_ARRAY);
+						if(map->normal_size >= 1) glEnableClientState(GL_NORMAL_ARRAY);
+						if(map->tc0_size >= 1) glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 						glDrawArrays((gl_expand_quads
 							? GL_TRIANGLES
 							: GL_QUADS),
 							0, chunk->vbo_arr_len);
-						glDisableClientState(GL_NORMAL_ARRAY);
-						glDisableClientState(GL_COLOR_ARRAY);
-						glDisableClientState(GL_VERTEX_ARRAY);
+						if(map->tc0_size >= 1) glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+						if(map->normal_size >= 1) glDisableClientState(GL_NORMAL_ARRAY);
+						if(map->color_size >= 1) glDisableClientState(GL_COLOR_ARRAY);
+						if(map->vertex_size >= 1) glDisableClientState(GL_VERTEX_ARRAY);
 
 						if(chunk->oq)
 						{
@@ -661,13 +676,7 @@ void render_map_tesselate_visible_chunks(map_t *map, int camx, int camz)
 			if(chunk->vbo != 0)
 			{
 				glBindBuffer(GL_ARRAY_BUFFER, chunk->vbo);
-				if(gl_shaders)
-				{
-					glBufferData(GL_ARRAY_BUFFER, sizeof(float)*9*chunk->vbo_arr_len, chunk->vbo_arr, GL_STATIC_DRAW);
-				} else {
-					glBufferData(GL_ARRAY_BUFFER, sizeof(float)*6*chunk->vbo_arr_len, chunk->vbo_arr, GL_STATIC_DRAW);
-
-				}
+				glBufferData(GL_ARRAY_BUFFER, sizeof(float)*map->stride*chunk->vbo_arr_len, chunk->vbo_arr, GL_STATIC_DRAW);
 				glBindBuffer(GL_ARRAY_BUFFER, 0);
 			}
 
@@ -766,7 +775,7 @@ void render_map_mark_chunks_as_dirty(map_t *map, int pillar_x, int pillar_z)
 	}
 }
 
-void render_update_vbo(float **arr, int *len, int *max, int newlen)
+void render_update_vbo(float **arr, int *len, int *max, int newlen, int vals_per_point)
 {
 	int xlen = 0;
 	
@@ -781,7 +790,6 @@ void render_update_vbo(float **arr, int *len, int *max, int newlen)
 			xlen = newlen + 10;
 	}
 
-	int vals_per_point = (gl_shaders ? 9 : 6);
 	*arr = (float*)realloc(*arr, xlen*sizeof(float)*vals_per_point);
 	*max = xlen;
 }
@@ -802,9 +810,17 @@ void render_gl_cube_pmf(model_bone_t *bone, float x, float y, float z, float r, 
 
 	int points_per_quad = (gl_expand_quads ? 6 : 4);
 	int vals_per_point = (gl_shaders ? 9 : 6);
+	int vo = 0;
+	int co = 3;
+	int no = 6;
+	int to = 9;
+	int vs = 3;
+	int cs = 3;
+	int ns = (gl_shaders ? 3 : 0);
+	int ts = (gl_shaders ? 0 : 0);
 
 	render_update_vbo(&(bone->vbo_arr), &(bone->vbo_arr_len), &(bone->vbo_arr_max),
-		bone->vbo_arr_len+points_per_quad*vals_per_point);
+		bone->vbo_arr_len+points_per_quad*6, vals_per_point);
 	float *arr = bone->vbo_arr;
 	arr += bone->vbo_arr_len*vals_per_point;
 	bone->vbo_arr_len += points_per_quad*6;
@@ -826,17 +842,19 @@ void render_gl_cube_pmf(model_bone_t *bone, float x, float y, float z, float r, 
 		ny = -vfinf_cube[i*9+7];
 		nz = -vfinf_cube[i*9+8];
 		
-#define ARR_ADD(vx,vy,vz) \
-		*(arr++) = vx; *(arr++) = vy; *(arr++) = vz; \
-		*(arr++) = cr; *(arr++) = cg; *(arr++) = cb; \
-		if(gl_shaders){*(arr++) = nx; *(arr++) = ny; *(arr++) = nz;}
+#define ARR_ADD(tx,ty,vx,vy,vz) \
+		if(vs >= 1) { arr[vo+0] = vx; arr[vo+1] = vy; arr[vo+2] = vz; } \
+		if(cs >= 1) { arr[co+0] = cr; arr[co+1] = cg; arr[co+2] = cb; } \
+		if(ns >= 1) { arr[no+0] = nx; arr[no+1] = ny; arr[no+2] = nz; } \
+		if(ts >= 1) { arr[to+0] = tx; arr[to+1] = ty; } \
+		arr += vals_per_point; \
 
 		/* Quad 1 */
 		cr = r*s1; cg = g*s1, cb = b*s1;
-		ARR_ADD(x,y,z);
-		ARR_ADD(x+rad*ua,y+rad*ub,z+rad*uc);
-		ARR_ADD(x+rad*(ua+va),y+rad*(ub+vb),z+rad*(uc+vc));
-		ARR_ADD(x+rad*va,y+rad*vb,z+rad*vc);
+		ARR_ADD(0,0,x,y,z);
+		ARR_ADD(1,0,x+rad*ua,y+rad*ub,z+rad*uc);
+		ARR_ADD(1,1,x+rad*(ua+va),y+rad*(ub+vb),z+rad*(uc+vc));
+		ARR_ADD(0,1,x+rad*va,y+rad*vb,z+rad*vc);
 
 		EXPAND_QUAD;
 
@@ -846,10 +864,10 @@ void render_gl_cube_pmf(model_bone_t *bone, float x, float y, float z, float r, 
 
 		/* Quad 2 */
 		cr = r*s2; cg = g*s2, cb = b*s2;
-		ARR_ADD(x+rad,y+rad,z+rad);
-		ARR_ADD(x+rad*(1-va),y+rad*(1-vb),z+rad*(1-vc));
-		ARR_ADD(x+rad*(1-ua-va),y+rad*(1-ub-vb),z+rad*(1-uc-vc));
-		ARR_ADD(x+rad*(1-ua),y+rad*(1-ub),z+rad*(1-uc));
+		ARR_ADD(0,0,x+rad,y+rad,z+rad);
+		ARR_ADD(1,0,x+rad*(1-va),y+rad*(1-vb),z+rad*(1-vc));
+		ARR_ADD(1,1,x+rad*(1-ua-va),y+rad*(1-ub-vb),z+rad*(1-uc-vc));
+		ARR_ADD(0,1,x+rad*(1-ua),y+rad*(1-ub),z+rad*(1-uc));
 
 		EXPAND_QUAD;
 #undef ARR_ADD
@@ -864,7 +882,15 @@ void render_gl_cube_map(map_t *map, map_chunk_t *chunk, float x, float y, float 
 	float average_light_vertex1, average_light_vertex2, average_light_vertex3, average_light_vertex4;
 
 	int points_per_quad = (gl_expand_quads ? 6 : 4);
-	int vals_per_point = (gl_shaders ? 9 : 6);
+	int vals_per_point = map->stride;
+	int vo = map->vertex_offs;
+	int co = map->color_offs;
+	int no = map->normal_offs;
+	int to = map->tc0_offs;
+	int vs = map->vertex_size;
+	int cs = map->color_size;
+	int ns = map->normal_size;
+	int ts = map->tc0_size;
 
 	float *arr = chunk->vbo_arr;
 
@@ -984,15 +1010,17 @@ void render_gl_cube_map(map_t *map, map_chunk_t *chunk, float x, float y, float 
 		float s1 = (map_enable_side_shading ? ((int)cam_shading[i+3])/255.0f : 1.0f);
 		float cr,cg,cb;
 	
-#define ARR_ADD(vx,vy,vz) \
-		*(arr++) = vx; *(arr++) = vy; *(arr++) = vz; \
-		*(arr++) = cr; *(arr++) = cg; *(arr++) = cb; \
-		if(gl_shaders){*(arr++) = nx; *(arr++) = ny; *(arr++) = nz;}
+#define ARR_ADD(tx,ty,vx,vy,vz) \
+		if(vs >= 1) { arr[vo+0] = vx; arr[vo+1] = vy; arr[vo+2] = vz; } \
+		if(cs >= 1) { arr[co+0] = cr; arr[co+1] = cg; arr[co+2] = cb; } \
+		if(ns >= 1) { arr[no+0] = nx; arr[no+1] = ny; arr[no+2] = nz; } \
+		if(ts >= 1) { arr[to+0] = tx; arr[to+1] = ty; } \
+		arr += vals_per_point; \
 
 		/* check visibility of the face (is face exposed to air ?) */
 		if (render_map_get_block_at(map, x - ub, y - uc, z - ua) == 0)
 		{
-			render_update_vbo(&(chunk->vbo_arr), &(chunk->vbo_arr_len), &(chunk->vbo_arr_max), chunk->vbo_arr_len+points_per_quad);
+			render_update_vbo(&(chunk->vbo_arr), &(chunk->vbo_arr_len), &(chunk->vbo_arr_max), chunk->vbo_arr_len+points_per_quad, vals_per_point);
 			arr = chunk->vbo_arr;
 			arr += chunk->vbo_arr_len*vals_per_point;
 			chunk->vbo_arr_len += points_per_quad;
@@ -1045,28 +1073,28 @@ void render_gl_cube_map(map_t *map, map_chunk_t *chunk, float x, float y, float 
 				cr = render_darken_color(cr, average_light_vertex2);
 				cg = render_darken_color(cg, average_light_vertex2);
 				cb = render_darken_color(cb, average_light_vertex2);
-				ARR_ADD(x+rad*ua,y+rad*ub,z+rad*uc);
+				ARR_ADD(1,0,x+rad*ua,y+rad*ub,z+rad*uc);
 
 				/* vertex 3 */
 				cr = r*s1; cg = g*s1, cb = b*s1;
 				cr = render_darken_color(cr, average_light_vertex3);
 				cg = render_darken_color(cg, average_light_vertex3);
 				cb = render_darken_color(cb, average_light_vertex3);
-				ARR_ADD(x+rad*(ua+va),y+rad*(ub+vb),z+rad*(uc+vc));
+				ARR_ADD(1,1,x+rad*(ua+va),y+rad*(ub+vb),z+rad*(uc+vc));
 
 				/* vertex 4 */
 				cr = r*s1; cg = g*s1, cb = b*s1;
 				cr = render_darken_color(cr, average_light_vertex4);
 				cg = render_darken_color(cg, average_light_vertex4);
 				cb = render_darken_color(cb, average_light_vertex4);
-				ARR_ADD(x+rad*va,y+rad*vb,z+rad*vc);
+				ARR_ADD(0,1,x+rad*va,y+rad*vb,z+rad*vc);
 
 				/* vertex 1 */
 				cr = r*s1; cg = g*s1, cb = b*s1;
 				cr = render_darken_color(cr, average_light_vertex1);
 				cg = render_darken_color(cg, average_light_vertex1);
 				cb = render_darken_color(cb, average_light_vertex1);
-				ARR_ADD(x,y,z);
+				ARR_ADD(0,0,x,y,z);
 
 				EXPAND_QUAD;
 
@@ -1078,28 +1106,28 @@ void render_gl_cube_map(map_t *map, map_chunk_t *chunk, float x, float y, float 
 				cr = render_darken_color(cr, average_light_vertex1);
 				cg = render_darken_color(cg, average_light_vertex1);
 				cb = render_darken_color(cb, average_light_vertex1);
-				ARR_ADD(x,y,z);
+				ARR_ADD(0,0,x,y,z);
 
 				/* vertex 2 */
 				cr = r*s1; cg = g*s1, cb = b*s1;
 				cr = render_darken_color(cr, average_light_vertex2);
 				cg = render_darken_color(cg, average_light_vertex2);
 				cb = render_darken_color(cb, average_light_vertex2);
-				ARR_ADD(x+rad*ua,y+rad*ub,z+rad*uc);
+				ARR_ADD(1,0,x+rad*ua,y+rad*ub,z+rad*uc);
 
 				/* vertex 3 */
 				cr = r*s1; cg = g*s1, cb = b*s1;
 				cr = render_darken_color(cr, average_light_vertex3);
 				cg = render_darken_color(cg, average_light_vertex3);
 				cb = render_darken_color(cb, average_light_vertex3);
-				ARR_ADD(x+rad*(ua+va),y+rad*(ub+vb),z+rad*(uc+vc));
+				ARR_ADD(1,1,x+rad*(ua+va),y+rad*(ub+vb),z+rad*(uc+vc));
 
 				/* vertex 4 */
 				cr = r*s1; cg = g*s1, cb = b*s1;
 				cr = render_darken_color(cr, average_light_vertex4);
 				cg = render_darken_color(cg, average_light_vertex4);
 				cb = render_darken_color(cb, average_light_vertex4);
-				ARR_ADD(x+rad*va,y+rad*vb,z+rad*vc);
+				ARR_ADD(0,1,x+rad*va,y+rad*vb,z+rad*vc);
 
 				EXPAND_QUAD;
 
@@ -1113,7 +1141,7 @@ void render_gl_cube_map(map_t *map, map_chunk_t *chunk, float x, float y, float 
 		/* check visibility of the face (is face exposed to air ?) */
 		if (render_map_get_block_at(map, x + vc, y + va, z + vb) == 0)
 		{
-			render_update_vbo(&(chunk->vbo_arr), &(chunk->vbo_arr_len), &(chunk->vbo_arr_max), chunk->vbo_arr_len+points_per_quad);
+			render_update_vbo(&(chunk->vbo_arr), &(chunk->vbo_arr_len), &(chunk->vbo_arr_max), chunk->vbo_arr_len+points_per_quad, vals_per_point);
 			arr = chunk->vbo_arr;
 			arr += chunk->vbo_arr_len*vals_per_point;
 			chunk->vbo_arr_len += points_per_quad;
@@ -1164,28 +1192,28 @@ void render_gl_cube_map(map_t *map, map_chunk_t *chunk, float x, float y, float 
 				cr = render_darken_color(cr, average_light_vertex2);
 				cg = render_darken_color(cg, average_light_vertex2);
 				cb = render_darken_color(cb, average_light_vertex2);
-				ARR_ADD(x+rad*(1-va),y+rad*(1-vb),z+rad*(1-vc));
+				ARR_ADD(0,1,x+rad*(1-va),y+rad*(1-vb),z+rad*(1-vc));
 
 				/* vertex 3 */
 				cr = r*s2; cg = g*s2, cb = b*s2;
 				cr = render_darken_color(cr, average_light_vertex3);
 				cg = render_darken_color(cg, average_light_vertex3);
 				cb = render_darken_color(cb, average_light_vertex3);
-				ARR_ADD(x+rad*(1-ua-va),y+rad*(1-ub-vb),z+rad*(1-uc-vc));
+				ARR_ADD(1,1,x+rad*(1-ua-va),y+rad*(1-ub-vb),z+rad*(1-uc-vc));
 
 				/* vertex 4 */
 				cr = r*s2; cg = g*s2, cb = b*s2;
 				cr = render_darken_color(cr, average_light_vertex4);
 				cg = render_darken_color(cg, average_light_vertex4);
 				cb = render_darken_color(cb, average_light_vertex4);
-				ARR_ADD(x+rad*(1-ua),y+rad*(1-ub),z+rad*(1-uc));
+				ARR_ADD(1,0,x+rad*(1-ua),y+rad*(1-ub),z+rad*(1-uc));
 
 				/* vertex 1 */
 				cr = r*s2; cg = g*s2, cb = b*s2;
 				cr = render_darken_color(cr, average_light_vertex1);
 				cg = render_darken_color(cg, average_light_vertex1);
 				cb = render_darken_color(cb, average_light_vertex1);
-				ARR_ADD(x+rad,y+rad,z+rad);
+				ARR_ADD(0,0,x+rad,y+rad,z+rad);
 
 				EXPAND_QUAD;
 
@@ -1197,28 +1225,28 @@ void render_gl_cube_map(map_t *map, map_chunk_t *chunk, float x, float y, float 
 				cr = render_darken_color(cr, average_light_vertex1);
 				cg = render_darken_color(cg, average_light_vertex1);
 				cb = render_darken_color(cb, average_light_vertex1);
-				ARR_ADD(x+rad,y+rad,z+rad);
+				ARR_ADD(0,0,x+rad,y+rad,z+rad);
 
 				/* vertex 2 */
 				cr = r*s2; cg = g*s2, cb = b*s2;
 				cr = render_darken_color(cr, average_light_vertex2);
 				cg = render_darken_color(cg, average_light_vertex2);
 				cb = render_darken_color(cb, average_light_vertex2);
-				ARR_ADD(x+rad*(1-va),y+rad*(1-vb),z+rad*(1-vc));
+				ARR_ADD(0,1,x+rad*(1-va),y+rad*(1-vb),z+rad*(1-vc));
 
 				/* vertex 3 */
 				cr = r*s2; cg = g*s2, cb = b*s2;
 				cr = render_darken_color(cr, average_light_vertex3);
 				cg = render_darken_color(cg, average_light_vertex3);
 				cb = render_darken_color(cb, average_light_vertex3);
-				ARR_ADD(x+rad*(1-ua-va),y+rad*(1-ub-vb),z+rad*(1-uc-vc));
+				ARR_ADD(1,1,x+rad*(1-ua-va),y+rad*(1-ub-vb),z+rad*(1-uc-vc));
 
 				/* vertex 4 */
 				cr = r*s2; cg = g*s2, cb = b*s2;
 				cr = render_darken_color(cr, average_light_vertex4);
 				cg = render_darken_color(cg, average_light_vertex4);
 				cb = render_darken_color(cb, average_light_vertex4);
-				ARR_ADD(x+rad*(1-ua),y+rad*(1-ub),z+rad*(1-uc));
+				ARR_ADD(1,0,x+rad*(1-ua),y+rad*(1-ub),z+rad*(1-uc));
 
 				EXPAND_QUAD;
 
@@ -1335,8 +1363,10 @@ void render_clear(camera_t *camera)
 	glTranslatef(-cx,-cy,-cz);
 }
 
-void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t *camera, map_t *map)
+void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t *camera, map_t *map,
+	img_t **img, int do_blend, char sfactor, char dfactor, float alpha, int img_count)
 {
+	int i;
 	int x,y,z;
 	float cx,cy,cz;
 
@@ -1362,7 +1392,98 @@ void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t
 	cfx = camera->mzx;
 	cfy = camera->mzy;
 	cfz = camera->mzz;
+
+	for(i = 0; i < img_count; i++)
+	if(img[i] != NULL)
+	{
+		int iw, ih;
+		if(img[i]->udtype == UD_FBO)
+		{
+			iw = ((fbo_t *)(img[i]))->width;
+			ih = ((fbo_t *)(img[i]))->height;
+		} else {
+			iw = img[i]->head.width;
+			ih = img[i]->head.height;
+			expandtex_gl(&iw, &ih);
+		}
+
+		glClientActiveTexture(GL_TEXTURE0 + i);
+		glActiveTexture(GL_TEXTURE0 + i);
+		glEnable(GL_TEXTURE_2D);
+		if(img[i]->udtype == UD_IMG && img[i]->tex_dirty)
+		{
+			if(img[i]->tex == 0)
+				glGenTextures(1, &(img[i]->tex));
+			
+			glBindTexture(GL_TEXTURE_2D, img[i]->tex);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iw, ih, 0, GL_BGRA, GL_UNSIGNED_BYTE, img[i]->pixels);
+			// BILINEAR FILTERING IS FOR PLEBS
+			// (just kidding, I may add support for it later)
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+			img[i]->tex_dirty = 0;
+		} else {
+			glBindTexture(GL_TEXTURE_2D, img[i]->tex);
+		}
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	}
+	glClientActiveTexture(GL_TEXTURE0);
+	glActiveTexture(GL_TEXTURE0);
+
+	if(do_blend)
+	{
+		glEnable(GL_BLEND);
+
+		GLenum rsfactor = GL_ONE;
+		GLenum rdfactor = GL_ZERO;
+
+		switch(sfactor)
+		{
+			case '0': rsfactor = GL_ZERO; break;
+			case '1': rsfactor = GL_ONE; break;
+			case 'C': rsfactor = GL_DST_COLOR; break;
+			case 'R': rsfactor = GL_ONE_MINUS_DST_COLOR; break;
+			case 'a': rsfactor = GL_SRC_ALPHA; break;
+			case 'A': rsfactor = GL_DST_ALPHA; break;
+			case 'h': rsfactor = GL_ONE_MINUS_SRC_ALPHA; break;
+			case 'H': rsfactor = GL_ONE_MINUS_DST_ALPHA; break;
+			case 's': rsfactor = GL_SRC_ALPHA_SATURATE; break;
+		}
+
+		switch(dfactor)
+		{
+			case '0': rdfactor = GL_ZERO; break;
+			case '1': rdfactor = GL_ONE; break;
+			case 'c': rdfactor = GL_SRC_COLOR; break;
+			case 'r': rdfactor = GL_ONE_MINUS_SRC_COLOR; break;
+			case 'a': rdfactor = GL_SRC_ALPHA; break;
+			case 'A': rdfactor = GL_DST_ALPHA; break;
+			case 'h': rdfactor = GL_ONE_MINUS_SRC_ALPHA; break;
+			case 'H': rdfactor = GL_ONE_MINUS_DST_ALPHA; break;
+		}
+
+		glBlendFunc(rsfactor, rdfactor);
+		glColor4f(1.0f, 1.0f, 1.0f, alpha);
+	} else {
+		glDisable(GL_BLEND);
+		glColor3f(1.0f, 1.0f, 1.0f);
+	}
+
 	render_map_visible_chunks_draw(map, cfx, cfy, cfz, cx, cy, cz);
+
+	for(i = 0; i < img_count; i++)
+	if(img[i] != NULL)
+	{
+		glClientActiveTexture(GL_TEXTURE0 + i);
+		glActiveTexture(GL_TEXTURE0 + i);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glDisable(GL_TEXTURE_2D);
+	}
+	glClientActiveTexture(GL_TEXTURE0);
+	glActiveTexture(GL_TEXTURE0);
+
+	glDisable(GL_BLEND);
 }
 
 void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_t *cam_base,

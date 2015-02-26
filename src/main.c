@@ -271,7 +271,8 @@ int update_client_cont1(void)
 	{
 		render_cubemap((uint32_t*)screen->pixels,
 			screen->w, screen->h, screen->pitch/4,
-			&tcam, clmap);
+			&tcam, clmap,
+			NULL, 0, '1', '0', 1.0f, 0);
 	}
 
 	// apply Lua HUD / model stuff

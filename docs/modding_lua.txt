@@ -403,6 +403,23 @@ common.map_free(map) @
 	
 	TODO: clean up all models on game kill
 
+client.map_set_render_format(map, format) @
+	defines what render info a map will have
+	
+	format is as per common.va_make,
+	except these are the formats supported:
+	- 3v - vertex - must have exactly one
+	- 3c - colour - must have at most one
+	- 3n - normal - must have at most one
+	- 2t - texcoord - must have at most one
+
+	default formats:
+	- 3v,3c,3n - gl_shaders enabled
+	- 3v,3c - gl_shaders disabled
+
+	you should probably just leave it at the defaults
+	when shaders are disabled
+
 client.map_render(map, px, py, pz, tex = nil, afmt = nil, alpha = 1.0) @
 	render a map at global position px, py, pz
 
@@ -410,8 +427,6 @@ client.map_render(map, px, py, pz, tex = nil, afmt = nil, alpha = 1.0) @
 
 	NOTE: at the moment it's probably not safe to render two of the same map
 	unless the px,py,pz offset is small
-
-	NOTE #2: tex, afmt, alpha are currently unsupported
 
 common.map_set(map) @
 	sets the "current" map to "map"

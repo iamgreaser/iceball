@@ -107,7 +107,7 @@ int map_parse_root(map_t *map, const char *dend, const char *data, int xlen, int
 
 #ifndef DEDI
 	map->visible_chunks_arr = NULL;
-	render_init_visible_chunks(map, 0, 0);
+	render_init_va_format(map);
 #endif
 
 	return 1;
@@ -251,7 +251,7 @@ map_t *map_parse_icemap(int len, const char *data)
 
 #ifndef DEDI
 	map->visible_chunks_arr = NULL;
-	render_init_visible_chunks(map, 0, 0);
+	render_init_va_format(map);
 #endif
 
 	//printf("all good.\n");

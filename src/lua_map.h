@@ -416,6 +416,101 @@ int icelua_fn_client_map_enable_side_shading(lua_State *L)
 	return 1;
 }
 
+int icelua_fn_client_map_set_render_format(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 2, 2);
+	if(!lua_isuserdata(L, 1))
+		return luaL_error(L, "not a map");
+	map_t *map = (map_t*)lua_touserdata(L, 1);
+	if(map == NULL || map->udtype != UD_MAP)
+		return luaL_error(L, "not a map");
+	
+	const char *mapfmt = lua_tostring(L, 2);
+	if(mapfmt == NULL)
+		return luaL_error(L, "format must be a string");
+
+#ifdef DEDI
+	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
+#else
+	// Set defaults
+	map->vertex_offs = -1;
+	map->color_offs = -1;
+	map->normal_offs = -1;
+	map->tc0_offs = -1;
+	map->vertex_size = 0;
+	map->color_size = 0;
+	map->normal_size = 0;
+	map->tc0_size = 0;
+	map->stride = 0;
+
+	// Parse string properly
+	const char *fol = mapfmt;
+	while(fol[0] != '\x00')
+	{
+		if(fol[0] >= '1' && fol[0] <= '4' && fol[1] != '\x00')
+		switch(fol[1])
+		{
+			case 'v':
+				// Vertex
+				if(fol[0] < '3' || fol[0] > '3')
+					return luaL_error(L, "Map render format not supported");
+				if(map->vertex_offs != -1)
+					return luaL_error(L, "Map render format not supported");
+				map->vertex_offs = map->stride;
+				map->vertex_size = fol[0] - '1' + 1;
+				map->stride += map->vertex_size;
+				break;
+
+			case 'c':
+				// Colour
+				if(fol[0] < '3' || fol[0] > '3')
+					return luaL_error(L, "Map render format not supported");
+				if(map->color_offs != -1)
+					return luaL_error(L, "Map render format not supported");
+				map->color_offs = map->stride;
+				map->color_size = fol[0] - '1' + 1;
+				map->stride += map->color_size;
+				break;
+
+			case 'n':
+				// Normal
+				if(fol[0] < '3' || fol[0] > '3')
+					return luaL_error(L, "Map render format not supported");
+				if(map->normal_offs != -1)
+					return luaL_error(L, "Map render format not supported");
+				map->normal_offs = map->stride;
+				map->normal_size = fol[0] - '1' + 1;
+				map->stride += map->normal_size;
+				break;
+
+			case 't':
+				// Texcoord
+				if(fol[0] < '2' || fol[0] > '2')
+					return luaL_error(L, "Map render format not supported");
+				if(map->tc0_offs != -1)
+					return luaL_error(L, "Map render format not supported");
+				map->tc0_offs = map->stride;
+				map->tc0_size = fol[0] - '1' + 1;
+				map->stride += map->tc0_size;
+				break;
+		}
+
+		fol += 2;
+		if(fol[0] == ',')
+			fol += 1;
+		else if(fol[0] != '\x00')
+			return luaL_error(L, "Map render format not supported");
+	}
+
+	if(map->vertex_offs == -1)
+		return luaL_error(L, "Map render format not supported");
+	render_init_visible_chunks(map, 0, 0);
+#endif
+
+	return 0;
+}
+
+
 int icelua_fn_client_map_render(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 4, 7);
@@ -471,10 +566,17 @@ int icelua_fn_client_map_render(lua_State *L)
 	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
 #else
 	glTranslatef(px, py, pz);
+	tcam.mpx -= px;
+	tcam.mpy -= py;
+	tcam.mpz -= pz;
 	render_vxl_redraw(&tcam, map);
 	render_cubemap((uint32_t*)screen->pixels,
 		screen->w, screen->h, screen->pitch/4,
-		&tcam, map);
+		&tcam, map,
+		img, (bmode != NULL), sfactor, dfactor, 1.0f, img_count);
+	tcam.mpx += px;
+	tcam.mpy += py;
+	tcam.mpz += pz;
 	glTranslatef(-px, -py, -pz);
 #endif
 

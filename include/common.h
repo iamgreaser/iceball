@@ -23,7 +23,7 @@
 #define VERSION_X 2
 #define VERSION_Y 1
 #define VERSION_A 0
-#define VERSION_Z 18
+#define VERSION_Z 19
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!
@@ -411,6 +411,11 @@ typedef struct map
 	int enable_side_shading;
 	int enable_ao;
 	float fog_distance;
+	int vertex_offs, vertex_size;
+	int color_offs, color_size;
+	int normal_offs, normal_size;
+	int tc0_offs, tc0_size;
+	int stride;
 	/* circular array of visible map chunks */
 	map_chunk_t *visible_chunks_arr;
 	/* current virtual center position in the circular array */
@@ -648,7 +653,8 @@ extern uint32_t fog_color;
 extern uint32_t cam_shading[6];
 void render_vxl_redraw(camera_t *camera, map_t *map);
 void render_clear(camera_t *camera);
-void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t *camera, map_t *map);
+void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t *camera, map_t *map,
+	img_t **img, int do_blend, char sfactor, char dfactor, float alpha, int img_count);
 void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_t *cam_base,
 	model_bone_t *bone, int islocal,
 	float px, float py, float pz, float ry, float rx, float ry2, float scale);
@@ -660,6 +666,7 @@ void render_resize(int width, int height);
 int render_init(int width, int height);
 void render_deinit(void);
 void render_init_visible_chunks(map_t *map, int starting_chunk_coordinate_x, int starting_chunk_coordinate_z);
+void render_init_va_format(map_t *map);
 void render_map_mark_chunks_as_dirty(map_t *map, int pillar_x, int pillar_z);
 void render_free_visible_chunks(map_t *map);
 int render_map_visible_chunks_count_dirty(map_t *map);

@@ -858,6 +858,9 @@ end
 -- load map
 map_loaded = common.map_load(map_fname, "auto")
 common.map_set(map_loaded)
+if client.map_set_render_format and USE_GLSL then
+	client.map_set_render_format(map_loaded, "3v,3c,3n")
+end
 borders = {}
 
 -- set fog
@@ -1085,6 +1088,7 @@ void main()
 
 	gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * wpos;
 	gl_FrontColor = gl_Color;
+	gl_TexCoord[0] = gl_MultiTexCoord0;
 }
 
 ]=], frag=[=[
@@ -1196,7 +1200,6 @@ shader_postproc, result = shader_new{name="postproc", vert=[=[
 void main()
 {
 	gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;
-	gl_FrontColor = gl_Color;
 	gl_TexCoord[0] = gl_MultiTexCoord0;
 }
 
@@ -1251,10 +1254,9 @@ float getdepth(float buf)
 
 void main()
 {
-	vec4 color = gl_Color;
 	vec2 tc = gl_TexCoord[0].st;
 	float dbval = texture2D(tex1, tc).x;
-	vec4 tcolor = texture2D(tex0, tc);
+	vec4 color = texture2D(tex0, tc);
 	/*
 	if(dbval > 0.9999)
 	{
@@ -1271,28 +1273,52 @@ void main()
 		: 1.0);
 	*/
 	float doffs = 1.0;
-	float dxn2 = getdepth(texture2D(tex1, tc + soffs*doffs*vec2(-1.0, 0.0)).x);
-	float dxp2 = getdepth(texture2D(tex1, tc + soffs*doffs*vec2( 1.0, 0.0)).x);
-	float dyn2 = getdepth(texture2D(tex1, tc + soffs*doffs*vec2( 0.0,-1.0)).x);
-	float dyp2 = getdepth(texture2D(tex1, tc + soffs*doffs*vec2( 0.0, 1.0)).x);
-	dxn2 = -(dxn2 - db);
-	dxp2 = (dxp2 - db);
-	dyn2 = -(dyn2 - db);
-	dyp2 = (dyp2 - db);
-	float minpurex = min(dxn2, dxp2);
-	float maxpurex = max(dxn2, dxp2);
-	float minpurey = min(dyn2, dyp2);
-	float maxpurey = max(dyn2, dyp2);
-	color *= tcolor;
+	float dxn1 = getdepth(texture2D(tex1, tc + soffs*doffs*vec2(-1.0, 0.0)).x);
+	float dxp1 = getdepth(texture2D(tex1, tc + soffs*doffs*vec2( 1.0, 0.0)).x);
+	float dyn1 = getdepth(texture2D(tex1, tc + soffs*doffs*vec2( 0.0,-1.0)).x);
+	float dyp1 = getdepth(texture2D(tex1, tc + soffs*doffs*vec2( 0.0, 1.0)).x);
+	float dxn2 = db - dxn1;
+	float dxp2 = dxp1 - db;
+	float dyn2 = db - dyn1;
+	float dyp2 = dyp1 - db;
 	const float dpurethres_min = 0.0006;
 	const float dpurethres_max = 0.0020;
 	const float dpurethres_delta = dpurethres_max-dpurethres_min;
-	float dpuregap = max(maxpurex - minpurex, maxpurey - minpurey)*(1.0/db);
+	float dpuregapx = abs(dxn2 - dxp2);
+	float dpuregapy = abs(dyn2 - dyp2);
+	float dpuregap = max(dpuregapx, dpuregapy)/db;
 	float distamp = length((tc*2.0-1.0)*(soffs.x/soffs)); // TODO: get correct FOV
 	float realdist = (1.0/db)*length(vec2(1.0, distamp));
 	float fog_strength = min(1.0, realdist/fog);
 	fog_strength *= fog_strength;
-	if(dpuregap > dpurethres_min) color *= max(0.0, 1.0-(dpuregap-dpurethres_min)/dpurethres_delta);
+	if(dpuregap > dpurethres_min)
+	{
+		color *= max(0.0, 1.0-(dpuregap-dpurethres_min)/dpurethres_delta);
+		/*
+		float color_acc = 1.0;
+		float fxaa_color_acc = 0.0;
+		vec4 fxaa_color = vec4(0.0);
+
+		if(dpuregapx > dpurethres_min)
+		{
+			color_acc *= 0.5;
+			fxaa_color_acc += 2.0;
+			fxaa_color += texture2D(tex0, tc + soffs*vec2(-1.0, 0.0));
+			fxaa_color += texture2D(tex0, tc + soffs*vec2( 1.0, 0.0));
+		}
+
+		if(dpuregapy > dpurethres_min)
+		{
+			color_acc *= 0.5;
+			fxaa_color_acc += 2.0;
+			fxaa_color += texture2D(tex0, tc + soffs*vec2( 0.0,-1.0));
+			fxaa_color += texture2D(tex0, tc + soffs*vec2( 0.0, 1.0));
+		}
+
+		if(fxaa_color_acc >= 1.0)
+			color = color_acc*color + (1.0-color_acc)*(fxaa_color/fxaa_color_acc);
+		*/
+	}
 	color.a = 1.0;
 	gl_FragColor = color * (1.0 - fog_strength)
 		+ gl_Fog.color * fog_strength;
