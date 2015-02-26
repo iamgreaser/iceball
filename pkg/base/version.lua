@@ -20,9 +20,9 @@
 -- Thanks. --GM
 
 VERSION_ENGINE = {
-	cmp={0,2,1,0,18},
-	num=8421376+18,
-	str="0.2.1-18",
+	cmp={0,2,1,0,19},
+	num=8421376+19,
+	str="0.2.1-19",
 }
 
 --error(""..common.version.num)
@@ -161,7 +161,7 @@ VERSION_BUGS = {
 {intro=nil, fix=8421376+15, msg="map_render not supported"},
 {intro=8421376+15, fix=nil, msg="map_render support incomplete"},
 {intro=nil, fix=8421376+16, msg="FBOs not supported"},
-{intro=8421376+16, fix=nil, msg="FBO support incomplete"},
+{intro=8421376+16, fix=8421376+19, msg="FBO support incomplete"},
 
 }
 
