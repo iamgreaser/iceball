@@ -902,6 +902,7 @@ do
 	local xlen, ylen, zlen
 	xlen, ylen, zlen = common.map_get_dims()
 	img_overview = common.img_new(xlen, zlen)
+	img_overview_hmap = common.img_new(xlen, zlen)
 	img_overview_grid = common.img_new(xlen, zlen)
 	img_overview_icons = common.img_new(xlen, zlen)
 	local x,z
@@ -911,6 +912,7 @@ do
 		local l = common.map_pillar_get(x,z)
 		local c = argb_split_to_merged(l[7],l[6],l[5])
 		common.img_pixel_set(img_overview, x, z, c)
+		common.img_pixel_set(img_overview_hmap, x, z, l[2])
 	end
 	end
 	
@@ -991,340 +993,12 @@ if VA_TEST then
 end
 
 if USE_GLSL_20 then
-shader_misc, result = shader_new{name="misc",
-vert=[=[
-// Vertex shader
-
-varying vec4 cpos;
-varying vec4 wpos;
-varying vec4 wnorm;
-varying float fogmul;
-uniform float time;
-
-void main()
-{
-	wpos = gl_Vertex;
-	cpos = (gl_ModelViewMatrixInverse * vec4(0.0, 0.0, 0.0, 1.0));
-	wnorm = vec4(normalize(gl_Normal), 0.0);
-	fogmul = 1.0 / (length(gl_ModelViewMatrixInverse * vec4(0.0, 0.0, -1.0, 0.0)) * gl_Fog.end);
-
-	gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * wpos;
-	gl_FrontColor = gl_Color;
-	gl_TexCoord[0] = gl_MultiTexCoord0;
-}
-
-]=], frag=[=[
-// Fragment shader
-
-varying vec4 cpos;
-varying vec4 wpos;
-varying vec4 wnorm;
-varying float fogmul;
-
-uniform vec4 sun;
-
-uniform sampler2D tex0;
-
-void main()
-{
-	float fog_strength = min(1.0, length((wpos - cpos).xyz) * fogmul);
-	fog_strength *= fog_strength;
-
-	vec4 color = gl_Color;
-	if(gl_TexCoord[0].s >= -0.1)
-	{
-		vec4 tcolor = texture2D(tex0, gl_TexCoord[0].st);
-		color *= tcolor;
-	}
-
-	if(gl_ProjectionMatrix[3][3] == 1.0)
-	{
-		// Skip lighting on orthographics
-		gl_FragColor = color;
-
-	} else {
-		vec4 camto = vec4(normalize((wpos - cpos).xyz), 0.0);
-
-		// Diffuse
-		float diff = max(0.0, dot(-camto, wnorm));
-		diff = 0.3 + 1.5*diff; // Exaggerated
-
-		// Specular
-		// disabling until it makes sense
-		/*
-		vec4 specdir = normalize(2.0*dot(wnorm, -sun)*wnorm - -sun);
-		float spec = max(0.0, dot(-camto, specdir));
-		spec = pow(spec, 32.0)*0.6;
-		*/
-
-		//color = vec4(vec3(color.rgb * diff) + vec3(1.0)*spec, color.a);
-		diff = diff * (1.0 - fog_strength);
-		diff = min(1.5, diff);
-		color = vec4(color.rgb * diff, color.a);
-		color = max(vec4(0.0), min(vec4(1.0), color));
-		//color = vec4(0.5+0.5*sin(3.141593*(color.rgb-0.5)), color.a);
-
-		gl_FragColor = color * (1.0 - fog_strength)
-			+ gl_Fog.color * fog_strength;
-	}
-}
-]=]}
-
-shader_world, result = shader_new{name="world", vert=[=[
-// Vertex shader
-
-varying vec4 cpos;
-varying vec4 wpos;
-varying vec4 wnorm;
-varying float fogmul;
-uniform float time;
-
-void main()
-{
-	wpos = gl_Vertex;
-	cpos = (gl_ModelViewMatrixInverse * vec4(0.0, 0.0, 0.0, 1.0));
-	wnorm = vec4(normalize(gl_Normal), 0.0);
-	fogmul = 1.0 / (length(gl_ModelViewMatrixInverse * vec4(0.0, 0.0, -1.0, 0.0)) * gl_Fog.end);
-
-	gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * wpos;
-	gl_FrontColor = gl_Color;
-	gl_TexCoord[0] = gl_MultiTexCoord0;
-}
-
-]=], frag=[=[
-// Fragment shader
-
-varying vec4 cpos;
-varying vec4 wpos;
-varying vec4 wnorm;
-varying float fogmul;
-
-uniform vec4 sun;
-
-void main()
-{
-	float fog_strength = min(1.0, length((wpos - cpos).xyz) * fogmul);
-	fog_strength *= fog_strength;
-
-	vec4 color = gl_Color;
-	vec4 camto = vec4(normalize((wpos - cpos).xyz), 0.0);
-
-	// Diffuse
-	float diff = max(0.0, dot(-camto, wnorm));
-	diff = 0.3 + 1.5*diff; // Exaggerated
-
-	// Specular
-	// disabling until it makes sense
-	/*
-	vec4 specdir = normalize(2.0*dot(wnorm, -sun)*wnorm - -sun);
-	float spec = max(0.0, dot(-camto, specdir));
-	spec = pow(spec, 32.0)*0.6;
-	*/
-
-	diff = diff * (1.0 - fog_strength);
-	diff = min(1.5, diff);
-	color = vec4(color.rgb * diff, color.a);
-	color = max(vec4(0.0), min(vec4(1.0), color));
-	//color = vec4(0.5+0.5*sin(3.141593*(color.rgb-0.5)), color.a);
-
-	gl_FragColor = color * (1.0 - fog_strength)
-		+ gl_Fog.color * fog_strength;
-}
-]=]}
-
-shader_white, result = shader_new{name="white", vert=[=[
-// Vertex shader
-
-void main()
-{
-	gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;
-}
-
-]=], frag=[=[
-// Fragment shader
-
-void main()
-{
-	gl_FragColor = vec4(1.0);
-}
-]=]}
-
-shader_simple, result = shader_new{name="simple", vert=[=[
-// Vertex shader
-
-void main()
-{
-	gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;
-	gl_FrontColor = gl_Color;
-}
-
-]=], frag=[=[
-// Fragment shader
-
-void main()
-{
-	gl_FragColor = gl_Color;
-}
-]=]}
-
-shader_img, result = shader_new{name="img", vert=[=[
-// Vertex shader
-
-void main()
-{
-	// use ProjectionMatrix otherwise text printing breaks
-	gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;
-	//gl_Position = gl_ModelViewMatrix * gl_Vertex;
-	gl_FrontColor = gl_Color;
-	gl_TexCoord[0] = gl_MultiTexCoord0;
-}
-
-]=], frag=[=[
-// Fragment shader
-
-uniform sampler2D tex0;
-
-void main()
-{
-	vec4 color = gl_Color;
-	vec4 tcolor = texture2D(tex0, gl_TexCoord[0].st);
-	color *= tcolor;
-	gl_FragColor = color;
-}
-
-]=]}
-
-shader_postproc, result = shader_new{name="postproc", vert=[=[
-// Vertex shader
-
-void main()
-{
-	gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;
-	gl_TexCoord[0] = gl_MultiTexCoord0;
-}
-
-]=], frag=[=[
-// Fragment shader
-
-uniform sampler2D tex0;
-uniform sampler2D tex1;
-uniform vec2 soffs;
-uniform float time;
-uniform float fog;
-uniform float depth_A;
-uniform float depth_B;
-
-float getdepth(float buf)
-{
-	/*
-	const float f = 127.5;
-	const float n = 0.05;
-	// TODO: fetch correct fog and zoom
-
-	// d = (Az+B)/(Cz+D)
-	// d(Cz+D) = (Az+B)
-	// Czd+Dd = Az+B
-	// Czd-Az = B-Dd
-	// z(Cd-A) = B-Dd
-	// z = (B-Dd)/(Cd-A)
-
-	// Note, commented code is correct
-	//const float A = (f+n)/(f-n);
-	//const float B = -(2.0*f*n)/(f-n);
-	//const float C = 1.0;
-	//return B/(C*buf-A);
-	//return (B/C)/(buf-(A/C)); // saves a calculation step
-
-	const float A = (f+n)/(f-n);
-	const float B = -(2.0*f*n)/(f-n);
-	return B/(buf-A);
-	*/
-
-	// Hypothetically faster when f,n not precalced
-	/*
-	const float A = (f+n);
-	const float B = -(2.0*f*n);
-	return B/((f-n)*buf-A);
-	*/
-
-	//return depth_B/(buf-depth_A);
-	// get 1/z
-	return (buf-depth_A)/depth_B;
-}
-
-void main()
-{
-	vec2 tc = gl_TexCoord[0].st;
-	float dbval = texture2D(tex1, tc).x;
-	vec4 color = texture2D(tex0, tc);
-	/*
-	if(dbval > 0.9999)
-	{
-		vec3 c = abs(tcolor.rgb - gl_Fog.color.rgb);
-		if(max(max(c.r,c.g),c.b) < 0.01)
-			discard;
-	}
-	*/
-
-	float db = getdepth(dbval);
-	/*
-	float doffs = (1.0/db < (1.0/soffs.y)/40.0
-		? 2.0
-		: 1.0);
-	*/
-	float doffs = 1.0;
-	float dxn1 = getdepth(texture2D(tex1, tc + soffs*doffs*vec2(-1.0, 0.0)).x);
-	float dxp1 = getdepth(texture2D(tex1, tc + soffs*doffs*vec2( 1.0, 0.0)).x);
-	float dyn1 = getdepth(texture2D(tex1, tc + soffs*doffs*vec2( 0.0,-1.0)).x);
-	float dyp1 = getdepth(texture2D(tex1, tc + soffs*doffs*vec2( 0.0, 1.0)).x);
-	float dxn2 = db - dxn1;
-	float dxp2 = dxp1 - db;
-	float dyn2 = db - dyn1;
-	float dyp2 = dyp1 - db;
-	const float dpurethres_min = 0.0006;
-	const float dpurethres_max = 0.0020;
-	const float dpurethres_delta = dpurethres_max-dpurethres_min;
-	float dpuregapx = abs(dxn2 - dxp2);
-	float dpuregapy = abs(dyn2 - dyp2);
-	float dpuregap = max(dpuregapx, dpuregapy)/db;
-	float distamp = length((tc*2.0-1.0)*(soffs.x/soffs)); // TODO: get correct FOV
-	float realdist = (1.0/db)*length(vec2(1.0, distamp));
-	float fog_strength = min(1.0, realdist/fog);
-	fog_strength *= fog_strength;
-	if(dpuregap > dpurethres_min)
-	{
-		color *= max(0.0, 1.0-(dpuregap-dpurethres_min)/dpurethres_delta);
-		/*
-		float color_acc = 1.0;
-		float fxaa_color_acc = 0.0;
-		vec4 fxaa_color = vec4(0.0);
-
-		if(dpuregapx > dpurethres_min)
-		{
-			color_acc *= 0.5;
-			fxaa_color_acc += 2.0;
-			fxaa_color += texture2D(tex0, tc + soffs*vec2(-1.0, 0.0));
-			fxaa_color += texture2D(tex0, tc + soffs*vec2( 1.0, 0.0));
-		}
-
-		if(dpuregapy > dpurethres_min)
-		{
-			color_acc *= 0.5;
-			fxaa_color_acc += 2.0;
-			fxaa_color += texture2D(tex0, tc + soffs*vec2( 0.0,-1.0));
-			fxaa_color += texture2D(tex0, tc + soffs*vec2( 0.0, 1.0));
-		}
-
-		if(fxaa_color_acc >= 1.0)
-			color = color_acc*color + (1.0-color_acc)*(fxaa_color/fxaa_color_acc);
-		*/
-	}
-	color.a = 1.0;
-	gl_FragColor = color * (1.0 - fog_strength)
-		+ gl_Fog.color * fog_strength;
-}
-
-]=]}
+shader_misc, result = loadfile("pkg/base/shader/misc_diff.lua")()
+shader_world, result = loadfile("pkg/base/shader/world_diff.lua")()
+shader_white, result = loadfile("pkg/base/shader/white.lua")()
+shader_simple, result = loadfile("pkg/base/shader/simple.lua")()
+shader_img, result = loadfile("pkg/base/shader/img.lua")()
+shader_postproc, result = loadfile("pkg/base/shader/post_toon.lua")()
 end
 
 if shader_world then
@@ -1349,7 +1023,11 @@ function client.hook_render()
 	end
 
 	if client.map_render and map_loaded then
-		client.map_render(map_loaded, 0, 0, 0)
+		if shader_world then
+			client.map_render(map_loaded, 0, 0, 0, {img_overview_hmap})
+		else
+			client.map_render(map_loaded, 0, 0, 0)
+		end
 	end
 
 	if shader_world then
@@ -1479,6 +1157,8 @@ function client.hook_render()
 			1.0/math.sqrt(4.0),
 			0)
 		shader_world.set_uniform_f("time", sec_current or 0.0)
+		local xlen, ylen, zlen = common.map_get_dims()
+		shader_world.set_uniform_f("map_idims", 1.0/xlen, 1.0/zlen)
 		shader_world.push()
 	end
 end

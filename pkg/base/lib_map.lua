@@ -180,6 +180,7 @@ function map_pillar_raw_set(x,z,t)
 		r = tpack[7]
 		local c = argb_split_to_merged(r,g,b)
 		common.img_pixel_set(img_overview, x, z, c)
+		common.img_pixel_set(img_overview_hmap, x, z, tpack[2])
 	end
 end
 

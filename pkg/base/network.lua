@@ -412,6 +412,7 @@ network.sys_handle_s2c(PKT_NEW_MAP, "", function (neth, cli, plr, sec_current, p
 		local xlen, ylen, zlen
 		xlen, ylen, zlen = common.map_get_dims()
 		img_overview = common.img_new(xlen, zlen)
+		img_overview_hmap = common.img_new(xlen, zlen)
 		img_overview_grid = common.img_new(xlen, zlen)
 		img_overview_icons = common.img_new(xlen, zlen)
 		local x,z
@@ -421,6 +422,7 @@ network.sys_handle_s2c(PKT_NEW_MAP, "", function (neth, cli, plr, sec_current, p
 			local l = common.map_pillar_get(x,z)
 			local c = argb_split_to_merged(l[7],l[6],l[5])
 			common.img_pixel_set(img_overview, x, z, c)
+			common.img_pixel_set(img_overview_hmap, x, z, l[2])
 		end
 		end
 		
