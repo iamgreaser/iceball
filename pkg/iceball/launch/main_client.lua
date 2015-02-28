@@ -185,6 +185,8 @@ function client.hook_render()
 	local i
 	if server_list == true then
 		font.render(text_offset, ch*7, "Fetching...", 0xFFEEEEEE)
+	elseif server_list == false then
+		font.render(text_offset, ch*7, "Could not connect to the server list. Are you connected to the internet?", 0xFFEEEEEE)
 	elseif server_list == nil then
 		font.render(text_offset, ch*7, "Failed to fetch the server list.", 0xFFEEEEEE)
 	else
