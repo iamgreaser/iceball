@@ -4,6 +4,11 @@
 # final binaries
 iceball.exe
 iceball-gl.exe
+iceball-dedi.exe
+iceball
+iceball-gl
+iceball-dedi
+Iceball.app
 
 # windows build crap
 winlibs/
@@ -49,3 +54,6 @@ ZERO_CHECK.dir
 #some cmake generated shit that will vs.net notify of cmake file changes.
 ALL_BUILD.vcproj
 ZERO_CHECK.vcproj
+
+#idea stuff
+.idea/
