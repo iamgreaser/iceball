@@ -16,15 +16,15 @@
 ]]
 
 local DEFAULT_CROSSHAIR = {
-    dot = true,
+	dot = true,
 	lines = true,
-    size = 4,
-    thickness = 1,
-    gap = 3,
-    colour = {255, 0, 0},
-    outline = false,
-    outline_colour = {0, 0, 0},
-    outline_thickness = 1,
+	size = 4,
+	thickness = 1,
+	gap = 3,
+	colour = {255, 0, 0},
+	outline = false,
+	outline_colour = {0, 0, 0},
+	outline_thickness = 1,
 	style = "classic",
 }
 
