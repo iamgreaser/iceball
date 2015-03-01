@@ -17,9 +17,9 @@
   <key>CFBundleIconFile</key>
   <string>Iceball.icns</string>
   <key>CFBundleShortVersionString</key>
-  <string>0.1.2</string>
+  <string>@short_version@</string>
   <key>CFBundleVersion</key>
-  <string>0.1.2</string>
+  <string>@long_version@</string>
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
   <key>CFBundlePackageType</key>
