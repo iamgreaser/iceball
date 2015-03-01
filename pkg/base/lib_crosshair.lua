@@ -76,11 +76,15 @@ function crosshair_styles.classic(config)
 	local offset_centre_y = size + gap
 	local width = (offset_centre_x * 2) + thickness
 	local height = (offset_centre_y * 2) + thickness
+	local offset_n_x = width
+	local offset_n_y = height
 	if config.outline then
 		width = width + (outline_thickness * 2)
 		height = height + (outline_thickness * 2)
 		offset_x = offset_x + outline_thickness
 		offset_y = offset_y + outline_thickness
+		offset_n_x = width - outline_thickness
+		offset_n_y = height - outline_thickness
 		offset_centre_x = offset_centre_x + outline_thickness
 		offset_centre_y = offset_centre_y + outline_thickness
 	end
@@ -123,9 +127,52 @@ function crosshair_styles.classic(config)
 	end
 	
 	-- Hit marker
-	crosshair_hit = crosshair
+	crosshair_hit = common.img_new(width, height)
+	-- For now, we replace the entire crosshair with a separate hitmarker crosshair, so copy the crosshair into the hitmarker
+	client.img_blit_to(crosshair_hit, crosshair, 0, 0)
 	
-	return crosshair, crosshair_hit
+	-- Draw outline first, so we can draw the fill over the intersection
+	hm_line_length = size
+	hm_offset_right = offset_n_x - hm_line_length
+	hm_offset_right_far = offset_n_x - thickness
+	hm_offset_bottom = offset_n_y - hm_line_length
+	hm_offset_bottom_far = offset_n_y - thickness
+	if config.outline then
+		-- Top-left
+		draw_outline(crosshair_hit, offset_x, offset_y, hm_line_length, thickness, outline_thickness, outline_colour)
+		draw_outline(crosshair_hit, offset_x, offset_y, thickness, hm_line_length, outline_thickness, outline_colour)
+		
+		-- Top-right
+		draw_outline(crosshair_hit, hm_offset_right, offset_y, hm_line_length, thickness, outline_thickness, outline_colour)
+		draw_outline(crosshair_hit, hm_offset_right_far, offset_y, thickness, hm_line_length, outline_thickness, outline_colour)
+		
+		-- Bottom-left
+		draw_outline(crosshair_hit, offset_x, hm_offset_bottom_far, hm_line_length, thickness, outline_thickness, outline_colour)
+		draw_outline(crosshair_hit, offset_x, hm_offset_bottom, thickness, hm_line_length, outline_thickness, outline_colour)
+		
+		-- Bottom-right
+		draw_outline(crosshair_hit, hm_offset_right, hm_offset_bottom_far, hm_line_length, thickness, outline_thickness, outline_colour)
+		draw_outline(crosshair_hit, hm_offset_right_far, hm_offset_bottom, thickness, hm_line_length, outline_thickness, outline_colour)
+	end
+	
+	-- Top-left
+	common.img_rect_fill(crosshair_hit, offset_x, offset_y, hm_line_length, thickness, colour)
+	common.img_rect_fill(crosshair_hit, offset_x, offset_y, thickness, hm_line_length, colour)
+	
+	-- Top-right
+	common.img_rect_fill(crosshair_hit, hm_offset_right, offset_y, hm_line_length, thickness, colour)
+	common.img_rect_fill(crosshair_hit, hm_offset_right_far, offset_y, thickness, hm_line_length, colour)
+	
+	-- Bottom-left
+	common.img_rect_fill(crosshair_hit, offset_x, hm_offset_bottom_far, hm_line_length, thickness, colour)
+	common.img_rect_fill(crosshair_hit, offset_x, hm_offset_bottom, thickness, hm_line_length, colour)
+	
+	-- Bottom-right
+	common.img_rect_fill(crosshair_hit, hm_offset_right, hm_offset_bottom_far, hm_line_length, thickness, colour)
+	common.img_rect_fill(crosshair_hit, hm_offset_right_far, hm_offset_bottom, thickness, hm_line_length, colour)
+	
+	--return crosshair_hit, crosshair
+	return crosshair_hit, crosshair
 end
 
 function crosshair_generate_images(config)
