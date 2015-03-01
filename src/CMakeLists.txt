@@ -34,29 +34,12 @@ include_directories(
     ${LUA_INCLUDE_DIR}
 )
 
+# iceball target
+add_executable(iceball ${MAIN_FILES} ${LUA_FILES} ${GL_FILES})
+target_link_libraries(iceball ${PNG_LIBRARIES} ${ENet_LIBRARIES} sackit ${LUA_LIBRARIES} ${SDL_LIBRARY} ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES})
+set_target_properties(iceball PROPERTIES COMPILE_DEFINITIONS "USE_OPENGL")
+
 # iceball-dedi target
 add_executable(iceball-dedi EXCLUDE_FROM_ALL ${MAIN_FILES} ${LUA_FILES})
 target_link_libraries(iceball-dedi ${PNG_LIBRARIES} ${ENet_LIBRARIES} sackit ${LUA_LIBRARIES} ${SDL_LIBRARY} ${SDL_LIBRARY})
 set_target_properties(iceball-dedi PROPERTIES COMPILE_DEFINITIONS "DEDI")
-
-# iceball-gl target
-add_executable(iceball-gl ${MAIN_FILES} ${LUA_FILES} ${GL_FILES})
-target_link_libraries(iceball-gl ${PNG_LIBRARIES} ${ENet_LIBRARIES} sackit ${LUA_LIBRARIES} ${SDL_LIBRARY} ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES})
-set_target_properties(iceball-gl PROPERTIES COMPILE_DEFINITIONS "USE_OPENGL")
-
-macro(add_dll DLLNAME)
-    add_custom_command(TARGET iceball-gl POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different ../winlibs/${DLLNAME} $<TARGET_FILE_DIR:iceball-gl>)
-    add_custom_command(TARGET iceball-dedi POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different ../winlibs/${DLLNAME} $<TARGET_FILE_DIR:iceball-dedi>)
-endmacro(add_dll)
-
-if (WIN32)
-    target_link_libraries(iceball-gl ws2_32 zdll)
-    target_link_libraries(iceball-dedi ws2_32 zdll)
-    add_dll("lua5.1.dll")
-    add_dll("SDL.dll")
-    add_dll("glew32.dll")
-    add_dll("zlib1.dll")
-else()
-    #target_link_libraries(iceball zlib)
-    #target_link_libraries(iceball-soft zlib)
-endif (WIN32)

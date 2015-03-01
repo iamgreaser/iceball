@@ -11,11 +11,10 @@ rm -rf Iceball.app
 mkdir -p Iceball.app/Contents/MacOS
 mkdir -p Iceball.app/Contents/libs
 mkdir -p Iceball.app/Contents/Resources
-cp iceball-gl Iceball.app/Contents/MacOS
+cp iceball Iceball.app/Contents/MacOS
 cp osx-package-files/iceball-launcher Iceball.app/Contents/MacOS
 cp osx-package-files/Info.plist Iceball.app/Contents
 sed -e "s/@long_version@/${VERSION}/" -e "s/@short_version@/${VERSION_SHORT}/" < osx-package-files/Info.plist > Iceball.app/Contents/Info.plist
-
 mv osx-package-files/Iceball.icns Iceball.app/Contents/Resources
 cp -Rv clsave dlcache docs pkg svsave tools Iceball.app/Contents/MacOS/
 dylibbundler -x Iceball.app/Contents/MacOS/iceball-gl -b -d Iceball.app/Contents/libs
