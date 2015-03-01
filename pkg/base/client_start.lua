@@ -161,16 +161,17 @@ BTSK_COLORRIGHT = controls_config.colorright or SDLK_RIGHT
 BTSK_COLORUP    = controls_config.colorup or SDLK_UP
 BTSK_COLORDOWN  = controls_config.colordown or SDLK_DOWN
 
-BTSK_CHAT      = controls_config.chat or SDLK_t
-BTSK_COMMAND   = SDLK_SLASH
-BTSK_TEAMCHAT  = controls_config.teamchat or SDLK_y
-BTSK_SQUADCHAT = controls_config.squadchat or SDLK_u
-BTSK_SCORES    = controls_config.scores or SDLK_TAB
+BTSK_CHAT       = controls_config.chat or SDLK_t
+BTSK_COMMAND    = SDLK_SLASH
+BTSK_TEAMCHAT   = controls_config.teamchat or SDLK_y
+BTSK_SQUADCHAT  = controls_config.squadchat or SDLK_u
+BTSK_SCORES     = controls_config.scores or SDLK_TAB
 
 BTSK_QUIT = controls_config.quit or SDLK_ESCAPE
 BTSK_YES  = SDLK_y
 BTSK_NO   = SDLK_n
 
+BTSK_SCREENSHOT = SDLK_F3
 BTSK_DEBUG = SDLK_F1
 BTSK_MAP = controls_config.map or SDLK_m
 
@@ -206,7 +207,8 @@ button_map = {
 	quit={key=BTSK_QUIT,desc="Quit"},
 	yes={key=BTSK_YES,desc="Yes"},
 	no={key=BTSK_NO,desc="No"},
-	
+
+	screenshot={key=BTSK_SCREENSHOT,desc="Grab Screenshot"},
 	debug={key=BTSK_DEBUG,desc="Debug"},
 	map={key=BTSK_MAP,desc="Map"},
 	team={key=BTSK_TEAM,desc="Change Team"},
@@ -376,6 +378,7 @@ rotpos = 0.0
 sec_last = 0.
 delta_last = 0.
 debug_enabled = false
+do_screenshot = false
 mouse_released = false
 sensitivity = user_config.sensitivity or 1.0
 sensitivity = sensitivity/1000.0
@@ -714,6 +717,12 @@ end
 
 function h_key(sym, state, modif, uni)
 	local key = sym
+
+
+	-- grab screenshot
+	if state and key == BTSK_SCREENSHOT then
+		do_screenshot = true
+	end
 
 	push_keypress(key, state, modif, sym, uni)
 
@@ -1131,6 +1140,7 @@ function client.hook_render()
 			s_img_blit(fbo_world, 0, 0)
 			client.img_blit = s_img_blit
 			if shader then shader.pop() end
+
 			client.gfx_clear_depth = s_gfx_clear_depth
 			--client.fbo_use(fbo_world)
 			--client.gfx_clear_color()
@@ -1165,6 +1175,13 @@ function client.hook_render()
 		local xlen, ylen, zlen = common.map_get_dims()
 		shader_world.set_uniform_f("map_idims", 1.0/xlen, 1.0/zlen)
 		shader_world.push()
+	end
+
+	if do_screenshot then
+		local loc = client.img_dump()
+		chat_add(chat_text, sec_current / 2, "Screenshot saved as: " .. loc, 0xFFFFFFAA)
+
+		do_screenshot = false
 	end
 end
 

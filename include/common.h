@@ -524,6 +524,7 @@ void img_free(img_t *img);
 void img_gc_set(lua_State *L);
 img_t *img_parse_tga(int len, const char *data, lua_State *L);
 img_t *img_load_tga(const char *fname, lua_State *L);
+void img_write_tga(const char *fname, img_t *img);
 
 // json.c
 int json_parse(lua_State *L, const char *p);
@@ -639,6 +640,7 @@ int path_type_server_readable(int type);
 int path_type_server_writable(int type);
 
 // render.c
+img_t *render_dump_img(int width, int height, int sx, int sy);
 void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 	img_t *src, int dx, int dy, int bw, int bh, int sx, int sy, uint32_t color, float scalex, float scaley);
 #ifndef DEDI

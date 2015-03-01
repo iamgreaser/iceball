@@ -19,6 +19,43 @@ void expandtex_gl(int *iw, int *ih);
 #endif
 
 // client functions
+int icelua_fn_client_img_dump(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 0, 1);
+
+	const char *fname;
+
+	if (top > 0)
+	{
+		fname = lua_tostring(L, 1);
+		if(fname == NULL)
+			return luaL_error(L, "filename must be a string");
+	} else {
+		time_t rawtime;
+		struct tm *timeinfo;
+		char buffer[80];
+
+		time(&rawtime);
+		timeinfo = localtime(&rawtime);
+
+		strftime(buffer, 80, "clsave/vol/screenshots/%F_%H.%M.%S.tga", timeinfo);
+		fname = buffer;
+	}
+
+#ifdef DEDI
+	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
+#else
+	printf("writing image to %s\n", fname);
+	img_t *img = render_dump_img(screen_width, screen_height, 0, 0);
+	img_write_tga(fname, img);
+	free(img);
+#endif
+
+	lua_pushstring(L, fname);
+
+	return 1;
+}
+
 int icelua_fn_client_img_blit(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 3, 10);

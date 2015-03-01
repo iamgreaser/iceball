@@ -207,6 +207,7 @@ do
 		
 		function client.hook_key(sym, uni, state, modif)
 			-- TODO!
+			print(sym)
 		end
 		
 		function client.hook_mouse_button(button, state)

@@ -44,9 +44,34 @@ void expandtex_gl(int *iw, int *ih)
 	}
 }
 
+
 void render_blit_img_toimg(uint32_t *pixels, int width, int height, int pitch,
 	img_t *src, int dx, int dy, int bw, int bh, int sx, int sy, uint32_t color,
 	float scalex, float scaley);
+
+img_t *render_dump_img(int width, int height, int sx, int sy) {
+	size_t img_size = (width - sx) * (height - sy) * 3;
+	img_t *img = malloc(sizeof(img_t) + img_size);
+	img->head.idlen = 0; // no ID
+	img->head.cmtype = 0; // no colourmap
+	img->head.imgtype = 2; // uncompressed RGB
+	img->head.cmoffs = 0;
+	img->head.cmlen = 0;
+	img->head.cmbpp = 0;
+	img->head.xstart = 0;
+	img->head.ystart = height - sy;
+	img->head.width = width - sx;
+	img->head.height = height - sy;
+	img->head.bpp = 24;
+	img->head.flags = 0x0;
+	img->udtype = UD_IMG;
+
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	glReadPixels(sx, sy, width, height, GL_BGR, GL_UNSIGNED_BYTE, img->pixels);
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+
+	return img;
+}
 
 GLuint vbo_img = 0;
 void render_blit_img(uint32_t *pixels, int width, int height, int pitch,

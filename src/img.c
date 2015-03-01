@@ -265,3 +265,16 @@ img_t *img_load_tga(const char *fname, lua_State *L)
 	return ret;
 }
 
+void img_write_tga(const char *fname, img_t *img)
+{
+	FILE *fp = fopen(fname, "wb");
+	if(fp == NULL) {
+		perror("img_write_tga");
+		return;
+	}
+	
+	size_t img_size = img->head.width * img->head.height;
+	fwrite(&img->head, sizeof(img_tgahead_t), 1, fp);
+	fwrite(img->pixels, sizeof(uint8_t) * 3, img_size, fp);
+	fclose(fp);
+}

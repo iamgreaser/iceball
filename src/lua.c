@@ -256,6 +256,7 @@ struct icelua_entry icelua_client[] = {
 	{icelua_fn_client_glsl_set_uniform_ui, "glsl_set_uniform_ui"},
 	{icelua_fn_client_model_render_bone_global, "model_render_bone_global"},
 	{icelua_fn_client_model_render_bone_local, "model_render_bone_local"},
+	{icelua_fn_client_img_dump, "img_dump"},
 	{icelua_fn_client_img_blit, "img_blit"},
 	{icelua_fn_client_img_blit_to, "img_blit_to"},
 	{icelua_fn_client_wav_cube_size, "wav_cube_size"},
