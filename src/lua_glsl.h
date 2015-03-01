@@ -25,10 +25,6 @@ int shader_gc_lua(lua_State *L)
 #ifndef DEDI
 		if(shader->prog != 0)
 			glDeleteProgram(shader->prog);
-		if(shader->sh_v != 0)
-			glDeleteShader(shader->sh_v);
-		if(shader->sh_f != 0)
-			glDeleteShader(shader->sh_f);
 #endif
 	}
 
@@ -65,7 +61,7 @@ int icelua_fn_client_glsl_create(lua_State *L)
 #else
 	GLint success = GL_FALSE;
 	GLuint prog;
-	
+
 	if(!gl_shaders)
 		return luaL_error(L, "shaders disabled in config!");
 	if(!(GL_VERSION_2_0))
@@ -73,7 +69,7 @@ int icelua_fn_client_glsl_create(lua_State *L)
 
 	const char *srcv = lua_tostring(L, 1);
 	const char *srcf = lua_tostring(L, 2);
-	char *shaderinf = malloc(64<<10);
+
 	if(top >= 3 && !lua_istable(L, 3))
 		return luaL_error(L, "expected list for attr_array");
 
@@ -88,15 +84,25 @@ int icelua_fn_client_glsl_create(lua_State *L)
 	glShaderSource(sh_v, 1, &srcv, NULL);
 	glShaderSource(sh_f, 1, &srcf, NULL);
 	glCompileShader(sh_v);
-	glGetShaderInfoLog(sh_v, (64<<10)-1, NULL, shaderinf);
-	luaL_addstring(&b, "Vertex shader compilation:\n");
-	luaL_addstring(&b, shaderinf);
-	luaL_addstring(&b, "\n");
+
+	glGetShaderiv(sh_v, GL_INFO_LOG_LENGTH, &len);
+	if (len > 0) {
+		char info[len];
+		glGetShaderInfoLog(sh_v, len, NULL, info);
+		luaL_addstring(&b, "Vertex shader compile error:\n");
+		luaL_addstring(&b, info);
+		luaL_addstring(&b, "\n");
+	}
 	glCompileShader(sh_f);
-	glGetShaderInfoLog(sh_f, (64<<10)-1, NULL, shaderinf);
-	luaL_addstring(&b, "Fragment shader compilation:\n");
-	luaL_addstring(&b, shaderinf);
-	luaL_addstring(&b, "\n");
+
+	glGetShaderiv(sh_f, GL_INFO_LOG_LENGTH, &len);
+	if (len > 0) {
+		char info[len];
+		glGetShaderInfoLog(sh_f, len, NULL, info);
+		luaL_addstring(&b, "Fragment shader compile error:\n");
+		luaL_addstring(&b, info);
+		luaL_addstring(&b, "\n");
+	}
 	prog = glCreateProgram();
 	glAttachShader(prog, sh_v);
 	glAttachShader(prog, sh_f);
@@ -117,10 +123,18 @@ int icelua_fn_client_glsl_create(lua_State *L)
 	}
 
 	glLinkProgram(prog);
-	glGetProgramInfoLog(prog, (64<<10)-1, NULL, shaderinf);
-	luaL_addstring(&b, "Program link information:\n");
-	luaL_addstring(&b, shaderinf);
-	luaL_addstring(&b, "\n");
+
+	glGetProgramiv(prog, GL_INFO_LOG_LENGTH, &len);
+	if (len > 0) {
+		char info[len];
+		glGetProgramInfoLog(prog, len, NULL, info);
+		luaL_addstring(&b, "Link error:\n");
+		luaL_addstring(&b, info);
+		luaL_addstring(&b, "\n");
+	}
+
+	if(sh_v != 0) glDeleteShader(sh_v);
+	if(sh_f != 0) glDeleteShader(sh_f);
 
 	// Push result string
 	luaL_pushresult(&b);
@@ -131,8 +145,6 @@ int icelua_fn_client_glsl_create(lua_State *L)
 	{
 		shader_t *shader = lua_newuserdata(L, sizeof(shader_t));
 		shader->udtype = UD_SHADER;
-		shader->sh_v = sh_v;
-		shader->sh_f = sh_f;
 		shader->prog = prog;
 		lua_newtable(L);
 		lua_pushcfunction(L, shader_gc_lua);
@@ -140,8 +152,6 @@ int icelua_fn_client_glsl_create(lua_State *L)
 		lua_setmetatable(L, -2);
 	} else {
 		if(prog != 0) glDeleteProgram(prog);
-		if(sh_v != 0) glDeleteShader(sh_v);
-		if(sh_f != 0) glDeleteShader(sh_f);
 		lua_pushnil(L);
 	}
 
@@ -149,8 +159,6 @@ int icelua_fn_client_glsl_create(lua_State *L)
 	lua_pushvalue(L, -2);
 	lua_remove(L, -3);
 
-	// Free shaderinf
-	free(shaderinf);
 
 	// Return!
 	return 2;

@@ -23,7 +23,7 @@
 #define VERSION_X 2
 #define VERSION_Y 1
 #define VERSION_A 0
-#define VERSION_Z 19
+#define VERSION_Z 20
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!
@@ -277,7 +277,6 @@ typedef struct shader
 {
 	int udtype;
 #ifndef DEDI
-	GLuint sh_v, sh_f;
 	GLuint prog;
 #endif
 } shader_t;
