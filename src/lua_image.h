@@ -301,3 +301,41 @@ int icelua_fn_common_img_get_dims(lua_State *L)
 	return 2;
 }
 
+
+int icelua_fn_common_img_rect_fill(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 6, 6);
+	
+	if(lua_islightuserdata(L, 1) || !lua_isuserdata(L, 1))
+		return luaL_error(L, "not an image");
+	img_t *img = (img_t *)lua_touserdata(L, 1);
+	if(img == NULL || img->udtype != UD_IMG)
+		return luaL_error(L, "not an image");
+	int x = lua_tointeger(L, 2);
+	int y = lua_tointeger(L, 3);
+	int w = lua_tointeger(L, 4);
+	int h = lua_tointeger(L, 5);
+	uint32_t color = lua_tointeger(L, 6);
+	
+	int iw = img->head.width;
+	int ih = img->head.height;
+#ifndef DEDI
+	expandtex_gl(&iw, &ih);
+#endif
+	int i;
+	int j;
+	for (i = y; i < (y + h); i++)
+	{
+		for (j = x; j < (x + w); j++)
+		{
+			img->pixels[(i * iw) + j] = color;
+		}
+	}
+	
+#ifndef DEDI
+	img->tex_dirty = 1;
+#endif
+	
+	return 0;
+}
+
