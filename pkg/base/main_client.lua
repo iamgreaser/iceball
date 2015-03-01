@@ -15,7 +15,7 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
-SANDBOX_CLIENT = false
+SANDBOX_CLIENT = true
 
 if common.version.num < 8388608 then
 	error("You need Iceball version 0.2 or later to connect to this server.")

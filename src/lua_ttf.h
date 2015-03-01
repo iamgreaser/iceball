@@ -22,6 +22,21 @@ int icelua_fn_client_font_render_to_texture(lua_State *L)
 
 	img_t *img;
 
+	const char *text = lua_tostring(L, 2);
+	if(text == NULL || text[0] == '\x00')
+	{
+		lua_getglobal(L, "common");
+		lua_getfield(L, -1, "img_new");
+		lua_remove(L, -2);
+		lua_pushnumber(L, 2); //2x2 transparent image
+		lua_pushnumber(L, 2);
+		lua_call(L, 2, 1);
+		//loads the return of the function - an empty image onto the stack
+		//since it's on top of the stack the return value will be it so we can work it
+		img = (img_t *)lua_touserdata(L, -1);
+		return 1;
+	}
+
 	TTF_Font *font = (TTF_Font *)lua_touserdata(L, 1);
 	if (font == NULL) //this is considered normal behaviour in case of fetching
 	{
@@ -37,8 +52,6 @@ int icelua_fn_client_font_render_to_texture(lua_State *L)
 		return 1;
 	}
 
-	const char *text = lua_tostring(L, 2);
-
 	uint32_t color = (top < 3 ? 0xFFFFFF : (uint32_t)lua_tointeger(L, 3));
 
 	if (top == 4 || top == 5)
@@ -51,7 +64,7 @@ int icelua_fn_client_font_render_to_texture(lua_State *L)
 		color = shadow_color;
 	}
 
-	SDL_Color text_sdl_clr = {(color>>16)&255,(color>>8)&255,(color)&255};
+	SDL_Color text_sdl_clr = {(color>>16)&255,(color>>8)&255,(color)&255,255};
 
 	SDL_Surface *font_rendered_surface = TTF_RenderText_Blended(font, text, text_sdl_clr);
 
@@ -93,16 +106,16 @@ int icelua_fn_client_font_render_to_texture(lua_State *L)
 		for (y=0; y<h; y++){
 			//int bpp = font_rendered_surface->format->BytesPerPixel; //always 4 in our case
 			//but just for reference ^
-			uint32_t  *p = (Uint8 *)font_rendered_surface->pixels + y * font_rendered_surface->pitch + x * 4;
+			uint32_t *p = (uint32_t *)((Uint8 *)font_rendered_surface->pixels + y * font_rendered_surface->pitch + x * sizeof(uint32_t));
 
-			img->pixels[y * iw +x]=*(uint32_t*)p;
+			img->pixels[y*iw + x] = *p;
 		}
 	}
-	SDL_FreeSurface(font_rendered_surface);
 	if (top == 4 || top == 5)
 	{
 		TTF_SetFontOutline(font, 0);
 	}
+
 	//aand get if off the stack again, because pointers
 	img = (img_t *)lua_touserdata(L, -1);
 	lua_pushnumber(L, w);
@@ -113,31 +126,41 @@ int icelua_fn_client_font_render_to_texture(lua_State *L)
 // common functions
 int icelua_fn_common_font_ttf_load(lua_State *L)
 {
-	int top = icelua_assert_stack(L, 1, 3);
+	int top = icelua_assert_stack(L, 1, 4);
 
 	const char *fname = lua_tostring(L, 1);
 	if(fname == NULL)
 		return luaL_error(L, "filename must be a string");
 
 	const uint32_t ptsize = (top < 2 ? 16 : lua_tointeger(L, 2));
-	if(ptsize == NULL) //practically checks if 0
+	if(ptsize == 0)
 		return luaL_error(L, "ptsize must be a natural number");
 
 	const uint32_t font_index = (top < 3 ? 0 : lua_tointeger(L, 3));
+	const uint32_t font_israw = (top < 4 ? 0 : lua_toboolean(L, 4));
 
-	lua_getglobal(L, "common");
-	lua_getfield(L, -1, "fetch_block");
-	lua_remove(L, -2);
-	lua_pushstring(L, "ttf");
-	lua_pushvalue(L, 1);
-	lua_call(L, 2, 1);
+	const char *buf = NULL;
+	size_t buf_size = 0;
+	if(font_israw)
+	{
+		buf = lua_tolstring(L, 1, &buf_size);
+	} else {
+		lua_getglobal(L, "common");
+		lua_getfield(L, -1, "fetch_block");
+		lua_remove(L, -2);
+		lua_pushstring(L, "ttf");
+		lua_pushvalue(L, 1);
+		lua_call(L, 2, 1);
 
-	int buf_size = 0;
-	char *buf = lua_tolstring(L, -1, &buf_size);
-	lua_remove(L, -1);
+		buf = lua_tolstring(L, -1, &buf_size);
+	}
 
-	SDL_RWops *src = SDL_RWFromMem(buf, buf_size+1);
+	if(buf == NULL)
+		return luaL_error(L, "ttf_load failed to get TTF data");
+
+	SDL_RWops *src = SDL_RWFromConstMem(buf, buf_size);
 	TTF_Font *font = TTF_OpenFontIndexRW(src, 1, ptsize, font_index);
+	lua_remove(L, -1);
 
 	if(font == NULL)
 	{

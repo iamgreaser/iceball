@@ -140,9 +140,21 @@ return function(sb_list, sb_aux, sb_ctl, name)
 		return img, common.img_get_dims(img)
 	end
 
+	-- TTF stuff
+	function SG.common.font_ttf_load(fname, ptsize, index, israw)
+		if israw then
+			return common.font_ttf_load(fname, ptsize, index, israw)
+		else
+			local raw = SG.common.fetch_block("ttf", fname)
+			local ret = common.font_ttf_load(raw, ptsize, index, true)
+			return ret
+		end
+	end
+
 	-- more aliases
 	if client then
 		SG.client.img_load = SG.common.img_load
+		SG.client.font_ttf_load = SG.common.font_ttf_load
 	end
 end
 

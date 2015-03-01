@@ -464,7 +464,8 @@ int update_client_cont1(void)
 
 		case SDL_WINDOWEVENT:
 			switch (ev.window.event) {
-				case SDL_WINDOWEVENT_FOCUS_GAINED || SDL_WINDOWEVENT_ENTER:
+				case SDL_WINDOWEVENT_FOCUS_GAINED:
+				case SDL_WINDOWEVENT_ENTER:
 					lua_getglobal(lstate_client, "client");
 					lua_getfield(lstate_client, -1, "hook_window_activate");
 					lua_remove(lstate_client, -2);
