@@ -393,6 +393,7 @@ img_crosshair, img_crosshairhit = crosshair_generate_images(user_config.crosshai
 img_chevron = client.img_load("pkg/base/gfx/chevron.tga")
 
 -- load kv6 models
+texa_overview_hmap = {}
 -- TODO: remove the pmfs
 
 -- load/make models
@@ -906,6 +907,10 @@ do
 	img_overview_grid = common.img_new(xlen, zlen)
 	img_overview_icons = common.img_new(xlen, zlen)
 	local x,z
+	
+	if shader_world then
+		texa_overview_hmap[1] = img_overview_hmap
+	end
 
 	for z=0,zlen-1 do
 	for x=0,xlen-1 do

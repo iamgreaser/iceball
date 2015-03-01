@@ -1183,7 +1183,9 @@ void render_gl_cube_map(map_t *map, map_chunk_t *chunk, float x, float y, float 
 			}
 
 			/* Check if the quad needs to be rotated (fix for ambient occlusion on sides) */
-			if (average_light_vertex1 + average_light_vertex3 > average_light_vertex2 + average_light_vertex4)
+			if ((average_light_vertex1 + average_light_vertex3 > average_light_vertex2 + average_light_vertex4
+				? !gl_flip_quads
+				: gl_flip_quads))
 			{
 				/* Quad 2 rotated */
 				

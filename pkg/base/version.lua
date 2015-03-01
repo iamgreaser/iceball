@@ -20,9 +20,9 @@
 -- Thanks. --GM
 
 VERSION_ENGINE = {
-	cmp={0,2,1,0,21},
-	num=8421376+21,
-	str="0.2.1-21",
+	cmp={0,2,1,0,22},
+	num=8421376+22,
+	str="0.2.1-22",
 }
 
 --error(""..common.version.num)
@@ -159,9 +159,10 @@ VERSION_BUGS = {
 {renderer="gl", intro=nil, fix=8421376+12, msg="[OpenGL] VAs broken when VBOs disabled"},
 {renderer="gl", intro=nil, fix=8421376+14, msg="[OpenGL] Vertex attributes not supported in shaders"},
 {intro=nil, fix=8421376+15, msg="map_render not supported"},
-{intro=8421376+15, fix=nil, msg="map_render support incomplete"},
+{intro=8421376+15, fix=8421376+20, msg="map_render support incomplete"},
 {intro=nil, fix=8421376+16, msg="FBOs not supported"},
 {intro=8421376+16, fix=8421376+19, msg="FBO support incomplete"},
+{intro=nil, fix=8421376+21, msg="gl_flip_quads incomplete"},
 
 }
 
