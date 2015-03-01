@@ -39,8 +39,9 @@ function common.font_load(fontname, ptsize)
   return font
 end
 
---ptsize = 16
 function common.font_get(fontname, ptsize)
+  ptsize = ptsize or 16
+
   if fonts[fontname] then
     if fonts[fontname][ptsize] then
       return fonts[fontname][ptsize]
@@ -61,11 +62,11 @@ do
 end
 
 if client then
+
 do
   -- common.font_get(FONT_DEFAULT, 16)
 end
 
---ptsize = 16, font = "OpenSans-Regular"
 function client.font_render_text(x, y, text, color, ptsize, fontname, shadow_color, shadow_size, shadow_x_translate, shadow_y_translate)
   if not FONT_DEFAULT or not fonts then
     error("Variable FONT_DEFAULT not set, can not continue!")
@@ -73,8 +74,19 @@ function client.font_render_text(x, y, text, color, ptsize, fontname, shadow_col
   if not client then
     error("Function render_text is client-only!")
   end
+
+  color = color or 0xFFFFFF
+  ptsize = ptsize or 16
+  fontname = fontname or FONT_DEFAULT
+
+  shadow_color = shadow_color
+  shadow_size = shadow_size or 0
+  shadow_x_translate = shadow_x_translate or 1
+  shadow_y_translate = shadow_y_translate or 1
+
   local ttf_font = common.font_get(fontname, ptsize)
-  local image
+
+  local image, image_shadow
   if shadow_color ~= nil then
     image_shadow = client.font_render_to_texture(ttf_font, text, color, shadow_color, shadow_size)
     client.img_blit(image_shadow, x + shadow_x_translate, y + shadow_y_translate)
@@ -86,4 +98,5 @@ function client.font_render_text(x, y, text, color, ptsize, fontname, shadow_col
     client.img_blit(image, x, y)
   end
 end
+
 end

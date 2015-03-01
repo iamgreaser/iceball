@@ -616,7 +616,7 @@ common.font_load(fname, ptsize = 16, index = 0) @
 		NOTE: font face loading possibly broken, needs testing
 
 
-client.font_render_to_texture(font, text, color = 0xFFFFFFFF, shadow_color = NULL, shadow_size = 1) @
+font_img = client.font_render_to_texture(font, text, color = 0xFFFFFFFF, shadow_color = NULL, shadow_size = 1) @
 	returns img_t you can img_blit or img_blit_to
 	font
 		Point to loaded font [eg. local font = common.font_load(fname)]
@@ -629,10 +629,17 @@ client.font_render_to_texture(font, text, color = 0xFFFFFFFF, shadow_color = NUL
 	shadow_size
 		If shadow_color is set, determine outline size
 
-common.font_render_to_texture(font) @
+common.font_get_height(font) @
 	returns font height _in pixels_ as determined by SDL_ttf.
 	font
 		Point to loaded font [eg. local font = common.font_load(fname)]
+
+width, height = common.font_get_height(font, text) @
+	returns resulting font text size as determined by SDL_ttf.
+	font
+		Point to loaded font [eg. local font = common.font_load(fname)]
+	text
+		The text whose resulting size you want to know
 
 client.font_render_text(x, y, text, color, ptsize, fontname, shadow_color, shadow_size, shadow_x_translate, shadow_y_translate) @
 	NOTE: this function is currently implemented in the lua side

@@ -103,7 +103,11 @@ int icelua_fn_client_font_render_to_texture(lua_State *L)
 	{
 		TTF_SetFontOutline(font, 0);
 	}
-	return 1;
+	//aand get if off the stack again, because pointers
+	img = (img_t *)lua_touserdata(L, -1);
+	lua_pushnumber(L, w);
+	lua_pushnumber(L, h);
+	return 3;
 }
 
 // common functions
@@ -159,5 +163,26 @@ int icelua_fn_common_font_get_height(lua_State *L)
 	int height = TTF_FontHeight(font);
 
 	lua_pushnumber(L, height);
+	return 1;
+}
+
+int icelua_fn_common_font_get_size(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 2, 2);
+	TTF_Font *font = (TTF_Font *)lua_touserdata(L, 1);
+
+	if(font == NULL)
+	{
+		printf("TTF get font size error: %s\n", TTF_GetError());
+		return 0;
+	}
+
+	const char *text = lua_tostring(L, 2);
+
+	int w,h;
+	if(TTF_SizeUNICODE(font,text,&w,&h) == 0) {
+		lua_pushnumber(L, w);
+		lua_pushnumber(L, h);
+	}
 	return 1;
 }
