@@ -655,6 +655,9 @@ common.img_pixel_get(img, x, y) @
 	
 	x, y clipped
 
+common.img_fill(img, color) @
+	fills an image with a solid colour
+
 common.img_free(img) @
 	free the given image
 
@@ -664,6 +667,9 @@ common.img_free(img) @
 
 width, height = common.img_get_dims(img) @
 	gets the image's dimensions
+
+common.img_rect_fill(img, x, y, width, height, color) @
+	fills a sub-rect of an image with a solid colour
 
 client.img_blit(img, dx, dy, width = iwidth, height = iheight, sx = 0, sy = 0, color = 0xFFFFFFFF, scalex = 1.0, scaley = 1.0) @
 	blits an image onto screen position dx, dy
@@ -685,9 +691,6 @@ client.img_blit_to(target, img, dx, dy, width = iwidth, height = iheight, sx = 0
 
 	use scalex/scaley to rescale source width/height to your likeness
 	(sw = dw/scalex; sh = dh/scaley)
-
-client.img_fill(img, color) @
-	fills an image with a solid colour
 
 tab = common.json_parse(str) @
 	parses the JSON string "str"
