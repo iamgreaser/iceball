@@ -46,10 +46,11 @@ end
 
 return function (plr)
 	local this = tpl_gun(plr, {
+		-- We're abusing this - it's not actually the hit part, but the number of parts hit
 		dmg = {
-			head = 1,
-			body = 1,
-			legs = 1,
+			head = 2,
+			body = 4,
+			legs = 5,
 		},
 		
 		ammo_clip = 200,
@@ -57,7 +58,7 @@ return function (plr)
 		time_fire = 0.05,
 		time_reload = 5,
 		pellet_count = 0,
-		range = 6,
+		range = 9,
 		spread = 0.5,
 		
 		-- We null out the recoil function call anyway, but just in case I overlook that when refactoring guns...
@@ -102,69 +103,49 @@ return function (plr)
 			this.spray_fire()
 		end
 		
-		for i=1,(this.cfg.pellet_count) do
-			-- TODO: Better spread
-			-- spread
-			local angy = plr.angy + (this.cfg.spread * (math.random() - 0.5))
-			local angx = plr.angx + (this.cfg.spread * (math.random() - 0.5))
-			
-			local sya = math.sin(angy)
-			local cya = math.cos(angy)
-			local sxa = math.sin(angx)
-			local cxa = math.cos(angx)
-			local fwx,fwy,fwz
-			fwx,fwy,fwz = sya*cxa, sxa, cya*cxa
-			
-			-- perform a trace
-			local d,cx1,cy1,cz1,cx2,cy2,cz2
-			d,cx1,cy1,cz1,cx2,cy2,cz2
-			= trace_map_ray_dist(plr.x+sya*0.4,plr.y,plr.z+cya*0.4, fwx,fwy,fwz, this.cfg.range)
-			d = d or this.cfg.range
-			
-			-- see if there's anyone we can kill
-			local hurt_idx = nil
-			local hurt_part = nil
-			local hurt_part_idx = 0
-			local hurt_dist = d*d
-			local i,j
-			
-			for i=1,players.max do
-				local p = players[i]
-				if p and p ~= plr and p.alive then
-					local dx = p.x-plr.x
-					local dy = p.y-plr.y+0.1
-					local dz = p.z-plr.z
+		-- Check if anyone is in our firing cone
+		local sya = math.sin(plr.angy)
+		local cya = math.cos(plr.angy)
+		local sxa = math.sin(plr.angx)
+		local cxa = math.cos(plr.angx)
+		local fwx,fwy,fwz
+		fwx,fwy,fwz = sya*cxa, sxa, cya*cxa
+		
+		local spread_limit = 1 - (this.cfg.spread / 2)
+		local distance_limit = this.cfg.range * this.cfg.range
+		
+		for i=1,players.max do
+			local p = players[i]
+			if p and p ~= plr and p.alive then
+				local dx = p.x-plr.x
+				local dy = p.y-plr.y+0.1
+				local dz = p.z-plr.z
+				
+				local hits = 0
+				
+				for j=1,3 do
 					
-					for j=1,3 do
-						local dot, dd = isect_line_sphere_delta(dx,dy,dz,fwx,fwy,fwz)
-						if dot and dot < 0.55 and dd < hurt_dist then
-							hurt_idx = i
-							hurt_dist = dd
-							hurt_part_idx = j
-							hurt_part = ({"head","body","legs"})[j]
-							
-							break
+					local dist = dx * dx + dy * dy + dz * dz
+					
+					if dist <= distance_limit then
+				
+						local dxn, dyn, dzn = vnorm(dx, dy, dz)
+						local dot = vdot(dxn, dyn, dzn, fwx, fwy, fwz)
+						
+						if dot >= spread_limit then
+							hits = hits + 1
 						end
-						dy = dy + 1.0
 					end
+					
+					dy = dy + 1.0
 				end
-			end
-			
-			if hurt_idx then
-				if server then
-					players[hurt_idx].gun_damage(
-						hurt_part, this.cfg.dmg[hurt_part], plr)
-				else
-					net_send(nil, common.net_pack("BBB", PKT_PLR_GUN_HIT, hurt_idx, hurt_part_idx))
+				
+				if hits > 0 then
+					net_send(nil, common.net_pack("BBB", PKT_PLR_GUN_HIT, i, hits))
 					plr.show_hit()
 				end
-			else
-				if client then
-					net_send(nil, common.net_pack("BBB"
-						, PKT_PLR_GUN_HIT, 0, 0))
-				end
-			end  -- if hurt_idx
-		end  -- for pellet_count
+			end
+		end
 		
 		-- apply recoil
 		-- No recoil on flamethrower
@@ -246,6 +227,7 @@ return function (plr)
 			local cxa = math.cos(angx)
 			local fwx,fwy,fwz
 			fwx,fwy,fwz = sya*cxa, sxa, cya*cxa
+			-- Random speed/life, dependent on each other for equal travel distance
 			local speed = math.random() + 0.5
 			local life = 2.5 - (speed * 0.7)
 			particles_add(new_particle{
@@ -257,7 +239,7 @@ return function (plr)
 				vz = fwz * range * speed,
 				model = flame_particles[math.random(table.getn(flame_particles))],
 				size = math.random(15, 50),
-				lifetime = 0.035 * range * life
+				lifetime = 0.015 * range * life  -- Magic number that makes it last about the right amount of time for the effective range
 			})
 		end
 	end
