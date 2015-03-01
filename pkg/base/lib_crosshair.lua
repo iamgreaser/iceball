@@ -171,8 +171,7 @@ function crosshair_styles.classic(config)
 	common.img_rect_fill(crosshair_hit, hm_offset_right, hm_offset_bottom_far, hm_line_length, thickness, colour)
 	common.img_rect_fill(crosshair_hit, hm_offset_right_far, hm_offset_bottom, thickness, hm_line_length, colour)
 	
-	--return crosshair_hit, crosshair
-	return crosshair_hit, crosshair
+	return crosshair, crosshair_hit
 end
 
 function crosshair_generate_images(config)
