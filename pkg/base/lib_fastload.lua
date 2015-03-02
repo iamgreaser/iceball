@@ -246,6 +246,7 @@ function fastload_analyse_client()
 
 	-- client.img_*: dummy
 	function state.e.client.img_fill() end
+	function state.e.client.img_rect_fill() end
 	function state.e.client.img_blit_to() end
 
 	-- common.fetch_block: Need to cache all the things, except for the things that we can't
