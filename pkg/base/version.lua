@@ -20,9 +20,9 @@
 -- Thanks. --GM
 
 VERSION_ENGINE = {
-	cmp={0,2,1,0,22},
-	num=8421376+22,
-	str="0.2.1-22",
+	cmp={0,2,1,0,23},
+	num=8421376+23,
+	str="0.2.1-23",
 }
 
 --error(""..common.version.num)
@@ -163,6 +163,7 @@ VERSION_BUGS = {
 {intro=nil, fix=8421376+16, msg="FBOs not supported"},
 {intro=8421376+16, fix=8421376+19, msg="FBO support incomplete"},
 {intro=nil, fix=8421376+21, msg="gl_flip_quads incomplete"},
+{intro=8421376+22, fix=8421376+23, msg="img_dump not sandboxed - UPGRADE"},
 
 }
 

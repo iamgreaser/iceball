@@ -45,6 +45,9 @@ int icelua_fn_client_img_dump(lua_State *L)
 #ifdef DEDI
 	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
 #else
+	if (!path_type_client_writable(path_get_type(fname)))
+		return luaL_error(L, "img_dump: cannot write to there");
+
 	printf("writing image to %s\n", fname);
 	img_t *img = render_dump_img(screen_width, screen_height, 0, 0);
 	img_write_tga(fname, img);
