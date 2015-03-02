@@ -41,5 +41,5 @@ set_target_properties(iceball PROPERTIES COMPILE_DEFINITIONS "USE_OPENGL")
 
 # iceball-dedi target
 add_executable(iceball-dedi EXCLUDE_FROM_ALL ${MAIN_FILES} ${LUA_FILES})
-target_link_libraries(iceball-dedi ${PNG_LIBRARIES} ${ENet_LIBRARIES} sackit ${LUA_LIBRARIES} ${SDL_LIBRARY} ${SDL_LIBRARY})
+target_link_libraries(iceball-dedi ${PNG_LIBRARIES} ${ENet_LIBRARIES} ${LUA_LIBRARIES} ${SDL_LIBRARY} ${SDL_LIBRARY})
 set_target_properties(iceball-dedi PROPERTIES COMPILE_DEFINITIONS "DEDI")
