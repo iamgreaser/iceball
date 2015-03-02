@@ -667,7 +667,8 @@ function h_tick_init(sec_current, sec_delta)
 
 	chat_add(chat_text, sec_current, "Welcome to Iceball!", 0xFFFF00AA)
 	--chat_add(chat_killfeed, sec_current, "If it's broken, fix it yourself", 0xFFFF00AA)
-	chat_add(chat_killfeed, sec_current, "If you have any questions, file a GitHub issue.", 0xFFFF00AA)
+	chat_add(chat_killfeed, sec_current, "If you have any questions, check the subreddit.", 0xFFFF00AA)
+	chat_add(chat_killfeed, sec_current, "If you Find any bugs, file an issue on GitHub.", 0xFFFF00AA)
 	
 	mouse_released = false
 	client.mouse_lock_set(true)
