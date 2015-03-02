@@ -23,7 +23,7 @@
 #define VERSION_X 2
 #define VERSION_Y 1
 #define VERSION_A 0
-#define VERSION_Z 23
+#define VERSION_Z 24
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!
@@ -47,8 +47,14 @@
 #ifndef _MSC_VER
 #define PACK_START
 #define PACK_END
-#ifndef APPLE
-#include <immintrin.h>
+#ifdef __MMX__
+#include <mmintrin.h>
+#endif
+#ifdef __SSE__
+#include <xmmintrin.h>
+#endif
+#ifdef __SSE2__
+#include <emmintrin.h>
 #endif
 #include <stdint.h>
 #else
@@ -112,7 +118,9 @@ extern "C" {
 #include <GL/glew.h>
 #endif
 
+#ifndef DEDI
 #include <sackit.h>
+#endif
 #include <zlib.h>
 
 #ifdef WIN32
@@ -169,13 +177,6 @@ enum
 
 // if this flag is set, free when finished sending
 #define UDF_TEMPSEND 0x8000
-
-// hack for apple computers running ancient GCCs
-#ifdef APPLE
-#undef __SSE__
-#undef __SSE2__
-#undef _SSE_
-#endif
 
 // hack for softgm so the colours look right
 #ifdef APPLE
@@ -684,10 +685,12 @@ void cam_point_dir(camera_t *model, float dx, float dy, float dz, float zoom, fl
 void cam_point_dir_sky(camera_t *model, float dx, float dy, float dz, float sx, float sy, float sz, float zoom);
 
 // wav.c
+#ifndef DEDI
 extern sackit_playback_t *icesackit_pb;
 extern int icesackit_bufoffs;
 extern float icesackit_vol;
 extern float icesackit_mvol;
+#endif
 wav_t *wav_parse(char *buf, int len);
 wav_t *wav_load(const char *fname);
 void wav_kill(wav_t *wav);

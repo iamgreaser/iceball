@@ -112,12 +112,25 @@ int icelua_fnaux_fetch_immediate(lua_State *L, const char *ftype, const char *fn
 		wav_gc_set(L);
 		return 1;
 	} else if(!strcmp(ftype, "it")) {
+#ifdef DEDI
+		int flen = 0;
+		char *d = net_fetch_file(fname, &flen);
+		if(d == NULL)
+		{
+			return 0;
+		} else {
+			lua_pushlstring(L, d, flen);
+			free(d);
+			return 1;
+		}
+#else
 		it_module_t *mus = sackit_module_load(fname);
 		if(mus == NULL)
 			return 0;
 
 		lua_pushlightuserdata(L, mus);
 		return 1;
+#endif
 	} else if(!strcmp(ftype, "bin")) {
 		int flen = 0;
 		char *d = net_fetch_file(fname, &flen);
@@ -337,6 +350,10 @@ int icelua_fn_common_fetch_poll(lua_State *L)
 			} break;
 
 			case UD_MUS_IT: {
+#ifdef DEDI
+				lua_pushlstring(L, to_client_local.cfetch_ubuf, to_client_local.cfetch_ulen);
+				ret = 1;
+#else
 				// create temp file (sackit doesn't support loading from memory, at least right now)
 				// "Never use this function." i have no other choice
 				char *tfname = tempnam(NULL, "ibsit");
@@ -365,6 +382,7 @@ int icelua_fn_common_fetch_poll(lua_State *L)
 				}
 
 				free(tfname);
+#endif
 			} break;
 
 			case UD_BIN: {

@@ -17,8 +17,7 @@ LIBS_ENet = `pkg-config libenet --libs`
 LIBS_Lua = `./findlua.sh --libs`
 # Lua is not an acronym. Get used to typing it with lower case u/a.
 LIBS_zlib = -lz
-LIBS_sackit = -lsackit
-LIBS = -Lxlibinc/ -lm $(LIBS_Lua) $(LIBS_zlib) $(LIBS_sackit) $(LIBS_ENet)
+LIBS = -Lxlibinc/ -lm $(LIBS_Lua) $(LIBS_zlib) $(LIBS_ENet)
 BINNAME = dedi_iceball
 
 OBJDIR = build/dedi

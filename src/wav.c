@@ -19,7 +19,9 @@
 
 int icesackit_bufoffs = 0;
 int icesackit_freq = 0;
+#ifndef DEDI
 sackit_playback_t *icesackit_pb = NULL;
+#endif
 float icesackit_vol = 1.0f;
 float icesackit_mvol = 1.0f;
 

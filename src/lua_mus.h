@@ -118,11 +118,19 @@ int icelua_fn_common_mus_free(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 1, 1);
 	
+#ifdef DEDI
+	uint8_t *mus = lua_touserdata(L, 1);
+	if(mus == NULL || mus[0] != 'I')
+		return luaL_error(L, "not an ImpulseTracker module");
+	
+	free(mus);
+#else
 	it_module_t *mus = lua_touserdata(L, 1);
 	if(mus == NULL || mus->header.magic[0] != 'I')
 		return luaL_error(L, "not an ImpulseTracker module");
 	
 	sackit_module_free(mus);
+#endif
 
 	return 0;
 }
