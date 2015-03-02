@@ -25,6 +25,10 @@ if not client.glsl_create then
 	USE_GLSL = false
 end
 
+if not USE_GLSL then
+	USE_FBO = false
+end
+
 if not client.gfx_fbo_available then
 	USE_FBO = false
 end
@@ -561,6 +565,7 @@ function h_tick_main(sec_current, sec_delta)
 	local max_ticksize = 1/lowest_fps
 	
 	if sec_delta > max_ticksize then sec_delta = max_ticksize end
+	tickrate = sec_delta
 	
 	local moment = sec_current - sec_delta
 	client_tick_accum = client_tick_accum + sec_delta
