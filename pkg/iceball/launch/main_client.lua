@@ -196,6 +196,13 @@ function client.hook_render()
 		if common.version.num < latest_version then
 			version_string = "Update available! ("..common.version.str..")"
 			version_colour = 0xFFE81515
+			download_text = "Download the latest version at http://iceball.build"
+			font.render(
+				screen_width - font.string_width(download_text) - text_offset,
+				ch * 1,
+				download_text,
+				0xFFCFC511
+			)
 		else
 			version_string = "Up to date! ("..common.version.str..")"
 			version_colour = 0xFF86CF11
