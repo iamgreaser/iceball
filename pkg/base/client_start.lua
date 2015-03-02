@@ -19,9 +19,18 @@ print("pkg/base/client_start.lua starting")
 print(...)
 
 USE_GLSL = true
+USE_FBO = true
 
 if not client.glsl_create then
 	USE_GLSL = false
+end
+
+if not USE_GLSL then
+	USE_FBO = false
+end
+
+if not client.gfx_fbo_available then
+	USE_FBO = false
 end
 
 map_fname = nil
@@ -93,6 +102,18 @@ else
 	function shader_pop_nil() end
 end
 
+if USE_FBO then
+	print("FBO availability:", client.gfx_fbo_available())
+	if not client.gfx_fbo_available() then
+		USE_FBO = false
+	end
+end
+
+if USE_FBO then
+	fbo_world = client.fbo_create(screen_width, screen_height, true)
+	print("FBO:", fbo_world)
+end
+
 -- speed through stuff
 FAST_LOCAL_INIT = user_config.fast_load_screen
 if FAST_LOCAL_INIT and sandbox then sandbox.gfx_select(nil) end
@@ -101,6 +122,7 @@ if FAST_LOCAL_INIT and sandbox then sandbox.gfx_select(nil) end
 dofile("pkg/base/lib_va.lua")
 dofile("pkg/base/common.lua")
 dofile("pkg/base/border.lua")
+dofile("pkg/base/lib_crosshair.lua")
 
 tracers = {head = 1, tail = 0, time = 0}
 
@@ -143,16 +165,17 @@ BTSK_COLORRIGHT = controls_config.colorright or SDLK_RIGHT
 BTSK_COLORUP    = controls_config.colorup or SDLK_UP
 BTSK_COLORDOWN  = controls_config.colordown or SDLK_DOWN
 
-BTSK_CHAT      = controls_config.chat or SDLK_t
-BTSK_COMMAND   = SDLK_SLASH
-BTSK_TEAMCHAT  = controls_config.teamchat or SDLK_y
-BTSK_SQUADCHAT = controls_config.squadchat or SDLK_u
-BTSK_SCORES    = controls_config.scores or SDLK_TAB
+BTSK_CHAT       = controls_config.chat or SDLK_t
+BTSK_COMMAND    = SDLK_SLASH
+BTSK_TEAMCHAT   = controls_config.teamchat or SDLK_y
+BTSK_SQUADCHAT  = controls_config.squadchat or SDLK_u
+BTSK_SCORES     = controls_config.scores or SDLK_TAB
 
 BTSK_QUIT = controls_config.quit or SDLK_ESCAPE
 BTSK_YES  = SDLK_y
 BTSK_NO   = SDLK_n
 
+BTSK_SCREENSHOT = SDLK_F3
 BTSK_DEBUG = SDLK_F1
 BTSK_MAP = controls_config.map or SDLK_m
 
@@ -188,7 +211,8 @@ button_map = {
 	quit={key=BTSK_QUIT,desc="Quit"},
 	yes={key=BTSK_YES,desc="Yes"},
 	no={key=BTSK_NO,desc="No"},
-	
+
+	screenshot={key=BTSK_SCREENSHOT,desc="Grab Screenshot"},
 	debug={key=BTSK_DEBUG,desc="Debug"},
 	map={key=BTSK_MAP,desc="Map"},
 	team={key=BTSK_TEAM,desc="Change Team"},
@@ -358,6 +382,7 @@ rotpos = 0.0
 sec_last = 0.
 delta_last = 0.
 debug_enabled = false
+do_screenshot = false
 mouse_released = false
 sensitivity = user_config.sensitivity or 1.0
 sensitivity = sensitivity/1000.0
@@ -371,11 +396,11 @@ window_activated = true
 show_scores = false
 
 -- load images
-img_crosshair = client.img_load("pkg/base/gfx/crosshair.tga")
-img_crosshairhit = client.img_load("pkg/base/gfx/crosshairhit.tga")
+img_crosshair, img_crosshairhit = crosshair_generate_images(user_config.crosshair)
 img_chevron = client.img_load("pkg/base/gfx/chevron.tga")
 
 -- load kv6 models
+texa_overview_hmap = {}
 -- TODO: remove the pmfs
 
 -- load/make models
@@ -540,6 +565,7 @@ function h_tick_main(sec_current, sec_delta)
 	local max_ticksize = 1/lowest_fps
 	
 	if sec_delta > max_ticksize then sec_delta = max_ticksize end
+	tickrate = sec_delta
 	
 	local moment = sec_current - sec_delta
 	client_tick_accum = client_tick_accum + sec_delta
@@ -646,7 +672,8 @@ function h_tick_init(sec_current, sec_delta)
 
 	chat_add(chat_text, sec_current, "Welcome to Iceball!", 0xFFFF00AA)
 	--chat_add(chat_killfeed, sec_current, "If it's broken, fix it yourself", 0xFFFF00AA)
-	chat_add(chat_killfeed, sec_current, "If you have any questions, file a GitHub issue.", 0xFFFF00AA)
+	chat_add(chat_killfeed, sec_current, "If you have any questions, check the subreddit.", 0xFFFF00AA)
+	chat_add(chat_killfeed, sec_current, "If you find any bugs, file an issue on GitHub.", 0xFFFF00AA)
 	
 	mouse_released = false
 	client.mouse_lock_set(true)
@@ -696,6 +723,12 @@ end
 
 function h_key(sym, state, modif, uni)
 	local key = sym
+
+
+	-- grab screenshot
+	if state and key == BTSK_SCREENSHOT then
+		do_screenshot = true
+	end
 
 	push_keypress(key, state, modif, sym, uni)
 
@@ -841,6 +874,9 @@ end
 -- load map
 map_loaded = common.map_load(map_fname, "auto")
 common.map_set(map_loaded)
+if client.map_set_render_format and USE_GLSL then
+	client.map_set_render_format(map_loaded, "3v,3c,3n")
+end
 borders = {}
 
 -- set fog
@@ -882,15 +918,21 @@ do
 	local xlen, ylen, zlen
 	xlen, ylen, zlen = common.map_get_dims()
 	img_overview = common.img_new(xlen, zlen)
+	img_overview_hmap = common.img_new(xlen, zlen)
 	img_overview_grid = common.img_new(xlen, zlen)
 	img_overview_icons = common.img_new(xlen, zlen)
 	local x,z
+	
+	if shader_world then
+		texa_overview_hmap[1] = img_overview_hmap
+	end
 
 	for z=0,zlen-1 do
 	for x=0,xlen-1 do
 		local l = common.map_pillar_get(x,z)
 		local c = argb_split_to_merged(l[7],l[6],l[5])
 		common.img_pixel_set(img_overview, x, z, c)
+		common.img_pixel_set(img_overview_hmap, x, z, l[2])
 	end
 	end
 	
@@ -971,214 +1013,42 @@ if VA_TEST then
 end
 
 if USE_GLSL_20 then
-shader_misc, result = shader_new{name="misc", vert=[=[
-// Vertex shader
-
-varying vec4 cpos;
-varying vec4 wpos;
-varying vec4 wnorm;
-varying float fogmul;
-uniform float time;
-
-void main()
-{
-	wpos = gl_Vertex;
-	cpos = (gl_ModelViewMatrixInverse * vec4(0.0, 0.0, 0.0, 1.0));
-	wnorm = vec4(normalize(gl_Normal), 0.0);
-	fogmul = 1.0 / (length(gl_ModelViewMatrixInverse * vec4(0.0, 0.0, -1.0, 0.0)) * gl_Fog.end);
-
-	gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * wpos;
-	gl_FrontColor = gl_Color;
-	gl_TexCoord[0] = gl_MultiTexCoord0;
-}
-
-]=], frag=[=[
-// Fragment shader
-
-varying vec4 cpos;
-varying vec4 wpos;
-varying vec4 wnorm;
-varying float fogmul;
-
-uniform vec4 sun;
-
-uniform sampler2D tex0;
-
-void main()
-{
-	float fog_strength = min(1.0, length((wpos - cpos).xyz) * fogmul);
-	fog_strength *= fog_strength;
-
-	vec4 color = gl_Color;
-	if(gl_TexCoord[0].s >= -0.1)
-	{
-		vec4 tcolor = texture2D(tex0, gl_TexCoord[0].st);
-		color *= tcolor;
-	}
-
-	if(gl_ProjectionMatrix[3][3] == 1.0)
-	{
-		// Skip lighting on orthographics
-		gl_FragColor = color;
-
-	} else {
-		vec4 camto = vec4(normalize((wpos - cpos).xyz), 0.0);
-
-		// Diffuse
-		float diff = max(0.0, dot(-camto, wnorm));
-		diff = 0.3 + 1.5*diff; // Exaggerated
-
-		// Specular
-		// disabling until it makes sense
-		/*
-		vec4 specdir = normalize(2.0*dot(wnorm, -sun)*wnorm - -sun);
-		float spec = max(0.0, dot(-camto, specdir));
-		spec = pow(spec, 32.0)*0.6;
-		*/
-
-		//color = vec4(vec3(color.rgb * diff) + vec3(1.0)*spec, color.a);
-		diff = diff * (1.0 - fog_strength);
-		diff = min(1.5, diff);
-		color = vec4(color.rgb * diff, color.a);
-		color = max(vec4(0.0), min(vec4(1.0), color));
-		//color = vec4(0.5+0.5*sin(3.141593*(color.rgb-0.5)), color.a);
-
-		gl_FragColor = color * (1.0 - fog_strength)
-			+ gl_Fog.color * fog_strength;
-	}
-}
-]=]}
-
-shader_world, result = shader_new{name="world", vert=[=[
-// Vertex shader
-
-varying vec4 cpos;
-varying vec4 wpos;
-varying vec4 wnorm;
-varying float fogmul;
-uniform float time;
-
-void main()
-{
-	wpos = gl_Vertex;
-	cpos = (gl_ModelViewMatrixInverse * vec4(0.0, 0.0, 0.0, 1.0));
-	wnorm = vec4(normalize(gl_Normal), 0.0);
-	fogmul = 1.0 / (length(gl_ModelViewMatrixInverse * vec4(0.0, 0.0, -1.0, 0.0)) * gl_Fog.end);
-
-	gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * wpos;
-	gl_FrontColor = gl_Color;
-}
-
-]=], frag=[=[
-// Fragment shader
-
-varying vec4 cpos;
-varying vec4 wpos;
-varying vec4 wnorm;
-varying float fogmul;
-
-uniform vec4 sun;
-
-void main()
-{
-	float fog_strength = min(1.0, length((wpos - cpos).xyz) * fogmul);
-	fog_strength *= fog_strength;
-
-	vec4 color = gl_Color;
-	vec4 camto = vec4(normalize((wpos - cpos).xyz), 0.0);
-
-	// Diffuse
-	float diff = max(0.0, dot(-camto, wnorm));
-	diff = 0.3 + 1.5*diff; // Exaggerated
-
-	// Specular
-	// disabling until it makes sense
-	/*
-	vec4 specdir = normalize(2.0*dot(wnorm, -sun)*wnorm - -sun);
-	float spec = max(0.0, dot(-camto, specdir));
-	spec = pow(spec, 32.0)*0.6;
-	*/
-
-	diff = diff * (1.0 - fog_strength);
-	diff = min(1.5, diff);
-	color = vec4(color.rgb * diff, color.a);
-	color = max(vec4(0.0), min(vec4(1.0), color));
-	//color = vec4(0.5+0.5*sin(3.141593*(color.rgb-0.5)), color.a);
-
-	gl_FragColor = color * (1.0 - fog_strength)
-		+ gl_Fog.color * fog_strength;
-}
-]=]}
-
-shader_white, result = shader_new{name="white", vert=[=[
-// Vertex shader
-
-void main()
-{
-	gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;
-}
-
-]=], frag=[=[
-// Fragment shader
-
-void main()
-{
-	gl_FragColor = vec4(1.0);
-}
-]=]}
-
-shader_simple, result = shader_new{name="simple", vert=[=[
-// Vertex shader
-
-void main()
-{
-	gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;
-	gl_FrontColor = gl_Color;
-}
-
-]=], frag=[=[
-// Fragment shader
-
-void main()
-{
-	gl_FragColor = gl_Color;
-}
-]=]}
-
-shader_img, result = shader_new{name="img", vert=[=[
-// Vertex shader
-
-void main()
-{
-	// use ProjectionMatrix otherwise text printing breaks
-	gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;
-	//gl_Position = gl_ModelViewMatrix * gl_Vertex;
-	gl_FrontColor = gl_Color;
-	gl_TexCoord[0] = gl_MultiTexCoord0;
-}
-
-]=], frag=[=[
-// Fragment shader
-
-uniform sampler2D tex0;
-
-void main()
-{
-	vec4 color = gl_Color;
-	vec4 tcolor = texture2D(tex0, gl_TexCoord[0].st);
-	color *= tcolor;
-	gl_FragColor = color;
-}
-
-]=]}
+shader_misc, result = loadfile("pkg/base/shader/misc_diff.lua")()
+shader_world, result = loadfile("pkg/base/shader/world_diff.lua")()
+shader_white, result = loadfile("pkg/base/shader/white.lua")()
+shader_simple, result = loadfile("pkg/base/shader/simple.lua")()
+shader_img, result = loadfile("pkg/base/shader/img.lua")()
+shader_postproc, result = loadfile("pkg/base/shader/post_toon.lua")()
 end
 
 if shader_world then
 	shader_world.push()
 end
 
+if client.map_render then
+	client.map_enable_autorender(false)
+	if USE_GLSL and shader_world then
+		client.map_enable_side_shading(false)
+	end
+end
+
 function client.hook_render()
 	local sec_current = render_sec_current
+
+	if fbo_world then
+		client.fbo_use(fbo_world)
+		client.gfx_clear_color()
+		client.gfx_clear_depth()
+		client.gfx_clear_stencil()
+	end
+
+	if client.map_render and map_loaded then
+		if shader_world then
+			client.map_render(map_loaded, 0, 0, 0, {img_overview_hmap})
+		else
+			client.map_render(map_loaded, 0, 0, 0)
+		end
+	end
 
 	if shader_world then
 		shader_world.pop()
@@ -1229,7 +1099,7 @@ function client.hook_render()
 			x,y,z,
 			0.0, -tc.xa, tc.ya, 1)
 	end
-	
+
 	for i=nades.head,nades.tail do
 		if nades[i] then nades[i].render() end
 	end
@@ -1242,12 +1112,60 @@ function client.hook_render()
 		borders[i].render()
 	end
 
+	local s_gfx_clear_depth = client.gfx_clear_depth
+	if fbo_world then
+		--[[
+		client.fbo_use(nil)
+		client.gfx_clear_color()
+		client.fbo_use(fbo_world)
+		]]
+
+		function client.gfx_clear_depth(...)
+			client.fbo_use(nil)
+			local shader = shader_postproc or shader_img or shader_misc
+			if shader then
+				shader.set_uniform_i("tex0", 0)
+				shader.set_uniform_i("tex1", 1)
+				shader.set_uniform_f("soffs", 1.0/screen_width, 1.0/screen_height)
+				shader.set_uniform_f("time", sec_current or 0)
+
+				local _r, _g, _b, f = client.map_fog_get()
+				local zoom = (players
+					and players.current
+					and players[players.current]
+					and players[players.current].zoom)
+						or 1.0
+
+				--f = f / zoom
+				local n = 0.05 -- / zoom
+				shader.set_uniform_f("fog", f)
+				shader.set_uniform_f("depth_A", (f+n)/(f-n))
+				shader.set_uniform_f("depth_B", -(2.0*f*n)/(f-n))
+				shader.push()
+			end
+			s_img_blit(fbo_world, 0, 0)
+			client.img_blit = s_img_blit
+			if shader then shader.pop() end
+
+			client.gfx_clear_depth = s_gfx_clear_depth
+			--client.fbo_use(fbo_world)
+			--client.gfx_clear_color()
+			s_gfx_clear_depth(...)
+			--client.fbo_use(fbo_world)
+		end
+	end
+
 	if players and players[players.current] then
 		players[players.current].show_hud()
 	end
 	if VA_TEST and sec_current then
 		client.va_render_local(va_test, -0.8, 0.35, 1, sec_current, sec_current*0.8, sec_current*0.623, 0.1, img_overview)
 	end
+
+	if client.gfx_clear_depth ~= s_gfx_clear_depth then
+		client.gfx_clear_depth()
+	end
+	client.gfx_clear_depth = s_gfx_clear_depth
 
 	if shader_misc then
 		shader_misc.pop()
@@ -1260,7 +1178,16 @@ function client.hook_render()
 			1.0/math.sqrt(4.0),
 			0)
 		shader_world.set_uniform_f("time", sec_current or 0.0)
+		local xlen, ylen, zlen = common.map_get_dims()
+		shader_world.set_uniform_f("map_idims", 1.0/xlen, 1.0/zlen)
 		shader_world.push()
+	end
+
+	if do_screenshot then
+		local loc = client.img_dump()
+		chat_add(chat_text, sec_current / 2, "Screenshot saved as: " .. loc, 0xFFFFFFAA)
+
+		do_screenshot = false
 	end
 end
 

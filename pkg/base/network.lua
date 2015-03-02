@@ -412,6 +412,7 @@ network.sys_handle_s2c(PKT_NEW_MAP, "", function (neth, cli, plr, sec_current, p
 		local xlen, ylen, zlen
 		xlen, ylen, zlen = common.map_get_dims()
 		img_overview = common.img_new(xlen, zlen)
+		img_overview_hmap = common.img_new(xlen, zlen)
 		img_overview_grid = common.img_new(xlen, zlen)
 		img_overview_icons = common.img_new(xlen, zlen)
 		local x,z
@@ -421,6 +422,7 @@ network.sys_handle_s2c(PKT_NEW_MAP, "", function (neth, cli, plr, sec_current, p
 			local l = common.map_pillar_get(x,z)
 			local c = argb_split_to_merged(l[7],l[6],l[5])
 			common.img_pixel_set(img_overview, x, z, c)
+			common.img_pixel_set(img_overview_hmap, x, z, l[2])
 		end
 		end
 		
@@ -549,7 +551,13 @@ network.sys_handle_c2s(PKT_CHAT_SEND, "z", nwdec_plrset(function (neth, cli, plr
 			or msg:lower():find("your not") or msg:lower():find("your real") 
 			or msg:lower():find("your da") or msg:lower():find("your a ") 
 			or msg:lower():find("your the") or msg:lower():find("your an ")
-			or msg:lower():find("ur mom") or msg:lower():find("ur mum") then
+			or msg:lower():find("ur mom") or msg:lower():find("ur mum")
+			or ((((msg:lower():find("please") or msg:lower():find("now"))
+				and msg:lower():find("leave"))
+			or msg:lower():find("go away")) and not (plr and
+				(plr.has_permission("ban") or plr.has_permission("kick")
+					or plr.has_permission("piano"))))
+			or msg:lower():find("no kill") then
 			plr.drop_piano()
 		end
 	end

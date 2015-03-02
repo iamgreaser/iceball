@@ -70,8 +70,8 @@ int icelua_fn_client_va_render_global(lua_State *L)
 			: NULL);
 	}
 	for(i = 0; i < img_count; i++)
-		if(img[i] != NULL && img[i]->udtype != UD_IMG)
-			return luaL_error(L, "texture %i not an image", i+1);
+		if(img[i] != NULL && img[i]->udtype != UD_IMG && img[i]->udtype != UD_FBO)
+			return luaL_error(L, "texture %d not an image", i+1);
 
 	px = lua_tonumber(L, 2);
 	py = lua_tonumber(L, 3);
@@ -145,8 +145,8 @@ int icelua_fn_client_va_render_local(lua_State *L)
 			: NULL);
 	}
 	for(i = 0; i < img_count; i++)
-		if(img[i] != NULL && img[i]->udtype != UD_IMG)
-			return luaL_error(L, "texture %i not an image", i+1);
+		if(img[i] != NULL && img[i]->udtype != UD_IMG && img[i]->udtype != UD_FBO)
+			return luaL_error(L, "texture %d not an image", i+1);
 
 
 	px = lua_tonumber(L, 2);

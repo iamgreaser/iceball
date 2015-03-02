@@ -43,10 +43,19 @@ function shader_new(settings)
 		name = settings.name or "???",
 		vert = settings.vert or error("must provide vert shader source"),
 		frag = settings.frag or error("must provide frag shader source"),
+		attribs = settings.attribs or nil,
 		unif = {},
 	}
 
-	this.prog, this.result = client.glsl_create(this.vert, this.frag)
+	if this.attribs then
+		if common.version.num >= 8421376+14 then
+			this.prog, this.result = client.glsl_create(this.vert, this.frag, this.attribs)
+		else
+			this.prog, this.result = nil, "Vertex attributes not supported - upgrade to 0.2.1-14!"
+		end
+	else
+		this.prog, this.result = client.glsl_create(this.vert, this.frag)
+	end
 	print("*** Shader", this.name, this.prog, this.result)
 
 	if not this.prog then

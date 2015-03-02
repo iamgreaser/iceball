@@ -21,6 +21,74 @@ network.sys_handle_s2c(PKT_SNOW_DROP, "HHH", function (neth, cli, plr, sec_curre
 	map_block_set(x,y,z,2,255,255,255)
 end)
 
+if USE_GLSL then
+	shader_snow, result = shader_new{name="snow", vert=[=[
+		// Vertex shader
+
+		varying vec3 bcsrc; // Barycentric coordinates
+
+		void main()
+		{
+			vec4 tc = vec4(gl_MultiTexCoord0.st, 0.0, 0.0);
+			gl_Position = gl_ProjectionMatrix * (
+				gl_ModelViewMatrix * (gl_Vertex - tc)
+				+ (tc*2.0-1.0)*0.5*vec4(1.0, 0.8, 1.0, 1.0));
+
+			bcsrc = vec3(
+				tc.x-tc.y/2.0,
+				tc.y,
+				1.0-tc.x-tc.y/2.0);
+		}
+	]=], frag=[=[
+		// Fragment shader
+
+		varying vec3 bcsrc; // Barycentric coordinates
+
+		void main()
+		{
+			const int steps = 4;
+			int i;
+
+			vec3 bc = bcsrc;
+
+			gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+			for(i = 0; i < steps; i++)
+			{
+				// Ensure this is within the middle subtriangle
+				if(max(max(bc.x, bc.y), bc.z) <= 0.5)
+					return;
+
+				// Rotate triangle such that Y is largest
+				if(bc.z > bc.x && bc.z > bc.y) bc = bc.yzx;
+				else if(bc.x > bc.y) bc = bc.zxy;
+
+				// Convert to 2D
+				bc = vec3(bc.x + bc.y/2.0, bc.y, 0.0);
+
+				// Flip along Y + Scale
+				bc -= 0.5;
+				bc.y = -bc.y;
+				bc *= 3.0;
+
+				// Check if X notably out of range
+				if(bc.x >= 0.5) { bc.x -= 0.5; bc *= 3.0; }
+				else if(bc.x <= -0.5) { bc.x += 0.5; bc *= 3.0; }
+
+				// Restore to centre
+				bc += 0.5;
+
+				// Convert to barycentric
+				bc = vec3(
+					bc.x-bc.y/2.0,
+					bc.y,
+					1.0-bc.x-bc.y/2.0);
+			}
+
+			discard;
+		}
+	]=]}
+end
+
 function snow_drop_part(x,z,t,bcast)
 	local xlen,ylen,zlen
 	xlen,ylen,zlen = common.map_get_dims()
@@ -229,26 +297,65 @@ if client then
 		local i
 		local camx,camy,camz
 		camx,camy,camz = client.camera_get_pos()
-		for i=1,snow_flakecount do
-			local px,py,pz
-			px = snowflakes[i].x+snowflakes.sxp
-			py = snowflakes[i].y
-			pz = snowflakes[i].z+snowflakes.szp
-			px = (px-camx+snow_flakedist)%(snow_flakedist*2)-snow_flakedist+camx
-			pz = (pz-camz+snow_flakedist)%(snow_flakedist*2)-snow_flakedist+camz
-			client.model_render_bone_global(mdl_snow, mdl_snow_bone, px, py, pz, 0,0,0, 1)
+
+		local function draw_snow()
+			local i
+			if shader_snow then
+				local l = {}
+				shader_snow.push()
+				for i=1,snow_flakecount do
+					local px,py,pz
+					px = snowflakes[i].x+snowflakes.sxp
+					py = snowflakes[i].y
+					pz = snowflakes[i].z+snowflakes.szp
+					px = (px-camx+snow_flakedist)%(snow_flakedist*2)-snow_flakedist+camx
+					pz = (pz-camz+snow_flakedist)%(snow_flakedist*2)-snow_flakedist+camz
+					l[1+#l] = {px,py,pz,0.0,0.0}
+					l[1+#l] = {px+1,py,pz,1.0,0.0}
+					l[1+#l] = {px+0.5,py+1,pz,0.5,1.0}
+				end
+				snow_va = common.va_make(l, snow_va, "3v,2t")
+				client.va_render_global(snow_va, 0, 0, 0, 0, 0, 0, 1)
+				shader_snow.pop()
+			else
+				for i=1,snow_flakecount do
+					local px,py,pz
+					px = snowflakes[i].x+snowflakes.sxp
+					py = snowflakes[i].y
+					pz = snowflakes[i].z+snowflakes.szp
+					px = (px-camx+snow_flakedist)%(snow_flakedist*2)-snow_flakedist+camx
+					pz = (pz-camz+snow_flakedist)%(snow_flakedist*2)-snow_flakedist+camz
+					client.model_render_bone_global(mdl_snow, mdl_snow_bone, px, py, pz, 0,0,0, 1)
+				end
+			end
+		end
+
+		local s_map_render = client.map_render
+		if fbo_world then
+			function client.map_render(...)
+				client.map_render = s_map_render
+				s_map_render(...)
+				if shader_misc then shader_misc.push() end
+				draw_snow()
+				if shader_misc then shader_misc.pop() end
+			end
+		else
+			draw_snow()
 		end
 		
 		client.hook_render = snow_oldrender
 		local ret = client.hook_render(...)
 		snow_oldrender = client.hook_render
 		client.hook_render = snow_render
+		client.map_render = s_map_render
 	end
 	
 	local snow_oldtick = client.hook_tick
 	function snow_tick(sec_current, sec_delta)
 		local xlen,ylen,zlen
 		xlen,ylen,zlen = common.map_get_dims()
+
+		--sec_delta = sec_delta * 0.05
 
 		-- update snow wind
 		local sdx,sdz
@@ -276,7 +383,9 @@ if client then
 				sf.z = math.random()*snow_flakedist*2
 			end
 		end
-		
+
+		--sec_delta = sec_delta / 0.05
+
 		client.hook_tick = snow_oldtick
 		local ret = client.hook_tick(sec_current, sec_delta)
 		snow_oldtick = client.hook_tick

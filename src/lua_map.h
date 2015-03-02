@@ -373,18 +373,218 @@ int icelua_fn_client_map_fog_set(lua_State *L)
 	if(fog_distance > FOG_MAX_DISTANCE)
 		fog_distance = FOG_MAX_DISTANCE;
 	
-#ifndef DEDI
-	// TODO: take advantage of realloc()
-	if(fog_distance != old_dist)
-		render_init_visible_chunks(map, 0, 0);
-#endif
-	
 	fog_color = (r<<16)|(g<<8)|b;
 	force_redraw = 1;
 #endif
 
 	return 4;
 }
+
+int icelua_fn_client_map_enable_autorender(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 1, 1);
+	
+#ifdef DEDI
+	return luaL_error(L, "lm: why the hell is this being called in the dedi version?");
+#else
+	map_enable_autorender = lua_toboolean(L, 1);
+#endif
+	return 1;
+}
+
+int icelua_fn_client_map_enable_ao(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 1, 1);
+	
+#ifdef DEDI
+	return luaL_error(L, "lm: why the hell is this being called in the dedi version?");
+#else
+	map_enable_ao = lua_toboolean(L, 1);
+#endif
+	return 1;
+}
+
+int icelua_fn_client_map_enable_side_shading(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 1, 1);
+	
+#ifdef DEDI
+	return luaL_error(L, "lm: why the hell is this being called in the dedi version?");
+#else
+	map_enable_side_shading = lua_toboolean(L, 1);
+#endif
+	return 1;
+}
+
+int icelua_fn_client_map_set_render_format(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 2, 2);
+	if(!lua_isuserdata(L, 1))
+		return luaL_error(L, "not a map");
+	map_t *map = (map_t*)lua_touserdata(L, 1);
+	if(map == NULL || map->udtype != UD_MAP)
+		return luaL_error(L, "not a map");
+	
+	const char *mapfmt = lua_tostring(L, 2);
+	if(mapfmt == NULL)
+		return luaL_error(L, "format must be a string");
+
+#ifdef DEDI
+	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
+#else
+	// Set defaults
+	map->vertex_offs = -1;
+	map->color_offs = -1;
+	map->normal_offs = -1;
+	map->tc0_offs = -1;
+	map->vertex_size = 0;
+	map->color_size = 0;
+	map->normal_size = 0;
+	map->tc0_size = 0;
+	map->stride = 0;
+
+	// Parse string properly
+	const char *fol = mapfmt;
+	while(fol[0] != '\x00')
+	{
+		if(fol[0] >= '1' && fol[0] <= '4' && fol[1] != '\x00')
+		switch(fol[1])
+		{
+			case 'v':
+				// Vertex
+				if(fol[0] < '3' || fol[0] > '3')
+					return luaL_error(L, "Map render format not supported");
+				if(map->vertex_offs != -1)
+					return luaL_error(L, "Map render format not supported");
+				map->vertex_offs = map->stride;
+				map->vertex_size = fol[0] - '1' + 1;
+				map->stride += map->vertex_size;
+				break;
+
+			case 'c':
+				// Colour
+				if(fol[0] < '3' || fol[0] > '3')
+					return luaL_error(L, "Map render format not supported");
+				if(map->color_offs != -1)
+					return luaL_error(L, "Map render format not supported");
+				map->color_offs = map->stride;
+				map->color_size = fol[0] - '1' + 1;
+				map->stride += map->color_size;
+				break;
+
+			case 'n':
+				// Normal
+				if(fol[0] < '3' || fol[0] > '3')
+					return luaL_error(L, "Map render format not supported");
+				if(map->normal_offs != -1)
+					return luaL_error(L, "Map render format not supported");
+				map->normal_offs = map->stride;
+				map->normal_size = fol[0] - '1' + 1;
+				map->stride += map->normal_size;
+				break;
+
+			case 't':
+				// Texcoord
+				if(fol[0] < '2' || fol[0] > '2')
+					return luaL_error(L, "Map render format not supported");
+				if(map->tc0_offs != -1)
+					return luaL_error(L, "Map render format not supported");
+				map->tc0_offs = map->stride;
+				map->tc0_size = fol[0] - '1' + 1;
+				map->stride += map->tc0_size;
+				break;
+		}
+
+		fol += 2;
+		if(fol[0] == ',')
+			fol += 1;
+		else if(fol[0] != '\x00')
+			return luaL_error(L, "Map render format not supported");
+	}
+
+	if(map->vertex_offs == -1)
+		return luaL_error(L, "Map render format not supported");
+	render_init_visible_chunks(map, 0, 0);
+#endif
+
+	return 0;
+}
+
+
+int icelua_fn_client_map_render(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 4, 7);
+	int i;
+	float px, py, pz;
+	float alpha;
+
+	if(!lua_isuserdata(L, 1))
+		return luaL_error(L, "not a map");
+	map_t *map = (map_t*)lua_touserdata(L, 1);
+	if(map == NULL || map->udtype != UD_MAP)
+		return luaL_error(L, "not a map");
+
+	img_t *img[VA_MAX_IMG];
+	int img_count = 1;
+	if(top >= 5 && lua_istable(L, 5))
+	{
+		img_count = lua_objlen(L, 5);
+
+		for(i = 0; i < img_count; i++)
+		{
+			lua_pushnumber(L, i+1);
+			lua_gettable(L, 5);
+			img[i] = (!lua_isnil(L, -1)
+				? (img_t *)lua_touserdata(L, -1)
+				: NULL);
+			lua_pop(L, 1);
+		}
+	} else {
+		img[0] = (top >= 5 && !lua_isnil(L, 5)
+			? (img_t *)lua_touserdata(L, 5)
+			: NULL);
+	}
+	for(i = 0; i < img_count; i++)
+		if(img[i] != NULL && img[i]->udtype != UD_IMG)
+			return luaL_error(L, "texture %i not an image", i+1);
+
+	px = lua_tonumber(L, 2);
+	py = lua_tonumber(L, 3);
+	pz = lua_tonumber(L, 4);
+
+	alpha = (top >= 7 && lua_isnumber(L, 7) ? lua_tonumber(L, 7) : 1.0f);
+
+	const char *bmode = (top >= 6 ? lua_tostring(L, 6) : NULL);
+	char sfactor = '1', dfactor = '0';
+	if(bmode != NULL && strlen(bmode) >= 2)
+	{
+		sfactor = bmode[0];
+		dfactor = bmode[1];
+	}
+
+#ifdef DEDI
+	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
+#else
+	glTranslatef(px, py, pz);
+	tcam.mpx -= px;
+	tcam.mpy -= py;
+	tcam.mpz -= pz;
+	render_vxl_redraw(&tcam, map);
+	render_cubemap((uint32_t*)screen->pixels,
+		screen->w, screen->h, screen->pitch/4,
+		&tcam, map,
+		img, (bmode != NULL), sfactor, dfactor, 1.0f, img_count);
+	tcam.mpx += px;
+	tcam.mpy += py;
+	tcam.mpz += pz;
+	glTranslatef(-px, -py, -pz);
+#endif
+
+	return 0;
+}
+
+// TODO: move these functions up a bit, these aren't client-only functions!
+// (leaving this comment so merge conflicts might be avoided)
 
 int icelua_fn_common_map_mapents_get(lua_State *L)
 {

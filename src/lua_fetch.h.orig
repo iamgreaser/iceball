@@ -132,8 +132,12 @@ int icelua_fnaux_fetch_immediate(lua_State *L, const char *ftype, const char *fn
 
 		lua_pushlightuserdata(L, mus);
 		return 1;
-#endif
+<<<<<<< HEAD
 	} else if(!strcmp(ftype, "bin") || !strcmp(ftype, "ttf")) {
+=======
+#endif
+	} else if(!strcmp(ftype, "bin")) {
+>>>>>>> origin/master
 		int flen = 0;
 		char *d = net_fetch_file(fname, &flen);
 		if(d == NULL)
@@ -481,4 +485,3 @@ int icelua_fn_common_fetch_block(lua_State *L)
 	}
 	// end
 }
-

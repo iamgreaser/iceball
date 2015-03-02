@@ -67,7 +67,7 @@ local function update_page_buttons()
 	if not server_list then
 		page = 0
 	end
-
+	
 	if page > 0 then
 		page_prev_active = true
 	else
@@ -155,6 +155,7 @@ function launcher_render_init()
 	render_initialized = true
 end
 
+--TODO: rewrite the whole thing
 function client.hook_render()
 	if  render_initialized then
 		launcher_render_init()
@@ -163,7 +164,7 @@ function client.hook_render()
 		if not img_splash_width then
 			img_splash_width, img_splash_height = common.img_get_dims(img_splash)
 		end
-
+		
 		if splashtweenprogress_scale > 0.25 then
 			if splashtweenprogress_scale > 0.85 then
 				splashtweenprogress_scale = splashtweenprogress_scale - 0.001 --would be nice to do this with frame delta time
@@ -178,46 +179,48 @@ function client.hook_render()
 		end
 		img_splash_width_scaled = img_splash_width*splashtweenprogress_scale
 		img_splash_height_scaled = img_splash_height*splashtweenprogress_scale
-
+		local splash_x, splash_y
 		splash_x = (screen_width/2) - (img_splash_width_scaled/2)
 		splash_y = (screen_height/(2/splashtweenprogress_y)) - img_splash_height_scaled
 		client.img_blit(img_splash, splash_x, splash_y, img_splash_width_scaled, img_splash_height_scaled, 0, 0, 0xFFFFFFFF, splashtweenprogress_scale, splashtweenprogress_scale)
 		--splash sequence end
-
+		
 		if splashtweenprogress_scale <= 0.5 then --don't draw the rest until the splash finishes
-
-
-		client.font_render_text(text_offset, ch*0, "Press L for a local server on port 20737", 0xEEEEEE, 16, FONT_DEFAULT)
-		client.font_render_text(text_offset, ch*1, "Press Escape to quit", 0xEEEEEE, 16, FONT_DEFAULT)
-		client.font_render_text(text_offset, ch*2, "Press C to change your settings", 0xEEEEEE, 16, FONT_DEFAULT)
-		client.font_render_text(text_offset, ch*3, "Press R to update the server list", 0xEEEEEE, 16, FONT_DEFAULT)
-		client.font_render_text(text_offset, ch*4, "Press a number to join a server", 0xEEEEEE, 16, FONT_DEFAULT)
-		client.font_render_text(text_offset, ch*6, "Server list:", 0xEEEEEE, 16, FONT_DEFAULT)
-
+		
+		
+		font.render(text_offset, ch*0, "Press L for a local server on port 20737", 0xFFEEEEEE)
+		font.render(text_offset, ch*1, "Press Escape to quit", 0xFFEEEEEE)
+		font.render(text_offset, ch*2, "Press C to change your settings", 0xFFEEEEEE)
+		font.render(text_offset, ch*3, "Press R to update the server list", 0xFFEEEEEE)
+		font.render(text_offset, ch*4, "Press a number to join a server", 0xFFEEEEEE)
+		font.render(text_offset, ch*6, "Server list:", 0xFFEEEEEE)
+	
 		local i
 		if server_list == true then
-			client.font_render_text(text_offset, ch*7, "Fetching...", 0xEEEEEE, 16, FONT_DEFAULT)
+			font.render(text_offset, ch*7, "Fetching...", 0xFFEEEEEE)
+		elseif server_list == false then
+			font.render(text_offset, ch*7, "Could not connect to the server list. Are you connected to the internet?", 0xFFEEEEEE)
 		elseif server_list == nil then
-			client.font_render_text(text_offset, ch*7, "Failed to fetch the server list.", 0xEEEEEE, 16, FONT_DEFAULT)
+			font.render(text_offset, ch*7, "Failed to fetch the server list.", 0xFFEEEEEE)
 		else
 			-- Draw version string
 			local version_string = nil
 			local version_colour = nil
 			if common.version.num < latest_version then
 				version_string = "Update available! ("..common.version.str..")"
-				version_colour = 0xE81515
+				version_colour = 0xFFE81515
 			else
 				version_string = "Up to date! ("..common.version.str..")"
-				version_colour = 0x86CF11
+				version_colour = 0xFF86CF11
 			end
-
-			client.font_render_text(
-				screen_width - 200 - text_offset,
+			
+			font.render(
+				screen_width - font.string_width(version_string) - text_offset,
 				0,
 				version_string,
-				version_colour, 16, FONT_DEFAULT
+				version_colour
 			)
-
+			
 			-- Draw server list
 			local empty_start = 10
 			for i=1,9 do
@@ -226,42 +229,42 @@ function client.hook_render()
 					empty_start = i
 					break
 				end
-
+				
 				local sv = server_list[sid]
-
+				
 				if sv.official then
 					-- TODO: Maybe make this a column or something? Could have columns for official and favourites
 					client.img_blit(img_row_official_bkg, text_offset-2, (ch+4)*(8+i-1) - 1)
 				else
 					client.img_blit(img_row_bkg, text_offset-2, (ch+4)*(8+i-1) - 1)
 				end
-
-				client.font_render_text(text_offset, (ch+4)*(8+i-1), sid..": "..sv.name
+			
+				font.render(text_offset, (ch+4)*(8+i-1), sid..": "..sv.name
 					.." - "..sv.players_current.."/"..sv.players_max
 					.." - "..sv.mode
-					.." - "..sv.map, 0xEEEEEE, 16, FONT_DEFAULT)
-
+					.." - "..sv.map, 0xFFEEEEEE)
+				
 			end
 	--		common.img_fill(img_row_bkg, 0x22111111)
 			for i=empty_start,9 do
 				client.img_blit(img_row_bkg_transparent, text_offset-2, (ch+4)*(8+i-1) - 1)
 			end
 			--common.img_fill(img_row_bkg, 0x99111111)
-
+			
 			-- Draw prev/next buttons
 			local button_pos_x = screen_width - text_offset - 2 - img_button_bkg_width
 			local button_pos_y = (ch+4)*17 - 1
-			local label_offset = (img_button_bkg_width / 2) - 10--(font.string_width("<") / 2)
+			local label_offset = (img_button_bkg_width / 2) - (font.string_width("<") / 2)
 			if page_next_active then
 				client.img_blit(img_button_bkg, button_pos_x, button_pos_y)
 			else
 				client.img_blit(img_button_bkg_transparent, button_pos_x, button_pos_y)
 			end
-			client.font_render_text(
+			font.render(
 				button_pos_x + label_offset,
 				button_pos_y,
 				">",
-				0xEEEEEE, 16, FONT_DEFAULT
+				0xFFEEEEEE
 			)
 			button_pos_x = button_pos_x - 2 - img_button_bkg_width
 			if page_prev_active then
@@ -269,14 +272,14 @@ function client.hook_render()
 			else
 				client.img_blit(img_button_bkg_transparent, button_pos_x, button_pos_y)
 			end
-			client.font_render_text(
+			font.render(
 				button_pos_x + label_offset,
 				button_pos_y,
 				"<",
-				0xEEEEEE, 16, FONT_DEFAULT
+				0xFFEEEEEE
 			)
 		end
-
+		
 		end
 	end
 end
@@ -302,6 +305,7 @@ function client.hook_tick(sec_current, sec_delta)
 	elseif AUTO_REFRESH_RATE and server_refresh + AUTO_REFRESH_RATE < sec_current then
 		master_http = http_new {url = MASTER_URL}
 	end
-
+	
 	return 0.01
 end
+

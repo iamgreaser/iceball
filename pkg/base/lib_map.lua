@@ -26,14 +26,14 @@ function map_pillar_raw_unpack(tpack)
 	local i,j,y
 	i = 1
 	y = 0
-	
+
 	while true do
 		-- fill with air
 		while y < tpack[i+1] do
 			t[y+1] = nil
 			y = y + 1
 		end
-		
+
 		-- fill with top data
 		j = i + 4
 		while y <= tpack[i+2] do
@@ -41,7 +41,7 @@ function map_pillar_raw_unpack(tpack)
 			y = y + 1
 			j = j + 4
 		end
-		
+
 		-- check if end
 		if tpack[i] == 0 then
 			-- fill the rest with invisible
@@ -52,17 +52,17 @@ function map_pillar_raw_unpack(tpack)
 			-- that's it
 			break
 		end
-		
+
 		local ntr = tpack[i]-1-(tpack[i+2]-tpack[i+1]+1)
 		i = i + 4*tpack[i]
 		ntr = tpack[i+3] - ntr
-		
+
 		-- fill with invisible
 		while y < ntr do
 			t[y+1] = false
 			y = y + 1
 		end
-		
+
 		-- fill with bottom data
 		while y < tpack[i+3] do
 			t[y+1] = {tpack[j+3],tpack[j+2],tpack[j+1],tpack[j+0]}
@@ -70,7 +70,7 @@ function map_pillar_raw_unpack(tpack)
 			j = j + 4
 		end
 	end
-	
+
 	return t
 end
 
@@ -97,24 +97,32 @@ function map_pillar_raw_pack(t)
 	a = 0
 	i = nil
 	y = 0
-	
+
 	while true do
 		-- skip air
-		while t[y+1] == nil do
+		while t[y+1] == nil and y < ylen do
 			y = y + 1
-			if y >= ylen then break end
 		end
-		if y >= ylen then break end
-		
+
 		if i then tpack[i] = n end
-		
+
+		if y >= ylen then
+			-- inject empty run
+			i = #tpack+1
+			tpack[i+0] = 0
+			tpack[i+1] = ylen
+			tpack[i+2] = ylen-1
+			tpack[i+3] = a
+			break
+		end
+
 		-- allocate slot
 		i = #tpack+1
 		tpack[i+0] = 0
 		tpack[i+1] = y
 		tpack[i+2] = 0
 		tpack[i+3] = a
-		
+
 		-- copy top run
 		n = 1
 		while t[y+1] do
@@ -126,14 +134,14 @@ function map_pillar_raw_pack(t)
 			n = n + 1
 		end
 		tpack[i+2] = y-1
-		
+
 		-- skip dirt
 		while t[y+1] == false do
 			y = y + 1
 			if y >= ylen then break end
 		end
 		if y >= ylen then break end
-		
+
 		-- build bottom run
 		while t[y+1] do
 			tpack[#tpack+1] = t[y+1][4]
@@ -143,10 +151,10 @@ function map_pillar_raw_pack(t)
 			n = n + 1
 			y = y + 1
 		end
-		
+
 		a = y
 	end
-	
+
 	return tpack
 end
 
@@ -161,9 +169,9 @@ function map_pillar_raw_set(x,z,t)
 	end
 
 	local tpack = map_pillar_raw_pack(t)
-	
+
 	common.map_pillar_set(x,z,tpack)
-	
+
 	if img_overview and tpack[5] then
 		-- TODO: check for wrapping
 		local r,g,b
@@ -172,6 +180,7 @@ function map_pillar_raw_set(x,z,t)
 		r = tpack[7]
 		local c = argb_split_to_merged(r,g,b)
 		common.img_pixel_set(img_overview, x, z, c)
+		common.img_pixel_set(img_overview_hmap, x, z, tpack[2])
 	end
 end
 
@@ -220,7 +229,7 @@ function map_pillar_aerate(x,z)
 		map_pillar_raw_get(x,z+1),
 	}
 	local y
-	
+
 	for y=1,ylen do
 		if t[y] then
 			if l[1][y] ~= nil and l[2][y] ~= nil
@@ -236,14 +245,14 @@ function map_pillar_aerate(x,z)
 			end
 		end
 	end
-	
+
 	map_pillar_raw_set(x,z,t)
 end
 
 function map_hashcoord3(x,y,z)
 	local xlen,ylen,zlen
 	xlen,ylen,zlen = common.map_get_dims()
-	
+
 	return 
 		 (y % ylen) + ylen*((x % xlen) + xlen*(z % zlen))
 end
@@ -251,7 +260,7 @@ end
 function map_hashcoord2(x,z)
 	local xlen,ylen,zlen
 	xlen,ylen,zlen = common.map_get_dims()
-	
+
 	return (x % xlen)
 		+xlen*(z % zlen)
 end
@@ -272,33 +281,33 @@ function map_chkdisbrk(x,y,z)
 	local ptag = {}
 	local ptaglist = {}
 	local nukeq = {}
-	
+
 	local xlen,ylen,zlen
 	xlen,ylen,zlen = common.map_get_dims()
-	
+
 	-- build chunks
 	local i,j
 		for i=1,#loadq do
 		local prio,tx,ty,tz
 		tx,ty,tz = loadq[i][1],loadq[i][2],loadq[i][3]
-			
+
 		if not pmap[map_hashcoord2(tx,tz)] then
 			pmap[map_hashcoord2(tx,tz)] = map_pillar_raw_get(tx,tz)
 			plist[#plist+1] = {tx,tz}
 		end
-		
+
 		if (not tmap[map_hashcoord3(tx,ty,tz)]) and pmap[map_hashcoord2(tx,tz)][ty+1] ~= nil then
 			local pq = collect_new_prioq(function(p,q)
 				return p[1] < q[1]
 			end)
-			
+
 			tmap[map_hashcoord3(tx,ty,tz)] = {
 				heur = -ty,
 				dist = 0,
 				i = i,
 			}
 			pq.push({-ty,tx,ty,tz})
-			
+
 			local nukeasm = {}
 			while nukeasm and not pq.empty() do
 				local c = pq.pop()
@@ -312,7 +321,7 @@ function map_chkdisbrk(x,y,z)
 						pmap[map_hashcoord2(tx,tz)] = map_pillar_raw_get(tx,tz)
 						plist[#plist+1] = {tx,tz}
 					end
-					
+
 					local nb = {
 						{tx-1,ty,tz},
 						{tx+1,ty,tz},
@@ -321,7 +330,7 @@ function map_chkdisbrk(x,y,z)
 						{tx,ty,tz-1},
 						{tx,ty,tz+1},
 					}
-					
+
 					local dist = tm.dist+1
 					for j=1,6 do
 						local cx,cy,cz = nb[j][1], nb[j][2], nb[j][3]
@@ -331,12 +340,12 @@ function map_chkdisbrk(x,y,z)
 							nukeasm = nil
 							break
 						end
-						
+
 						if not pmap[map_hashcoord2(cx,cz)] then
 							pmap[map_hashcoord2(cx,cz)] = map_pillar_raw_get(cx,cz)
 							plist[#plist+1] = {cx,cz}
 						end
-						
+
 						if pmap[map_hashcoord2(cx,cz)][cy+1] ~= nil then
 							local heur = -cy
 							if not cm then
@@ -358,14 +367,14 @@ function map_chkdisbrk(x,y,z)
 					end
 				end
 			end
-			
+
 			if nukeasm then
 				nukeq[#nukeq+1] = nukeasm
 				--print(#nukeq,#nukeasm)
 			end
 		end
 	end
-	
+
 	-- nuke it all
 	-- TODO: assemble falling PMFs and drop the buggers
 	local brokestuff = false
@@ -415,11 +424,11 @@ function map_chkdisbrk(x,y,z)
 			}))
 		end
 	end
-	
+
 	if brokestuff and client then
 		client.wav_play_global(wav_grif,x+0.5,y+0.5,z+0.5)
 	end
-	
+
 	-- apply nukings
 	local nptag = {}
 	local nptaglist = {}
@@ -428,19 +437,19 @@ function map_chkdisbrk(x,y,z)
 		local c = ptaglist[i]
 		tx,tz = c[1], c[2]
 		map_pillar_raw_set(tx,tz,pmap[map_hashcoord2(tx,tz)])
-		
+
 		if not nptag[map_hashcoord2(tx,tz)] then
 			nptag[map_hashcoord2(tx,tz)] = true
 			nptaglist[#nptaglist+1] = {tx,tz}
 		end
 	end
-	
+
 	-- aerate
 	for i=1,#nptaglist do
 		local tx,tz
 		local c = nptaglist[i]
 		tx,tz = c[1], c[2]
-		
+
 		map_pillar_aerate(tx,tz)
 	end
 end
@@ -502,17 +511,17 @@ function map_block_set(x,y,z,typ,r,g,b)
 	local xlen,ylen,zlen 
 	xlen,ylen,zlen = common.map_get_dims()
 	if y < 0 or y >= ylen then return end
-	
+
 	local t = map_pillar_raw_get(x,z)
 	t[y+1] = {typ, r, g, b}
 	map_pillar_raw_set(x,z,t)
-	
+
 	map_pillar_aerate(x,z)
 	map_pillar_aerate(x-1,z)
 	map_pillar_aerate(x+1,z)
 	map_pillar_aerate(x,z-1)
 	map_pillar_aerate(x,z+1)
-	
+
 	if bhealth_clear then
 		bhealth_clear(x,y,z,false)
 	end
@@ -522,7 +531,7 @@ function map_block_paint(x,y,z,typ,r,g,b)
 	local xlen,ylen,zlen 
 	xlen,ylen,zlen = common.map_get_dims()
 	if y < 0 or y >= ylen then return end
-	
+
 	local t = map_pillar_raw_get(x,z)
 	if t[y+1] then
 		t[y+1] = {typ, r, g, b}
@@ -534,22 +543,22 @@ function map_block_break(x,y,z)
 	local xlen,ylen,zlen 
 	xlen,ylen,zlen = common.map_get_dims()
 	if y < 0 or y >= ylen-1 then return false end
-	
+
 	local t = map_pillar_raw_get(x,z)
 	if t[y+1] == nil then return false end
 	t[y+1] = nil
 	map_pillar_raw_set(x,z,t)
-	
+
 	map_pillar_aerate(x,z)
 	map_pillar_aerate(x-1,z)
 	map_pillar_aerate(x+1,z)
 	map_pillar_aerate(x,z-1)
 	map_pillar_aerate(x,z+1)
-	
+
 	map_chkdisbrk(x,y,z)
-	
+
 	bhealth_clear(x,y,z,false)
-	
+
 	return true
 end
 
@@ -557,11 +566,11 @@ function map_block_delete(x,y,z)
 	local xlen,ylen,zlen 
 	xlen,ylen,zlen = common.map_get_dims()
 	if y < 0 or y >= ylen-1 then return end
-	
+
 	local t = map_pillar_raw_get(x,z)
 	t[y+1] = nil
 	map_pillar_raw_set(x,z,t)
-	
+
 	map_pillar_aerate(x,z)
 	map_pillar_aerate(x-1,z)
 	map_pillar_aerate(x+1,z)
@@ -575,12 +584,12 @@ function map_block_pick(x,y,z)
 	if x < 0 or x >= xlen then return end
 	if y < 0 or y >= ylen then return end
 	if z < 0 or z >= zlen then return end
-	
+
 	local t = map_pillar_raw_get(x,z)
 	local c = t[y+1]
-	
+
 	if c==nil then error(x..","..y..","..z) end
-	
+
 	return c[1],c[2],c[3],c[4]
 end
 

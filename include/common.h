@@ -23,7 +23,7 @@
 #define VERSION_X 2
 #define VERSION_Y 1
 #define VERSION_A 20
-#define VERSION_Z 11
+#define VERSION_Z 24
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!
@@ -47,8 +47,14 @@
 #ifndef _MSC_VER
 #define PACK_START
 #define PACK_END
-#ifndef APPLE
-#include <immintrin.h>
+#ifdef __MMX__
+#include <mmintrin.h>
+#endif
+#ifdef __SSE__
+#include <xmmintrin.h>
+#endif
+#ifdef __SSE2__
+#include <emmintrin.h>
 #endif
 #include <stdint.h>
 #else
@@ -113,7 +119,9 @@ extern "C" {
 #include <GL/glew.h>
 #endif
 
+#ifndef DEDI
 #include <sackit.h>
+#endif
 #include <zlib.h>
 
 #ifdef WIN32
@@ -164,19 +172,13 @@ enum
 	UD_IMG,
 	UD_VA,
 	UD_SHADER,
+	UD_FBO,
 
 	UD_MAX
 };
 
 // if this flag is set, free when finished sending
 #define UDF_TEMPSEND 0x8000
-
-// hack for apple computers running ancient GCCs
-#ifdef APPLE
-#undef __SSE__
-#undef __SSE2__
-#undef _SSE_
-#endif
 
 // hack for softgm so the colours look right
 #ifdef APPLE
@@ -278,10 +280,20 @@ typedef struct shader
 {
 	int udtype;
 #ifndef DEDI
-	GLuint sh_v, sh_f;
 	GLuint prog;
 #endif
 } shader_t;
+
+typedef struct fbo
+{
+	int udtype;
+#ifndef DEDI
+	GLuint ctex, dstex;
+	GLuint handle;
+#endif
+	int width, height;
+} fbo_t;
+
 
 PACK_START
 // source: http://paulbourke.net/dataformats/tga/
@@ -398,6 +410,14 @@ typedef struct map
 	int udtype;
 	int xlen, ylen, zlen;
 #ifndef DEDI
+	int enable_side_shading;
+	int enable_ao;
+	float fog_distance;
+	int vertex_offs, vertex_size;
+	int color_offs, color_size;
+	int normal_offs, normal_size;
+	int tc0_offs, tc0_size;
+	int stride;
 	/* circular array of visible map chunks */
 	map_chunk_t *visible_chunks_arr;
 	/* current virtual center position in the circular array */
@@ -491,7 +511,7 @@ enum
 // dsp.c
 float interp_linear(float y0, float y1, float x);
 float interp_cubic(float y0, float y1, float y2, float y3, float x);
-float interp_hermite6p(float y0, float y1, float y2, float y3,
+float interp_hermite6p(float y0, float y1, float y2, float y3, 
 		float y4, float y5, float x);
 float frequency2wavelength(int rate, float frequency);
 float wavelength2frequency(int rate, float wavelength);
@@ -507,7 +527,7 @@ void img_free(img_t *img);
 void img_gc_set(lua_State *L);
 img_t *img_parse_tga(int len, const char *data, lua_State *L);
 img_t *img_load_tga(const char *fname, lua_State *L);
-
+void img_write_tga(const char *fname, img_t *img);
 //ttf.c
 img_t *font_ttf_render_to_texture(TTF_Font *font, const char *text, uint32_t color, lua_State *L);
 
@@ -538,12 +558,17 @@ extern int screen_cubeshift;
 extern int screen_fullscreen;
 extern int screen_antialiasing_level;
 extern int screen_smooth_lighting;
+extern int map_enable_autorender;
+extern int map_enable_ao;
+extern int map_enable_side_shading;
 extern int gl_expand_textures;
 extern int gl_use_vbo;
+extern int gl_use_fbo;
 extern int gl_quality;
 extern int gl_vsync;
 extern int gl_frustum_cull;
 extern int gl_flip_quads;
+extern int gl_expand_quads;
 extern int gl_chunk_size;
 extern int gl_visible_chunks;
 extern int gl_chunks_tesselated_per_frame;
@@ -625,6 +650,7 @@ int path_type_server_readable(int type);
 int path_type_server_writable(int type);
 
 // render.c
+img_t *render_dump_img(int width, int height, int sx, int sy);
 void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 	img_t *src, int dx, int dy, int bw, int bh, int sx, int sy, uint32_t color, float scalex, float scaley);
 #ifndef DEDI
@@ -637,7 +663,9 @@ extern float fog_distance;
 extern uint32_t fog_color;
 extern uint32_t cam_shading[6];
 void render_vxl_redraw(camera_t *camera, map_t *map);
-void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t *camera, map_t *map);
+void render_clear(camera_t *camera);
+void render_cubemap(uint32_t *pixels, int width, int height, int pitch, camera_t *camera, map_t *map,
+	img_t **img, int do_blend, char sfactor, char dfactor, float alpha, int img_count);
 void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_t *cam_base,
 	model_bone_t *bone, int islocal,
 	float px, float py, float pz, float ry, float rx, float ry2, float scale);
@@ -645,9 +673,11 @@ void render_vertex_array(uint32_t *pixels, int width, int height, int pitch, cam
 	va_t *bone, int islocal,
 	float px, float py, float pz, float ry, float rx, float ry2, float scale,
 	img_t **img, int do_blend, char sfactor, char dfactor, float alpha, int img_count);
+void render_resize(int width, int height);
 int render_init(int width, int height);
 void render_deinit(void);
 void render_init_visible_chunks(map_t *map, int starting_chunk_coordinate_x, int starting_chunk_coordinate_z);
+void render_init_va_format(map_t *map);
 void render_map_mark_chunks_as_dirty(map_t *map, int pillar_x, int pillar_z);
 void render_free_visible_chunks(map_t *map);
 int render_map_visible_chunks_count_dirty(map_t *map);
@@ -664,9 +694,12 @@ void cam_point_dir(camera_t *model, float dx, float dy, float dz, float zoom, fl
 void cam_point_dir_sky(camera_t *model, float dx, float dy, float dz, float sx, float sy, float sz, float zoom);
 
 // wav.c
+#ifndef DEDI
 extern sackit_playback_t *icesackit_pb;
 extern int icesackit_bufoffs;
 extern float icesackit_vol;
+extern float icesackit_mvol;
+#endif
 wav_t *wav_parse(char *buf, int len);
 wav_t *wav_load(const char *fname);
 void wav_kill(wav_t *wav);
@@ -682,3 +715,4 @@ void wav_chn_kill(wavchn_t *chn);
 int wav_init(void);
 void wav_deinit(void);
 #endif
+

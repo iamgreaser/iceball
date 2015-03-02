@@ -16,7 +16,7 @@
 # along with Iceball.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import errno, heapq, json, random, socket, struct, sys, time
+import errno, heapq, json, operator, random, socket, struct, sys, time
 
 CONN_PORT = int(sys.argv[1])
 
@@ -52,6 +52,37 @@ IB_VERSION = calc_ib_version(*IB_VERSION_CMP)
 IB_VERSION_MASK = ~((1<<10)-1)
 # if you wish to ignore "A" version as well, use this instead:
 # IB_VERSION_MASK = ~((1<<(10+5))-1)
+
+PRIORITY_DEFAULT = 0
+PRIORITY_OFFICIAL = 1
+PRIORITY_SERVERS = {}
+OFFICIAL_SERVERS = set()
+
+try:
+	with open("servers.json", "r") as fp:
+		p = json.load(fp)
+		# Server priorities
+		for k, v in p["server_priorities"].iteritems():
+			if not isinstance(k, (str, unicode)) or not isinstance(v, int):
+				print 'Invalid server priority entry in servers.json - skipping: "%s", "%s"' % (k, v)
+				break
+		else:
+			PRIORITY_SERVERS = p["server_priorities"]
+		# Official servers
+		for v in p["official_servers"]:
+			if not isinstance(v, (str, unicode)):
+				print 'Invalid official server entry in servers.json - ignoring: "%s"' % v
+			else:
+				OFFICIAL_SERVERS.add(v)
+		# Default priority values
+		PRIORITY_DEFAULT = p.get("default_priority", PRIORITY_DEFAULT)
+		PRIORITY_OFFICIAL = p.get("official_priority", PRIORITY_OFFICIAL)
+		# Cleanup
+		del p
+except IOError:
+	print "Could not read servers.json - skipping"
+except AttributeError:
+	print "Error in servers.json - skipping"
 
 def stripnul(s):
 	idx = s.find("\x00")
@@ -384,6 +415,8 @@ class HServer:
 			if d:
 				l.append(d)
 
+		l.sort(key=operator.itemgetter("priority"), reverse=True)
+
 		return l
 
 class HClient:
@@ -445,6 +478,13 @@ class HClient:
 				d["map"] = stripnul(msg[:30])
 
 				d["version"] = ib_version_str(ibver)
+
+				host_port = "%s:%s" % (d["address"], d["port"])
+				priority = PRIORITY_DEFAULT
+				if host_port in OFFICIAL_SERVERS:
+					d["official"] = 1
+					priority = PRIORITY_OFFICIAL
+				d["priority"] = PRIORITY_SERVERS.get(host_port, priority)
 
 				self.ibdata_queued = d
 				self.ibdata_cookie = struct.pack("<I", random.randint(0,0xFFFFFFFF))

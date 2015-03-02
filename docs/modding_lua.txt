@@ -29,13 +29,13 @@ lua base library stuff:
 	loadfile @
 	dofile @
 	_G @
-
+	
 	nothing else yet
 	(TODO: work out what we want to keep,
 	 as there's stuff being used that isn't listed here!)
-
+	
 	check http://www.lua.org/manual/5.1/ for more info on these
-
+	
 	some notes:
 	- dofile(x) = loadfile(x)()
 	- loadfile(x) = common.fetch_block("lua", x)
@@ -51,7 +51,7 @@ lua base library stuff:
 
 common.base_dir @
 	current base directory (minus the "pkg/" bit)
-
+	
 	writing to this string will *not* change the base dir,
 	so *don't write to it* or else you'll just screw up your own code!
 
@@ -62,7 +62,7 @@ server.port @
 
 common.version = {cmp={w,x,y,a,z},num,str="w.x.ya-z"} @
 	current engine version
-
+	
 	cmp is for the individual version components
 	num is a comparable number (bit count for each: 5,5,7,5,10)
 	str is the version as a string
@@ -75,62 +75,62 @@ client.renderer @
 client/server.hook_tick = fn(sec_curtime, sec_delta)->sec_wait @
 	sets a hook called every "tick"
 	returns a number telling it how long it wants to wait for
-
+	
 	"sec_curtime" is the current time elapsed from the start
 	"sec_delta" is the time elapsed from the start of the last
 	call to the hooked function
-
+	
 	setting this to nil will quit your game
-
+	
 	NOTE: DO NOT USE COMMON FOR THIS HOOK!
 	(only client/server is accepted)
 
 server.hook_file = fn(neth, ftype, fname)->object
 	sets a hook to intercept networked file requests
-
+	
 	"neth" is the socket handle pertaining to the file request
-
+	
 	can return nil to cancel the request
 	can return true to perform the default request
 	can return a string to load a different file instead
 	otherwise, return an object to be serialised
-
+	
 	currently supported values for ftype:
 	- "icemap"
-
+	
 	the rest must be either nil, true, or a string.
 
 client.hook_render = fn() @
 	sets a hook called every frame
-
+	
 	this is the only place where it is safe to render stuff
 	such as models and HUDs and whatnot
 
 client.hook_key = fn(key, state, modif, uni) @
 	sets a hook called every time a key changes
-
+	
 	state is either true or false
 	uni is an index of a unicode character, which is 0 if there is no unicode decoding
 
 client.hook_mouse_button = fn(button, state) @
 	sets a hook called every time a mouse button changes
-
+	
 	state is either true or false
 
 client.hook_mouse_motion = fn(x, y, dx, dy) @
 	sets a hook called every time the mouse is moved
-
+	
 	x, y are the current position
 	dx, dy are the delta positions
-
+	
 	you will probably use the latter pair if the mouse is "locked"
 	as x, y are not defined the same on all platforms!
 
 server.hook_connect = fn(neth, addrinfo) @
 	sets a hook called every time a client connects
-
+	
 	note, neth == true for "local multiplayer" mode
-
+	
 	"addrinfo" is a table which may or may not contain:
 	- "proto" / "addr": protocol / address used, one of the following:
 	  - "local" / nil
@@ -140,12 +140,12 @@ server.hook_connect = fn(neth, addrinfo) @
 		["cport"] = client port,
 		["sport"] = server port,
 	  }
-
+	
 	note, not all of the features are supported.
 
 server.hook_disconnect = fn(neth, server_force, reason) @
 	sets a hook called every time a client disconnects
-
+	
 	"server_force" is true where the server forces the disconnect
 
 client.mouse_lock_set(state) @
@@ -159,7 +159,7 @@ client.mouse_warp(x, y) @
 
 obj = common.fetch_start(ftype, fname)
 	initiates a file fetch
-
+	
 	"ftype" is one of the following:
 	- "lua": lua script
 	- "map": map (autodetect)
@@ -173,44 +173,44 @@ obj = common.fetch_start(ftype, fname)
 	- "it": it music module
 	- "ttf": ttf font
 	- "bin": raw data
-	- "ply": Stanford PLY model (PLY NOT SUPPORTED) - and unlikely to ever be
+	- "ply": Stanford PLY model
 	- "log": log data (TODO)
-
+	
 	for the server, this just loads the file from the disk.
-
+	
 	for the client, all clsave/* stuff is taken from the disk,
 	but all other files are downloaded from the server.
-
+	
 	returns true if the fetch has started,
 	nil if there is an error,
 	or the object if this was an immediate load.
-
+	
 	if there is already a file in the queue,
 	this will return "nil".
 
 obj, csize, usize, amount = common.fetch_poll()
-	polls the
+	polls the 
 	"obj" is one of the following:
 	- "nil" if transfer aborted or nothing is being fetched
 	  - in this case, all other fields will be nil
 	- "false" if still downloading
 	- the object you requested
 	  - in this case, another poll will just return nils
-
+	
 	"amount" is in the range 0 <= "amount" <= 1,
 	and indicates how much is downloaded
 	"csize" is the compressed size of the file
 	"usize" is the uncompressed size
-
+	
 	the two sizes will be nil while unknown.
-
+	
 	note, all vxl maps will be converted to icemap before sending.
 
 obj = common.fetch_block(ftype, fname) @
 	fetches a file using common.fetch_*
-
+	
 	simply returns "nil" on error
-
+	
 	if there is already something being fetched,
 	it will return "nil", too
 
@@ -219,10 +219,20 @@ client.gfx_alpha_test(enable) @
 
 	this is reset to true by the start of each frame
 
+client.gfx_clear_color() @
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	clears the screen (or FBO if we're using that)
+
 client.gfx_clear_depth() @
 	glClear(GL_DEPTH_BUFFER_BIT);
 
 	clears the depth buffer AKA z buffer
+
+client.gfx_clear_stencil() @
+	glClear(GL_STENCIL_BUFFER_BIT);
+
+	clears the stencil buffer
 
 client.gfx_depth_mask(enable) @
 	glDepthMask(enable ? GL_TRUE : GL_FALSE);
@@ -271,6 +281,16 @@ client.gfx_stencil_test(enable) @
 
 	this is reset to FALSE by the start of each frame
 
+client.gfx_viewport(x, y, width, height) @
+	glViewport(x, y, width, height);
+
+	sets up the drawing region
+	note, this also corrects the projection matrix
+
+	WARNING: (x,y) denotes the *bottom*-left of the "screen"!
+
+	this is reset to full screen by the start of each frame
+
 tex_units = client.gfx_tex_available() @
 	returns the number of texture units available
 
@@ -281,6 +301,30 @@ tex_units = client.gfx_tex_available() @
 	will eventually use GL_MAX_TEXTURE_IMAGE_UNITS_ARB
 	once shader support is in place
 
+success = client.gfx_fbo_available() @
+	returns if FBOs are available
+
+fbo = client.fbo_create(w, h, use_stencil) @
+	creates a new FBO with color/depth/stencil information
+	returns nil on failure
+
+	if use_stencil is set, create a GL_DEPTH_STENCIL_ATTACHMENT,
+	otherwise just a GL_DEPTH_ATTACHMENT.
+
+	WARNING: this also clears the current FBO status
+	so if you're using an FBO, you'll have to call fbo_use again!
+	(it does the equivalent of client.fbo_use(nil))
+	(why are you creating FBOs once you get around to actually using them anyway?)
+
+	FBO note: the width and height you get will NOT be expanded;
+	that is, a 320x200 FBO really IS 320x200,
+	rather than 512x256.
+
+client.fbo_use(fbo) @
+	uses the given FBO
+
+	"fbo" can be nil, in which case it uses the screen
+
 glver = client.gfx_glsl_available() @
 	returns if GLSL shaders are available
 
@@ -289,21 +333,23 @@ glver = client.gfx_glsl_available() @
 	- "2.0" if GL 2.0
 	- nil otherwise
 
-shader, result = client.glsl_create(vertex_src_string, fragment_src_string) @
+shader, result = client.glsl_create(vertex_src_string, fragment_src_string, attr_array = {}) @
 	creates a shader
 
+	attr_array is a list of strings to bind to attributes
+	
 	returns a shader handle in "shader" on success
 	returns nil on failure
 
 	shaders are garbage collected, so watch out!
-
+	
 	"result" is just the shader compiler output
 
 client.glsl_use(shader) @
 	uses a shader
 
 	pass nil if you want to switch to default GL 1 behaviour
-
+	
 	note, fog is disabled while using a shader
 	this does NOT mean that the far plane is extended for you!
 
@@ -321,30 +367,67 @@ client.glsl_set_uniform_i(uniform_idx, val1[, val2[, val3[, val4]]]) @
 client.glsl_set_uniform_ui(uniform_idx, val1[, val2[, val3[, val4]]]) @
 	sets an unsigned int uniform
 
+client.map_enable_autorender(enabled) @
+	enable drawing of the map at the start of each frame
+	enabled by default
+
+client.map_enable_ao(enabled) @
+	enable built-in ambient occlusion (unless smoothlighting is off)
+	enabled by default
+
+client.map_enable_side_shading(enabled) @
+	enable built-in voxlap-style side shading
+	enabled by default
+
 map = common.map_load(fname, fmt = "auto") @
 	loads a map, either "vxl" or "icemap"
 	use "auto" to autodetect
-
+	
 	this will return nil if it fails.
 
 map = common.map_new(lx, ly, lz) @
 	creates a new map
-
+	
 	note, ly is the *height* of the new map
-
+	
 	also all dimensions must be powers of two,
 	otherwise this will fail horribly!
-
+	
 	this will throw a lua error if it fails.
 
 common.map_free(map) @
 	free the given map
 	if you don't do this then it's memoryleaktopia
 	(plus i'm allowed to kill you)
-
+	
 	ALSO DON'T DO THIS TO THE CURRENT "SET" MAP
-
+	
 	TODO: clean up all models on game kill
+
+client.map_set_render_format(map, format) @
+	defines what render info a map will have
+	
+	format is as per common.va_make,
+	except these are the formats supported:
+	- 3v - vertex - must have exactly one
+	- 3c - colour - must have at most one
+	- 3n - normal - must have at most one
+	- 2t - texcoord - must have at most one
+
+	default formats:
+	- 3v,3c,3n - gl_shaders enabled
+	- 3v,3c - gl_shaders disabled
+
+	you should probably just leave it at the defaults
+	when shaders are disabled
+
+client.map_render(map, px, py, pz, tex = nil, afmt = nil, alpha = 1.0) @
+	render a map at global position px, py, pz
+
+	see client.va_render_global for the meanings of the other arguments
+
+	NOTE: at the moment it's probably not safe to render two of the same map
+	unless the px,py,pz offset is small
 
 common.map_set(map) @
 	sets the "current" map to "map"
@@ -356,7 +439,7 @@ map = common.map_get() @
 
 common.map_save(map, fname, fmt = "icemap") @
 	saves a map to a file, either "vxl" or "icemap"
-
+	
 	this will throw a lua error if it fails.
 
 r, g, b, dist = client.map_fog_get() @
@@ -367,36 +450,36 @@ client.map_fog_set(r, g, b, dist) @
 
 lx, ly, lz = common.map_get_dims() @
 	gets the map's dimensions
-
+	
 	these will be nil if there is no map loaded
 
 table = common.map_pillar_get(px, pz) @
 	returns a full pillar of data, skipping the total size header
-
+	
 	this will be nil if there is no map loaded
-
+	
 	note, the data wraps around here (wrt px,pz)!
 
 common.map_pillar_set(px, pz, table) @
 	sets a full pillar of data
-
+	
 	this will be nil if there is no map loaded
-
+	
 	the data is checked before setting,
 	and will throw a lua error if it fails.
-
+	
 	note, the data wraps around here (wrt px,pz)!
-
+	
 	WARNING: You MUST update the side pillars in your code!
 	You MUST ALSO fill in the newly-exposed blocks,
 	as well as remove the newly-unexposed blocks!
 	Otherwise, there WILL be gaps!
-
+	
 	WE'RE NOT DOING IT FOR YOU!
 
 common.map_mapents_get() @
 	gets the MapEnts chunk data (as a hopefully-json string)
-
+	
 	this will be nil if there is no map loaded or no MapEnts chunk
 
 common.map_mapents_set(mapents) @
@@ -437,11 +520,11 @@ pmf = common.model_new(bonemax = 5) @
 	[ paragraph does not apply to 0.1.2-10 and higher ]
 	remember to free it when you're done
 	as this is only a light userdata
-
+	
 	"bonemax" is the initial maximum number of "bones"
 	this model can have initially
 	useful if you know exactly how many you'll need
-
+	
 	currently the number of bones is limited to 256
 
 pmf = common.model_load_pmf(fname) @
@@ -450,10 +533,10 @@ pmf = common.model_load_pmf(fname) @
 	[ paragraph does not apply to 0.1.2-10 and higher ]
 	remember to free it when you're done
 	as this is only a light userdata
-
+	
 	limits of bones / points still applies here;
 	files which exceed these WILL be rejected!
-
+	
 	returns nil on failure.
 
 success = common.model_save_pmf(pmf, fname) @
@@ -465,7 +548,7 @@ common.model_free(pmf) @
 	[ paragraph does not apply to 0.1.2-10 and higher ]
 	if you don't do this then it's memoryleaktopia
 	(plus i'm allowed to kill you)
-
+	
 	TODO: clean up all models on game kill
 
 len = common.model_len(pmf) @
@@ -473,19 +556,19 @@ len = common.model_len(pmf) @
 
 pmf, boneidx = common.model_bone_new(pmf, ptmax = 20) @
 	creates a new bone
-
+	
 	"ptmax" is the initial maximum number of "points"
 	this bone can have initially
 	useful if you know exactly how many you'll need
-
+	
 	currently the number of points is limited to 4096
-
+	
 	WARNING: YOU *MUST* TAKE THE pmf VALUE RETURNED
 	AND *NOT* USE THE OLD ONE ANY LONGER!
-
+	
 	this is because realloc() is called on this dynamic list
 	and it can seriously crash badly
-
+	
 	JUST SAYING
 
 common.model_bone_free(pmf, boneidx) @
@@ -493,36 +576,36 @@ common.model_bone_free(pmf, boneidx) @
 
 name, table = common.model_bone_get(pmf, boneidx) @
 	gets a table with every point in the given bone
-
+	
 	each entry in the table has the following keys:
 		uint16_t radius; // fixed point 8.8
 		int16_t x,y,z; // fixed point 8.8
 		uint8_t r,g,b;
-
+	
 	the reserved field of each point is inaccessible from this API
 
 common.model_bone_set(pmf, boneidx, name, table) @
 	replaces the bone's contents with that in the table
-
+	
 	note, bones will be rejected if:
 	- name is > 15 chars long
 	- radius,x,y,z,r,g,b are missing
 	- 0 <= radius < 65536 fails
 	- -32768 <= x,y,z < 32768 fails
 	- 0 <= r,g,b < 256 fails
-
+	
 	these exceptions will throw a lua error
 
 boneidx = common.model_bone_find(pmf, name) @
 	finds the first bone with the given name
-
+	
 	note, this is case sensitive
-
+	
 	if it cannot be found, this returns nil
 
 client.model_render_bone_global(pmf, boneidx, px, py, pz, ry, rx, ry2, scale) @
 	renders a bone at world position (px,py,pz),
-
+	
 	rotated around Y by "ry" radians,
 	then around X by "rx" radians,
 	then around Y by "ry2" radians,
@@ -530,7 +613,7 @@ client.model_render_bone_global(pmf, boneidx, px, py, pz, ry, rx, ry2, scale) @
 
 client.model_render_bone_local(pmf, boneidx, px, py, pz, ry, rx, ry2, scale) @
 	renders a bone at camera-local position (px,py,pz),
-
+	
 	rotated around Y by "ry" radians,
 	then around X by "rx" radians,
 	then around Y by "ry2" radians,
@@ -551,7 +634,7 @@ img, width, height = common.img_load(fname, fmt = "tga") @
 
 	format is either "tga" or "png"
 	use "auto" to autodetect [ NOT SUPPORTED YET ]
-
+	
 	if this fails, img, width, height will all be nil
 
 img = common.img_new(width, height) @
@@ -560,18 +643,21 @@ img = common.img_new(width, height) @
 	[ paragraph does not apply to 0.1.2-10 and higher ]
 	remember to free it when you're done
 	as this is only a light userdata
-
+	
 	if this fails, img will be nil
 
 common.img_pixel_set(img, x, y, color) @
 	sets the pixel x,y on image "img" to "color"
-
+	
 	drawing is clipped
 
 common.img_pixel_get(img, x, y) @
 	gets the pixel x,y colour on image "img"
-
+	
 	x, y clipped
+
+common.img_fill(img, color) @
+	fills an image with a solid colour
 
 common.img_free(img) @
 	free the given image
@@ -583,11 +669,15 @@ common.img_free(img) @
 width, height = common.img_get_dims(img) @
 	gets the image's dimensions
 
+common.img_rect_fill(img, x, y, width, height, color) @
+	fills a sub-rect of an image with a solid colour
+
 client.img_blit(img, dx, dy, width = iwidth, height = iheight, sx = 0, sy = 0, color = 0xFFFFFFFF, scalex = 1.0, scaley = 1.0) @
 	blits an image onto screen position dx, dy
-
+	(img can also be an FBO here)
+	
 	"color" indicates a base 0xAARRGGBB colour to use
-
+	
 	this is clipped to fit!
 
 	use scalex/scaley to rescale source width/height to your likeness
@@ -595,16 +685,13 @@ client.img_blit(img, dx, dy, width = iwidth, height = iheight, sx = 0, sy = 0, c
 
 client.img_blit_to(target, img, dx, dy, width = iwidth, height = iheight, sx = 0, sy = 0, color = 0xFFFFFFFF, scalex = 1.0, scaley = 1.0) @
 	blits an image onto another image at position dx, dy
-
+	
 	"color" indicates a base 0xAARRGGBB colour to use
-
+	
 	this is clipped to fit!
 
 	use scalex/scaley to rescale source width/height to your likeness
 	(sw = dw/scalex; sh = dh/scaley)
-
-client.img_fill(img, color) @
-	fills an image with a solid colour
 
 common.font_load(fname, ptsize = 16, index = 0) @
 	fname
@@ -616,7 +703,7 @@ common.font_load(fname, ptsize = 16, index = 0) @
 		NOTE: font face loading possibly broken, needs testing
 
 
-font_img = client.font_render_to_texture(font, text, color = 0xFFFFFFFF, shadow_color = NULL, shadow_size = 1) @
+font_img, font_width, font_height = client.font_render_to_texture(font, text, color = 0xFFFFFFFF, shadow_color = NULL, shadow_size = 1) @
 	returns img_t you can img_blit or img_blit_to
 	font
 		Point to loaded font [eg. local font = common.font_load(fname)]
@@ -674,36 +761,36 @@ common.font_load(fontname, ptsize) @
 
 tab = common.json_parse(str) @
 	parses the JSON string "str"
-
+	
 	yes, this parser is anal-retentive,
 	and only allows one specific case where it breaks the rules!
 	it also errors if it encounters a char 0 in the middle of a string.
-
+	
 	returns nil on error
 
 tab = common.json_load(fname) @
 	loads a JSON file and parses it
-
+	
 	returns nil on error
 
 common.json_write(fname, value) @
 	takes a value and saves it to a file as JSON
 	makes the most sense if value is a table
-
+	
 	the following types are supported:
 	- numbers
 	- strings
 	- true, false, nil
 	- tables
 	- arrays
-
+	
 	and therefore the following types are NOT supported:
 	- functions/closures of ANY sort (C or Lua)
 	- userdata (light or otherwise)
 	- tables with a metatable (the metatable will be stripped)
-
+	
 	and i think that's about it for types really
-
+	
 	to tell the difference between tables and arrays it checks for the existence of the key "1"
 
 str = common.net_pack(fmt, ...) @
@@ -721,23 +808,23 @@ str = common.net_pack(fmt, ...) @
 	d = double-precision 64-bit float [def 0.0]
 	z = zero-terminated string [def ""]
 	#s = fixed-length string (replace # with a decimal number) [def ""]
-
+	
 	throws a lua error if the fmt syntax is invalid.
-
+	
 	spews defaults if not enough arguments are provided.
 
 ..., remain = common.net_unpack(fmt, str) @
 	unpacks data from a string
-
+	
 	will attempt to decode from start to end
-
+	
 	"remain" is the remainder of the string which was not decoded
-
+	
 	returns nil for fields that could not be decoded
 
 success = common.net_send(neth, str, unreliable = false) @
 	sends a packet
-
+	
 	"neth" is ignored C->S and should be nil
 	S->C local multiplayer should set "neth" to "true"
 
@@ -756,19 +843,19 @@ success = common.net_send(neth, str, unreliable = false) @
 
 str, neth = common.net_recv() @
 	receives a packet
-
+	
 	for C->S "neth" is nil
 	S->C local multiplayer will result in "neth" being "true"
-
+	
 	returns nil, nil if nothing is there
 	returns false, nil on the client if the connection was terminated
 
 server.net_kick(neth, reason) @
 	kicks a client from the server
-
+	
 	fails silently if neth is invalid (but still a plausible parameter),
 	or the socket is closed / errors out
-
+	
 	throws a lua error for other weird errors.
 
 client.hook_kick = fn(reason) @
@@ -787,7 +874,7 @@ data = common.tcp_recv(tcpsockfd) @
 	WARNING: DO NOT MAKE UP YOUR OWN SOCKFDS!
 	DOING THAT CAN REALLY SCREW UP YOUR CONNECTIONS AND WHATNOT.
 	SAME WARNING APPLIES TO SENDING.
-
+	
 	DO NOT MIX TCPSOCKFDS UP WITH UDPSOCKFDS. IT DOESN'T WORK.
 
 	THAT MEANS DON'T BE A SMARTARSE - LEAVE STDIN/OUT/ERR ALONE.
@@ -875,7 +962,7 @@ client.va_render_global(va, px, py, pz, ry, rx, ry2, scale, tex = nil, afmt = ni
 	- sd h = GL_ONE_MINUS_SRC_ALPHA
 	- sd H = GL_ONE_MINUS_DST_ALPHA
 	- s. s = GL_SRC_ALPHA_SATURATE
-
+	
 	useful blend modes:
 	- additive: "11"
 	- multiplicative: "C0" (?)
@@ -907,33 +994,33 @@ client.wav_cube_size(size) @
 
 chn = client.wav_play_global(wav, x, y, z, vol = 1.0, freq_mod = 1.0, vol_spread = ?) @
 	play the given sound at the given world position
-
+	
 	TODO: define vol_spread properly
-
+	
 	returns an index of a channel
 	returns nil on error
 
 chn = client.wav_play_local(wav, x = 0.0, y = 0.0, z = 0.0, vol = 1.0, freq_mod = 1.0, vol_spread = ?) @
 	play the given sound at the given camera-local position
-
+	
 	returns an index of a channel
 	returns nil on error
 
 exists = client.wav_chn_exists(chn) @
 	checks if an allocated channel still exists
-
+	
 	if a channel stops, it is garbage collected
 
 success = client.wav_chn_update(chn, x = nil, y = nil, z = nil, vol = nil, freq_mod = nil, vol_spread = nil) @
 	updates information pertaining to a channel
-
+	
 	any field which is nil is not affected
-
+	
 	returns false if the channel no longer exists
 
 client.wav_kill(chn) @
 	stops and removes a channel
-
+	
 	if chn == "true", kills all channels
 
 mus = common.mus_load_it(fname) @
@@ -976,3 +1063,4 @@ client.mk_sys_execv(arglist) @
 	relaunches Iceball with the given argv[] list
 	THIS CAN ONLY BE DONE IN -s 0 MODE!
 	see pkg/iceball/launch/main_client.lua.
+

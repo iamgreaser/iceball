@@ -10,6 +10,10 @@
 		(Yes, this DOES help on an Intel 3000 HD.)
 		If your game crashes when the map starts appearing, set it to false.
 
+		Do not confuse this with gl_fbo,
+		which is useful for render-to-texture stuff,
+		but requires a reasonably good GPU.
+
 		If you have an OpenGL-2.0-capable card (or one with non-power-of-two support),
 		and you wish to conserve a little bit of VRAM,
 		set gl_expand_textures to false.
@@ -34,7 +38,9 @@
 		"gl_frustum_cull": true,
 		"gl_occlusion_cull": 0,
 		"gl_flip_quads": true,
+		"gl_expand_quads": false,
 		"gl_vsync": true,
+		"gl_fbo": true,
 		"gl_vbo": true
 	},
 	
@@ -42,6 +48,7 @@
 		"freq": 44100,
 		"bufsize": 2048,
 		
+		"mus_volume": 1.0,
 		"volume": 1.0
 	},
 

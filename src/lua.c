@@ -186,6 +186,7 @@ int icelua_fn_client_mk_set_title(lua_State *L)
 #include "lua_base.h"
 #include "lua_bin.h"
 #include "lua_camera.h"
+#include "lua_fbo.h"
 #include "lua_gfx.h"
 #include "lua_glsl.h"
 #include "lua_image.h"
@@ -217,6 +218,11 @@ struct icelua_entry icelua_client[] = {
 	{icelua_fn_client_mouse_visible_set, "mouse_visible_set"},
 	{icelua_fn_client_mouse_visible_set, "mouse_visible_set"},
 	{icelua_fn_client_mouse_warp, "mouse_warp"},
+	{icelua_fn_client_map_enable_autorender, "map_enable_autorender"},
+	{icelua_fn_client_map_enable_ao, "map_enable_ao"},
+	{icelua_fn_client_map_enable_side_shading, "map_enable_side_shading"},
+	{icelua_fn_client_map_set_render_format, "map_set_render_format"},
+	{icelua_fn_client_map_render, "map_render"},
 	{icelua_fn_client_map_fog_get, "map_fog_get"},
 	{icelua_fn_client_map_fog_set, "map_fog_set"},
 	{icelua_fn_client_camera_point, "camera_point"},
@@ -229,13 +235,19 @@ struct icelua_entry icelua_client[] = {
 	{icelua_fn_client_camera_shading_set, "camera_shading_set"},
 	{icelua_fn_client_screen_get_dims, "screen_get_dims"},
 	{icelua_fn_client_gfx_alpha_test, "gfx_alpha_test"},
+	{icelua_fn_client_gfx_clear_color, "gfx_clear_color"},
 	{icelua_fn_client_gfx_clear_depth, "gfx_clear_depth"},
+	{icelua_fn_client_gfx_clear_stencil, "gfx_clear_stencil"},
 	{icelua_fn_client_gfx_depth_mask, "gfx_depth_mask"},
 	{icelua_fn_client_gfx_depth_test, "gfx_depth_test"},
 	{icelua_fn_client_gfx_stencil_test, "gfx_stencil_test"},
 	{icelua_fn_client_gfx_stencil_op, "gfx_stencil_op"},
 	{icelua_fn_client_gfx_stencil_func, "gfx_stencil_func"},
+	{icelua_fn_client_gfx_viewport, "gfx_viewport"},
 	{icelua_fn_client_gfx_tex_available, "gfx_tex_available"},
+	{icelua_fn_client_gfx_fbo_available, "gfx_fbo_available"},
+	{icelua_fn_client_fbo_create, "fbo_create"},
+	{icelua_fn_client_fbo_use, "fbo_use"},
 	{icelua_fn_client_gfx_glsl_available, "gfx_glsl_available"},
 	{icelua_fn_client_glsl_create, "glsl_create"},
 	{icelua_fn_client_glsl_use, "glsl_use"},
@@ -245,6 +257,7 @@ struct icelua_entry icelua_client[] = {
 	{icelua_fn_client_glsl_set_uniform_ui, "glsl_set_uniform_ui"},
 	{icelua_fn_client_model_render_bone_global, "model_render_bone_global"},
 	{icelua_fn_client_model_render_bone_local, "model_render_bone_local"},
+	{icelua_fn_client_img_dump, "img_dump"},
 	{icelua_fn_client_img_blit, "img_blit"},
 	{icelua_fn_client_img_blit_to, "img_blit_to"},
 	{icelua_fn_client_font_render_to_texture, "font_render_to_texture"},
@@ -298,6 +311,7 @@ struct icelua_entry icelua_common[] = {
 	{icelua_fn_common_img_pixel_set, "img_pixel_set"},
 	{icelua_fn_common_img_pixel_get, "img_pixel_get"},
 	{icelua_fn_common_img_fill, "img_fill"},
+	{icelua_fn_common_img_rect_fill, "img_rect_fill"},
 	{icelua_fn_common_img_free, "img_free"},
 	{icelua_fn_common_img_get_dims, "img_get_dims"},
 	{icelua_fn_common_font_ttf_load, "font_ttf_load"},
@@ -557,10 +571,22 @@ int icelua_init(void)
 			if(!lua_isnil(Lc, -1)) gl_use_vbo = v;
 			lua_pop(Lc, 1);
 
+
+			lua_getfield(Lc, -1, "gl_fbo");
+			v = lua_toboolean(Lc, -1);
+			if(!lua_isnil(Lc, -1)) gl_use_fbo = v;
+			lua_pop(Lc, 1);
+
 			lua_getfield(Lc, -1, "gl_flip_quads");
 			v = lua_toboolean(Lc, -1);
 			if(!lua_isnil(Lc, -1)) gl_flip_quads = v;
 			lua_pop(Lc, 1);
+
+			lua_getfield(Lc, -1, "gl_expand_quads");
+			v = lua_toboolean(Lc, -1);
+			if(!lua_isnil(Lc, -1)) gl_expand_quads = v;
+			lua_pop(Lc, 1);
+			if(gl_expand_quads) gl_flip_quads = 0;
 
 			lua_getfield(Lc, -1, "gl_frustum_cull");
 			v = lua_toboolean(Lc, -1);
@@ -617,6 +643,11 @@ int icelua_init(void)
 			lua_getfield(Lc, -1, "bufsize");
 			v = lua_tointeger(Lc, -1);
 			if(v >= 0) wav_bufsize = v;
+			lua_pop(Lc, 1);
+
+			lua_getfield(Lc, -1, "mus_volume");
+			f = lua_tonumber(Lc, -1);
+			if(!lua_isnil(Lc, -1)) icesackit_mvol = f;
 			lua_pop(Lc, 1);
 
 			lua_getfield(Lc, -1, "volume");

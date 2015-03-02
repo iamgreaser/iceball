@@ -60,7 +60,6 @@ clsave/config.json:
 		"gl_shaders" enables GLSL shaders (default: true).
 		If your card does not support these, it SHOULD fall back.
 		If you are having issues, you can turn these off.
-		NOTE: not supported yet - this will be ignored.
 
 		"gl_frustum_cull" enables 2D-space frustum culling for chunks (default: true)
 		Set this to "false" if the artifacts are digging your head in,
@@ -69,6 +68,12 @@ clsave/config.json:
 		"gl_flip_quads" changes the order in which quads are assembled.
 		Enable this if you have smooth lighting enabled and it looks like you have dark squares
 		at each of the corners.
+
+		"gl_expand_quads" forces the engine to render quads as two triangles.
+		Enabling this makes the engine ignore gl_flip_quads.
+		If your driver internally changes quads to tris, this may improve speed,
+		but Intel GPUs can handle the quad format directly, and this will slow them down.
+		This was mostly added to make porting to GLES easier.
 
 		"gl_vbo" enables vertex buffer objects (default: true)
 		May fail on older computers. Enable for a faster FPS.
@@ -81,9 +86,13 @@ clsave/config.json:
 		  typically you'll leave this at 2 for stereo.
 		"bits" is how many bits per sample - must be 16 or 8.
 		
-		"volume" is a volume multiplier.
-		Best to leave this at 1.0.
-	
+		"volume" is a volume multiplier for sound effects.
+		Full volume is 1.0.
+		
+		"mus_volume" is a volume multiplier for the music.
+		This is independent of "volume"!
+		Full volume is 1.0.
+
 	"security" section:
 		"bin_storage_allowed" allows/disallows saving of files to vol/ directories.
 		Set this to "false" if you are in any way worried about a server possibly

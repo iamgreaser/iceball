@@ -42,13 +42,18 @@ int gl_chunk_size = 16;
 int gl_visible_chunks = 49;
 int gl_chunks_tesselated_per_frame = 2;
 int gl_use_vbo = 1;
+int gl_use_fbo = 1;
 int gl_quality = 1;
 int gl_vsync = 1;
 int gl_frustum_cull = 1;
 int gl_occlusion_cull = 1;
 int gl_flip_quads = 0;
+int gl_expand_quads = 0;
 int gl_max_texunits = 1;
 int gl_shaders = 1;
+int map_enable_autorender = 1;
+int map_enable_ao = 1;
+int map_enable_side_shading = 1;
 
 int force_redraw = 1;
 
@@ -107,12 +112,16 @@ int platform_init(void)
 
 int video_init(void)
 {
+#ifndef USE_SDL2
+	SDL_WM_SetCaption("iceball",NULL);
+#endif
 	SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
+	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+	
 	if(!gl_vsync)
 #ifdef USE_SDL2
 		SDL_GL_SetSwapInterval(1);
@@ -260,44 +269,57 @@ int update_client_cont1(void)
 	if(mod_basedir == NULL || (boot_mode & 8))
 		return 0;
 
-	if (render_map_visible_chunks_count_dirty(clmap) > 0)
-		force_redraw = 1;
-
-	// redraw scene if necessary
-	if(force_redraw
-		|| fabsf(tcam.mpx-ompx) > 0.001f
-		|| fabsf(tcam.mpy-ompy) > 0.01f
-		|| fabsf(tcam.mpz-ompz) > 0.001f)
+	if(map_enable_autorender)
 	{
+		if (render_map_visible_chunks_count_dirty(clmap) > 0)
+			force_redraw = 1;
+
+		// redraw scene if necessary
+		if(force_redraw
+			|| fabsf(tcam.mpx-ompx) > 0.001f
+			|| fabsf(tcam.mpy-ompy) > 0.01f
+			|| fabsf(tcam.mpz-ompz) > 0.001f)
+		{
 #ifdef RENDER_FACE_COUNT
-		render_face_remain = 6;
+			render_face_remain = 6;
 #else
-		render_vxl_redraw(&tcam, clmap);
+			render_vxl_redraw(&tcam, clmap);
 #endif
-		ompx = tcam.mpx;
-		ompy = tcam.mpy;
-		ompz = tcam.mpz;
-		force_redraw = 0;
-	}
+			ompx = tcam.mpx;
+			ompy = tcam.mpy;
+			ompz = tcam.mpz;
+			force_redraw = 0;
+		}
 
 #ifdef RENDER_FACE_COUNT
-	if(render_face_remain > 0)
-		render_vxl_redraw(&tcam, clmap);
+		if(render_face_remain > 0)
+			render_vxl_redraw(&tcam, clmap);
 #endif
+	}
 
 	//printf("%.2f",);
 	// draw scene to cubemap
-	// SDL_LockSurface(screen);
+	// SDL_LockSurface(screen); //SDL2 this
 
 	//memset(screen->pixels, 0x51, screen->h*screen->pitch);
 #ifdef USE_SDL2
-	render_cubemap(NULL,
-		screen_width, screen_height, screen_width,
-		&tcam, clmap);
+	render_clear(&tcam);
+	if(map_enable_autorender)
+	{
+		render_cubemap(NULL,
+			screen->w, screen->h, screen->pitch/4,
+			&tcam, clmap,
+			NULL, 0, '1', '0', 1.0f, 0);
+	}
 #else
-	render_cubemap((uint32_t*)screen->pixels,
-		screen->w, screen->h, screen->pitch/4,
-		&tcam, clmap);
+	render_clear(&tcam);
+	if(map_enable_autorender)
+	{
+		render_cubemap((uint32_t*)screen->pixels,
+			screen->w, screen->h, screen->pitch/4,
+			&tcam, clmap,
+			NULL, 0, '1', '0', 1.0f, 0);
+	}
 #endif
 
 	// apply Lua HUD / model stuff

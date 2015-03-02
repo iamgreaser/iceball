@@ -107,7 +107,7 @@ int map_parse_root(map_t *map, const char *dend, const char *data, int xlen, int
 
 #ifndef DEDI
 	map->visible_chunks_arr = NULL;
-	render_init_visible_chunks(map, 0, 0);
+	render_init_va_format(map);
 #endif
 
 	return 1;
@@ -251,7 +251,7 @@ map_t *map_parse_icemap(int len, const char *data)
 
 #ifndef DEDI
 	map->visible_chunks_arr = NULL;
-	render_init_visible_chunks(map, 0, 0);
+	render_init_va_format(map);
 #endif
 
 	//printf("all good.\n");
@@ -285,6 +285,7 @@ map_t *map_load_icemap(const char *fname)
 char *map_serialise_icemap(map_t *map, int *len)
 {
 	// TODO: make map_save_icemap rely on this
+	// TODO: make this actually save everything (MetaInf, MapEnts)
 	int x,z,pi;
 
 	if(map == NULL)
@@ -435,6 +436,21 @@ int map_save_icemap(map_t *map, const char *fname)
 		}
 
 		fwrite(pb, p-pb, 1, fp);
+	}
+	
+	// write MapEnts
+	if (map->entities != NULL)
+	{
+		fwrite("MapEnts", 7, 1, fp);
+		if (map->entities_size < 255) {
+			uint8_t mapents_size = (uint8_t)map->entities_size;
+			fwrite(&mapents_size, 1, 1, fp);
+		} else {
+			fwrite("\xFF", 1, 1, fp);
+			uint32_t mapents_size = (uint32_t)map->entities_size;
+			fwrite(&mapents_size, 4, 1, fp);
+		}
+		fwrite(map->entities, map->entities_size, 1, fp);
 	}
 
 	// write end
