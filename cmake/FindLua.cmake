@@ -21,6 +21,7 @@ FIND_PATH(LUA_INCLUDE_DIR lua.h
   /opt/local
   /opt/csw
   /opt
+  "${CMAKE_CURRENT_SOURCE_DIR}/winlibs"
 )
 
 FIND_LIBRARY(LUA_LIBRARY
@@ -37,6 +38,7 @@ FIND_LIBRARY(LUA_LIBRARY
   /opt/local
   /opt/csw
   /opt
+  "${CMAKE_CURRENT_SOURCE_DIR}/winlibs"
 )
 
 if(LUA_LIBRARY)

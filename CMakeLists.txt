@@ -1,5 +1,5 @@
 #/CMakeLists.txt
-cmake_minimum_required (VERSION 2.8)
+cmake_minimum_required (VERSION 2.8.4)
 project (iceball)
 
 #set(CMAKE_BINARY_DIR build)
@@ -24,11 +24,39 @@ if (WIN32)
 	if (MSVC)
 		set_source_files_properties(filename.c PROPERTIES LANGUAGE CXX )
 	endif (MSVC)
-	LINK_DIRECTORIES(../winlibs)
-	include_directories(winlibs/glew)
-	include_directories(winlibs/lua)
-	include_directories(winlibs/SDL)
-	include_directories(winlibs/zlib)
+
+	include_directories("${CMAKE_CURRENT_SOURCE_DIR}/winlibs")
+	include_directories("${CMAKE_CURRENT_SOURCE_DIR}/winlibs/glew")
+	include_directories("${CMAKE_CURRENT_SOURCE_DIR}/winlibs/lua")
+	include_directories("${CMAKE_CURRENT_SOURCE_DIR}/winlibs/SDL")
+	include_directories("${CMAKE_CURRENT_SOURCE_DIR}/winlibs/zlib")
+	
+	link_directories("${CMAKE_CURRENT_SOURCE_DIR}/winlibs")
+
 endif (WIN32)
+
+# here be sackit
+link_directories("${CMAKE_CURRENT_SOURCE_DIR}/xlibinc")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/xlibinc")
+
+# find the hidden treasures
+find_package(ENet REQUIRED)
+find_package(PNG REQUIRED)
+find_package(SDL REQUIRED)
+find_package(zlib REQUIRED)
+find_package(Lua REQUIRED)
+find_package(GLEW REQUIRED)
+find_package(OpenGL REQUIRED)
+
+# include the outcasts
+include_directories(
+    ${PNG_INCLUDE_DIRS}
+    ${ENet_INCLUDE_DIRS}
+    ${SACKIT_INCLUDE_DIR}
+    ${ZLIB_INCLUDE_DIRS}
+    ${GLEW_INCLUDE_DIRS}
+    ${SDL_INCLUDE_DIR}
+    ${LUA_INCLUDE_DIR}
+)
 
 add_subdirectory(src)

@@ -19,6 +19,7 @@ FIND_PATH(ENet_INCLUDE_DIRS enet/enet.h
     $ENV{ENETDIR}
     /usr/local
     /usr
+    "${CMAKE_CURRENT_SOURCE_DIR}/winlibs"
     PATH_SUFFIXES include
     )
 
@@ -28,6 +29,7 @@ FIND_LIBRARY(ENet_LIBRARY
     $ENV{ENETDIR}
     /usr/local
     /usr
+    "${CMAKE_CURRENT_SOURCE_DIR}/winlibs"
     PATH_SUFFIXES lib
     )
 

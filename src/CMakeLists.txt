@@ -10,30 +10,6 @@ set(SOFT_FILES softgm/render.c softgm/render_img.c)
 source_group(softgm FILES ${SOFT_FILES})
 source_group(lua FILES ${LUA_FILES})
 
-# look for required libraries
-find_package(ENet REQUIRED)
-find_package(PNG REQUIRED)
-find_package(SDL REQUIRED)
-find_package(zlib REQUIRED)
-find_package(Lua REQUIRED)
-find_package(GLEW REQUIRED)
-find_package(OpenGL REQUIRED)
-
-# here be sackit
-link_directories("${CMAKE_CURRENT_SOURCE_DIR}/../xlibinc")
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/../xlibinc")
-
-# include
-include_directories(
-    ${PNG_INCLUDE_DIRS}
-    ${ENet_INCLUDE_DIRS}
-    ${SACKIT_INCLUDE_DIR}
-    ${ZLIB_INCLUDE_DIRS}
-    ${GLEW_INCLUDE_DIRS}
-    ${SDL_INCLUDE_DIR}
-    ${LUA_INCLUDE_DIR}
-)
-
 # iceball target
 add_executable(iceball ${MAIN_FILES} ${LUA_FILES} ${GL_FILES})
 target_link_libraries(iceball ${PNG_LIBRARIES} ${ENet_LIBRARIES} sackit ${LUA_LIBRARIES} ${SDL_LIBRARY} ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES})
@@ -41,5 +17,5 @@ set_target_properties(iceball PROPERTIES COMPILE_DEFINITIONS "USE_OPENGL")
 
 # iceball-dedi target
 add_executable(iceball-dedi EXCLUDE_FROM_ALL ${MAIN_FILES} ${LUA_FILES})
-target_link_libraries(iceball-dedi ${PNG_LIBRARIES} ${ENet_LIBRARIES} ${LUA_LIBRARIES} ${SDL_LIBRARY} ${SDL_LIBRARY})
+target_link_libraries(iceball-dedi ${PNG_LIBRARIES} ${ENet_LIBRARIES} ${LUA_LIBRARIES} ${SDL_LIBRARY})
 set_target_properties(iceball-dedi PROPERTIES COMPILE_DEFINITIONS "DEDI")
