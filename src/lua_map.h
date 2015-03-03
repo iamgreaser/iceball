@@ -570,10 +570,17 @@ int icelua_fn_client_map_render(lua_State *L)
 	tcam.mpy -= py;
 	tcam.mpz -= pz;
 	render_vxl_redraw(&tcam, map);
+#ifdef USE_SDL2
+	render_cubemap(NULL,
+		screen_width, screen_height, screen_width,
+		&tcam, map,
+		img, (bmode != NULL), sfactor, dfactor, 1.0f, img_count);
+#else
 	render_cubemap((uint32_t*)screen->pixels,
 		screen->w, screen->h, screen->pitch/4,
 		&tcam, map,
 		img, (bmode != NULL), sfactor, dfactor, 1.0f, img_count);
+#endif
 	tcam.mpx += px;
 	tcam.mpy += py;
 	tcam.mpz += pz;

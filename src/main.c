@@ -307,7 +307,7 @@ int update_client_cont1(void)
 	if(map_enable_autorender)
 	{
 		render_cubemap(NULL,
-			screen->w, screen->h, screen->pitch/4,
+			screen_width, screen_height, screen_width,
 			&tcam, clmap,
 			NULL, 0, '1', '0', 1.0f, 0);
 	}
