@@ -160,6 +160,7 @@ function client.hook_render()
 	if  render_initialized then
 		launcher_render_init()
 	else
+<<<<<<< HEAD
 		--splash sequence
 		if not img_splash_width then
 			img_splash_width, img_splash_height = common.img_get_dims(img_splash)
@@ -176,6 +177,24 @@ function client.hook_render()
 		end
 		if splashtweenprogress_y < 2.0 and  splashtweenprogress_scale < 0.85 then
 			splashtweenprogress_y = splashtweenprogress_y + 0.1
+=======
+		-- Draw version string
+		local version_string = nil
+		local version_colour = nil
+		if common.version.num < latest_version then
+			version_string = "Update available! ("..common.version.str..")"
+			version_colour = 0xFFE81515
+			download_text = "Download the latest version at http://iceball.build"
+			font.render(
+				screen_width - font.string_width(download_text) - text_offset,
+				ch * 1,
+				download_text,
+				0xFFCFC511
+			)
+		else
+			version_string = "Up to date! ("..common.version.str..")"
+			version_colour = 0xFF86CF11
+>>>>>>> master
 		end
 		img_splash_width_scaled = img_splash_width*splashtweenprogress_scale
 		img_splash_height_scaled = img_splash_height*splashtweenprogress_scale
