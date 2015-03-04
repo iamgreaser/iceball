@@ -54,10 +54,10 @@ void main()
 	owpos.z -= 0.5;
 	vec2 subpos1 = sin((fract(owpos.xz)*2.0-1.0)*3.141593/2.0)*0.5+0.5;
 	vec2 subpos0 = 1.0 - subpos1;
-	float t00 = texture2D(tex0, (owpos.xz + vec2( 0.0,  0.0))*map_idims).b*255.0;
-	float t01 = texture2D(tex0, (owpos.xz + vec2( 0.0,  1.0))*map_idims).b*255.0;
-	float t10 = texture2D(tex0, (owpos.xz + vec2( 1.0,  0.0))*map_idims).b*255.0;
-	float t11 = texture2D(tex0, (owpos.xz + vec2( 1.0,  1.0))*map_idims).b*255.0;
+	float t00 = texture2D(tex0, (owpos.xz + vec2(0.01,  0.01)) * map_idims).b * 255.0;
+	float t01 = texture2D(tex0, (owpos.xz + vec2(0.01,  0.99)) * map_idims).b * 255.0;
+	float t10 = texture2D(tex0, (owpos.xz + vec2(0.99,  0.01)) * map_idims).b * 255.0;
+	float t11 = texture2D(tex0, (owpos.xz + vec2(0.99,  0.99)) * map_idims).b * 255.0;
 	t00 = (owpos.y < t00 ? 1.0 : 0.0)*subpos0.x*subpos0.y;
 	t01 = (owpos.y < t01 ? 1.0 : 0.0)*subpos0.x*subpos1.y;
 	t10 = (owpos.y < t10 ? 1.0 : 0.0)*subpos1.x*subpos0.y;
