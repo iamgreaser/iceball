@@ -23,7 +23,7 @@
 #define VERSION_X 2
 #define VERSION_Y 1
 #define VERSION_A 0
-#define VERSION_Z 24
+#define VERSION_Z 25
 // Remember to bump "Z" basically every time you change the engine!
 // Remember to bump the version in Lua too!
 // Remember to document API changes in a new version!
@@ -677,6 +677,7 @@ int render_map_visible_chunks_count_dirty(map_t *map);
 // png.c
 img_t *img_parse_png(int len, const char *data, lua_State *L);
 img_t *img_load_png(const char *fname, lua_State *L);
+void img_write_png(const char *fname, img_t *img);
 
 // vecmath.c
 vec4f_t mtx_apply_vec(matrix_t *mtx, vec4f_t *vec);

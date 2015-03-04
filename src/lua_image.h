@@ -38,7 +38,7 @@ int icelua_fn_client_img_dump(lua_State *L)
 		time(&rawtime);
 		timeinfo = localtime(&rawtime);
 
-		strftime(buffer, 80, "clsave/vol/screenshots/%F_%H.%M.%S.tga", timeinfo);
+		strftime(buffer, 80, "clsave/vol/screenshots/%Y-%m-%d_%H.%M.%S.png", timeinfo);
 		fname = buffer;
 	}
 
@@ -50,7 +50,7 @@ int icelua_fn_client_img_dump(lua_State *L)
 
 	printf("writing image to %s\n", fname);
 	img_t *img = render_dump_img(screen_width, screen_height, 0, 0);
-	img_write_tga(fname, img);
+	img_write_png(fname, img);
 	free(img);
 #endif
 

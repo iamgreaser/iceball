@@ -20,9 +20,9 @@
 -- Thanks. --GM
 
 VERSION_ENGINE = {
-	cmp={0,2,1,0,24},
-	num=8421376+24,
-	str="0.2.1-24",
+	cmp={0,2,1,0,25},
+	num=8421376+25,
+	str="0.2.1-25",
 }
 
 --error(""..common.version.num)
@@ -161,9 +161,8 @@ VERSION_BUGS = {
 {intro=nil, fix=8421376+15, msg="map_render not supported"},
 {intro=8421376+15, fix=8421376+20, msg="map_render support incomplete"},
 {intro=nil, fix=8421376+16, msg="FBOs not supported"},
-{intro=8421376+16, fix=8421376+19, msg="FBO support incomplete"},
+{intro=8421376+16, fix=nil, msg="FBO support incomplete"},
 {intro=nil, fix=8421376+21, msg="gl_flip_quads incomplete"},
 {intro=8421376+22, fix=8421376+23, msg="img_dump not sandboxed - UPGRADE"},
-
 }
 

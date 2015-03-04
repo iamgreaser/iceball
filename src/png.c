@@ -512,3 +512,224 @@ img_t *img_load_png(const char *fname, lua_State *L)
 	return ret;
 }
 
+void img_write_png(const char *fname, img_t *img)
+{
+	size_t x, y, i;
+
+	// Create an image buffer
+	// Create a row
+	size_t gap = 3;
+	size_t src_row_size = img->head.width*gap;
+	size_t row_size = img->head.width*gap + gap;
+	size_t img_size = row_size * img->head.height;
+	size_t img_uncomp_len = (row_size - (gap-1)) * img->head.height;
+	uint8_t *img_uncomp = malloc(img_uncomp_len);
+	uint8_t rowP[1][row_size];
+	uint8_t rowC[5][row_size];
+	uint8_t *src_pixels = (uint8_t *)(img->pixels);
+	int rowsel = 0;
+
+	// Clear previous row
+	for(x = 0; x < row_size; x++)
+		rowC[0][x] = 0;
+
+	// Apply predition
+	for(y = 0; y < img->head.height; y++)
+	{
+		// Clear left pixel
+		for(x = 0; x < gap; x++)
+			rowC[0][x] = 0;
+
+		// Copy to last
+		memcpy(rowP, rowC[0], row_size);
+
+		// Grab current pixel run
+		memcpy(rowC[0] + gap,
+			src_pixels + src_row_size*(img->head.height-1-y),
+			src_row_size);
+
+		// BGR -> RGB
+		for(x = gap; x < row_size; x += gap)
+		{
+			uint8_t r = rowC[0][x+2];
+			uint8_t g = rowC[0][x+1];
+			uint8_t b = rowC[0][x+0];
+			rowC[0][x+0] = r;
+			rowC[0][x+1] = g;
+			rowC[0][x+2] = b;
+		}
+
+		// Apply prediction types
+		for(i = 1; i < 5; i++)
+		{
+			rowC[i][gap-1] = i;
+			switch(i)
+			{
+				case 1:
+					for(x = gap; x < row_size; x++)
+						rowC[i][x] = rowC[0][x] - rowC[0][x-gap];
+					break;
+				case 2:
+					for(x = gap; x < row_size; x++)
+						rowC[i][x] = rowC[0][x] - rowP[0][x];
+					break;
+				case 3:
+					for(x = gap; x < row_size; x++)
+						rowC[i][x] = rowC[0][x] - (uint8_t)(
+							(((int16_t)(rowP[0][x]))
+							+((int16_t)(rowC[0][x-gap])))/2);
+					break;
+				case 4:
+					for(x = gap; x < row_size; x++)
+						rowC[i][x] = rowC[0][x] - png_predict_paeth(
+							rowC[0][x-gap],
+							rowP[0][x],
+							rowP[0][x-gap]);
+					break;
+
+			}
+		}
+
+		// Estimate best prediction
+		// TODO: check for redundancies that the LZSS step can gobble up
+		// TODO: collect statistics!
+		uint16_t rtab[256];
+		int rbest = 0;
+		uint64_t rbestscore = 0;
+
+		for(i = 0; i < 5; i++)
+		{
+			// Clear freq table
+			for(x = 0; x < 256; x++)
+				rtab[x] = 0;
+
+			// Add to freq table
+			int symcount = 0;
+			for(x = 2; x < row_size; x++)
+			{
+				if(rtab[rowC[i][x]] == 0)
+					symcount++;
+
+				rtab[rowC[i][x]]++;
+			}
+
+			// Sum total - the bigger the better
+			uint64_t score = 0;
+			for(x = 0; x < 256; x++)
+			{
+				uint64_t adder = (uint64_t)(rtab[x]);
+				adder *= adder;
+				score += adder;
+			}
+
+			// Apply symbol count
+			// Ultimately we want something along the lines of the log2 of this
+			// Using a loose A/(B+x) estimate
+			score *= ((uint64_t)(4*0x100))/(uint64_t)(symcount + 4);
+
+			// Is this the best score?
+			if(i == 0 || score > rbestscore)
+			{
+				rbest = i;
+				rbestscore = score;
+			}
+		}
+
+		// Use this prediction!
+		//printf("%i: %i %i\n", y, rbest, rbestscore);
+		memcpy(img_uncomp + (row_size - (gap-1))*y,
+			rowC[rbest] + (gap-1), row_size - (gap-1));
+	}
+
+	// Compress image
+	uLongf cbound = compressBound(img_size);
+	uint8_t *img_comp = malloc(cbound);
+	if(compress((Bytef *)(img_comp), &cbound,
+		(Bytef *)(img_uncomp), img_uncomp_len))
+	{
+		// abort
+		fprintf(stderr, "img_write_png: compression failed!\n");
+		free(img_uncomp);
+		free(img_comp);
+		return;
+	}
+
+	// Start writing
+	FILE *fp = fopen(fname, "wb");
+	if(fp == NULL) {
+		perror("img_write_png");
+		return;
+	}
+
+	int crc = 0;
+
+	// Write header
+	fwrite("\x89PNG\x0D\x0A\x1A\x0A", 8, 1, fp);
+	uint8_t ihdr[25];
+	ihdr[0] = 0;
+	ihdr[1] = 0;
+	ihdr[2] = 0;
+	ihdr[3] = 13;
+	ihdr[4] = 'I';
+	ihdr[5] = 'H';
+	ihdr[6] = 'D';
+	ihdr[7] = 'R';
+	ihdr[8] = 0;
+	ihdr[9] = 0;
+	ihdr[10] = img->head.width>>8;
+	ihdr[11] = img->head.width&255;
+	ihdr[12] = 0;
+	ihdr[13] = 0;
+	ihdr[14] = img->head.height>>8;
+	ihdr[15] = img->head.height&255;
+	ihdr[16] = 8;
+	ihdr[17] = 2;
+	ihdr[18] = 0;
+	ihdr[19] = 0;
+	ihdr[20] = 0; // Think we'll interlace these? THINK AGAIN
+	crc = crc32(crc32(0L, Z_NULL, 0), ihdr+4, 13+4);
+	ihdr[21] = (uint8_t)(crc>>24);
+	ihdr[22] = (uint8_t)(crc>>16);
+	ihdr[23] = (uint8_t)(crc>>8);
+	ihdr[24] = (uint8_t)(crc);
+	fwrite(ihdr, 25, 1, fp);
+
+	// Write image
+	uint32_t img_comp_len = (uint32_t)cbound;
+	crc = crc32(crc32(0L, Z_NULL, 0), (const Bytef *)"IDAT", 4);
+	crc = crc32(crc, (const Bytef *)img_comp, (size_t)img_comp_len);
+	ihdr[0] = (uint8_t)(img_comp_len>>24);
+	ihdr[1] = (uint8_t)(img_comp_len>>16);
+	ihdr[2] = (uint8_t)(img_comp_len>>8);
+	ihdr[3] = (uint8_t)(img_comp_len);
+	ihdr[4] = (uint8_t)(crc>>24);
+	ihdr[5] = (uint8_t)(crc>>16);
+	ihdr[6] = (uint8_t)(crc>>8);
+	ihdr[7] = (uint8_t)(crc);
+	fwrite(ihdr, 4, 1, fp);
+	fwrite("IDAT", 4, 1, fp);
+	fwrite(img_comp, img_comp_len, 1, fp);
+	fwrite(ihdr+4, 4, 1, fp);
+
+	// Write IEND
+	crc = crc32(crc32(0L, Z_NULL, 0), (const Bytef *)"IEND", 4);
+	ihdr[0] = (uint8_t)(0>>24);
+	ihdr[1] = (uint8_t)(0>>16);
+	ihdr[2] = (uint8_t)(0>>8);
+	ihdr[3] = (uint8_t)(0);
+	ihdr[4] = (uint8_t)(crc>>24);
+	ihdr[5] = (uint8_t)(crc>>16);
+	ihdr[6] = (uint8_t)(crc>>8);
+	ihdr[7] = (uint8_t)(crc);
+	fwrite(ihdr, 4, 1, fp);
+	fwrite("IEND", 4, 1, fp);
+	fwrite(ihdr+4, 4, 1, fp);
+
+	// Free uncompressed and compressed images
+	free(img_uncomp);
+	free(img_comp);
+
+	// Close!
+	fclose(fp);
+}
+
