@@ -331,6 +331,10 @@ if server then
 		net_broadcast(nil, common.net_pack("BBBB", PKT_FOG_COLOR, fog_r, fog_g, fog_b))
 	end
 
+	function fog_get()
+		return fog_r, fog_g, fog_b
+	end
+
 	function fog_send_to(neth)
 		net_send(neth, common.net_pack("BBBB", PKT_FOG_COLOR, fog_r, fog_g, fog_b))
 	end
