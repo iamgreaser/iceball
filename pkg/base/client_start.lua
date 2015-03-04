@@ -1018,7 +1018,12 @@ shader_world, result = loadfile("pkg/base/shader/world_diff.lua")()
 shader_white, result = loadfile("pkg/base/shader/white.lua")()
 shader_simple, result = loadfile("pkg/base/shader/simple.lua")()
 shader_img, result = loadfile("pkg/base/shader/img.lua")()
-shader_postproc, result = loadfile("pkg/base/shader/post_toon.lua")()
+postproc_map = {
+	toon = "pkg/base/shader/post_toon.lua",
+	stereo = "pkg/base/shader/post_stereo.lua",
+}
+postproc = (user_config.postproc and postproc_map[user_config.postproc]) or "pkg/base/shader/post_toon.lua"
+shader_postproc, result = loadfile(postproc)()
 end
 
 if shader_world then
