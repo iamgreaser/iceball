@@ -50,11 +50,9 @@ void main()
 
 	// Sky shadow
 	vec4 owpos = wpos + wnorm*0.001;
-	/*
-	owpos.x -= map_idims.x*1.0;
-	owpos.z -= map_idims.y*1.0;
-	*/
-	vec2 subpos1 = owpos.xz - vec2(ivec2(owpos.xz));
+	owpos.x -= 0.5;
+	owpos.z -= 0.5;
+	vec2 subpos1 = sin((fract(owpos.xz)*2.0-1.0)*3.141593/2.0)*0.5+0.5;
 	vec2 subpos0 = 1.0 - subpos1;
 	float t00 = texture2D(tex0, (owpos.xz + vec2( 0.0,  0.0))*map_idims).b*255.0;
 	float t01 = texture2D(tex0, (owpos.xz + vec2( 0.0,  1.0))*map_idims).b*255.0;
