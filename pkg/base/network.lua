@@ -414,7 +414,7 @@ network.sys_handle_s2c(PKT_NEW_MAP, "", function (neth, cli, plr, sec_current, p
 		img_overview = common.img_new(xlen, zlen)
 		img_overview_hmap = common.img_new(xlen, zlen)
 		img_overview_grid = common.img_new(xlen, zlen)
-		img_overview_icons = common.img_new(xlen, zlen)
+		--img_overview_icons = common.img_new(xlen, zlen)
 		local x,z
 
 		for z=0,zlen-1 do

@@ -57,6 +57,74 @@ function recolor_component(r,g,b,mdata)
 	end
 end
 
+function gen_icon(mspr)
+	local this = {
+		ofx = mspr[1],
+		ofy = mspr[2],
+	}
+
+	do
+		local i
+		local lgx, lgy = mspr[1], mspr[2]
+
+		for i=3,#mspr,2 do
+			this.ofx = math.min(this.ofx, mspr[i+0])
+			this.ofy = math.min(this.ofy, mspr[i+1])
+			lgx = math.max(lgx, mspr[i+0])
+			lgy = math.max(lgy, mspr[i+1])
+		end
+
+		this.w = lgx - this.ofx + 1
+		this.h = lgy - this.ofy + 1
+		this.img = common.img_new(this.w, this.h)
+
+		--print(this.w, this.h, this.ofx, this.ofy)
+		for i=1,#mspr,2 do
+			common.img_pixel_set(this.img,
+				mspr[i+0]-this.ofx,
+				mspr[i+1]-this.ofy,
+				0xFFFFFFFF)
+		end
+	end
+
+	function this.blit(x, y, c, mx, my, x1, y1, x2, y2)
+		local dx = x + this.ofx - x1
+		local dy = y + this.ofy - y1
+		local sx = 0
+		local sy = 0
+		local iw = this.w
+		local ih = this.h
+
+		if dx < 0 then
+			local diff = 0 - dx
+			dx = 0
+			sx = sx + diff
+			iw = iw - diff
+		end
+
+		if dy < 0 then
+			local diff = 0 - dy
+			dy = 0
+			sy = sy + diff
+			ih = ih - diff
+		end
+
+		if dx + iw >= x2-x1 then
+			iw = (x2-x1) - dx
+		end
+
+		if dy + ih >= y2-y1 then
+			ih = (y2-y1) - dy
+		end
+
+		if iw >= 1 and ih >= 1 then
+			client.img_blit(this.img, dx+mx, dy+my, iw, ih, sx, sy, c)
+		end
+	end
+
+	return this
+end
+
 function string.split(s, sep, plain)
 	local start = 1
 	local done = false

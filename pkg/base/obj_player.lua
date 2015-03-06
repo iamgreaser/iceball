@@ -1481,14 +1481,22 @@ function new_player(settings)
 			font_mini.print(x - font_mini.width*#s/2, y, 0xFFFFFFFF, s)
 		end
 
+		function this.blit_overview_icons(mx, my, x1, y1, x2, y2)
+			local i
+			for i=1,#log_mspr do
+				--print("blit", i, log_mspr[i][1], log_mspr[i][2], log_mspr[i][3])
+				log_mspr[i][4].blit(
+					log_mspr[i][1],
+					log_mspr[i][2],
+					log_mspr[i][3],
+					mx, my,
+					x1, y1, x2, y2)
+			end
+		end
+
 		function this.update_overview_icons(dT)
 			if this.alive then
-				for i=1,#log_mspr,2 do
-					local u,v
-					u = log_mspr[i  ]
-					v = log_mspr[i+1]
-					common.img_pixel_set(img_overview_icons, u, v, 0x00000000)
-				end
+				local i, j
 				log_mspr = {}
 
 				for j=1,players.max do
@@ -1501,7 +1509,9 @@ function new_player(settings)
 						if not plr.alive then
 							drawit = false
 						elseif plr == this then
+							-- TODO: work out how to draw the line!
 							c = 0xFF00FFFF
+							--[[
 							for i=0,10-1 do
 								local d=i/math.sqrt(2)
 								local u,v
@@ -1511,6 +1521,7 @@ function new_player(settings)
 								log_mspr[#log_mspr+1] = v
 								common.img_pixel_set(img_overview_icons, u, v, c)
 							end
+							]]
 						elseif plr.team == this.team then
 							c = 0xFFFFFFFF
 						else
@@ -1520,14 +1531,7 @@ function new_player(settings)
 						end
 
 						if drawit then
-							for i=1,#mspr_player,2 do
-								local u,v
-								u = math.floor(x)+mspr_player[i  ]
-								v = math.floor(y)+mspr_player[i+1]
-								log_mspr[#log_mspr+1] = u
-								log_mspr[#log_mspr+1] = v
-								common.img_pixel_set(img_overview_icons, u, v, c)
-							end
+							log_mspr[1+#log_mspr] = {math.floor(x), math.floor(y), c, mspr_player}
 						end
 					end
 				end
@@ -1540,14 +1544,7 @@ function new_player(settings)
 						x,y = obj.x, obj.z
 						local l = obj.color_icon
 						local c = argb_split_to_merged(l[1],l[2],l[3])
-						for i=1,#(obj.mspr),2 do
-							local u,v
-							u = math.floor(x)+obj.mspr[i  ]
-							v = math.floor(y)+obj.mspr[i+1]
-							log_mspr[#log_mspr+1] = u
-							log_mspr[#log_mspr+1] = v
-							common.img_pixel_set(img_overview_icons, u, v, c)
-						end
+						log_mspr[1+#log_mspr] = {x, y, c, obj.mspr}
 					end
 				end
 			end
@@ -1562,7 +1559,8 @@ function new_player(settings)
 			client.img_blit(img_overview_grid, mx, my,
 				this.large_map.width, this.large_map.height, 
 				0, 0, 0x80FFFFFF)
-			client.img_blit(img_overview_icons, mx, my)
+			--client.img_blit(img_overview_icons, mx, my)
+			this.blit_overview_icons(mx, my, 0, 0, this.large_map.width, this.large_map.height)
 
 			local i
 
@@ -1616,16 +1614,15 @@ function new_player(settings)
 				mw, mh = this.mini_map.width, this.mini_map.height
 
 				local left, top
-				left = this.mini_map.l
-				top = this.mini_map.t
+				left = math.floor(this.mini_map.l)
+				top = math.floor(this.mini_map.t)
 
 				local qx, qy
 				for qy=-1,1 do
 				for qx=-1,1 do
-
 					local view_left, view_top
-					view_left = this.x-mw/2+this.large_map.width*qx
-					view_top = this.z-mh/2+this.large_map.height*qy
+					view_left = math.floor(this.x-mw/2)+this.large_map.width*qx
+					view_top = math.floor(this.z-mh/2)+this.large_map.height*qy
 
 					client.img_blit(img_overview, left, top,
 						mw, mh,
@@ -1635,12 +1632,10 @@ function new_player(settings)
 						mw, mh,
 						view_left, view_top,
 						0x80FFFFFF)
-					client.img_blit(img_overview_icons, left, top,
-						mw, mh,
-						view_left, view_top,
-						0xFFFFFFFF)
 				end
 				end
+				local vx, vy = math.floor(this.x-mw/2), math.floor(this.z-mh/2)
+				this.blit_overview_icons(left, top, vx, vy, vx+mw, vy+mh)
 				this.print_map_location(this.mini_map.cx, this.mini_map.b + 2)
 			end
 		end

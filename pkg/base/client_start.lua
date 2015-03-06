@@ -25,10 +25,6 @@ if not client.glsl_create then
 	USE_GLSL = false
 end
 
-if not USE_GLSL then
-	USE_FBO = false
-end
-
 if not client.gfx_fbo_available then
 	USE_FBO = false
 end
@@ -100,6 +96,10 @@ else
 	function shader_new() return nil, "Shaders not supported by this GPU" end
 	function shader_push_nil() end
 	function shader_pop_nil() end
+end
+
+if not USE_GLSL then
+	USE_FBO = false
 end
 
 if USE_FBO then
@@ -326,7 +326,7 @@ end
 -- create map sprites
 log_mspr = {}
 
-mspr_player = {
+mspr_player = gen_icon {
 	                -1,-3,   0,-3,   1,-3,
 
 	        -2,-2,                           2,-2,
@@ -343,7 +343,7 @@ mspr_player = {
 }
 
 -- TODO: confirm the correct size of the intel + tent icons
-mspr_intel = {
+mspr_intel = gen_icon {
 	-3,-3,  -2,-3,  -1,-3,   0,-3,   1,-3,   2,-3,   3,-3,
 
 	-3,-2,                                           3,-2,
@@ -359,7 +359,7 @@ mspr_intel = {
 	-3, 3,  -2, 3,  -1, 3,   0, 3,   1, 3,   2, 3,   3, 3,
 }
 
-mspr_tent = {
+mspr_tent = gen_icon {
 	                         0,-3,
 
 	                         0,-2,
@@ -920,7 +920,7 @@ do
 	img_overview = common.img_new(xlen, zlen)
 	img_overview_hmap = common.img_new(xlen, zlen)
 	img_overview_grid = common.img_new(xlen, zlen)
-	img_overview_icons = common.img_new(xlen, zlen)
+	--img_overview_icons = common.img_new(xlen, zlen)
 	local x,z
 	
 	if shader_world then
