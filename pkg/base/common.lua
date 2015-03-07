@@ -55,107 +55,115 @@ for i=1,#LIB_LIST do
 end
 i = nil
 
+function cvar(name, default)
+	if mod_data and mod_data.cvars and mod_data.cvars[name] ~= nil then
+		_G[name] = mod_data.cvars[name]
+	else
+		_G[name] = default
+	end
+end
+
 -- mode stuff
-MODE_DEBUG_SHOWBOXES = false
-MODE_DEBUG_VPLTEST = false
-MODE_CHEAT_FLY = false
-MODE_ALLGUNS = false
+cvar("MODE_DEBUG_SHOWBOXES", false)
+cvar("MODE_DEBUG_VPLTEST", false)
+cvar("MODE_CHEAT_FLY", false)
+cvar("MODE_ALLGUNS", false)
 
-MODE_FREEAIM = false
+cvar("MODE_FREEAIM", false)
 
-MODE_BORDER_SHOW = false
+cvar("MODE_BORDER_SHOW", false)
 
-MODE_PLAYERS_MAX = 64
+cvar("MODE_PLAYERS_MAX", 64)
 
-MODE_MAX_FOG = 127.5
-MODE_DEFAULT_FOG = 60
+cvar("MODE_MAX_FOG", 127.5)
+cvar("MODE_DEFAULT_FOG", 60)
 -- v This extends the fog distance a bit for gl users, to match the softgm renderer at the screen centre.
-MODE_FOG_GL_EXTEND = true 
+cvar("MODE_FOG_GL_EXTEND", true) 
 
-MODE_AUTOCLIMB = true
-MODE_AIRJUMP = false
-MODE_SOFTCROUCH = true
+cvar("MODE_AUTOCLIMB", true)
+cvar("MODE_AIRJUMP", false)
+cvar("MODE_SOFTCROUCH", true)
 
-MODE_JUMP_SPEED = 7.0
-MODE_JUMP_POGO = true
-MODE_GRAVITY = 9.81
+cvar("MODE_JUMP_SPEED", 7.0)
+cvar("MODE_JUMP_POGO", true)
+cvar("MODE_GRAVITY", 9.81)
 
-MODE_PSPEED_CONV_PHYSICS = true
-MODE_PSPEED_CONV_SPEEDCAP_ON = true
-MODE_PSPEED_CONV_SPEEDCAP = 7.0
-MODE_PSPEED_CONV_ACCEL = 3.6
-MODE_PSPEED_CONV_BRAKES = 0.7
-MODE_PSPEED_NORMAL = 7.0
-MODE_PSPEED_FLYMODE = 20.0
-MODE_PSPEED_CHANGE = 5.0
-MODE_PSPEED_AIRSLOW = 0.3
-MODE_PSPEED_AIRSLOW_CHANGE = 0.3
-MODE_PSPEED_WATER = 0.6
-MODE_PSPEED_CROUCH = 0.5
-MODE_PSPEED_SNEAK = 0.5
-MODE_PSPEED_SPADE = 1.25
+cvar("MODE_PSPEED_CONV_PHYSICS", true)
+cvar("MODE_PSPEED_CONV_SPEEDCAP_ON", true)
+cvar("MODE_PSPEED_CONV_SPEEDCAP", 7.0)
+cvar("MODE_PSPEED_CONV_ACCEL", 3.6)
+cvar("MODE_PSPEED_CONV_BRAKES", 0.7)
+cvar("MODE_PSPEED_NORMAL", 7.0)
+cvar("MODE_PSPEED_FLYMODE", 20.0)
+cvar("MODE_PSPEED_CHANGE", 5.0)
+cvar("MODE_PSPEED_AIRSLOW", 0.3)
+cvar("MODE_PSPEED_AIRSLOW_CHANGE", 0.3)
+cvar("MODE_PSPEED_WATER", 0.6)
+cvar("MODE_PSPEED_CROUCH", 0.5)
+cvar("MODE_PSPEED_SNEAK", 0.5)
+cvar("MODE_PSPEED_SPADE", 1.25)
 
-MODE_NADE_SPEED = 30.0
-MODE_NADE_STEP = 0.1
-MODE_NADE_FUSE = 3.0
-MODE_NADE_ADAMP = 0.5
-MODE_NADE_BDAMP = 1.0
-MODE_NADE_RANGE = 8.0
-MODE_NADE_DAMAGE = 210.0
+cvar("MODE_NADE_SPEED", 30.0)
+cvar("MODE_NADE_STEP", 0.1)
+cvar("MODE_NADE_FUSE", 3.0)
+cvar("MODE_NADE_ADAMP", 0.5)
+cvar("MODE_NADE_BDAMP", 1.0)
+cvar("MODE_NADE_RANGE", 8.0)
+cvar("MODE_NADE_DAMAGE", 210.0)
 
 -- WARNING: EXPERIMENTAL - set to false if your server slows down an awful lot or locks up!
-MODE_NADE_VPL_ENABLE = false -- disabled as it's kinda impractical due to the framerate drop
-MODE_NADE_VPL_MAX_COUNT = 300 -- O(n*m) stuff, n == number of players, m == THIS
-MODE_NADE_VPL_MAX_TRIES = 1000
-MODE_NADE_VPL_MAX_RANGE = 30.0
-MODE_NADE_VPL_DIRECT_STRENGTH = 1.0
-MODE_NADE_VPL_DAMAGE_1 = 2000.0
-MODE_NADE_VPL_BLK_DAMAGE = 30
+cvar("MODE_NADE_VPL_ENABLE", false) -- disabled as it's kinda impractical due to the framerate drop
+cvar("MODE_NADE_VPL_MAX_COUNT", 300) -- O(n*m) stuff, n == number of players, m == THIS
+cvar("MODE_NADE_VPL_MAX_TRIES", 1000)
+cvar("MODE_NADE_VPL_MAX_RANGE", 30.0)
+cvar("MODE_NADE_VPL_DIRECT_STRENGTH", 1.0)
+cvar("MODE_NADE_VPL_DAMAGE_1", 2000.0)
+cvar("MODE_NADE_VPL_BLK_DAMAGE", 30)
 
-MODE_TEAM_GUNS = false
+cvar("MODE_TEAM_GUNS", false)
 
-MODE_MINIMAP_RCIRC = false
-MODE_ENABLE_MINIMAP = true
-MODE_MAP_TRACERS = false -- TODO!
+cvar("MODE_MINIMAP_RCIRC", false)
+cvar("MODE_ENABLE_MINIMAP", true)
+cvar("MODE_MAP_TRACERS", false) -- TODO!
 
-MODE_TILT_SLOWDOWN = false -- TODO!
-MODE_TILT_DOWN_NOCLIMB = false -- TODO!
+cvar("MODE_TILT_SLOWDOWN", false) -- TODO!
+cvar("MODE_TILT_DOWN_NOCLIMB", false) -- TODO!
 
-MODE_DRUNKCAM_VELOCITY = false -- keep this off unless you want to throw up
-MODE_DRUNKCAM_LOCALTURN = false -- this is the one you're looking for.
-MODE_DRUNKCAM_CORRECTSPEED = 10.0
+cvar("MODE_DRUNKCAM_VELOCITY", false) -- keep this off unless you want to throw up
+cvar("MODE_DRUNKCAM_LOCALTURN", false) -- this is the one you're looking for.
+cvar("MODE_DRUNKCAM_CORRECTSPEED", 10.0)
 
-MODE_DELAY_SPADE_DIG = 1.0
-MODE_DELAY_SPADE_HIT = 0.25
-MODE_DELAY_BLOCK_BUILD = 0.25
-MODE_DELAY_TOOL_CHANGE = 0.2
-MODE_DELAY_NADE_THROW = 0.5
+cvar("MODE_DELAY_SPADE_DIG", 1.0)
+cvar("MODE_DELAY_SPADE_HIT", 0.25)
+cvar("MODE_DELAY_BLOCK_BUILD", 0.25)
+cvar("MODE_DELAY_TOOL_CHANGE", 0.2)
+cvar("MODE_DELAY_NADE_THROW", 0.5)
 
-MODE_BLOCK_HEALTH = 100
-MODE_BLOCK_DAMAGE_SPADE = 34
-MODE_BLOCK_DAMAGE_RIFLE = 34
-MODE_BLOCK_REGEN_TIME = 30.0
-MODE_BLOCK_PLACE_IN_AIR = false --TODO: make this a server config variable, maybe godmode?
-MODE_BLOCK_NO_RED_MARKER = false
+cvar("MODE_BLOCK_HEALTH", 100)
+cvar("MODE_BLOCK_DAMAGE_SPADE", 34)
+cvar("MODE_BLOCK_DAMAGE_RIFLE", 34)
+cvar("MODE_BLOCK_REGEN_TIME", 30.0)
+cvar("MODE_BLOCK_PLACE_IN_AIR", false) --TODO: make this a server config variable, maybe godmode?
+cvar("MODE_BLOCK_NO_RED_MARKER", false)
 
-MODE_BLOCKS_SPAWN = 100
-MODE_BLOCKS_MAX = 300
+cvar("MODE_BLOCKS_SPAWN", 100)
+cvar("MODE_BLOCKS_MAX", 300)
 
-MODE_RCIRC_LINGER = 60.0
-MODE_RESPAWN_TIME = 8.0
+cvar("MODE_RCIRC_LINGER", 60.0)
+cvar("MODE_RESPAWN_TIME", 8.0)
 
-MODE_CHAT_LINGER = 15.0
-MODE_CHAT_MAX = 10
-MODE_CHAT_STRMAX = 102
+cvar("MODE_CHAT_LINGER", 15.0)
+cvar("MODE_CHAT_MAX", 10)
+cvar("MODE_CHAT_STRMAX", 102)
 
 -- some settings that can be moved
-SHOW_NETGRAPH = false
+cvar("SHOW_NETGRAPH", false)
 
 -- scoring
-SCORE_INTEL = 10
-SCORE_KILL = 1
-SCORE_TEAMKILL = -1
-SCORE_SUICIDE = -1
+cvar("SCORE_INTEL", 10)
+cvar("SCORE_KILL", 1)
+cvar("SCORE_TEAMKILL", -1)
+cvar("SCORE_SUICIDE", -1)
 
 -- tools
 TOOL_SPADE = 0
