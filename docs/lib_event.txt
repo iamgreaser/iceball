@@ -28,23 +28,32 @@ events.fire(event_type, data) @
 Example
 =======
 
+	-- Create an event manager
 	events = event_manager()
 
-	function derp(t, d)
-		print("HANDLER 1! "..t)
-		print(d)
+	-- Create a couple of handlers
+	function handler_one(event_type, event_data)
+		print("HANDLER 1! "..event_type)
+		print(event_data)
 	end
 
-	function herp(t, d)
-		print("HANDLER 2! "..t)
-		d.foo = d.foo.."bar"
+	function handler_two(event_type, event_data)
+		print("HANDLER 2! "..event_type)
+		if event_data.foo then
+			event_data.foo = event_data.foo.."!"
+		end
 	end
 
-	events.register("derp", derp)
-	events.register("derp", herp, events.ORDER_EARLY, true)
+	-- Register our handlers
+	-- This handler will only received non-cancelled events
+	events.register("example_event", handler_one)
+	-- This handler will fire before default order ones, and also for cancelled events
+	events.register("example_event", handler_two, events.ORDER_EARLY, true)
 
-	data = events.fire("derp", {})
+	-- We get the event data returned to us, so we can create it anonymously in the function call
+	data = events.fire("example_event", {foo="woop"})
 	print(data.foo)
 
+	-- ...or we can create a name instance and pass that in - the returned table is the exact same table
 	data = {cancelled=true}
 	events.fire("derp", data)
