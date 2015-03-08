@@ -18,6 +18,7 @@
 --[[
 	This server plugin adds the command /disco based on pyspades original script by mat^2
 	To load on your server, add this script to svsave/pub/mods.json
+	Add the 'disco' permission to users allowed to use the command
 ]]
 
 --[[ CUSTOM SETTINGS START ]] --
@@ -58,7 +59,7 @@ if server then
 	-- register disco command
 	command_register({
 		command = "disco",
-		permission = "resetgame",
+		permission = "disco",
 		usage = "/disco",
 		func = function(plr, plrid, neth, prms, msg)
 			local r, g, b

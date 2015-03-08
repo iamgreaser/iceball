@@ -60,7 +60,8 @@
 				"piano",
 				"intelcmd",
 				"goto",
-				"map"
+				"map",
+				"disco"
 			]
 		},
 		"admin" : {
@@ -69,7 +70,8 @@
 			"permissions" : [
 				"permissions",
 				"resetgame",
-				"ban"
+				"ban",
+				"disco"
 			]
 		}
 	}
