@@ -45,6 +45,110 @@ local disco_stopping_message = "The party has been stopped."
 
 --[[ CUSTOM SETTINGS END ]] --
 
+-- shader
+if client then
+	disco_shader_world = USE_GLSL and shader_new{name="world_diff_disco", vert=[=[
+	// Vertex shader
+
+	varying vec4 cpos;
+	varying vec4 wpos;
+	varying vec4 wnorm;
+	varying float fogmul;
+	uniform float time;
+
+	void main()
+	{
+		wpos = gl_Vertex;
+		cpos = (gl_ModelViewMatrixInverse * vec4(0.0, 0.0, 0.0, 1.0));
+		wnorm = vec4(normalize(gl_Normal), 0.0);
+		fogmul = 1.0 / (length(gl_ModelViewMatrixInverse * vec4(0.0, 0.0, -1.0, 0.0)) * gl_Fog.end);
+
+		gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * wpos;
+		gl_FrontColor = gl_Color;
+		//gl_TexCoord[0] = (gl_MultiTexCoord0 * 64.0 + vec4(64.0*4.0, 64.0*4.0, 0.0, 0.0))/512.0;
+		gl_TexCoord[0] = vec4(
+			dot(wpos.xyz, gl_Normal.yzx)/16.0,
+			dot(wpos.xyz, gl_Normal.zxy)/16.0,
+			0.0, 0.0);
+		gl_TexCoord[0] -= vec4(ivec4(gl_TexCoord[0]));
+	}
+
+	]=], frag=[=[
+	// Fragment shader
+
+	varying vec4 cpos;
+	varying vec4 wpos;
+	varying vec4 wnorm;
+	varying float fogmul;
+
+	uniform vec4 sun;
+	uniform sampler2D tex0;
+	uniform vec2 map_idims;
+	uniform float time;
+
+	const vec4 dcentre = vec4(256.0, -256.0, 256.0, 1.0);
+
+	void main()
+	{
+		float fog_strength = min(1.0, length((wpos - cpos).xyz) * fogmul);
+		fog_strength *= fog_strength;
+
+		vec4 color = gl_Color;
+		vec4 camto = vec4(normalize((wpos - cpos).xyz), 0.0);
+
+		// Diffuse
+		float diff = max(0.0, dot(-camto, wnorm));
+		diff = 0.2 + 0.5*diff;
+
+		// Sky shadow
+		vec4 owpos = wpos + wnorm*0.001;
+		owpos.x -= 0.5;
+		owpos.z -= 0.5;
+		vec2 subpos1 = sin((fract(owpos.xz)*2.0-1.0)*3.141593/2.0)*0.5+0.5;
+		vec2 subpos0 = 1.0 - subpos1;
+		float t00 = texture2D(tex0, (owpos.xz + vec2(0.01,  0.01)) * map_idims).b * 255.0;
+		float t01 = texture2D(tex0, (owpos.xz + vec2(0.01,  0.99)) * map_idims).b * 255.0;
+		float t10 = texture2D(tex0, (owpos.xz + vec2(0.99,  0.01)) * map_idims).b * 255.0;
+		float t11 = texture2D(tex0, (owpos.xz + vec2(0.99,  0.99)) * map_idims).b * 255.0;
+		t00 = (owpos.y < t00 ? 1.0 : 0.0)*subpos0.x*subpos0.y;
+		t01 = (owpos.y < t01 ? 1.0 : 0.0)*subpos0.x*subpos1.y;
+		t10 = (owpos.y < t10 ? 1.0 : 0.0)*subpos1.x*subpos0.y;
+		t11 = (owpos.y < t11 ? 1.0 : 0.0)*subpos1.x*subpos1.y;
+		float ddiff = 1.2*(t00+t01+t10+t11);
+
+		// Disco lighting
+		vec4 ball_rel = normalize(wpos - dcentre);
+		vec2 ball_uv = ball_rel.xz*512.0;
+		float stime = time * 0.03;
+		ball_uv = vec2(
+			ball_uv.x*sin(stime) + ball_uv.y*cos(stime),
+			ball_uv.x*cos(stime) - ball_uv.y*sin(stime));
+		ball_uv = fract(ball_uv*0.5);
+		ball_uv -= 0.5;
+		ball_uv *= 2.0*2.5;
+		ddiff *= sqrt(max(0.0, 1.0 - dot(ball_uv, ball_uv)));
+
+		// Specular
+		// disabling until it makes sense
+		/*
+		vec4 specdir = normalize(2.0*dot(wnorm, -sun)*wnorm - -sun);
+		float spec = max(0.0, dot(-camto, specdir));
+		spec = pow(spec, 32.0)*0.6;
+		*/
+
+		diff = diff * (1.0 - fog_strength);
+		diff = min(1.5, diff);
+		color = vec4(color.rgb * diff, color.a);
+		color += vec4(color.rgb * gl_Fog.color.rgb * ddiff, 0.0);
+		color = max(vec4(0.0), min(vec4(1.0), color));
+		//color = vec4(0.5+0.5*sin(3.141593*(color.rgb-0.5)), color.a);
+
+		gl_FragColor = color * (1.0 - fog_strength)
+			+ gl_Fog.color * fog_strength;
+	}
+	]=]}
+end
+
 local PKT_TOGGLE_DISCO = network.sys_alloc_packet()
 
 local DISCO_DISABLED = 0
@@ -109,12 +213,23 @@ if client then
 	network.sys_handle_s2c(PKT_TOGGLE_DISCO, "BB", function (neth, cli, plr, sec_current, state, pkt)
 		if state == DISCO_DISABLED then
 			if disco_status == DISCO_ENABLED then
+				if shader_world and disco_shader_world and shader_world == disco_shader_world then
+					shader_world.pop()
+					shader_world = disco_old_shader_world
+					shader_world.push()
+				end
 				client.mus_stop()
 				disco_status = DISCO_DISABLED
 				client.map_fog_set(original_fog_color[1], original_fog_color[2], original_fog_color[3], original_fog_distance)
 			end
 		elseif state == DISCO_ENABLED then
 			if disco_status == DISCO_DISABLED then
+				if shader_world and disco_shader_world and shader_world ~= disco_shader_world then
+					disco_old_shader_world = shader_world
+					shader_world.pop()
+					shader_world = disco_shader_world
+					shader_world.push()
+				end
 				local xr, xg, xb, fdist = client.map_fog_get()
 				original_fog_color[1] = xr;
 				original_fog_color[2] = xg;
