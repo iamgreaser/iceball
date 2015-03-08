@@ -2,13 +2,13 @@
 *.o
 
 # final binaries
-iceball.exe
-iceball-gl.exe
-iceball-dedi.exe
-iceball
-iceball-gl
-iceball-dedi
-Iceball.app
+/iceball.exe
+/iceball-gl.exe
+/iceball-dedi.exe
+/iceball
+/iceball-gl
+/iceball-dedi
+/Iceball.app
 
 # windows build crap
 winlibs/
