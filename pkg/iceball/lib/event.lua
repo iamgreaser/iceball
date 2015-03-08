@@ -34,7 +34,7 @@ function event_manager()
 	local handlers = {}
 	
 	local function sort_handlers(one, two)
-		return one.order <= two.order
+		return one.order < two.order
 	end
 	
 	function this.register(event_type, handler, order, cancelled)
@@ -51,6 +51,20 @@ function event_manager()
 			order = order,
 			cancelled = cancelled
 		}
+		table.sort(event_handlers, sort_handlers)
+	end
+	
+	function this.deregister(event_type, handler)
+		if handlers[event_type] == nil then
+			return
+		end
+		
+		local event_handlers = handlers[event_type]
+		for i=#event_handlers,1,-1 do
+			if event_handlers[i].handler == handler then
+				table.remove(event_handlers, i)
+			end
+		end
 		table.sort(event_handlers, sort_handlers)
 	end
 	
