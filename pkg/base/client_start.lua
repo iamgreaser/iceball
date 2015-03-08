@@ -1234,4 +1234,3 @@ print("pkg/base/client_start.lua loaded.")
 
 if FAST_LOCAL_INIT and sandbox then sandbox.gfx_select(sandbox.this()) end
 
-
