@@ -990,7 +990,7 @@ function new_player(settings)
 		-- fix sinking when no autoclimb
 		if this.alive then
 			local _,h2 = trace_gap(tx1,ty1,tz1)
-			if ty1+by2+0.05 > h2 then
+			if ty1+by2+0.05 > h2 and ty1+by2+0.05 < h2+0.8 then
 				ty1 = h2-by2-0.05
 			end
 		end
