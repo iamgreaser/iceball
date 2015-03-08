@@ -19,6 +19,9 @@ print("base dir:",common.base_dir)
 
 dofile("pkg/base/version.lua")
 dofile("pkg/base/network.lua")
+dofile("pkg/iceball/lib/event.lua")
+
+events = event_manager()
 
 MAP_DEFAULT = MAP_DEFAULT or DIR_PKG_MAP.."/mesa.vxl"
 
