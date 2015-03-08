@@ -1,0 +1,50 @@
+/pkg/iceball/event
+==================
+
+events = event_manager() @
+	Create a new event manager object.
+	@return event_manager instance
+
+events.register(event_type, handler, order, cancelled) @
+	Register a new event handler.
+	@param event_type Event type name to be handled
+	@param handler Function with parameters (event_type, event_data)
+	@param order One of ORDER_* to determine the position in the list of handlers
+	@param cancelled Whether or not to received cancelled events
+
+events.deregister(event_type, handler) @
+	Deregister a previously registered handler.
+	@param event_type Event type name previously registered
+	@param handler Function previously registered
+
+events.fire(event_type, data) @
+	Fire an event.
+	Event data can contain a "cancelled" attribute.
+	@param event_type Event type name to be handled
+	@param data Event data table
+	@return data is returned for convenience
+
+
+Example
+=======
+
+	events = event_manager()
+
+	function derp(t, d)
+		print("HANDLER 1! "..t)
+		print(d)
+	end
+
+	function herp(t, d)
+		print("HANDLER 2! "..t)
+		d.foo = d.foo.."bar"
+	end
+
+	events.register("derp", derp)
+	events.register("derp", herp, events.ORDER_EARLY, true)
+
+	data = events.fire("derp", {})
+	print(data.foo)
+
+	data = {cancelled=true}
+	events.fire("derp", data)
