@@ -109,21 +109,3 @@ function event_manager()
 	
 	return this
 end
-
-events = event_manager()
-
-function derp(t, d)
-	print("HANDLER1! "..t)
-	print(d)
-end
-
-function herp(t, d)
-	print("HANDLER2! "..t)
-	print(d)
-end
-
-events.register("derp", derp, events.ORDER_DEFAULT)
-events.register("derp", herp, events.ORDER_DEFAULT, true)
-
-data = {cancelled=true}
-events.fire("derp", data)
