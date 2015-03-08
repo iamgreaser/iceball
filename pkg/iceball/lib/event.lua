@@ -20,6 +20,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ]]
 
+---
+-- Create a new event manager object.
+-- @return event_manager instance
 function event_manager()
 	local this = {}
 	
@@ -37,6 +40,12 @@ function event_manager()
 		return one.order < two.order
 	end
 	
+	---
+	-- Register a new event handler.
+	-- @param event_type Event type name to be handled
+	-- @param handler Function with parameters (event_type, event_data)
+	-- @param order One of ORDER_* to determine the position in the list of handlers
+	-- @param cancelled Whether or not to received cancelled events
 	function this.register(event_type, handler, order, cancelled)
 		cancelled = cancelled or false
 		order = order or this.ORDER_DEFAULT
@@ -54,6 +63,10 @@ function event_manager()
 		table.sort(event_handlers, sort_handlers)
 	end
 	
+	---
+	-- Deregister a previously registered handler.
+	-- @param event_type Event type name previously registered
+	-- @param handler Function previously registered
 	function this.deregister(event_type, handler)
 		if handlers[event_type] == nil then
 			return
@@ -68,6 +81,12 @@ function event_manager()
 		table.sort(event_handlers, sort_handlers)
 	end
 	
+	---
+	-- Fire an event.
+	-- Event data can contain a "cancelled" attribute.
+	-- @param event_type Event type name to be handled
+	-- @param data Event data table
+	-- @return data is returned for convenience
 	function this.fire(event_type, data)
 		if data.cancelled == nil then
 			data.cancelled = false
@@ -90,3 +109,21 @@ function event_manager()
 	
 	return this
 end
+
+events = event_manager()
+
+function derp(t, d)
+	print("HANDLER1! "..t)
+	print(d)
+end
+
+function herp(t, d)
+	print("HANDLER2! "..t)
+	print(d)
+end
+
+events.register("derp", derp, events.ORDER_DEFAULT)
+events.register("derp", herp, events.ORDER_DEFAULT, true)
+
+data = {cancelled=true}
+events.fire("derp", data)
