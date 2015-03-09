@@ -21,8 +21,8 @@ local thisid = ...
 MODE_BLOCK_DAMAGE_SMG = 20
 
 if client then
-	wav_smg_shot = wav_rifle_shot
-	wav_smg_reload = wav_rifle_reload
+	wav_smg_shot = skin_load("wav", "smg-shot.wav", DIR_SMG)
+	wav_smg_reload = skin_load("wav", "smg-reload.wav", DIR_SMG)
 
 	weapon_models[thisid] = model_load({
 		pmf = {
@@ -52,6 +52,9 @@ return function (plr)
 		recoil_y = -0.005,
 
 		model = client and (weapon_models[thisid] {}),
+		
+		shot_sound = wav_smg_shot,
+		reload_sound = wav_smg_reload,
 		
 		name = "SMG",
 	})
