@@ -194,6 +194,10 @@ function new_player(...)
 		if this.mode ~= PLM_NORMAL or this.has_intel or intel.team == this.team then
 			return false
 		end
+
+		if not this.alive then
+			return false
+		end
 		
 		if server then
 			local x,y,z,f
