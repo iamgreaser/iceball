@@ -32,6 +32,24 @@ typedef struct wavfmt {
 	uint16_t blkalign, bps;
 } __attribute__((__packed__)) wavfmt_t;
 
+// These 2 tables are from here: http://wiki.multimedia.cx/index.php?title=IMA_ADPCM
+int ima_index_table[16] = {
+	-1, -1, -1, -1, 2, 4, 6, 8,
+	-1, -1, -1, -1, 2, 4, 6, 8
+}; 
+
+int ima_step_table[89] = { 
+	7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 
+	19, 21, 23, 25, 28, 31, 34, 37, 41, 45, 
+	50, 55, 60, 66, 73, 80, 88, 97, 107, 118, 
+	130, 143, 157, 173, 190, 209, 230, 253, 279, 307,
+	337, 371, 408, 449, 494, 544, 598, 658, 724, 796,
+	876, 963, 1060, 1166, 1282, 1411, 1552, 1707, 1878, 2066, 
+	2272, 2499, 2749, 3024, 3327, 3660, 4026, 4428, 4871, 5358,
+	5894, 6484, 7132, 7845, 8630, 9493, 10442, 11487, 12635, 13899, 
+	15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767 
+};
+
 #ifndef DEDI
 float wav_cube_size = 1.0f;
 int wav_mfreq = 44100;
@@ -206,9 +224,47 @@ void wav_fn_mixer_s16he_stereo(void *buf, int len)
 }
 #endif
 
-wav_t *wav_parse(char *buf, int len)
+int adpcm_predict(int v, int *pred, int *step)
+{
+	int diff;
+
+	diff = (((v&7)*2 + 1) * ima_step_table[*step]) / 8;
+
+	*step += ima_index_table[v];
+	if(*step < 0) *step = 0;
+	if(*step > 88) *step = 88;
+
+	*pred += ((v & 8) != 0 ? -diff : diff);
+	if(*pred < -0x8000) *pred = -0x8000;
+	if(*pred >  0x7FFF) *pred =  0x7FFF;
+
+	return *pred;
+}
+
+void adpcm_load_block(int16_t **wptr, int *pred, int *step, uint8_t **dbase, uint8_t *dbend)
 {
 	int i;
+	int v;
+
+	for(i = 0; i < 4; i++)
+	{
+		if(((*dbase)+1) > dbend)
+		{
+			fprintf(stderr, "adpcm_load_block: block ended too early!\n");
+			fflush(stderr);
+			abort();
+		}
+
+		v = *((*dbase)++);
+		*((*wptr)++) = adpcm_predict(v&15, pred, step);
+		*((*wptr)++) = adpcm_predict((v>>4)&15, pred, step);
+	}
+
+}
+
+wav_t *wav_parse(char *buf, int len)
+{
+	int i, j;
 
 	if(len < 28+16)
 	{
@@ -271,9 +327,9 @@ wav_t *wav_parse(char *buf, int len)
 	*/
 
 	// check support
-	if(fmt.codec != 1)
+	if(fmt.codec != 0x0001 && fmt.codec != 0x0011)
 	{
-		fprintf(stderr, "wav_parse: codec %i not supported\n", fmt.codec);
+		fprintf(stderr, "wav_parse: codec 0x%04X not supported\n", fmt.codec);
 		return NULL;
 	}
 	if(fmt.chns != 1)
@@ -281,34 +337,48 @@ wav_t *wav_parse(char *buf, int len)
 		fprintf(stderr, "wav_parse: only mono .wav is supported (not %i-channel)\n", fmt.chns);
 		return NULL;
 	}
-	if(fmt.bps != 8 && fmt.bps != 16)
+	if(fmt.bps != 4 && fmt.bps != 8 && fmt.bps != 16)
 	{
-		fprintf(stderr, "wav_parse: only 8bps/16bps .wav is supported (not %ibps)\n", fmt.bps);
+		fprintf(stderr, "wav_parse: only 8bps/16bps .wav or 4bps ADPCM is supported (not %ibps)\n", fmt.bps);
 		return NULL;
 	}
 
 	// check integrity
-	if(fmt.blkalign != ((fmt.bps+7)>>3)*fmt.chns)
+	if(fmt.codec == 0x0001 && fmt.blkalign != ((fmt.bps+7)>>3)*fmt.chns)
 	{
 		fprintf(stderr, "wav_parse: block alignment is inconsistent\n");
 		return NULL;
 	}
-	if(fmt.bytes_sec != fmt.freq*fmt.blkalign)
+	if(fmt.codec == 0x0001 && fmt.bytes_sec != fmt.freq*fmt.blkalign)
 	{
 		fprintf(stderr, "wav_parse: bytes per second is inconsistent\n");
 		return NULL;
 	}
 
 	// now attempt to load data
-	if(memcmp(buf+20+fmtlen, "data", 4))
+	int factlen = 0;
+	if(!memcmp(buf+20+fmtlen, "fact", 4))
+	{
+		// skip this crap
+		factlen = (int)*(uint32_t *)(buf+20+fmtlen+4);
+		factlen += 8;
+	}
+
+	if(len < 28+factlen+fmtlen)
+	{
+		fprintf(stderr, "wav_parse: file too short\n");
+		return NULL;
+	}
+
+	if(memcmp(buf+20+factlen+fmtlen, "data", 4))
 	{
 		fprintf(stderr, "wav_parse: expected \"data\" tag\n");
 		return NULL;
 	}
 
-	int datalen = (int)*(uint32_t *)(buf+24+fmtlen);
-	void *data_void = buf+28+fmtlen;
-	if(len < datalen+28+fmtlen)
+	int datalen = (int)*(uint32_t *)(buf+24+factlen+fmtlen);
+	void *data_void = buf+28+factlen+fmtlen;
+	if(len < datalen+28+factlen+fmtlen)
 	{
 		fprintf(stderr, "wav_parse: file too short for \"data\" section\n");
 		return NULL;
@@ -321,6 +391,11 @@ wav_t *wav_parse(char *buf, int len)
 	}
 
 	int datalen_smps = datalen/fmt.blkalign;
+	if(fmt.codec == 0x0011)
+	{
+		// Technically you're supposed to use the fact chunk
+		datalen_smps *= (fmt.blkalign-4)*2;
+	}
 
 	wav_t *wav = (wav_t*)malloc(sizeof(wav_t)*datalen_smps);
 	wav->udtype = UD_WAV;
@@ -328,8 +403,41 @@ wav_t *wav_parse(char *buf, int len)
 	wav->len = datalen_smps;
 	wav->freq = fmt.freq;
 
-	if(fmt.bps == 8)
+	if(fmt.codec == 17 && fmt.bps == 4)
 	{
+		int16_t *wptr1 = wav->data;
+		int lpred, lstep;
+		uint8_t *dbase2 = (uint8_t *)data_void;
+		uint8_t **dbase = &dbase2;
+		uint8_t *dbend = dbase2 + datalen;
+
+		for(i = 0; i < len/fmt.blkalign; i++)
+		{
+			// Feed predictors
+			if(((*dbase)+4) > dbend)
+			{
+				fprintf(stderr, "adpcm_load_block: block ended too early!\n");
+				fflush(stderr);
+				abort();
+			}
+
+			lpred = (*dbase)[1];
+			lpred <<= 8;
+			lpred |= (*dbase)[0];
+			lstep = (*dbase)[2];
+			(*dbase) += 4;
+
+			if(lpred >= 0x8000) lpred -= 0x10000;
+
+			//printf("pred %i %i\n", lpred, lstep);
+
+			// Actually predict things
+			for(j = 0; j < (fmt.blkalign/(4*fmt.chns))-1; j++)
+				adpcm_load_block(&wptr1, &lpred, &lstep, dbase, dbend);
+
+		}
+
+	} else if(fmt.bps == 8) {
 		int16_t *d = wav->data;
 		uint8_t *s = (uint8_t *)data_void;
 
@@ -339,6 +447,7 @@ wav_t *wav_parse(char *buf, int len)
 		memcpy(wav->data, data_void, datalen_smps*2);
 	} else {
 		fprintf(stderr, "EDOOFUS: should never reach this point!\n");
+		fflush(stderr);
 		abort();
 	}
 

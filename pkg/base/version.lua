@@ -20,9 +20,9 @@
 -- Thanks. --GM
 
 VERSION_ENGINE = {
-	cmp={0,2,1,0,25},
-	num=8421376+25,
-	str="0.2.1-25",
+	cmp={0,2,1,0,26},
+	num=8421376+26,
+	str="0.2.1-26",
 }
 
 --error(""..common.version.num)
@@ -164,5 +164,6 @@ VERSION_BUGS = {
 {intro=8421376+16, fix=nil, msg="FBO support incomplete"},
 {intro=nil, fix=8421376+21, msg="gl_flip_quads incomplete"},
 {intro=8421376+22, fix=8421376+23, msg="img_dump not sandboxed - UPGRADE"},
+{intro=nil, fix=8421376+26, msg="IMA ADPCM samples not supported"},
 }
 

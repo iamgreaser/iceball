@@ -274,6 +274,11 @@ function fastload_analyse_client()
 		return fetch_block("bin", fname)
 	end
 
+	-- common.mus_load_it: Call fetch_block instead
+	function state.e.common.mus_load_it(fname)
+		return fetch_block("it", fname)
+	end
+
 	-- common.fetch_start: Call fetch_block instead
 	function state.e.common.fetch_start(ftype, fname)
 		print(ftype, fname)

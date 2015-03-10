@@ -911,6 +911,9 @@ client.va_render_local(va, px, py, pz, ry, rx, ry2, scale, tex = nil, afmt = nil
 wav = common.wav_load(fname) @
 	loads a sound with filename "fname"
 
+	supported codecs are PCM (0x0001)
+	and (as of 0.2.1-26) IMA ADPCM (0x0011)
+
 	[ paragraph does not apply to 0.1.2-10 and higher ]
 	remember to free it when you're done
 	as this is only a light userdata

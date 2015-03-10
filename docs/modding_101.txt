@@ -93,7 +93,7 @@ Maps:
 - *.icemap: Iceball map format
 - *.vxl: Ace of Spades headerless 512x512x64 VOXLAP map
   - well, why *wouldn't* we support that?
-  - 1.0 maps are supported but stuff >= 128 high seems to break
+  - 1.0 maps are supported by the C side
 
 Models:
 - *.pmf: Point Model Format, designed for this game
@@ -121,7 +121,7 @@ Metadata:
 
 Sounds:
 - 8/16-bit *mono* *.wav. Stereo .wav will just be rejected.
-- Hoping to get ADPCM support in there too.
+- IMA ADPCM (codec 0x0011, NOT 0x0002 (which is MS ADPCM)!) supported since 0.2.1-26.
 - If someone can be bothered with libogg/libvorbis, *.ogg vorbis too.
 - Maybe even some form of DFPWM, but that'll be for voice chat only.
 

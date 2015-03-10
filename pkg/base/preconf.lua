@@ -41,6 +41,7 @@ DIR_PKG_PMF = DIR_PKG_PMF or DIR_PKG_ROOT.."/pmf"
 DIR_PKG_KV6 = DIR_PKG_KV6 or DIR_PKG_ROOT.."/kv6"
 DIR_PKG_GFX = DIR_PKG_GFX or DIR_PKG_ROOT.."/gfx"
 DIR_PKG_WAV = DIR_PKG_WAV or DIR_PKG_ROOT.."/wav"
+DIR_PKG_WAV_ADPCM = DIR_PKG_WAV_ADPCM or DIR_PKG_ROOT.."/adpcm"
 DIR_PKG_IT = DIR_PKG_IT or DIR_PKG_ROOT.."/it"
 DIR_PKG_MAP = DIR_PKG_MAP or "pkg/maps"
 DIR_SKIN = DIR_SKIN or "clsave/pub/skin"
@@ -51,6 +52,9 @@ function skin_load(ftype, name, bdir, sdir)
 	sdir = sdir or DIR_SKIN
 	local hdl = SKIN_ENABLE[ftype] and common.fetch_block(ftype, sdir.."/"..name)
 	print(hdl, bdir.."/"..name)
+	if ftype == "wav" and bdir == DIR_PKG_WAV then
+		hdl = hdl or common.fetch_block(ftype, DIR_PKG_WAV_ADPCM.."/"..name)
+	end
 	hdl = hdl or common.fetch_block(ftype, bdir.."/"..name)
 	print(hdl)
 	return hdl
