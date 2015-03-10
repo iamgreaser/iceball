@@ -31,7 +31,7 @@ if client then
 	}, {"kv6"})
 end
 
-weapon_names[thisid] = "MOTHERFUCKING FLAMETHROWER"  -- TODO: Be serious
+weapon_names[thisid] = "Flamethrower"
 
 local flame_particles = nil
 if client then
@@ -125,18 +125,29 @@ return function (plr)
 				
 				for j=1,3 do
 					
+					-- Distance squared - no need to sqrt it for this
 					local dist = dx * dx + dy * dy + dz * dz
 					
 					if dist <= distance_limit then
-				
+						
+						-- Check if we hit based on angle between crosshair and player part
 						local dxn, dyn, dzn = vnorm(dx, dy, dz)
 						local dot = vdot(dxn, dyn, dzn, fwx, fwy, fwz)
 						
 						if dot >= spread_limit then
-							hits = hits + 1
+							
+							-- Finally, check we're not hitting them through a wall or something
+							local d,cx1,cy1,cz1,cx2,cy2,cz2 = trace_map_ray_dist(plr.x + sya * 0.4, plr.y, plr.z + cya * 0.4, fwx, fwy, fwz, this.cfg.range)
+							d = d or this.cfg.range
+							d = d * d
+							
+							if d == nil or dist < d then
+								hits = hits + 1
+							end
 						end
 					end
 					
+					-- No real hitboxes, just offsets from the head position (what do you mean you're smaller when you crouch?)
 					dy = dy + 1.0
 				end
 				
