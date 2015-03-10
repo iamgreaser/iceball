@@ -20,7 +20,11 @@
 local thisid = ...
 
 if client then
-	wav_flamethrower_shot = skin_load("wav", "flamethrower-shot.wav", DIR_FLAMETHROWER)
+	wav_flamethrower_shots = {
+		skin_load("wav", "flamethrower-shot1.wav", DIR_FLAMETHROWER),
+		skin_load("wav", "flamethrower-shot2.wav", DIR_FLAMETHROWER),
+		skin_load("wav", "flamethrower-shot3.wav", DIR_FLAMETHROWER)
+	}
 
 	weapon_models[thisid] = model_load({
 		kv6 = {
@@ -75,6 +79,11 @@ return function (plr)
 	this.burn_tick_time = 0.5
 	this.flame_particle_count = 32
 	
+	local sound_delay = 0.1
+	
+	local last_tick_time = 0
+	local last_sound_time = last_tick_time - sound_delay
+	
 	if client then
 		this.flame_particles = flame_particles
 	end
@@ -100,6 +109,7 @@ return function (plr)
 				
 		-- FIYAH
 		if client then
+			this.play_sound()
 			this.spray_fire()
 		end
 		
@@ -213,13 +223,17 @@ return function (plr)
 				this.hits[to_remove[i]] = nil
 			end
 		end
+		
+		if client then
+			last_tick_time = sec_current
+		end
+		
 		return s_tick(sec_current, sec_delta, ...)
 	end
 	
 	function this.remote_client_fire(fire_type)
 		if client then
-			-- TODO: Different sound for alt-fire (fire_type == 2)
-			-- client.wav_play_global(this.cfg.shot_sound, plr.x, plr.y, plr.z)
+			this.play_sound()
 			this.spray_fire()
 		end
 	end
@@ -252,6 +266,14 @@ return function (plr)
 				size = math.random(15, 50),
 				lifetime = 0.015 * range * life  -- Magic number that makes it last about the right amount of time for the effective range
 			})
+		end
+	end
+	
+	function this.play_sound()
+		if last_tick_time > last_sound_time + sound_delay then
+			local sound = wav_flamethrower_shots[math.random(#wav_flamethrower_shots)]
+			client.wav_play_global(sound, plr.x, plr.y, plr.z)
+			last_sound_time = last_tick_time
 		end
 	end
 	
