@@ -20,9 +20,9 @@
 -- Thanks. --GM
 
 VERSION_ENGINE = {
-	cmp={0,2,1,0,26},
-	num=8421376+26,
-	str="0.2.1-26",
+	cmp={0,2,1,0,27},
+	num=8421376+27,
+	str="0.2.1-27",
 }
 
 --error(""..common.version.num)
@@ -70,7 +70,7 @@ VERSION_BUGS = {
 {intro=nil, fix=34, msg="Server must be manually seeded"},
 {intro=33, fix=34, msg="A few compilation warnings that shouldn't be there"},
 {renderer="gl", intro=22, fix=35, msg="[OpenGL] Smooth lighting not supported"},
-{renderer="gl", intro=35, fix=nil, msg="[OpenGL] Smooth lighting of PMF models not supported"},
+--{renderer="gl", intro=35, fix=nil, msg="[OpenGL] Smooth lighting of PMF models not supported"},
 {renderer="softgm", intro=37, fix=39, msg="[softgm] Preliminary smooth lighting (WIP)"},
 {renderer="gl", intro=22, fix=38, msg="[OpenGL] Rendering tends to stutter on some cards"},
 {renderer="gl", intro=38, fix=4227072+2, msg="[OpenGL] Preliminary stutter-reduced rendering (WIP)"},
@@ -165,5 +165,6 @@ VERSION_BUGS = {
 {intro=nil, fix=8421376+21, msg="gl_flip_quads incomplete"},
 {intro=8421376+22, fix=8421376+23, msg="img_dump not sandboxed - UPGRADE"},
 {intro=nil, fix=8421376+26, msg="IMA ADPCM samples not supported"},
+{intro=nil, fix=8421376+27, msg=".it module music plays at wrong frequency when mixing freq not 44100Hz"},
 }
 

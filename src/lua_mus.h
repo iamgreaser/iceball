@@ -33,9 +33,11 @@ int icelua_fn_client_mus_play(lua_State *L)
 	int row = (top >= 3 ? lua_tointeger(L, 3) : 0);
 
 	// XXX: i should probably add a proper API to sackit for this
+	// ^ why did I write this?
 	if(icesackit_pb != NULL)
 		sackit_playback_free(icesackit_pb);
-	icesackit_pb = sackit_playback_new(mus, 4096, 256, MIXER_IT214FS);
+	//icesackit_pb = sackit_playback_new(mus, 4096, 256, MIXER_IT214FS);
+	icesackit_pb = sackit_playback_new2(mus, 4096, 256, fnlist_itmixer[MIXER_IT214FS], 4, wav_mfreq);
 	if(icesackit_pb == NULL)
 	{
 		lua_pushboolean(L, 0);
