@@ -61,7 +61,7 @@ local page_prev_active = false
 local page_next_active = false
 
 local function update_page_buttons()
-	if not server_list then
+	if type(server_list) ~= "table" then
 		page = 0
 	end
 	
@@ -70,7 +70,7 @@ local function update_page_buttons()
 	else
 		page_prev_active = false
 	end
-	if server_list and page < math.ceil(#server_list / 9) - 1 then
+	if type(server_list) == "table" and page < math.ceil(#server_list / 9) - 1 then
 		page_next_active = true
 	else
 		page_next_active = false
@@ -78,6 +78,9 @@ local function update_page_buttons()
 end
 
 local function join_server(sid)
+	if type(server_list) ~= "table" then
+		return
+	end
 	local idx = (page * 9) + sid
 	if idx <= #server_list then
 		local sv = server_list[idx]
@@ -106,7 +109,7 @@ function client.hook_key(key, state, modif, uni)
 				update_page_buttons()
 			end
 		elseif key == SDLK_RIGHT then
-			if server_list then
+			if type(server_list) == "table" then
 				if page < math.ceil(#server_list / 9) - 1 then
 					page = page + 1
 					update_page_buttons()
