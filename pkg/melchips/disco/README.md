@@ -3,6 +3,9 @@ Disco Mod
 
 Adds a `/disco` command to start a party !
 
+## Preview
+
+![Disco animated gif preview](https://github.com/iamgreaser/iceball/raw/master/pkg/melchips/disco/mod_preview.gif)
 
 ## Configuration
 
