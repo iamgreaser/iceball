@@ -166,9 +166,9 @@ function new_tent(settings)
 	end
 
 	function this.spawn_at(x,y,z)
-		this.x = x
+		this.x = x + 0.5
 		this.y = y
-		this.z = z
+		this.z = z + 0.5
 
 		prv_spawn_cont1()
 	end
@@ -178,9 +178,9 @@ function new_tent(settings)
 	end
 
 	function this.set_pos_recv(x,y,z)
-		this.x = x
+		this.x = x + 0.5
 		this.y = y
-		this.z = z
+		this.z = z + 0.5
 	end
 
 	function this.get_flags()
