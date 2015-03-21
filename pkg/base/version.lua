@@ -20,9 +20,9 @@
 -- Thanks. --GM
 
 VERSION_ENGINE = {
-	cmp={0,2,1,0,27},
-	num=8421376+27,
-	str="0.2.1-27",
+	cmp={0,2,1,0,28},
+	num=8421376+28,
+	str="0.2.1-28",
 }
 
 --error(""..common.version.num)
@@ -166,6 +166,6 @@ VERSION_BUGS = {
 {intro=8421376+22, fix=8421376+23, msg="img_dump not sandboxed - UPGRADE"},
 {intro=nil, fix=8421376+26, msg="IMA ADPCM samples not supported"},
 {intro=nil, fix=8421376+27, msg=".it module music plays at wrong frequency when mixing freq not 44100Hz"},
-{intro=nil, fix=8421376+27, msg="Potential infinite loop due to zero time delta"},
+{intro=nil, fix=8421376+28, msg="Potential infinite loop due to zero time delta"},
 }
 

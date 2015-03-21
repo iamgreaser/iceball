@@ -520,7 +520,7 @@ end
 -- set hooks
 lflush = nil
 function h_tick_main(sec_current, sec_delta)
-	-- TODO: DEPRECATED: FUTURE: HOW2LABELTHESETHINGS: Remove this check once sufficient time has passed that everyone should be above version 0.2.1-27
+	-- TODO: DEPRECATED: FUTURE: HOW2LABELTHESETHINGS: Remove this check once sufficient time has passed that everyone should be above version 0.2.1-28
 	if sec_delta <= 0 then
 		-- WHY THE FUCK IS SEC_DELTA <= 0?!?
 		sec_delta = 0.000001
