@@ -520,6 +520,11 @@ end
 -- set hooks
 lflush = nil
 function h_tick_main(sec_current, sec_delta)
+	-- TODO: DEPRECATED: FUTURE: HOW2LABELTHESETHINGS: Remove this check once sufficient time has passed that everyone should be above version 0.2.1-27
+	if sec_delta <= 0 then
+		-- WHY THE FUCK IS SEC_DELTA <= 0?!?
+		sec_delta = 0.000001
+	end
 	render_sec_current = sec_current
 	if bone_ctr_reset then
 		bone_ctr_reset()
@@ -600,8 +605,11 @@ function h_tick_main(sec_current, sec_delta)
 		
 		for i=1,#miscents do
 			miscents[i].tick(moment, tickrate)
-		end				
+		end
+		local derp = client_tick_accum
 		client_tick_accum = client_tick_accum - tickrate
+		local herp = derp - client_tick_accum
+		local boop = client_tick_accum - client_tick_accum
 	end
 	
 	if players.current and players[players.current] then
