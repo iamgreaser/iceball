@@ -450,8 +450,12 @@ int update_client(void)
 			return 1;
 		}
 
+		double sec_delta = sec_curtime - sec_lasttime;
+		if (sec_delta <= 0) {
+			sec_delta = 0.00000001;
+		}
 		lua_pushnumber(lstate_client, sec_curtime);
-		lua_pushnumber(lstate_client, sec_curtime - sec_lasttime);
+		lua_pushnumber(lstate_client, sec_delta);
 		if(lua_pcall(lstate_client, 2, 1, 0) != 0)
 		{
 			printf("Lua Client Error (tick): %s\n", lua_tostring(lstate_client, -1));

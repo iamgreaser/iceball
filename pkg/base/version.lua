@@ -166,5 +166,6 @@ VERSION_BUGS = {
 {intro=8421376+22, fix=8421376+23, msg="img_dump not sandboxed - UPGRADE"},
 {intro=nil, fix=8421376+26, msg="IMA ADPCM samples not supported"},
 {intro=nil, fix=8421376+27, msg=".it module music plays at wrong frequency when mixing freq not 44100Hz"},
+{intro=nil, fix=8421376+27, msg="Potential infinite loop due to zero time delta"},
 }
 
