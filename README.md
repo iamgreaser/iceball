@@ -9,7 +9,7 @@ If you're planning on contributing to the Iceball project, please check out [con
 # Community
 * **Official**:
   * Reddit: [/r/iceball](http://reddit.com/r/iceball)
-  * IRC: [irc.fractiongamers.com/#iceball](http://webchat.fractiongamers.com/?channels=iceball)
+  * IRC: `irc.fractiongamers.com/#iceball` ([webchat](http://webchat.fractiongamers.com/?channels=iceball))
 * **Unofficial**:
   * BnS subreddit: [/r/buildandshoot](http://reddit.com/r/buildandshoot)
   * BnS subforum: [buildandshoot.com](http://www.buildandshoot.com/viewforum.php?f=84)
