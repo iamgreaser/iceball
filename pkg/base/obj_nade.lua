@@ -99,7 +99,7 @@ function new_nade(settings)
 			this.vz = this.vz * MODE_NADE_ADAMP
 		end
 
-		this.vy = this.vy + 5*9.81*MODE_NADE_STEP*MODE_NADE_STEP
+		this.vy = this.vy + 5*MODE_GRAVITY*MODE_NADE_STEP*MODE_NADE_STEP
 	end
 
 	function this.explode_dmg()

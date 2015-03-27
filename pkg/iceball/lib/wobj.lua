@@ -46,7 +46,7 @@ function wobj_new(settings)
 	-- Calculate jump speed required to jump d blocks high.
 	function this.get_jump_speed(d)
 		local grav = this.grav or 1.0
-		local acc = 9.81*4.0*grav
+		local acc = MODE_GRAVITY*4.0*grav
 
 		-- d = a*t*t/2
 		-- d, a known; find t
@@ -96,7 +96,7 @@ function wobj_new(settings)
 		-- d = v*t + (a*t*t)/2
 		-- Tested to be consistent over a wide variety of sec_delta values.
 		if this.grav then
-			local acc = 9.81*4.0*this.grav
+			local acc = MODE_GRAVITY*4.0*this.grav
 			this.vg.y = this.vg.y + sec_delta*acc
 		end
 

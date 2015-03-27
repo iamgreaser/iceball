@@ -139,7 +139,7 @@ function new_particle(settings)
 			this.vz = this.vz * this.adamp
 		end
 		
-		this.vy = this.vy + 5*9.81*this.step*this.step
+		this.vy = this.vy + 5*MODE_GRAVITY*this.step*this.step
 	end
 	
 	function this.tick(sec_current, sec_delta)
