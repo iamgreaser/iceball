@@ -91,12 +91,30 @@ function new_nade(settings)
 		this.z1 = this.z0 + this.vz*df
 
 		if x1 then
-			if x1 ~= x2 then this.vx = -this.vx*MODE_NADE_BDAMP end
-			if y1 ~= y2 then this.vy = -this.vy*MODE_NADE_BDAMP end
-			if z1 ~= z2 then this.vz = -this.vz*MODE_NADE_BDAMP end
+			local bounce_vel = 0
+			if x1 ~= x2 then
+				this.vx = -this.vx*MODE_NADE_BDAMP
+				bounce_vel = math.max(bounce_vel, math.abs(this.vx))
+			end
+			if y1 ~= y2 then
+				this.vy = -this.vy*MODE_NADE_BDAMP
+				bounce_vel = math.max(bounce_vel, math.abs(this.vy))
+			end
+			if z1 ~= z2 then
+				this.vz = -this.vz*MODE_NADE_BDAMP
+				bounce_vel = math.max(bounce_vel, math.abs(this.vz))
+			end
 			this.vx = this.vx * MODE_NADE_ADAMP
 			this.vy = this.vy * MODE_NADE_ADAMP
 			this.vz = this.vz * MODE_NADE_ADAMP
+
+			if client and bounce_vel >= MODE_NADE_BOUNCE_SOUND_MIN then
+				local vol = 1.0
+				if bounce_vel < MODE_NADE_BOUNCE_SOUND_FADE then
+					vol = rescale_value(MODE_NADE_BOUNCE_SOUND_MIN, MODE_NADE_BOUNCE_SOUND_FADE, 0, 1, bounce_vel)
+				end
+				client.wav_play_global(wav_nade_bounce, this.x, this.y, this.z, vol)
+			end
 		end
 
 		this.vy = this.vy + 5*MODE_GRAVITY*MODE_NADE_STEP*MODE_NADE_STEP

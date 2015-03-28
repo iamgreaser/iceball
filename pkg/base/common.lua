@@ -111,6 +111,8 @@ cvar("MODE_NADE_STEP", 0.1)
 cvar("MODE_NADE_FUSE", 3.0)
 cvar("MODE_NADE_ADAMP", 0.5)
 cvar("MODE_NADE_BDAMP", 1.0)
+cvar("MODE_NADE_BOUNCE_SOUND_FADE", 2.0)
+cvar("MODE_NADE_BOUNCE_SOUND_MIN", 0.375)
 cvar("MODE_NADE_RANGE", 8.0)
 cvar("MODE_NADE_DAMAGE", 210.0)
 
@@ -189,6 +191,7 @@ if client then
 	wav_jump_down = skin_load("wav", "land.wav", DIR_PKG_WAV)
 	wav_pin = skin_load("wav", "pin.wav", DIR_PKG_WAV)
 	wav_kapiano = skin_load("wav", "kapiano.wav", DIR_PKG_WAV)
+	wav_nade_bounce = skin_load("wav", "nade-bounce.wav", DIR_PKG_WAV)
 	wav_nade_boom = skin_load("wav", "nade-boom.wav", DIR_PKG_WAV)
 	wav_pop = skin_load("wav", "pop.wav", DIR_PKG_WAV)
 	wav_steps = {}
