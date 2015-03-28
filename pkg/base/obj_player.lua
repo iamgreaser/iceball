@@ -651,7 +651,7 @@ function new_player(settings)
 				this.respawn_msg.visible = false
 			else
 				this.respawn_msg.visible = true
-				this.respawn_msg.text = "Respawning in " .. math.ceil(this.t_respawn - sec_current)
+				this.respawn_msg.text = "Respawning in " .. math.max(0, math.ceil(this.t_respawn - sec_current))
 			end
 		end
 	end
