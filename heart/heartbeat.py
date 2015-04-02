@@ -75,14 +75,14 @@ try:
 		p = json.load(fp)
 		# Server priorities
 		for k, v in p["server_priorities"].iteritems():
-			if not type(k) in (str, unicode) or not type(v) == int:
+			if not isinstance(k, (str, unicode) or not isinstance(v, int):
 				print 'Invalid server priority entry in servers.json - skipping: "%s", "%s"' % (k, v)
 				break
 		else:
 			PRIORITY_SERVERS = p["server_priorities"]
 		# Official servers
 		for v in p["official_servers"]:
-			if not type(v) in (str, unicode):
+			if not isinstance(v, str, unicode):
 				print 'Invalid official server entry in servers.json - ignoring: "%s"' % v
 			else:
 				OFFICIAL_SERVERS.add(v)
