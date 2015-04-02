@@ -18,7 +18,19 @@
 
 import errno, heapq, json, operator, random, socket, struct, sys, time
 
-CONN_PORT = int(sys.argv[1])
+if len(sys.argv) == 2:
+	CONN_PORT = int(sys.argv[1])
+else:
+	raise Exception("Syntax: {} port_number".format(sys.argv[0]))
+
+def get_stylesheet():
+	try:
+		with open("style.css") as f:
+			return "text/css", f.read()
+	except IOError:
+		print("No style.css found - ignoring") 
+		return None, None
+STYLE_CSS = get_stylesheet()
 
 def ib_version_str(n):
 	z = n & ((1<<10)-1); n >>= 10
@@ -63,31 +75,29 @@ try:
 		p = json.load(fp)
 		# Server priorities
 		for k, v in p["server_priorities"].iteritems():
-			if not isinstance(k, (str, unicode)) or not isinstance(v, int):
+			if not type(k) in (str, unicode) or not type(v) == int:
 				print 'Invalid server priority entry in servers.json - skipping: "%s", "%s"' % (k, v)
 				break
 		else:
 			PRIORITY_SERVERS = p["server_priorities"]
 		# Official servers
 		for v in p["official_servers"]:
-			if not isinstance(v, (str, unicode)):
+			if not type(v) in (str, unicode):
 				print 'Invalid official server entry in servers.json - ignoring: "%s"' % v
 			else:
 				OFFICIAL_SERVERS.add(v)
 		# Default priority values
 		PRIORITY_DEFAULT = p.get("default_priority", PRIORITY_DEFAULT)
 		PRIORITY_OFFICIAL = p.get("official_priority", PRIORITY_OFFICIAL)
-		# Cleanup
-		del p
+
 except IOError:
 	print "Could not read servers.json - skipping"
 except AttributeError:
 	print "Error in servers.json - skipping"
 
-def stripnul(s):
-	idx = s.find("\x00")
-	return (s if idx == -1 else s[:idx])
-
+"""
+# this function does some weird stuff, either me or the author has no idea what he is doing
+# until stuff breaks, it has been replaced by str.replace
 def replace_char_all(s, f, t):
 	v = ord(f)
 	s = s.replace(f, t)
@@ -98,13 +108,7 @@ def replace_char_all(s, f, t):
 	s = s.replace(chr(0xFC) + chr(0x80) + chr(0x80) + chr(0x80) + chr(0x80 | ((v>>6)&3)) + chr(0x80 | (v&63)), t)
 	# TODO: handle the 6-bit and 8-bit variants and whatnot
 	return s
-
-def sanestr(s):
-	s = str(s)
-	s = replace_char_all(s, "&", "&amp;")
-	s = replace_char_all(s, "<", "&lt;")
-	s = replace_char_all(s, ">", "&gt;")
-	return s
+"""
 
 class HTTPClient:
 	def __init__(self, ct, reactor, server, sockfd):
@@ -116,6 +120,15 @@ class HTTPClient:
 		self.sockfd.setblocking(False)
 		self.reactor.push(ct, self.update)
 
+	def sanetize_str(self, string):
+		return str(string)\
+		.replace("&", "&amp;")\
+		.replace("<", "&lt;")\
+		.replace(">", "&gt;")
+
+	def sanetize_dict_values(self, dict):
+		return {key:self.sanetize_str(dict[key]) for key in dict}
+
 	def is_dead(self, ct):
 		return self.sockfd == None
 
@@ -124,40 +137,55 @@ class HTTPClient:
 		self.push_buf(ct)
 		if self.sockfd:
 			self.reactor.push(ct + 0.1, self.update)
-
+	
 	def get_file_index(self):
+		# for the functional programming noobs:
+		# map takes a function and applies it it every elem in a iterable
 		l = self.server.get_ib_fields()
-		s = "<html>\n<head>\n"
-		s += "<title>Iceball Server List</title>\n"
-		s += "<link href=\"//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css\" rel=\"stylesheet\">\n"
-		s += "<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\">\n"
-		s += "</head>\n<body>\n"
-		s += "<div class=\"content\">\n"
-		s += "<h1>Iceball Server List</h1>\n"
-		s += "<table class=\"table table-bordered table-striped table-hover\">\n"
-		s += "<thead>"
-		s += "<th>Address</th>"
-		s += "<th>Port</th>"
-		s += "<th>Name</th>"
-		s += "<th>Version</th>"
-		s += "<th>Players</th>"
-		s += "<th>Mode</th>"
-		s += "<th>Map</th>"
-		s += "</thead>\n"
-		for d in l:
-			s += "<tr>"
-			s += "<td>" + sanestr(d["address"]) + "</td>"
-			s += "<td>" + sanestr(d["port"]) + "</td>"
-			s += "<td>" + "<a href=\"iceball://" + sanestr(d["address"]) + ":" + sanestr(d["port"]) + "\">" + sanestr(d["name"]) + "</a>" + "</td>"
-			s += "<td>" + sanestr(d["version"]) + "</td>"
-			s += "<td>" + sanestr(d["players_current"]) + " / " + sanestr(d["players_max"]) + "</td>"
-			s += "<td>" + sanestr(d["mode"]) + "</td>"
-			s += "<td>" + sanestr(d["map"]) + "</td>"
-			s += "</tr>\n"
-		s += "</table>\n"
-		s += "</div>\n"
-		s += "</body>\n</html>\n"
-		return "text/html", s.replace("\n","\r\n")
+
+		page_template = """\
+<html>
+	<head>
+		<title>Iceball Server List</title>
+		<link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css"
+			rel="stylesheet">
+		<link rel="stylesheet" type="text/css" href="style.css">
+	</head>
+	<body>
+		<div class="content">
+			<h1>Iceball Server List</h1>
+			<table class="table table-bordered table-striped table-hover">
+				<thead>
+					<th>Address</th>
+					<th>Port</th>
+					<th>Name</th>
+					<th>Version</th>
+					<th>Players</th>
+					<th>Mode</th>
+					<th>Map</th>
+				</thead>
+			{listing}
+			</table>
+		</div>
+	</body>
+</html>
+		"""
+		listing_template = "<tr>"\
+		"<td>{address}</td>"\
+		"<td>{port}</td>"\
+		"<td><a href=\"iceball://{address}:{port}\">{name}</a></td>"\
+		"<td>{version}</td>"\
+		"<td>{players_current}/{players_max}</td>"\
+		"<td>{mode}</td>"\
+		"<td>{map}</td>"\
+		"</tr>\n"
+		
+		listing_list = [listing_template.format(**self.sanetize_dict_values(d)) for d in l]
+		listing = "\n".join(listing_list)
+		
+		page = page_template.format(listing=listing)
+
+		return "text/html", page.replace("\n","\r\n")
 
 	def get_file_json(self):
 		l = self.server.get_ib_fields()
@@ -173,14 +201,10 @@ class HTTPClient:
 		self.wbuf = ver + " 404 Not Found\r\n\r\n"
 
 	def get_file(self, fname):
-		if fname == "/" or fname == "/index.html":
+		if fname in ("/", "/index.html"):
 			return self.get_file_index()
 		elif fname == "/style.css":
-			try:
-				with open("style.css") as f:
-					return "text/css", f.read()
-			except IOError:
-				return None, None
+			return STYLE_CSS
 		elif fname == "/master.json":
 			return self.get_file_json()
 		else:
@@ -234,10 +258,7 @@ class HTTPClient:
 			self.parse_http_data(data)
 	
 	def push_buf(self, ct):
-		if self.sockfd == None:
-			return
-
-		if self.wbuf == None:
+		if None in (self.sockfd, self.wbuf):
 			return
 
 		try:
@@ -246,6 +267,7 @@ class HTTPClient:
 				self.sockfd.close()
 				self.sockfd = None
 				return
+
 			self.wbuf = self.wbuf[bsent:]
 			if len(self.wbuf) == 0:
 				self.sockfd.close()
@@ -259,14 +281,11 @@ class HTTPClient:
 				try:
 					self.sockfd.close()
 				except Exception:
-					pass
+					print("Could not close sockfd - Ignoring")
 				self.sockfd = None
 	
 	def get_msgs(self, ct):
-		if self.sockfd == None:
-			return
-
-		if self.buf == None:
+		if None in (self.sockfd, self.buf):
 			return
 
 		try:
@@ -471,11 +490,11 @@ class HClient:
 				d["address"] = str(self.addr)
 				d["port"], d["players_current"], d["players_max"] = struct.unpack("<HHH", msg[:6])
 				msg = msg[6:]
-				d["name"] = stripnul(msg[:30])
+				d["name"] = msg[:30].strip("\x00")
 				msg = msg[30:]
-				d["mode"] = stripnul(msg[:10])
+				d["mode"] = msg[:10].strip("\x00")
 				msg = msg[10:]
-				d["map"] = stripnul(msg[:30])
+				d["map"] = msg[:30].strip("\x00")
 
 				d["version"] = ib_version_str(ibver)
 
@@ -500,4 +519,3 @@ class HClient:
 hb_reactor = HReactor()
 hb_server = HServer(hb_reactor.get_time(), hb_reactor, socket.AF_INET, CONN_PORT)
 hb_reactor.run()
-
