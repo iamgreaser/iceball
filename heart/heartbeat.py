@@ -75,20 +75,22 @@ try:
 		p = json.load(fp)
 		# Server priorities
 		for k, v in p["server_priorities"].iteritems():
-			if not type(k) in (str, unicode) or not type(v) == int:
+			if not isinstance(k, (str, unicode)) or not isinstance(v, int):
 				print 'Invalid server priority entry in servers.json - skipping: "%s", "%s"' % (k, v)
 				break
 		else:
 			PRIORITY_SERVERS = p["server_priorities"]
 		# Official servers
 		for v in p["official_servers"]:
-			if not type(v) in (str, unicode):
+			if not isinstance(v, (str, unicode)):
 				print 'Invalid official server entry in servers.json - ignoring: "%s"' % v
 			else:
 				OFFICIAL_SERVERS.add(v)
 		# Default priority values
 		PRIORITY_DEFAULT = p.get("default_priority", PRIORITY_DEFAULT)
 		PRIORITY_OFFICIAL = p.get("official_priority", PRIORITY_OFFICIAL)
+	# Cleanup, since we are in global scope
+	del p, k, v, fp
 
 except IOError:
 	print "Could not read servers.json - skipping"
@@ -120,14 +122,14 @@ class HTTPClient:
 		self.sockfd.setblocking(False)
 		self.reactor.push(ct, self.update)
 
-	def sanetize_str(self, string):
+	def sanetise_str(self, string):
 		return str(string)\
 		.replace("&", "&amp;")\
 		.replace("<", "&lt;")\
 		.replace(">", "&gt;")
 
-	def sanetize_dict_values(self, dict):
-		return {key:self.sanetize_str(dict[key]) for key in dict}
+	def sanetise_dict_values(self, dict):
+		return {key:self.sanetise_str(dict[key]) for key in dict}
 
 	def is_dead(self, ct):
 		return self.sockfd == None
@@ -180,8 +182,7 @@ class HTTPClient:
 		"<td>{map}</td>"\
 		"</tr>\n"
 		
-		listing_list = [listing_template.format(**self.sanetize_dict_values(d)) for d in l]
-		listing = "\n".join(listing_list)
+		listing = "\n".join([listing_template.format(**self.sanetise_dict_values(d)) for d in l])
 		
 		page = page_template.format(listing=listing)
 
@@ -258,7 +259,7 @@ class HTTPClient:
 			self.parse_http_data(data)
 	
 	def push_buf(self, ct):
-		if None in (self.sockfd, self.wbuf):
+		if self.sockfd == none or self.wbuf == none:
 			return
 
 		try:
@@ -285,7 +286,7 @@ class HTTPClient:
 				self.sockfd = None
 	
 	def get_msgs(self, ct):
-		if None in (self.sockfd, self.buf):
+		if self.sockfd == none or self.wbuf == none:
 			return
 
 		try:
@@ -396,7 +397,6 @@ class HServer:
 
 		for v in kill:
 			self.http_clients.remove(v)
-				
 
 	def kill_old_clients(self, ct):
 		# TODO: use a priority queue for the clients
