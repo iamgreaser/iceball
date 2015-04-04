@@ -606,10 +606,7 @@ function h_tick_main(sec_current, sec_delta)
 		for i=1,#miscents do
 			miscents[i].tick(moment, tickrate)
 		end
-		local derp = client_tick_accum
 		client_tick_accum = client_tick_accum - tickrate
-		local herp = derp - client_tick_accum
-		local boop = client_tick_accum - client_tick_accum
 	end
 	
 	if players.current and players[players.current] then
