@@ -32,6 +32,10 @@ def get_stylesheet():
 		return None, None
 STYLE_CSS = get_stylesheet()
 
+def strip_nul(s):
+    # unlike the title says, this actually removes anything after the first \x00
+    return s.split('\x00')[0]
+
 def ib_version_str(n):
 	z = n & ((1<<10)-1); n >>= 10
 	a = n & ((1<<5)-1); n >>= 5
@@ -490,11 +494,11 @@ class HClient:
 				d["address"] = str(self.addr)
 				d["port"], d["players_current"], d["players_max"] = struct.unpack("<HHH", msg[:6])
 				msg = msg[6:]
-				d["name"] = msg[:30].strip("\x00")
+				d["name"] = strip_nul(msg[:30])
 				msg = msg[30:]
-				d["mode"] = msg[:10].strip("\x00")
+				d["mode"] = strip_nul(msg[:10])
 				msg = msg[10:]
-				d["map"] = msg[:30].strip("\x00")
+				d["map"] = strip_nul(msg[:30])
 
 				d["version"] = ib_version_str(ibver)
 
