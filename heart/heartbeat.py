@@ -259,7 +259,7 @@ class HTTPClient:
 			self.parse_http_data(data)
 	
 	def push_buf(self, ct):
-		if self.sockfd == none or self.wbuf == none:
+		if self.sockfd == None or self.wbuf == None:
 			return
 
 		try:
@@ -286,7 +286,7 @@ class HTTPClient:
 				self.sockfd = None
 	
 	def get_msgs(self, ct):
-		if self.sockfd == none or self.wbuf == none:
+		if self.sockfd == None or self.wbuf == None:
 			return
 
 		try:
