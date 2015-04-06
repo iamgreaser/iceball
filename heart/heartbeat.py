@@ -286,7 +286,7 @@ class HTTPClient:
 				self.sockfd = None
 	
 	def get_msgs(self, ct):
-		if self.sockfd == None or self.wbuf == None:
+		if self.sockfd == None or self.buf == None:
 			return
 
 		try:
