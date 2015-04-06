@@ -122,14 +122,14 @@ class HTTPClient:
 		self.sockfd.setblocking(False)
 		self.reactor.push(ct, self.update)
 
-	def sanetise_str(self, string):
+	def sanitise_str(self, string):
 		return str(string)\
 		.replace("&", "&amp;")\
 		.replace("<", "&lt;")\
 		.replace(">", "&gt;")
 
-	def sanetise_dict_values(self, dict):
-		return {key:self.sanetise_str(dict[key]) for key in dict}
+	def sanitise_dict_values(self, dict):
+		return {key:self.sanitise_str(dict[key]) for key in dict}
 
 	def is_dead(self, ct):
 		return self.sockfd == None
@@ -182,7 +182,7 @@ class HTTPClient:
 		"<td>{map}</td>"\
 		"</tr>\n"
 		
-		listing = "\n".join([listing_template.format(**self.sanetise_dict_values(d)) for d in l])
+		listing = "\n".join([listing_template.format(**self.sanitise_dict_values(d)) for d in l])
 		
 		page = page_template.format(listing=listing)
 
