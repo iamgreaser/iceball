@@ -160,18 +160,25 @@ void wav_fn_mixer_s16he_stereo(void *buf, int len)
 		// TODO: work out how to apply vol_spread? or do we just scrap it?
 
 		// determine speaker volumes
-		// TODO: genericise this for multiple channels!
+		// apply b-format
+		float bw = att*0.707f;
+		float bx = att*-dz;
+		float by = att*-dx;
+		float bz = att*dy;
+
+		// TODO: load these configs from somewhere
+		// TODO: not assume balanced stereo
+		float mw = 1.5f;
+		float mx = 0.5f;
+		float my = 1.0f;
+		float mz = 0.0f;
+		float mg = 0.7f;
+
+		// convert b-format to speaker space
+		// TODO: genericise this!
 		float vol[2];
-		vol[0] = 1.0f-dx;
-		vol[1] = 1.0f+dx;
-
-		if(vol[0] > 1.0f)
-			vol[0] = 1.0f;
-		if(vol[1] > 1.0f)
-			vol[1] = 1.0f;
-
-		vol[0] *= att;
-		vol[1] *= att;
+		vol[0] = (mw*bw + my*by + mx*bx)*mg;
+		vol[1] = (mw*bw - my*by + mx*bx)*mg;
 
 		// get the speed
 		uint32_t freq = (uint32_t)(wc->src->freq*wc->freq_mod+0.5f);
@@ -198,8 +205,8 @@ void wav_fn_mixer_s16he_stereo(void *buf, int len)
 			}
 
 			int16_t d = data[offs];
-			int32_t v0 = (int32_t)(*v) + (int32_t)(vol[0]*d+0.5f);
-			int32_t v1 = (int32_t)(*(v+1)) + (int32_t)(vol[1]*d+0.5f);
+			int32_t v0 = (int32_t)(*v) + (int32_t)(vol[0]*d);
+			int32_t v1 = (int32_t)(*(v+1)) + (int32_t)(vol[1]*d);
 			if(v0 >  0x7FFF) v0 =  0x7FFF;
 			if(v0 < -0x7FFF) v0 = -0x7FFF;
 			if(v1 >  0x7FFF) v1 =  0x7FFF;

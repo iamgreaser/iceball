@@ -20,9 +20,9 @@
 -- Thanks. --GM
 
 VERSION_ENGINE = {
-	cmp={0,2,1,0,28},
-	num=8421376+28,
-	str="0.2.1-28",
+	cmp={0,2,1,0,29},
+	num=8421376+29,
+	str="0.2.1-29",
 }
 
 --error(""..common.version.num)
@@ -167,5 +167,7 @@ VERSION_BUGS = {
 {intro=nil, fix=8421376+26, msg="IMA ADPCM samples not supported"},
 {intro=nil, fix=8421376+27, msg=".it module music plays at wrong frequency when mixing freq not 44100Hz"},
 {intro=nil, fix=8421376+28, msg="Potential infinite loop due to zero time delta"},
+{intro=nil, fix=8421376+29, msg="B-format audio system not supported"},
+{intro=8421376+29, fix=nil, msg="B-format audio system incomplete"},
 }
 
