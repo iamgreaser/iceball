@@ -163,6 +163,7 @@ cvar("MODE_CHAT_STRMAX", 102)
 
 -- some settings that can be moved
 cvar("SHOW_NETGRAPH", false)
+cvar("MODE_SPECTATE", true)
 
 -- scoring
 cvar("SCORE_INTEL", 10)
@@ -176,9 +177,6 @@ TOOL_BLOCK = 1
 TOOL_GUN = 2
 TOOL_EXPL = 3
 TOOL_MARKER = 4
-
---respawn
-cvar("MODE_SPECTATE", true)
 
 -- sounds
 if client then
