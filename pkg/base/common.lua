@@ -177,6 +177,9 @@ TOOL_GUN = 2
 TOOL_EXPL = 3
 TOOL_MARKER = 4
 
+--respawn
+cvar("MODE_SPECTATE", true)
+
 -- sounds
 if client then
 	client.wav_cube_size(1)
