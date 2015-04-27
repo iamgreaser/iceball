@@ -163,6 +163,7 @@ cvar("MODE_CHAT_STRMAX", 102)
 
 -- some settings that can be moved
 cvar("SHOW_NETGRAPH", false)
+cvar("MODE_SPECTATE", true)
 
 -- scoring
 cvar("SCORE_INTEL", 10)

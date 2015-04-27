@@ -99,7 +99,9 @@
 		"SCORE_INTEL": 10,
 		"SCORE_KILL": 1,
 		"SCORE_TEAMKILL": -1,
-		"SCORE_SUICIDE": -1
+		"SCORE_SUICIDE": -1,
+
+		"MODE_SPECTATE": false
 	}
 }
 

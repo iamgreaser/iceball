@@ -77,6 +77,8 @@ function new_player(settings)
 	this.zooming = false
 	this.inwater = false
 	this.mode = settings.mode or PLM_NORMAL
+	this.spectateindex = 0
+	this.spectateplr = this
 
 	function teamfilt(tr, tg, tb)
 		return (function (r,g,b)
@@ -178,6 +180,8 @@ function new_player(settings)
 
 		this.grounded = false
 		this.crouching = false
+		this.spectateindex = 0
+		this.spectateplr = this
 
 		this.arm_rest_right = 0.0
 		this.arm_rest_left = 1.0
@@ -1204,7 +1208,11 @@ function new_player(settings)
 				this.crosshairhit.y = this.crosshair.y
 			end
 		else
-			client.camera_move_to(this.dead_x, this.dead_y, this.dead_z)
+			if this.spectateplr.alive then
+				client.camera_move_to(this.spectateplr.x , this.spectateplr.y , this.spectateplr.z)
+			else
+				client.camera_move_to(this.spectateplr.dead_x , this.spectateplr.dead_y , this.spectateplr.dead_z)
+			end
 		end
 
 		local angy, angx
@@ -1258,8 +1266,13 @@ function new_player(settings)
 			-- move camera back as far as it can sanely go
 			local dc = 10
 			local df = 0.101
-			local dt = trace_map_ray_dist(this.dead_x , this.dead_y , this.dead_z ,
-				-fwx, -fwy, -fwz, dc, true)
+			if this.spectateplr.alive then
+				local dt = trace_map_ray_dist(this.spectateplr.x , this.spectateplr.y , this.spectateplr.z ,
+					-fwx, -fwy, -fwz, dc, true)
+			else
+				local dt = trace_map_ray_dist(this.spectateplr.dead_x , this.spectateplr.dead_y , this.spectateplr.dead_z ,
+					-fwx, -fwy, -fwz, dc, true)
+			end
 			dt = dt or dc
 
 			local offs = dt - df
@@ -2067,8 +2080,35 @@ function new_player(settings)
 		if this.mode == PLM_SPECTATE then
 			return
 		end
+
 		if this.alive then
 			this.tools[this.tool+1].click(button, state)
+		elseif not state and (button == 1 or button == 3) and MODE_SPECTATE then
+			local teamplayers = {}
+			for i, v in ipairs(team_players(this.team)) do
+				if v ~= this then
+					table.insert(teamplayers, v)
+				end
+			end
+
+			if button == 1 then
+				this.spectateindex = this.spectateindex + 1
+				if this.spectateindex > #teamplayers then
+					this.spectateindex = 0
+				end
+			elseif button == 3 then
+				this.spectateindex = this.spectateindex - 1
+				if this.spectateindex < 0 then
+					this.spectateindex = #teamplayers
+				end
+			end
+
+			if this.spectateindex == 0 then
+				this.spectateplr = this
+			else
+				this.spectateplr = teamplayers[this.spectateindex]
+			end
+
 		end
 		if button == 1 then
 			-- LMB
