@@ -408,8 +408,11 @@ mdl_test = model_load({pmf={bdir=DIR_PKG_PMF, name="test.pmf"}},{"pmf"})
 mdl_cube = model_load({pmf={bdir=DIR_PKG_PMF, name="cube.pmf"}},{"pmf"})
 mdl_piano = model_load({pmf={bdir=DIR_PKG_PMF, name="piano.pmf"}},{"pmf"})
 mdl_marker = model_load({pmf={bdir=DIR_PKG_PMF, name="marker.pmf"}},{"pmf"})
-mdl_tracer = model_load({pmf={bdir=DIR_PKG_PMF, name="tracer.pmf"}},{"pmf"})
 
+mdl_tracer = model_load({
+	kv6={bdir=DIR_PKG_KV6, name="tracer.kv6", scale=1.0/8.0},
+	pmf={bdir=DIR_PKG_PMF, name="tracer.pmf"},
+},{"kv6","pmf"})
 mdl_block = model_load({
 	kv6={bdir=DIR_PKG_KV6, name="block.kv6", scale=1.0/22.0},
 	pmf={bdir=DIR_PKG_PMF, name="block.pmf"},
