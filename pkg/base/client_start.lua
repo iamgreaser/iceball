@@ -1223,7 +1223,7 @@ function client.hook_kick(reason)
 		return 0.01
 	end
 	function client.hook_key(sym, state, modif, uni)
-		if state and key == BTSK_QUIT then
+		if state and sym == BTSK_QUIT then
 			client.hook_tick = nil
 		end
 	end
