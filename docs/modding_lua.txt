@@ -746,6 +746,11 @@ str = common.net_pack(fmt, ...) @
 	
 	spews defaults if not enough arguments are provided.
 
+str = common.net_pack_array(fmt, len, arr) @
+	packs an array to a string
+	fmt is one of the formats as seen in net_pack and ONLY ONE CHARACTER
+	len is the amount of data to unpack
+
 ..., remain = common.net_unpack(fmt, str) @
 	unpacks data from a string
 	
@@ -754,6 +759,10 @@ str = common.net_pack(fmt, ...) @
 	"remain" is the remainder of the string which was not decoded
 	
 	returns nil for fields that could not be decoded
+
+array = common.net_unpack_array(fmt, len, str) @
+	unpacks an array from a string
+	see net_pack_array
 
 success = common.net_send(neth, str, unreliable = false) @
 	sends a packet

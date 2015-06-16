@@ -20,9 +20,9 @@
 -- Thanks. --GM
 
 VERSION_ENGINE = {
-	cmp={0,2,1,0,29},
-	num=8421376+29,
-	str="0.2.1-29",
+	cmp={0,2,1,0,30},
+	num=8421376+30,
+	str="0.2.1-30",
 }
 
 --error(""..common.version.num)

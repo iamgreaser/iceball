@@ -217,6 +217,166 @@ int icelua_fn_common_net_pack(lua_State *L)
 	return 1;
 }
 
+int icelua_fn_common_net_pack_array(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 3, 3);
+	
+	const char *fmt = lua_tostring(L, 1);
+	if(fmt == NULL)
+		return luaL_error(L, "not a string");
+	int32_t len = lua_tointeger(L, 2);
+	luaL_checktype(L, 3, LUA_TTABLE);
+
+	const char *v = fmt;
+	int n = 0;
+	int i;
+	
+	int32_t xint;
+	uint32_t xuint;
+	float xfloat;
+	double xdouble;
+	
+	int slen = 0;
+	if (*v == 'z') { //net_packlen doesn't work when the format is "z" because the strings aren't on the stack
+		for (i = 0; i < len; i++) {
+			lua_rawgeti(L, 3, i + 1);
+			const char *xstr = lua_tostring(L, -1);
+			slen += strlen(xstr) + 1;
+		}
+	} else {
+		slen = icelua_fnaux_net_packlen(L, fmt, top) * len;
+	}
+
+	if(slen < 0)
+		return luaL_error(L, "invalid pack format");
+	char *sbuf = (char*)malloc(slen+1);
+	char *sstop = sbuf+slen;
+	*sstop = '\0';
+	
+	char *s = sbuf;
+	
+	while(*v != '\0')
+	{
+		if(*v >= '0' && *v <= '9')
+		{
+			n = n*10 + (*(v++) - '0');
+		} else switch(*(v++)) {
+			case 'b':
+			case 'B':
+				for (i = 0; i < len; i++)
+				{
+					lua_rawgeti(L, 3, i + 1);
+					xint = lua_tointeger(L, -1);
+					*(s++) = xint & 0xFF;
+				}
+				break;
+			case 'h':
+			case 'H':
+				for (i = 0; i < len; i++)
+				{
+					lua_rawgeti(L, 3, i + 1);
+					xint = lua_tointeger(L, -1);
+					*(s++) = xint & 0xFF;
+					*(s++) = (xint>>8) & 0xFF;
+				}
+				break;
+			case 'i':
+				for (i = 0; i < len; i++)
+				{
+					lua_rawgeti(L, 3, i + 1);
+					xint = lua_tonumber(L, -1);
+					*(s++) = xint & 0xFF;
+					*(s++) = (xint>>8) & 0xFF;
+					*(s++) = (xint>>16) & 0xFF;
+					*(s++) = (xint>>24) & 0xFF;
+				}
+				break;
+			case 'I':
+				for (i = 0; i < len; i++)
+				{
+					lua_rawgeti(L, 3, i + 1);
+					xuint = lua_tonumber(L, -1);
+					*(s++) = xuint & 0xFF;
+					*(s++) = (xuint>>8) & 0xFF;
+					*(s++) = (xuint>>16) & 0xFF;
+					*(s++) = (xuint>>24) & 0xFF;
+				}
+				break;
+
+			case 'f':
+				for (i = 0; i < len; i++)
+				{
+					lua_rawgeti(L, 3, i + 1);
+					xfloat = lua_tonumber(L, -1);
+					xint = *(int32_t *)(float *)&xfloat;
+					*(s++) = xint & 0xFF;
+					*(s++) = (xint>>8) & 0xFF;
+					*(s++) = (xint>>16) & 0xFF;
+					*(s++) = (xint>>24) & 0xFF;
+				}
+				break;
+			case 'd':
+				for (i = 0; i < len; i++)
+				{
+					lua_rawgeti(L, 3, i + 1);
+					xdouble = lua_tonumber(L, -1);
+					xint = ((int32_t *)(float *)&xdouble)[0];
+					*(s++) = xint & 0xFF;
+					*(s++) = (xint>>8) & 0xFF;
+					*(s++) = (xint>>16) & 0xFF;
+					*(s++) = (xint>>24) & 0xFF;
+					xint = ((int32_t *)(float *)&xdouble)[1];
+					*(s++) = xint & 0xFF;
+					*(s++) = (xint>>8) & 0xFF;
+					*(s++) = (xint>>16) & 0xFF;
+					*(s++) = (xint>>24) & 0xFF;
+				}
+				break;
+			case 's': {
+				for (i = 0; i < len; i++)
+				{
+					size_t slen;
+					lua_rawgeti(L, 3, i + 1);
+					const char *xstr = lua_tolstring(L, -1, &slen);
+					memset(s, 0, n);
+					if(xstr != NULL)
+						memcpy(s, xstr, ((int)slen <= n ? (int)slen : n));
+					s += n;
+				}
+			} break;
+			case 'z': {
+				for (i = 0; i < len; i++)
+				{
+					lua_rawgeti(L, 3, i + 1);
+					const char *xstr = lua_tostring(L, -1);
+					if(xstr != NULL)
+					{
+						int slen = strlen(xstr);
+						memcpy(s, xstr, slen);
+						s += slen;
+					}
+					*(s++) = '\0';
+				}
+			} break;
+			default:
+				fprintf(stderr, "net_pack_array[EDOOFUS]: unexpected char\n");
+				fflush(stderr);
+				abort();
+		}
+	}
+	
+	if(s != sstop)
+	{
+		fprintf(stderr, "%i\n", (int)(sstop-s));
+		fprintf(stderr, "net_pack_array[EDOOFUS]: s != sstop!\n");
+		fflush(stderr);
+		abort();
+	}
+	lua_pushlstring(L, sbuf, slen);
+	free(sbuf);
+	return 1;
+}
+
 int icelua_fn_common_net_unpack(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 2, 2);
@@ -297,7 +457,9 @@ int icelua_fn_common_net_unpack(lua_State *L)
 				p++;
 				break;
 			case 's': {
-				lua_pushlstring(L, s+n, n);
+				lua_pushlstring(L, s, n);
+				s += n;
+				n = 0;
 				p++;
 				break;
 			} break;
@@ -316,6 +478,138 @@ int icelua_fn_common_net_unpack(lua_State *L)
 	
 	lua_pushlstring(L, s, (size_t)(bsize-(int)(s-str)));
 	return p+1;
+}
+
+int icelua_fn_common_net_unpack_array(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 3, 3);
+	
+	const char *fmt = lua_tostring(L, 1);
+	if(fmt == NULL)
+		return luaL_error(L, "not a string");
+	int32_t len = lua_tointeger(L, 2);
+	size_t bsize;
+	const char *str = lua_tolstring(L, 3, &bsize);
+	if(str == NULL)
+		return luaL_error(L, "not a string");
+	
+	const char *v = fmt;
+	
+	const char *s = str;
+	int n = 0;
+	int i;
+	
+	int32_t xint;
+	uint32_t xuint;
+	float xfloat;
+	double xdouble;
+	
+	lua_newtable(L);
+	while(*v != '\0')
+	{
+		if(*v >= '0' && *v <= '9')
+		{
+			n = n*10 + (*(v++) - '0');
+		} else switch(*(v++)) {
+			case 'b':
+				for (i = 0; i < len; i++)
+				{
+					xint = *(int8_t *)s;
+					s++;
+					lua_pushinteger(L, xint);
+					lua_rawseti(L, -2, i + 1);
+				}
+				break;
+			case 'B':
+				for (i = 0; i < len; i++)
+				{
+					xint = *(uint8_t *)s;
+					s++;
+					lua_pushinteger(L, xint);
+					lua_rawseti(L, -2, i + 1);
+				}
+				break;
+			case 'h':
+				for (i = 0; i < len; i++)
+				{
+					xint = *(int16_t *)s;
+					s += 2;
+					lua_pushinteger(L, xint);
+					lua_rawseti(L, -2, i + 1);
+				}
+				break;
+			case 'H':
+				for (i = 0; i < len; i++)
+				{
+					xint = *(uint16_t *)s;
+					s += 2;
+					lua_pushinteger(L, xint);
+					lua_rawseti(L, -2, i + 1);
+				}
+				break;
+			case 'i':
+				for (i = 0; i < len; i++)
+				{
+					xint = *(int32_t *)s;
+					s += 4;
+					lua_pushinteger(L, xint);
+					lua_rawseti(L, -2, i + 1);
+				}
+				break;
+			case 'I':
+				for (i = 0; i < len; i++)
+				{
+					xuint = *(uint32_t *)s;
+					s += 4;
+					lua_pushnumber(L, (double)xuint);
+					lua_rawseti(L, -2, i + 1);
+				}
+				break;
+			case 'f':
+				for (i = 0; i < len; i++)
+				{
+					xint = *(uint32_t *)s;
+					xfloat = *(float *)&xint;
+					s += 4;
+					lua_pushnumber(L, xfloat);
+					lua_rawseti(L, -2, i + 1);
+				}
+				break;
+			case 'd':
+				for (i = 0; i < len; i++)
+				{
+					xint = *(uint32_t *)s;
+					xdouble = *(double *)&xint;
+					s += 8;
+					lua_pushnumber(L, xdouble);
+					lua_rawseti(L, -2, i + 1);
+				}
+			break;
+			case 's': {
+				for (i = 0; i < len; i++)
+				{
+					lua_pushlstring(L, s, n);
+					s += n;
+					lua_rawseti(L, -2, i + 1);
+				}
+				break;
+			} break;
+			case 'z':
+				for (i = 0; i < len; i++)
+				{
+					int slen = strlen(s);
+					lua_pushstring(L, s);
+					s += slen+1;
+					lua_rawseti(L, -2, i + 1);
+				}
+				break;
+			default:
+				lua_pop(L, -1);
+				return luaL_error(L, "net_unpack_array: unexpected char\n");
+		}
+	}
+	
+	return 1;
 }
 
 int icelua_fn_common_net_send(lua_State *L)
