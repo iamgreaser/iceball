@@ -12,7 +12,7 @@ CFLAGS = -DDEDI -O2 -fno-strict-aliasing -g -Wall -Wextra \
 HEADERS_ENet = `pkg-config libenet --cflags`
 HEADERS_Lua = `./findlua.sh --cflags`
 
-LDFLAGS = -pg -g -I/usr/local/include $(LDFLAGS_EXTRA)
+LDFLAGS = -pg -g -pthread -I/usr/local/include $(LDFLAGS_EXTRA)
 LIBS_ENet = `pkg-config libenet --libs`
 LIBS_Lua = `./findlua.sh --libs`
 # Lua is not an acronym. Get used to typing it with lower case u/a.
