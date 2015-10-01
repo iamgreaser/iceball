@@ -1,5 +1,5 @@
 --[[
-    This file is part of Ice Lua Components.
+    This file is derived from code from Ice Lua Components.
 
     Ice Lua Components is free software: you can redistribute it and/or modify
     it under the terms of the GNU Lesser General Public License as published by
@@ -15,66 +15,207 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
--- Random vectors
-function vrand(amp)
-	local x = (math.random()*2.0-1.0)*amp
-	local y = (math.random()*2.0-1.0)*amp
-	math.random() -- screw with the linear congruential generator a bit because it kinda sucks
-	local z = (math.random()*2.0-1.0)*amp
-	math.random() -- screw with it once more
-	return x, y, z
+local portal_transforms = {}
+local portal_traces = {}
+local portal_traces_mcache = {}
+portal_traces_enabled = true
+
+portal_transforms_performed = {}
+
+local function trace_portal_get_transform(cx, cy, cz)
+	if not(portal_traces[cz] and portal_traces[cz][cx] and portal_traces[cz][cx][cy]) then
+		return nil
+	end
+
+	local tidx = portal_traces[cz][cx][cy]
+	local tf = portal_transforms[tidx]
+
+	return tf
 end
 
--- Useful linear algebra primitives
-function vcross(x1,y1,z1,x2,y2,z2)
-	return    y1*z2 - z1*y2
-		, z1*x2 - x1*z2
-		, x1*y2 - y1*x2
+function trace_portal_transform(tf, cx, cy, cz, vx, vy, vz)
+	print("ENTRY", cx, cy, cz, vx, vy, vz)
+
+	-- Get origins
+	local cx1 = tf[1][1] + 0.5 + tf[1][4]*0.5
+	local cy1 = tf[1][2] + 0.5 + tf[1][5]*0.5
+	local cz1 = tf[1][3] + 0.5 + tf[1][6]*0.5
+	local cx2 = tf[2][1] + 0.5 + tf[2][4]*0.5
+	local cy2 = tf[2][2] + 0.5 + tf[2][5]*0.5
+	local cz2 = tf[2][3] + 0.5 + tf[2][6]*0.5
+
+	-- Get normals
+	local nx1 = tf[1][4]
+	local ny1 = tf[1][5]
+	local nz1 = tf[1][6]
+	local nx2 = tf[2][4]
+	local ny2 = tf[2][5]
+	local nz2 = tf[2][6]
+
+	-- Get sky vectors
+	local sx1 = tf[1][7]
+	local sy1 = tf[1][8]
+	local sz1 = tf[1][9]
+	local sx2 = tf[2][7]
+	local sy2 = tf[2][8]
+	local sz2 = tf[2][9]
+
+	-- Get horiz vectors
+	local hx1 = ny1*sz1-nz1*sy1
+	local hy1 = nz1*sx1-nx1*sz1
+	local hz1 = nx1*sy1-ny1*sx1
+	local hx2 = ny2*sz2-nz2*sy2
+	local hy2 = nz2*sx2-nx2*sz2
+	local hz2 = nx2*sy2-ny2*sx2
+
+	-- Get offsets
+	local no1 = nx1*cx1 + ny1*cy1 + nz1*cz1
+	local no2 = nx2*cx2 + ny2*cy2 + nz2*cz2
+	local so1 = sx1*cx1 + sy1*cy1 + sz1*cz1
+	local so2 = sx2*cx2 + sy2*cy2 + sz2*cz2
+	local ho1 = hx1*cx1 + hy1*cy1 + hz1*cz1
+	local ho2 = hx2*cx2 + hy2*cy2 + hz2*cz2
+
+	print("NORMS", nx1, ny1, nz1, nx2, ny2, nz2, no1)
+	print("SKIES", sx1, sy1, sz1, sx2, sy2, sz2, so1)
+	print("HORIZ", hx1, hy1, hz1, hx2, hy2, hz2, ho1)
+
+	-- Get source offsets
+	local noP = nx1*cx + ny1*cy + nz1*cz - no1
+	local soP = sx1*cx + sy1*cy + sz1*cz - so1
+	local hoP = hx1*cx + hy1*cy + hz1*cz - ho1
+
+	-- Update position
+	cx = nx2*noP + sx2*soP + hx2*hoP + no2*nx2 + so2*sx2 + ho2*hx2
+	cy = ny2*noP + sy2*soP + hy2*hoP + no2*ny2 + so2*sy2 + ho2*hy2
+	cz = nz2*noP + sz2*soP + hz2*hoP + no2*nz2 + so2*sz2 + ho2*hz2
+
+	-- Get direction offsets
+	local noV = nx1*vx + ny1*vy + nz1*vz
+	local soV = sx1*vx + sy1*vy + sz1*vz
+	local hoV = hx1*vx + hy1*vy + hz1*vz
+
+	-- Update direction
+	vx = -(nx2*noV + sx2*soV + hx2*hoV)
+	vy = -(ny2*noV + sy2*soV + hy2*hoV)
+	vz = -(nz2*noV + sz2*soV + hz2*hoV)
+
+	-- Return!
+	print("EXIT ", cx, cy, cz, vx, vy, vz)
+	return cx, cy, cz, vx, vy, vz
+
 end
 
-function vdot(x1,y1,z1,x2,y2,z2)
-	return x1*x2 + y1*y2 + z1*z2
+local function trace_portal_set_mark(pid, portal_select, cx, cy, cz)
+	local l = portal_traces
+	if not l[cz] then l[cz] = {} end
+	if not l[cz][cx] then l[cz][cx] = {} end
+	l[cz][cx][cy] = pid*2+portal_select
+	--print(cx, cy, cz)
 end
 
-function vlen2(x,y,z)
-	return x*x + y*y + z*z
+local function trace_portal_insert(p, pid, portal_select)
+	local cx, cy, cz = p[1], p[2], p[3]
+	local dx, dy, dz = p[4], p[5], p[6]
+	local sx, sy, sz = p[7], p[8], p[9]
+	local hx = dy*sz-dz*sy
+	local hy = dz*sx-dx*sz
+	local hz = dx*sy-dy*sx
+
+	-- Mark area
+	trace_portal_set_mark(pid, portal_select, cx   , cy   , cz   )
+	trace_portal_set_mark(pid, portal_select, cx-sx, cy-sy, cz-sz)
+	trace_portal_set_mark(pid, portal_select, cx+sx, cy+sy, cz+sz)
+	trace_portal_set_mark(pid, portal_select, cx   +hx, cy   +hy, cz   +hz)
+	trace_portal_set_mark(pid, portal_select, cx-sx+hx, cy-sy+hy, cz-sz+hz)
+	trace_portal_set_mark(pid, portal_select, cx+sx+hx, cy+sy+hy, cz+sz+hz)
+	trace_portal_set_mark(pid, portal_select, cx   -hx, cy   -hy, cz   -hz)
+	trace_portal_set_mark(pid, portal_select, cx-sx-hx, cy-sy-hy, cz-sz-hz)
+	trace_portal_set_mark(pid, portal_select, cx+sx-hx, cy+sy-hy, cz+sz-hz)
 end
 
-function vlen(x,y,z)
-	return math.sqrt(vlen2(x,y,z))
+local function trace_portal_setup()
+	local i
+
+	portal_traces = {}
+	portal_transforms = {}
+
+	if not portal_traces_enabled then return end
+
+	-- Gather portal info
+	for i=1,players.max do
+		local plr = players[i]
+		if plr then
+			local p1 = plr.portal_list[1]
+			local p2 = plr.portal_list[2]
+
+			if p1 and p2 then
+				-- Create transformation!
+				local t1 = {p1, p2}
+				local t2 = {p2, p1}
+
+				-- Save transformation!
+				portal_transforms[i*2+1] = t1
+				portal_transforms[i*2+2] = t2
+				-- TODO! (instead we're drilling the map)
+
+				-- Place marks which indicate the transformation thing!
+				trace_portal_insert(p1, i, 1)
+				trace_portal_insert(p2, i, 2)
+			end
+		end
+	end
 end
 
-function vnorm(x,y,z)
-	local d = math.max(0.0000001,vlen(x,y,z))
-	return x/d, y/d, z/d
+local function map_pillar_get_fake(x, z)
+	-- Check if we have a portal list
+	if not (portal_traces[z] and portal_traces[z][x]) then
+		return common.map_pillar_get(x, z)
+	end
+
+	-- Check if we have a cache
+	if portal_traces_mcache[z] and portal_traces_mcache[z][x] then
+		return portal_traces_mcache[z][x]
+	end
+
+	--print("TRACES EXIST", x, z)
+
+	-- We have to edit because of this portal list
+	local l = common.map_pillar_get(x, z)
+	local pl = portal_traces[z][x]
+
+	-- Unpack
+	local ul = map_pillar_raw_unpack(l)
+
+	-- Replace things
+	local xlen,ylen,zlen
+	xlen,ylen,zlen = common.map_get_dims()
+	local i
+	for i=1,ylen do
+		if pl[i-1] then
+			--print("DELETE", x, i, z)
+			ul[i] = nil
+		end
+	end
+
+	-- Repack
+	l = map_pillar_raw_pack(ul)
+
+	-- Dump this into the cache
+	if not portal_traces_mcache[z] then portal_traces_mcache[z] = {} end
+	portal_traces_mcache[z][x] = l
+
+	-- Return
+	return l
 end
 
-function vrotate(theta,x,y,z,bx,by,bz)
-	-- glRotate as specified by SGI :D
-	bx,by,bz = vnorm(bx,by,bz)
-
-	-- S = [  0 -z  y ]
-	--     [  z  0 -x ]
-	--     [ -y  x  0 ]
-	-- R = uuT + cosO (I - uuT) + sinO S
-	-- alternatively
-	-- R = uuT * (1 - cosO) + IcosO + sinO S
-
-	local ct = math.cos(theta)
-	local st = math.sin(theta)
-
-	return
-		x*(bx*bx*(1-ct)+ct)       + y*(bx*by*(1-ct) + st*-bz)  + z*(bx*bz*(1-ct) + st*by),
-		x*(by*bx*(1-ct) + st*bz)  + y*(by*by*(1-ct)*(1-ct)+ct) + z*(by*bz*(1-ct) + st*-bx),
-		x*(bz*bx*(1-ct) + st*-by) + y*(bz*by*(1-ct) + st*bx)   + z*(bz*bz*(1-ct)+ct)
-end
-
+-- need to copy-paste these functions from lib_vector.lua in order to mangle them
 -- Map helpers
 function trace_gap(x,y,z)
 	local xlen,ylen,zlen
 	xlen,ylen,zlen = common.map_get_dims()
 
-	local l = common.map_pillar_get(math.floor(x), math.floor(z))
+	local l = map_pillar_get_fake(math.floor(x), math.floor(z))
 	local i = 1
 	local h1,h2
 	h1 = nil
@@ -112,7 +253,7 @@ function box_is_clear(x1,y1,z1,x2,y2,z2,canwrap)
 
 	for z=z1,z2 do
 	for x=x1,x2 do
-		local l = common.map_pillar_get(x, z)
+		local l = map_pillar_get_fake(x, z)
 		i = 1
 		while true do
 			if l[i+1] == ylen-1 and y2 < ylen then break end
@@ -126,7 +267,6 @@ function box_is_clear(x1,y1,z1,x2,y2,z2,canwrap)
 
 	return true
 end
-
 -- Ray tracing
 function trace_map_ray_dist(x1,y1,z1, vx,vy,vz, maxdist, nil_on_maxdist)
 	if nil_on_maxdist == nil then nil_on_maxdist = true end
@@ -169,9 +309,10 @@ function trace_map_ray_dist(x1,y1,z1, vx,vy,vz, maxdist, nil_on_maxdist)
 
 	local dist = 0
 	local pillar, npillar
-	npillar = common.map_pillar_get(cx,cz)
+	npillar = map_pillar_get_fake(cx,cz)
 	pillar = npillar
 
+	trace_portal_setup() -- Have to do this!
 	while true do
 		local tx = sx/depsilon(vx)
 		local ty = sy/depsilon(vy)
@@ -184,7 +325,7 @@ function trace_map_ray_dist(x1,y1,z1, vx,vy,vz, maxdist, nil_on_maxdist)
 			t = tx
 			d = 0
 			ncx = cx + gx
-			npillar = common.map_pillar_get(ncx,ncz)
+			npillar = map_pillar_get_fake(ncx,ncz)
 		elseif ty < tx and ty < tz then
 			t = ty
 			d = 1
@@ -193,7 +334,7 @@ function trace_map_ray_dist(x1,y1,z1, vx,vy,vz, maxdist, nil_on_maxdist)
 			t = tz
 			d = 2
 			ncz = cz + gz
-			npillar = common.map_pillar_get(ncx,ncz)
+			npillar = map_pillar_get_fake(ncx,ncz)
 		end
 
 		dist = dist + t
@@ -306,6 +447,7 @@ function trace_map_box(x1,y1,z1, x2,y2,z2, bx1,by1,bz1, bx2,by2,bz2, canwrap)
 	ry = nil
 	rz = nil
 
+	trace_portal_setup() -- Have to do this!
 	-- TODO: unset these when another boundary is crossed
 
 	local i
@@ -315,6 +457,7 @@ function trace_map_box(x1,y1,z1, x2,y2,z2, bx1,by1,bz1, bx2,by2,bz2, canwrap)
 		+ math.abs(tcz-cz)
 	)
 
+	portal_transforms_performed = {}
 	for i=1,iend do
 		-- get the time it takes to hit the boundary
 		local tx = sx/depsilon(dx)
@@ -365,6 +508,16 @@ function trace_map_box(x1,y1,z1, x2,y2,z2, bx1,by1,bz1, bx2,by2,bz2, canwrap)
 		end
 
 		--if not ck then return x1-bx1, y1-by1, z1-bz1 end
+		local tf = trace_portal_get_transform(cx, cy, cz)
+		if tf then
+			table.insert(portal_transforms_performed, tf)
+			cx, cy, cz, dx, dy, dz = trace_portal_transform(tf, cx, cy, cz, dx, dy, dz)
+			x1, y1, z1, gx, gy, gz = trace_portal_transform(tf, x1, y1, z1, gx, gy, gz)
+			x2, y2, z2 = trace_portal_transform(tf, x2, y2, z2, 0, 0, 0)
+			if dx < 0 then sx = 1.0 - sx; dx = -dx end
+			if dy < 0 then sy = 1.0 - sy; dy = -dy end
+			if dz < 0 then sz = 1.0 - sz; dz = -dz end
+		end
 	end
 	--
 	if rx then rx = rx - fx end
@@ -372,100 +525,5 @@ function trace_map_box(x1,y1,z1, x2,y2,z2, bx1,by1,bz1, bx2,by2,bz2, canwrap)
 	if rz then rz = rz - fz end
 
 	return rx or x2, ry or y2, rz or z2
-end
-
--- Intersections
-function isect_line_sphere_delta(dx,dy,dz,fwx,fwy,fwz)
-	local dd = dx*dx+dy*dy+dz*dz
-	local dotk = dx*fwx+dy*fwy+dz*fwz
-	if dotk <= 0 then return nil end
-	local dot = math.sqrt(dd-dotk*dotk)
-	return dot, dd
-end
-
-function isect_line_sphere(x1,y1,z1,fx,fy,fz,x2,y2,z2)
-	return isect_line_sphere_delta(x2-x1,y2-y1,z2-z1,fx,fy,fz)
-end
-
--- Instant Radiosity methods
-function vpl_gen_from_sphere(ssx, ssy, ssz, maxcount, maxdist, maxtries)
-	local vpls = {}
-	local max_prob = 1.0
-	local max_rad3 = maxdist * maxdist * maxdist
-
-	while #vpls < maxcount and maxtries > 0 do
-		local vx, vy, vz
-
-		maxtries = maxtries - 1
-		-- pick a random direction
-		-- TODO: try something more uniform than this crap
-		vx, vy, vz = vnorm(vrand(1.0))
-
-		-- pick a random number to find a VPL
-		local r = math.random()*max_prob
-		local px, py, pz, pd, ps, pc -- x,y,z, distance, strength, current index
-		local pvx, pvy, pvz, pns -- vx,vy,vz, new strength
-		local isgood = false
-		if r < 1.0 then
-			px, py, pz, pd, ps, pc = ssx, ssy, ssz, 0.0, 1.0, nil
-			pvx, pvy, pvz = vx, vy, vz
-			pns = 1.0
-			isgood = true
-		else
-			r = r - 1.0
-			local i
-			for i=1,#vpls do
-				local v = vpls[i]
-				local rad = (maxdist - v.d)
-				local prob = rad*rad*rad/max_rad3
-				if r < prob then
-					px, py, pz, pd, ps, pc = v.x, v.y, v.z, v.d, v.s, i
-					pvx, pvy, pvz = v.vx, v.vy, v.vz
-					pns = vdot(pvx, pvy, pvz, vx, vy, vz)
-					isgood = pns > 0.01 --math.random()
-					break
-				end
-				r = r - prob
-			end
-		end
-
-		-- check if it's good enough for us
-		if isgood then
-			-- trace
-			local dist, cx, cy, cz, ncx, ncy, ncz
-			dist, cx, cy, cz, ncx, ncy, ncz = trace_map_ray_dist(px, py, pz, vx, vy, vz, maxdist - pd, true)
-			if dist then
-				-- now move along
-				dist = dist - 0.04
-				px = px + vx*dist
-				py = py + vy*dist
-				pz = pz + vz*dist
-
-				-- get the normal
-				local nx, ny, nz
-				nx = cx - ncx
-				ny = cy - ncy
-				nz = cz - ncz
-				nx, ny, nz = vnorm(nx, ny, nz)
-
-				-- add a VPL
-				local rad = (maxdist - pd)
-				local prob = rad*rad*rad/max_rad3
-				local ns = ps * pns
-				vpls[#vpls + 1] = {
-					x = px, y = py, z = pz,
-					vx = nx, vy = ny, vz = nz,
-					cx = ncx, cy = ncy, cz = ncz,
-					d = pd + dist, s = ns,
-					c = pc
-				}
-
-				max_prob = max_prob + prob
-			end
-		end
-	end
-
-	-- return the list of VPLs
-	return vpls
 end
 
