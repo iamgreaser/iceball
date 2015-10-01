@@ -107,9 +107,12 @@ function trace_portal_transform(tf, cx, cy, cz, vx, vy, vz)
 end
 
 local function trace_portal_set_mark(pid, portal_select, cx, cy, cz)
+	cx = math.floor(cx)
+	cy = math.floor(cy)
+	cz = math.floor(cz)
 	local l = portal_traces
-	if not l[cz] then l[cz] = {} end
-	if not l[cz][cx] then l[cz][cx] = {} end
+	if nil == l[cz] then l[cz] = {} end
+	if nil == l[cz][cx] then l[cz][cx] = {} end
 	l[cz][cx][cy] = pid*2+portal_select
 	--print(cx, cy, cz)
 end
@@ -132,6 +135,20 @@ local function trace_portal_insert(p, pid, portal_select)
 	trace_portal_set_mark(pid, portal_select, cx   -hx, cy   -hy, cz   -hz)
 	trace_portal_set_mark(pid, portal_select, cx-sx-hx, cy-sy-hy, cz-sz-hz)
 	trace_portal_set_mark(pid, portal_select, cx+sx-hx, cy+sy-hy, cz+sz-hz)
+
+	-- Actually allow proper dropdown
+	if dy == 1 then
+		cy = cy + 1
+		trace_portal_set_mark(pid, portal_select, cx   , cy   , cz   )
+		trace_portal_set_mark(pid, portal_select, cx-sx, cy-sy, cz-sz)
+		trace_portal_set_mark(pid, portal_select, cx+sx, cy+sy, cz+sz)
+		trace_portal_set_mark(pid, portal_select, cx   +hx, cy   +hy, cz   +hz)
+		trace_portal_set_mark(pid, portal_select, cx-sx+hx, cy-sy+hy, cz-sz+hz)
+		trace_portal_set_mark(pid, portal_select, cx+sx+hx, cy+sy+hy, cz+sz+hz)
+		trace_portal_set_mark(pid, portal_select, cx   -hx, cy   -hy, cz   -hz)
+		trace_portal_set_mark(pid, portal_select, cx-sx-hx, cy-sy-hy, cz-sz-hz)
+		trace_portal_set_mark(pid, portal_select, cx+sx-hx, cy+sy-hy, cz+sz-hz)
+	end
 end
 
 local function trace_portal_setup()
@@ -174,14 +191,16 @@ local function map_pillar_get_fake(x, z)
 	end
 
 	-- Check if we have a cache
+	local l = nil
 	if portal_traces_mcache[z] and portal_traces_mcache[z][x] then
-		return portal_traces_mcache[z][x]
+		l = portal_traces_mcache[z][x]
+		return l
 	end
 
 	--print("TRACES EXIST", x, z)
 
 	-- We have to edit because of this portal list
-	local l = common.map_pillar_get(x, z)
+	l = l or common.map_pillar_get(x, z)
 	local pl = portal_traces[z][x]
 
 	-- Unpack
@@ -509,7 +528,7 @@ function trace_map_box(x1,y1,z1, x2,y2,z2, bx1,by1,bz1, bx2,by2,bz2, canwrap)
 
 		--if not ck then return x1-bx1, y1-by1, z1-bz1 end
 		local tf = trace_portal_get_transform(cx, cy, cz)
-		if tf then
+		if tf and portal_transforms_performed[#portal_transforms_performed] ~= tf then
 			table.insert(portal_transforms_performed, tf)
 			cx, cy, cz, dx, dy, dz = trace_portal_transform(tf, cx, cy, cz, dx, dy, dz)
 			x1, y1, z1, gx, gy, gz = trace_portal_transform(tf, x1, y1, z1, gx, gy, gz)
