@@ -85,7 +85,7 @@ function trace_portal_transform(tf, cx, cy, cz, vx, vy, vz)
 	local soP = (sx1*cx + sy1*cy + sz1*cz - so1)
 	local hoP = -(hx1*cx + hy1*cy + hz1*cz - ho1)
 
-	if ny2 < 0 then noP = noP - 0.1 end
+	if ny2 > 0 then noP = noP - 0.1 end
 
 	-- Update position
 	cx = (nx2*noP + sx2*soP + hx2*hoP) + no2*nx2 + so2*sx2 + ho2*hx2
