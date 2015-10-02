@@ -2269,7 +2269,8 @@ function new_player(settings)
 		for i=1,players.max do
 			local plr = players[i]
 			if plr and plr ~= this then
-				if client.gfx_stencil_test and plr.team == this.team then
+				-- FIXME PORTAL GUN IS FUCKED WHEN THIS IS ENABLED
+				if false and client.gfx_stencil_test and plr.team == this.team then
 					client.gfx_stencil_test(true)
 
 					-- PASS 1: set to 1 for enlarged model
