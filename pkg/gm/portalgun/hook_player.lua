@@ -71,7 +71,7 @@ do
 
 			return tx1, ty1, tz1
 		end
-		local function render_portals()
+		local function render_portals(render_mode)
 			local i
 
 			for i=1,2 do
@@ -466,7 +466,7 @@ do
 
 					client.va_render_global(p.va.border, 0, 0, 0, 0, 0, 0, 1)
 
-					if other and other.va and other.va.scene then
+					if render_mode ~= "stencil" and other and other.va and other.va.scene then
 						-- Mark stencil region
 						client.gfx_stencil_test(true)
 						client.gfx_stencil_func("1", 2, 255)
@@ -497,10 +497,10 @@ do
 		end
 
 		local s_render = this.render
-		function this.render(...)
-			render_portals()
+		function this.render(render_mode, ...)
+			render_portals(render_mode)
 
-			local ret = s_render(...)
+			local ret = s_render(render_mode, ...)
 
 			return ret
 		end

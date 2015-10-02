@@ -2282,7 +2282,7 @@ function new_player(settings)
 						scale = scale * 1.4
 						return s_va_render_global(va, px, py, pz, ry, rx, ry2, scale, ...)
 					end
-					plr.render()
+					plr.render("stencil")
 					client.va_render_global = s_va_render_global
 					client.gfx_depth_mask(true)
 
