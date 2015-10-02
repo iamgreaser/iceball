@@ -156,6 +156,7 @@ local function trace_portal_setup()
 
 	portal_traces = {}
 	portal_transforms = {}
+	portal_traces_mcache = {}
 
 	if not portal_traces_enabled then return end
 
@@ -170,6 +171,8 @@ local function trace_portal_setup()
 				-- Create transformation!
 				local t1 = {p1, p2}
 				local t2 = {p2, p1}
+				t1.inv = t2
+				t2.inv = t1
 
 				-- Save transformation!
 				portal_transforms[i*2+1] = t1
@@ -528,7 +531,7 @@ function trace_map_box(x1,y1,z1, x2,y2,z2, bx1,by1,bz1, bx2,by2,bz2, canwrap)
 
 		--if not ck then return x1-bx1, y1-by1, z1-bz1 end
 		local tf = trace_portal_get_transform(cx, cy, cz)
-		if tf and portal_transforms_performed[#portal_transforms_performed] ~= tf then
+		if tf and portal_transforms_performed[#portal_transforms_performed] ~= tf and portal_transforms_performed[#portal_transforms_performed] ~= tf.inv then
 			table.insert(portal_transforms_performed, tf)
 			cx, cy, cz, dx, dy, dz = trace_portal_transform(tf, cx, cy, cz, dx, dy, dz)
 			x1, y1, z1, gx, gy, gz = trace_portal_transform(tf, x1, y1, z1, gx, gy, gz)
