@@ -22,7 +22,7 @@ portal_traces_enabled = true
 
 portal_transforms_performed = {}
 
-local function trace_portal_get_transform(cx, cy, cz)
+function trace_portal_get_transform(cx, cy, cz)
 	if not(portal_traces[cz] and portal_traces[cz][cx] and portal_traces[cz][cx][cy]) then
 		return nil
 	end
@@ -125,20 +125,12 @@ local function trace_portal_insert(p, pid, portal_select)
 	local hy = dz*sx-dx*sz
 	local hz = dx*sy-dy*sx
 
-	-- Mark area
-	trace_portal_set_mark(pid, portal_select, cx   , cy   , cz   )
-	trace_portal_set_mark(pid, portal_select, cx-sx, cy-sy, cz-sz)
-	trace_portal_set_mark(pid, portal_select, cx+sx, cy+sy, cz+sz)
-	trace_portal_set_mark(pid, portal_select, cx   +hx, cy   +hy, cz   +hz)
-	trace_portal_set_mark(pid, portal_select, cx-sx+hx, cy-sy+hy, cz-sz+hz)
-	trace_portal_set_mark(pid, portal_select, cx+sx+hx, cy+sy+hy, cz+sz+hz)
-	trace_portal_set_mark(pid, portal_select, cx   -hx, cy   -hy, cz   -hz)
-	trace_portal_set_mark(pid, portal_select, cx-sx-hx, cy-sy-hy, cz-sz-hz)
-	trace_portal_set_mark(pid, portal_select, cx+sx-hx, cy+sy-hy, cz+sz-hz)
+	-- Allocate extra space for dropdown
+	local cymax = (dy~=0 and 3) or 0
 
-	-- Actually allow proper dropdown
-	if dy == 1 then
-		cy = cy + 1
+	-- Mark area
+	local i
+	for i=0,cymax do
 		trace_portal_set_mark(pid, portal_select, cx   , cy   , cz   )
 		trace_portal_set_mark(pid, portal_select, cx-sx, cy-sy, cz-sz)
 		trace_portal_set_mark(pid, portal_select, cx+sx, cy+sy, cz+sz)
@@ -148,6 +140,7 @@ local function trace_portal_insert(p, pid, portal_select)
 		trace_portal_set_mark(pid, portal_select, cx   -hx, cy   -hy, cz   -hz)
 		trace_portal_set_mark(pid, portal_select, cx-sx-hx, cy-sy-hy, cz-sz-hz)
 		trace_portal_set_mark(pid, portal_select, cx+sx-hx, cy+sy-hy, cz+sz-hz)
+		cy = cy + dy
 	end
 end
 
@@ -169,8 +162,8 @@ local function trace_portal_setup()
 
 			if p1 and p2 then
 				-- Create transformation!
-				local t1 = {p1, p2}
-				local t2 = {p2, p1}
+				local t1 = {p1, p2, idx=i}
+				local t2 = {p2, p1, idx=i}
 				t1.inv = t2
 				t2.inv = t1
 
@@ -530,6 +523,7 @@ function trace_map_box(x1,y1,z1, x2,y2,z2, bx1,by1,bz1, bx2,by2,bz2, canwrap)
 		end
 
 		--if not ck then return x1-bx1, y1-by1, z1-bz1 end
+		--[[
 		local tf = trace_portal_get_transform(cx, cy, cz)
 		if tf and portal_transforms_performed[#portal_transforms_performed] ~= tf and portal_transforms_performed[#portal_transforms_performed] ~= tf.inv then
 			table.insert(portal_transforms_performed, tf)
@@ -540,6 +534,7 @@ function trace_map_box(x1,y1,z1, x2,y2,z2, bx1,by1,bz1, bx2,by2,bz2, canwrap)
 			if dy < 0 then sy = 1.0 - sy; dy = -dy end
 			if dz < 0 then sz = 1.0 - sz; dz = -dz end
 		end
+		]]
 	end
 	--
 	if rx then rx = rx - fx end

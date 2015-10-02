@@ -7,44 +7,66 @@ do
 
 		this.portal_list = {}
 		this.portal_list_va = {}
+		this.portal_tf_prev = nil
+		this.portal_tf_prev_delay = nil
 
 		local s_calc_motion_trace = this.calc_motion_trace
 		function this.calc_motion_trace(sec_current, sec_delta, ox, oy, oz, nx, ny, nz, ...)
 			local tx1, ty1, tz1 = s_calc_motion_trace(sec_current, sec_delta, ox, oy, oz, nx, ny, nz, ...)
-			if #portal_transforms_performed == 0 then
+			local tf = trace_portal_get_transform(math.floor(tx1), math.floor(ty1), math.floor(tz1))
+			if not tf then
+				if this.portal_tf_prev_delay and sec_current > this.portal_tf_prev_delay+0.1 then
+					this.portal_tf_prev = nil
+					this.portal_tf_prev_delay = nil
+				end
 				return tx1, ty1, tz1
 			end
 
-			local k, v, _
-			for k, v in pairs(portal_transforms_performed) do
-				-- Apply to velocity
-				_, _, _, this.vx, this.vy, this.vz = trace_portal_transform(
-					v, 0, 0, 0, this.vx, this.vy, this.vz)
-
-				-- Get camera direction
-				local sya = math.sin(this.angy)
-				local cya = math.cos(this.angy)
-				local sxa = math.sin(this.angx)
-				local cxa = math.cos(this.angx)
-				local fwx,fwy,fwz = sya*cxa, sxa, cya*cxa
-
-				-- Apply to camera
-				_, _, _, fwx, fwy, fwz = trace_portal_transform(
-					v, 0, 0, 0, fwx, fwy, fwz)
-
-				-- Apply roll
-				this.sx, this.sy, this.sz = sxa*sya, -cxa, sxa*cya
-				_, _, _, this.sx, this.sy, this.sz = trace_portal_transform(
-					v, 0, 0, 0, this.sx, this.sy, this.sz)
-				local ds = math.sqrt(this.sx*this.sx + this.sy*this.sy + this.sz*this.sz)
-				this.sx = this.sx / ds
-				this.sy = this.sy / ds
-				this.sz = this.sz / ds
-
-				-- Set camera direction
-				this.angy = math.atan2(fwx, fwz)
-				this.angx = math.asin(fwy)
+			-- Prevent a jam
+			this.portal_tf_prev_delay = sec_current
+			if tf.idx == this.portal_tf_prev then
+				return tx1, ty1, tz1
 			end
+			this.portal_tf_prev = tf.idx
+			print("TRANSFORM", tf.idx)
+
+			-- Apply to position + velocity
+			tx1, ty1, tz1, this.vx, this.vy, this.vz = trace_portal_transform(
+				tf, tx1, ty1, tz1, this.vx, this.vy, this.vz)
+
+			-- Adjust y value so we don't jam ourselves
+			-- (compare dy of destination, if zero then set y to cy plus something)
+			if tf[2][5] == 0 then
+				if this.crouching then
+					ty1 = tf[2][2]
+				else
+					ty1 = tf[2][2] - 0.5
+				end
+			end
+
+			-- Get camera direction
+			local sya = math.sin(this.angy)
+			local cya = math.cos(this.angy)
+			local sxa = math.sin(this.angx)
+			local cxa = math.cos(this.angx)
+			local fwx,fwy,fwz = sya*cxa, sxa, cya*cxa
+
+			-- Apply to camera
+			_, _, _, fwx, fwy, fwz = trace_portal_transform(
+				tf, 0, 0, 0, fwx, fwy, fwz)
+
+			-- Apply roll
+			this.sx, this.sy, this.sz = sxa*sya, -cxa, sxa*cya
+			_, _, _, this.sx, this.sy, this.sz = trace_portal_transform(
+				tf, 0, 0, 0, this.sx, this.sy, this.sz)
+			local ds = math.sqrt(this.sx*this.sx + this.sy*this.sy + this.sz*this.sz)
+			this.sx = this.sx / ds
+			this.sy = this.sy / ds
+			this.sz = this.sz / ds
+
+			-- Set camera direction
+			this.angy = math.atan2(fwx, fwz)
+			this.angx = math.asin(fwy)
 
 			return tx1, ty1, tz1
 		end

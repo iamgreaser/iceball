@@ -248,6 +248,9 @@ return function (plr)
 						sz = (fwz < 0 and -1) or 1
 					end
 
+					sx = sx * dy
+					sz = sz * dy
+
 					net_send(nil, common.net_pack("BBBhhhbbbbbb", PKT_PORTALGUN_SET,
 						0, this.portal_select, cx, cy, cz,
 						dx, dy, dz, sx, 0, sz))
