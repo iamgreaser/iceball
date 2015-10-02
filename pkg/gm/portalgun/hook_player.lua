@@ -469,14 +469,14 @@ do
 					if other and other.va and other.va.scene then
 						-- Mark stencil region
 						client.gfx_stencil_test(true)
-						client.gfx_stencil_func("1", 1, 255)
+						client.gfx_stencil_func("1", 2, 255)
 						client.gfx_stencil_op(";;=")
 						client.va_render_global(p.va.stencil, 0, 0, 0, 0, 0, 0, 1, nil, "10")
 
 						-- Clear depth
 						-- FIXME: engine needs support for glDepthFunc(GL_ALWAYS)
 						-- (ATM we have to generate the block list back-to-front)
-						client.gfx_stencil_func("==", 1, 255)
+						client.gfx_stencil_func("==", 2, 255)
 						client.gfx_stencil_op(";;;")
 						client.gfx_depth_test(false)
 						client.va_render_global(p.va.box, 0, 0, 0, 0, 0, 0, 1)
