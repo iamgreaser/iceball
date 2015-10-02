@@ -466,7 +466,7 @@ do
 
 					client.va_render_global(p.va.border, 0, 0, 0, 0, 0, 0, 1)
 
-					if render_mode ~= "stencil" and other and other.va and other.va.scene then
+					if other and other.va and other.va.scene then
 						-- Mark stencil region
 						client.gfx_stencil_test(true)
 						client.gfx_stencil_func("1", 2, 255)
@@ -498,7 +498,9 @@ do
 
 		local s_render = this.render
 		function this.render(render_mode, ...)
-			render_portals(render_mode)
+			if render_mode == nil then
+				render_portals(render_mode)
+			end
 
 			local ret = s_render(render_mode, ...)
 
