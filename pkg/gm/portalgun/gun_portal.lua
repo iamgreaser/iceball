@@ -52,7 +52,7 @@ return function (plr)
 
 		model = client and (weapon_models[thisid] {}),
 
-		name = "Rifle",
+		name = "Portal Gun",
 	})
 
 	function this.reload()
@@ -68,7 +68,8 @@ return function (plr)
 	function this.textgen()
 		local cols
 		col = 0xFFC0C0C0
-		return col, "- -"
+		return col, ((plr.portal_list[1] and "0") or "-")..
+			" "..((plr.portal_list[2] and "0") or "-")
 	end
 
 	function this.click(button, state)

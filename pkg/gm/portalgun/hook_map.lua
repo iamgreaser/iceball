@@ -34,7 +34,7 @@ local function trace_portal_get_transform(cx, cy, cz)
 end
 
 function trace_portal_transform(tf, cx, cy, cz, vx, vy, vz)
-	print("ENTRY", cx, cy, cz, vx, vy, vz)
+	--print("ENTRY", cx, cy, cz, vx, vy, vz)
 
 	-- Get origins
 	local cx1 = tf[1][1] + 0.5 + tf[1][4]*0.5
@@ -76,9 +76,9 @@ function trace_portal_transform(tf, cx, cy, cz, vx, vy, vz)
 	local ho1 = hx1*cx1 + hy1*cy1 + hz1*cz1
 	local ho2 = hx2*cx2 + hy2*cy2 + hz2*cz2
 
-	print("NORMS", nx1, ny1, nz1, nx2, ny2, nz2, no1)
-	print("SKIES", sx1, sy1, sz1, sx2, sy2, sz2, so1)
-	print("HORIZ", hx1, hy1, hz1, hx2, hy2, hz2, ho1)
+	--print("NORMS", nx1, ny1, nz1, nx2, ny2, nz2, no1)
+	--print("SKIES", sx1, sy1, sz1, sx2, sy2, sz2, so1)
+	--print("HORIZ", hx1, hy1, hz1, hx2, hy2, hz2, ho1)
 
 	-- Get source offsets
 	local noP = (nx1*cx + ny1*cy + nz1*cz - no1)
@@ -101,7 +101,7 @@ function trace_portal_transform(tf, cx, cy, cz, vx, vy, vz)
 	vz = -(nz2*noV + sz2*soV + hz2*hoV)
 
 	-- Return!
-	print("EXIT ", cx, cy, cz, vx, vy, vz)
+	--print("EXIT ", cx, cy, cz, vx, vy, vz)
 	return cx, cy, cz, vx, vy, vz
 
 end

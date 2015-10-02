@@ -55,9 +55,15 @@ network.sys_handle_s2c(PKT_PORTALGUN_SET, "BBhhhbbbbbb",
 	if dx == 0 and dy == 0 and dz == 0 then
 		print("CLIENT DELETE PORTAL "..pid..":"..portal_select)
 		plr.portal_list[portal_select] = nil
+		if plr.portal_list[3-portal_select] then
+			plr.portal_list[3-portal_select].va = nil
+		end
 	else
 		print("CLIENT CREATE PORTAL "..pid..":"..portal_select.." AT ("..cx..", "..cy..", "..cz..")")
 		plr.portal_list[portal_select] = {cx, cy, cz, dx, dy, dz, sx, sy, sz}
+		if plr.portal_list[3-portal_select] then
+			plr.portal_list[3-portal_select].va = nil
+		end
 	end
 end)
 
