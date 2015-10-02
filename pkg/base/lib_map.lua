@@ -590,6 +590,8 @@ function map_block_pick(x,y,z)
 
 	if c==nil then error(x..","..y..","..z) end
 
+	if c==false then return nil end
+
 	return c[1],c[2],c[3],c[4]
 end
 

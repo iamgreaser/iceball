@@ -20,9 +20,9 @@
 -- Thanks. --GM
 
 VERSION_ENGINE = {
-	cmp={0,2,1,0,29},
-	num=8421376+29,
-	str="0.2.1-29",
+	cmp={0,2,1,0,30},
+	num=8421376+30,
+	str="0.2.1-30",
 }
 
 --error(""..common.version.num)
@@ -169,5 +169,8 @@ VERSION_BUGS = {
 {intro=nil, fix=8421376+28, msg="Potential infinite loop due to zero time delta"},
 {intro=nil, fix=8421376+29, msg="B-format audio system not supported"},
 {intro=8421376+29, fix=nil, msg="B-format audio system incomplete"},
+{intro=nil, fix=8421376+30, msg="net_pack/unpack_array not supported"},
+{intro=nil, fix=8421376+30, msg="string mode bugged in net_unpack"},
+{intro=nil, fix=nil, msg="string mode bugged in net_pack, net_*_array"},
 }
 

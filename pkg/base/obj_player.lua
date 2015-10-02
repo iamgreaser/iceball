@@ -834,7 +834,8 @@ function new_player(settings)
 			this.vz = this.vz * alt_a
 
 			if this.mode == PLM_NORMAL then
-				this.vy = (this.vy + 2.0*MODE_GRAVITY*sec_delta) * alt_a
+				--this.vy = (this.vy + 2.0*MODE_GRAVITY*sec_delta) * alt_a
+				this.vy = (this.vy + 2.0*MODE_GRAVITY*sec_delta)
 			else
 				this.vy = (this.vy + mvy*mmul) * alt_a
 			end
@@ -1135,6 +1136,15 @@ function new_player(settings)
 		local tx1,ty1,tz1
 		ox, oy, oz = this.x, this.y, this.z
 		nx, ny, nz = this.x + this.vx*sec_delta, this.y + this.vy*sec_delta, this.z + this.vz*sec_delta
+		if this.mode == PLM_NORMAL then
+			-- mostly correct gravity
+			-- FIXME: physics is still a bit of a hack
+			-- FIXME: need to incorporate air friction properly
+			local alt_a = math.exp(-sec_delta*mvchange*MODE_PSPEED_CONV_BRAKES)
+			local accel_grav = 2.0*MODE_GRAVITY
+			ny = ny + accel_grav/2.0*sec_delta*sec_delta
+		end
+
 		local wasgrounded = this.grounded
 		tx1, ty1, tz1 = this.calc_motion_trace(sec_current, sec_delta, ox, oy, oz, nx, ny, nz)
 		this.x, this.y, this.z = tx1, ty1, tz1
@@ -2259,7 +2269,8 @@ function new_player(settings)
 		for i=1,players.max do
 			local plr = players[i]
 			if plr and plr ~= this then
-				if client.gfx_stencil_test and plr.team == this.team then
+				-- FIXME PORTAL GUN IS FUCKED WHEN THIS IS ENABLED
+				if false and client.gfx_stencil_test and plr.team == this.team then
 					client.gfx_stencil_test(true)
 
 					-- PASS 1: set to 1 for enlarged model
@@ -2272,7 +2283,7 @@ function new_player(settings)
 						scale = scale * 1.4
 						return s_va_render_global(va, px, py, pz, ry, rx, ry2, scale, ...)
 					end
-					plr.render()
+					plr.render("stencil")
 					client.va_render_global = s_va_render_global
 					client.gfx_depth_mask(true)
 
