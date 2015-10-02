@@ -34,8 +34,7 @@ do
 
 				-- Set camera direction
 				-- TODO: angx
-				this.angy = -math.atan2(fwx, fwz)
-
+				this.angy = math.atan2(fwx, fwz)
 			end
 
 			return tx1, ty1, tz1

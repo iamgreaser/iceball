@@ -81,19 +81,19 @@ function trace_portal_transform(tf, cx, cy, cz, vx, vy, vz)
 	print("HORIZ", hx1, hy1, hz1, hx2, hy2, hz2, ho1)
 
 	-- Get source offsets
-	local noP = nx1*cx + ny1*cy + nz1*cz - no1
-	local soP = sx1*cx + sy1*cy + sz1*cz - so1
-	local hoP = hx1*cx + hy1*cy + hz1*cz - ho1
+	local noP = (nx1*cx + ny1*cy + nz1*cz - no1)
+	local soP = (sx1*cx + sy1*cy + sz1*cz - so1)
+	local hoP = -(hx1*cx + hy1*cy + hz1*cz - ho1)
 
 	-- Update position
-	cx = nx2*noP + sx2*soP + hx2*hoP + no2*nx2 + so2*sx2 + ho2*hx2
-	cy = ny2*noP + sy2*soP + hy2*hoP + no2*ny2 + so2*sy2 + ho2*hy2
-	cz = nz2*noP + sz2*soP + hz2*hoP + no2*nz2 + so2*sz2 + ho2*hz2
+	cx = (nx2*noP + sx2*soP + hx2*hoP) + no2*nx2 + so2*sx2 + ho2*hx2
+	cy = (ny2*noP + sy2*soP + hy2*hoP) + no2*ny2 + so2*sy2 + ho2*hy2
+	cz = (nz2*noP + sz2*soP + hz2*hoP) + no2*nz2 + so2*sz2 + ho2*hz2
 
 	-- Get direction offsets
-	local noV = nx1*vx + ny1*vy + nz1*vz
-	local soV = sx1*vx + sy1*vy + sz1*vz
-	local hoV = hx1*vx + hy1*vy + hz1*vz
+	local noV = (nx1*vx + ny1*vy + nz1*vz)
+	local soV = -(sx1*vx + sy1*vy + sz1*vz)
+	local hoV = (hx1*vx + hy1*vy + hz1*vz)
 
 	-- Update direction
 	vx = -(nx2*noV + sx2*soV + hx2*hoV)

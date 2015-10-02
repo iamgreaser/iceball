@@ -236,7 +236,7 @@ return function (plr)
 				if valid and dy == 0 and (dx ~= 0 or dz ~= 0) then
 					net_send(nil, common.net_pack("BBBhhhbbbbbb", PKT_PORTALGUN_SET,
 						0, this.portal_select, cx, cy, cz,
-						dx, dy, dz, 0, 1, 0))
+						dx, dy, dz, 0, -1, 0))
 
 				elseif valid and dy ~= 0 and (dx == 0 and dz == 0) then
 					local sx, sz = 0, 0
