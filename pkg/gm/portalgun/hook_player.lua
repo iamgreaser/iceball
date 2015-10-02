@@ -13,20 +13,21 @@ do
 		local s_calc_motion_trace = this.calc_motion_trace
 		function this.calc_motion_trace(sec_current, sec_delta, ox, oy, oz, nx, ny, nz, ...)
 			local tx1, ty1, tz1 = s_calc_motion_trace(sec_current, sec_delta, ox, oy, oz, nx, ny, nz, ...)
+			if this.portal_tf_prev_delay and sec_current > this.portal_tf_prev_delay+0.02 then
+				this.portal_tf_prev = nil
+				this.portal_tf_prev_delay = nil
+			end
+
 			local tf = trace_portal_get_transform(math.floor(tx1), math.floor(ty1), math.floor(tz1))
 			if not tf then
-				if this.portal_tf_prev_delay and sec_current > this.portal_tf_prev_delay+0.1 then
-					this.portal_tf_prev = nil
-					this.portal_tf_prev_delay = nil
-				end
 				return tx1, ty1, tz1
 			end
 
 			-- Prevent a jam
-			this.portal_tf_prev_delay = sec_current
 			if tf.idx == this.portal_tf_prev then
 				return tx1, ty1, tz1
 			end
+			this.portal_tf_prev_delay = sec_current
 			this.portal_tf_prev = tf.idx
 			print("TRANSFORM", tf.idx)
 
@@ -35,8 +36,8 @@ do
 				tf, tx1, ty1, tz1, this.vx, this.vy, this.vz)
 
 			-- Adjust y value so we don't jam ourselves
-			-- (compare dy of destination, if zero then set y to cy plus something)
-			if tf[2][5] == 0 then
+			-- (compare dys, if non0->0 then set y to cy plus something)
+			if tf[2][5] == 0 and tf[1][5] ~= 0 then
 				if this.crouching then
 					ty1 = tf[2][2]
 				else
@@ -126,7 +127,7 @@ do
 							{x3,y3,z3,cr,cg,cb,-dx,-dy,-dz},
 						}, this.portal_list_va[i].border, "3v,3c,3n")
 
-						doffs = doffs+0.05
+						doffs = doffs+0.005
 						rh = rh-0.12
 						rs = rs-0.12
 
@@ -143,18 +144,67 @@ do
 						y4 = cy - doffs*dy + rh*hy + rs*sy
 						z4 = cz - doffs*dz + rh*hz + rs*sz
 
+						doffs = doffs - 1
+						local x5 = cx - doffs*dx - rh*hx - rs*sx
+						local y5 = cy - doffs*dy - rh*hy - rs*sy
+						local z5 = cz - doffs*dz - rh*hz - rs*sz
+						local x6 = cx - doffs*dx + rh*hx - rs*sx
+						local y6 = cy - doffs*dy + rh*hy - rs*sy
+						local z6 = cz - doffs*dz + rh*hz - rs*sz
+						local x7 = cx - doffs*dx - rh*hx + rs*sx
+						local y7 = cy - doffs*dy - rh*hy + rs*sy
+						local z7 = cz - doffs*dz - rh*hz + rs*sz
+						local x8 = cx - doffs*dx + rh*hx + rs*sx
+						local y8 = cy - doffs*dy + rh*hy + rs*sy
+						local z8 = cz - doffs*dz + rh*hz + rs*sz
+
 						cr = cr/2
 						cg = cg/2
 						cb = cb/2
 
 						p.va.stencil = common.va_make({
-							{x1,y1,z1,cr,cg,cb},
-							{x3,y3,z3,cr,cg,cb},
-							{x2,y2,z2,cr,cg,cb},
-							{x4,y4,z4,cr,cg,cb},
-							{x2,y2,z2,cr,cg,cb},
-							{x3,y3,z3,cr,cg,cb},
-						}, this.portal_list_va[i].stencil, "3v,3c")
+							{x1,y1,z1},
+							{x3,y3,z3},
+							{x2,y2,z2},
+							{x4,y4,z4},
+							{x2,y2,z2},
+							{x3,y3,z3},
+
+							{x5,y5,z5},
+							{x7,y7,z7},
+							{x6,y6,z6},
+							{x8,y8,z8},
+							{x6,y6,z6},
+							{x7,y7,z7},
+
+							{x1,y1,z1},
+							{x3,y3,z3},
+							{x5,y5,z5},
+							{x7,y7,z7},
+							{x5,y5,z5},
+							{x3,y3,z3},
+
+							{x2,y2,z2},
+							{x6,y6,z6},
+							{x4,y4,z4},
+							{x8,y8,z8},
+							{x4,y4,z4},
+							{x6,y6,z6},
+
+							{x1,y1,z1},
+							{x5,y5,z5},
+							{x2,y2,z2},
+							{x6,y6,z6},
+							{x2,y2,z2},
+							{x5,y5,z5},
+
+							{x3,y3,z3},
+							{x4,y4,z4},
+							{x7,y7,z7},
+							{x8,y8,z8},
+							{x7,y7,z7},
+							{x4,y4,z4},
+						}, this.portal_list_va[i].stencil, "3v")
 					end
 
 					if (not p.va.box) and other and other.va then
@@ -247,6 +297,14 @@ do
 						local thy = tdz*tsx-tdx*tsz
 						local thz = tdx*tsy-tdy*tsx
 
+						hx = -hx
+						hy = -hy
+						hz = -hz
+
+						tdx = -tdx
+						tdy = -tdy
+						tdz = -tdz
+
 						local taxx = hx*thx + hy*tsx + hz*tdx
 						local taxy = hx*thy + hy*tsy + hz*tdy
 						local taxz = hx*thz + hy*tsz + hz*tdz
@@ -256,6 +314,18 @@ do
 						local tazx = dx*thx + dy*tsx + dz*tdx
 						local tazy = dx*thy + dy*tsy + dz*tdy
 						local tazz = dx*thz + dy*tsz + dz*tdz
+
+						--[[
+						taxx, taxy, taxz = 1, 0, 0
+						tayx, tayy, tayz = 0, 1, 0
+						tazx, tazy, tazz = 0, 0, 1
+						]]
+
+						--[[
+						taxx, taxy, taxz = -taxx, -taxy, -taxz
+						tayx, tayy, tayz = -tayx, -tayy, -tayz
+						tazx, tazy, tazz = -tazx, -tazy, -tazz
+						]]
 
 						local function add_block(rx, ry, rz, t, tx, ty, tz)
 							local x1 = rx
@@ -269,11 +339,15 @@ do
 							cr = cr / 255.0
 							cg = cg / 255.0
 							cb = cb / 255.0
-							cr = cr / 2.0
-							cg = cg / 2.0
-							cb = cb / 2.0
+							cr = cr / 1.5
+							cg = cg / 1.5
+							cb = cb / 1.5
 
-							local ALL_FACES = true -- TODO: make this work properly when set to false
+							-- FIXME: some dy~=0 cases fail
+							local ALL_FACES = false
+							if dy ~= 0 or tdy ~= 0 then
+								ALL_FACES = true
+							end
 
 							if ALL_FACES or map_block_get(tx-tazx,ty-tazy,tz-tazz) == nil then
 							--print("block", rx, ry, rz, cr, cg, cb)
@@ -331,10 +405,6 @@ do
 							end
 						end
 
-						tdx = -tdx
-						tdy = -tdy
-						tdz = -tdz
-
 						for r=radius*3,1,-1 do
 						for z=0,r do
 							local az = math.abs(z)
@@ -356,9 +426,9 @@ do
 								-- LET'S DO IT
 
 								-- Get source coordinates
-								local rx = cx + dx*z - hx*x + sx*y
-								local ry = cy + dy*z - hy*x + sy*y
-								local rz = cz + dz*z - hz*x + sz*y
+								local rx = cx + dx*z + hx*x + sx*y
+								local ry = cy + dy*z + hy*x + sy*y
+								local rz = cz + dz*z + hz*x + sz*y
 
 								rx = math.floor(rx+0.5)
 								ry = math.floor(ry+0.5)
