@@ -84,8 +84,9 @@ function trace_portal_transform(tf, cx, cy, cz, vx, vy, vz)
 	local noP = -math.abs(nx1*cx + ny1*cy + nz1*cz - no1)
 	local soP = (sx1*cx + sy1*cy + sz1*cz - so1)
 	local hoP = -(hx1*cx + hy1*cy + hz1*cz - ho1)
+	soP, hoP = 0, 0 -- centre-suction if necessary
 
-	if ny2 > 0 then noP = noP - 0.1 end
+	if ny1 > 0 or ny2 > 0 then noP = noP - 0.1 end
 
 	-- Update position
 	cx = (nx2*noP + sx2*soP + hx2*hoP) + no2*nx2 + so2*sx2 + ho2*hx2
@@ -182,7 +183,7 @@ local function trace_portal_setup()
 	end
 end
 
-local function map_pillar_get_fake(x, z)
+local function map_pillar_get_fake_core(x, z)
 	-- Check if we have a portal list
 	if not (portal_traces[z] and portal_traces[z][x]) then
 		return common.map_pillar_get(x, z)
@@ -226,6 +227,26 @@ local function map_pillar_get_fake(x, z)
 	return l
 end
 
+local function map_pillar_get_fake(x, z)
+	local l = map_pillar_get_fake_core(x, z)
+	local i = 1
+
+	-- Follow to end
+	while l[i+0] ~= 0 do
+		i = i + l[i+0]*4
+	end
+
+	-- Check top
+	local xlen,ylen,zlen
+	xlen,ylen,zlen = common.map_get_dims()
+	if l[i+1] >= ylen-1 and trace_portal_get_transform(x,ylen-1,z) then
+		l[i+1] = l[i+1] + 10
+		l[i+2] = l[i+2] + 10
+	end
+
+	return l
+end
+
 -- need to copy-paste these functions from lib_vector.lua in order to mangle them
 -- Map helpers
 function trace_gap(x,y,z)
@@ -239,6 +260,7 @@ function trace_gap(x,y,z)
 	while true do
 		h2 = l[i+1]
 		if h2 == ylen-1 then h2 = ylen end
+		if h2 >= ylen and trace_portal_get_transform(x,ylen-1,z) then return h1, nil end
 		if y < l[i+1] or l[i] == 0 then return h1, h2 end
 		i = i + l[i]*4
 		if y < l[i+3] then return h1, h2 end
@@ -273,6 +295,7 @@ function box_is_clear(x1,y1,z1,x2,y2,z2,canwrap)
 		local l = map_pillar_get_fake(x, z)
 		i = 1
 		while true do
+			if y2 >= ylen and trace_portal_get_transform(x,ylen-1,z) then break end
 			if l[i+1] == ylen-1 and y2 < ylen then break end
 			if y2 < l[i+1] then break end
 			if l[i] == 0 then return false end
@@ -546,3 +569,12 @@ function trace_map_box(x1,y1,z1, x2,y2,z2, bx1,by1,bz1, bx2,by2,bz2, canwrap)
 	return rx or x2, ry or y2, rz or z2
 end
 
+do
+	local s_map_block_get = map_block_get
+	function map_block_get(x,y,z,...)
+		local xlen,ylen,zlen 
+		xlen,ylen,zlen = common.map_get_dims()
+		if y >= ylen and trace_portal_get_transform(x,ylen-1,z) then return nil end
+		return s_map_block_get(x,y,z,...)
+	end
+end
