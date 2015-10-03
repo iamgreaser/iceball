@@ -20,15 +20,11 @@ local thisid = ...
 if client then
 	weapon_models[thisid] = model_load({
 		kv6 = {
-			bdir = DIR_PKG_KV6,
-			name = "rifle.kv6",
+			bdir = DIR_PORTALGUN,
+			name = "portalgun.kv6",
 			scale = 1.0/128.0,
 		},
-		pmf = {
-			bdir = DIR_PKG_PMF,
-			name = "rifle.pmf",
-		},
-	}, {"kv6", "pmf"})
+	}, {"kv6"})
 end
 
 weapon_names[thisid] = "Portal Gun"
