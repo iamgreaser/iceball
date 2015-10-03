@@ -23,13 +23,13 @@ network.sys_handle_c2s(PKT_PORTALGUN_SET, "BBhhhbbbbbb", nwdec_plrset(
 	if dx == 0 and dy == 0 and dz == 0 then
 		print("SERVER DELETE PORTAL "..portal_select)
 		plr.portal_list[portal_select] = nil
-		net_broadcast(nil, common.net_pack("BBBhhhbbbbbb",
+		net_broadcast(neth, common.net_pack("BBBhhhbbbbbb",
 			PKT_PORTALGUN_SET, cli.plrid, portal_select,
 			cx, cy, cz, dx, dy, dz, sx, sy, sz))
 	else
 		print("SERVER CREATE PORTAL "..portal_select.." AT ("..cx..", "..cy..", "..cz..")")
 		plr.portal_list[portal_select] = {cx, cy, cz, dx, dy, dz, sx, sy, sz}
-		net_broadcast(nil, common.net_pack("BBBhhhbbbbbb",
+		net_broadcast(neth, common.net_pack("BBBhhhbbbbbb",
 			PKT_PORTALGUN_SET, cli.plrid, portal_select,
 			cx, cy, cz, dx, dy, dz, sx, sy, sz))
 	end

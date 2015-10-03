@@ -173,6 +173,7 @@ return function (plr)
 			end
 		end
 
+		--[==[
 		if hurt_idx then
 			if server then
 				--[[
@@ -186,13 +187,13 @@ return function (plr)
 				]]
 				plr.show_hit()
 			end
-		else
-			if client then
-				--[[
-				net_send(nil, common.net_pack("BBB"
-					, PKT_PLR_GUN_HIT, 0, 0))
-				]]
-			end
+		end
+		]==]
+		if client then
+			--[[
+			net_send(nil, common.net_pack("BBB"
+				, PKT_PLR_GUN_HIT, 0, 0))
+			]]
 
 			if cx2 and cy2 <= ylen-2 and cx2 >= 0 and cx2 < xlen and cz2 >= 0 and cz2 < zlen then
 				print("Portal hit ("..cx2..", "..cy2..", "..cz2..") type "..this.portal_select)
@@ -231,6 +232,8 @@ return function (plr)
 				end
 
 				if valid and dy == 0 and (dx ~= 0 or dz ~= 0) then
+					plr.show_hit()
+					plr.portal_list[this.portal_select] = {cx, cy, cz, dx, dy, dz, 0, -1, 0}
 					net_send(nil, common.net_pack("BBBhhhbbbbbb", PKT_PORTALGUN_SET,
 						0, this.portal_select, cx, cy, cz,
 						dx, dy, dz, 0, -1, 0))
@@ -247,6 +250,8 @@ return function (plr)
 					sx = sx * dy
 					sz = sz * dy
 
+					plr.show_hit()
+					plr.portal_list[this.portal_select] = {cx, cy, cz, dx, dy, dz, sx, 0, sz}
 					net_send(nil, common.net_pack("BBBhhhbbbbbb", PKT_PORTALGUN_SET,
 						0, this.portal_select, cx, cy, cz,
 						dx, dy, dz, sx, 0, sz))
