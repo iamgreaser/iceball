@@ -52,7 +52,15 @@ return function (plr)
 	})
 
 	function this.reload()
-		
+		-- Close both portals
+		plr.portal_list[1] = nil
+		net_send(nil, common.net_pack("BBBhhhbbbbbb", PKT_PORTALGUN_SET,
+			0, 1, cx, cy, cz,
+			dx, dy, dz, 0, 0, 0))
+		plr.portal_list[2] = nil
+		net_send(nil, common.net_pack("BBBhhhbbbbbb", PKT_PORTALGUN_SET,
+			0, 2, cx, cy, cz,
+			dx, dy, dz, 0, 0, 0))
 	end
 
 	local s_tick = this.tick
