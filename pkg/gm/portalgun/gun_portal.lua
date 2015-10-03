@@ -234,6 +234,9 @@ return function (plr)
 				if valid and dy == 0 and (dx ~= 0 or dz ~= 0) then
 					plr.show_hit()
 					plr.portal_list[this.portal_select] = {cx, cy, cz, dx, dy, dz, 0, -1, 0}
+					if plr.portal_list[3-this.portal_select] then
+						plr.portal_list[3-this.portal_select].va = nil
+					end
 					net_send(nil, common.net_pack("BBBhhhbbbbbb", PKT_PORTALGUN_SET,
 						0, this.portal_select, cx, cy, cz,
 						dx, dy, dz, 0, -1, 0))
@@ -252,6 +255,9 @@ return function (plr)
 
 					plr.show_hit()
 					plr.portal_list[this.portal_select] = {cx, cy, cz, dx, dy, dz, sx, 0, sz}
+					if plr.portal_list[3-this.portal_select] then
+						plr.portal_list[3-this.portal_select].va = nil
+					end
 					net_send(nil, common.net_pack("BBBhhhbbbbbb", PKT_PORTALGUN_SET,
 						0, this.portal_select, cx, cy, cz,
 						dx, dy, dz, sx, 0, sz))

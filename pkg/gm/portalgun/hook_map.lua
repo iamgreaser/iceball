@@ -23,6 +23,11 @@ portal_traces_enabled = true
 portal_transforms_performed = {}
 
 function trace_portal_get_transform(cx, cy, cz)
+	local xlen,ylen,zlen
+	xlen,ylen,zlen = common.map_get_dims()
+
+	if cy > ylen-1 then cy = ylen-1 end
+
 	if not(portal_traces[cz] and portal_traces[cz][cx] and portal_traces[cz][cx][cy]) then
 		return nil
 	end
@@ -33,7 +38,7 @@ function trace_portal_get_transform(cx, cy, cz)
 	return tf
 end
 
-function trace_portal_transform(tf, cx, cy, cz, vx, vy, vz)
+function trace_portal_transform(tf, cx, cy, cz, vx, vy, vz, noclamp)
 	--print("ENTRY", cx, cy, cz, vx, vy, vz)
 
 	-- Get origins
@@ -94,9 +99,13 @@ function trace_portal_transform(tf, cx, cy, cz, vx, vy, vz)
 	cz = (nz2*noP + sz2*soP + hz2*hoP) + no2*nz2 + so2*sz2 + ho2*hz2
 
 	-- Get direction offsets
-	local noV = math.max(0.1,math.abs(nx1*vx + ny1*vy + nz1*vz))
+	local noV = (nx1*vx + ny1*vy + nz1*vz)
 	local soV = -(sx1*vx + sy1*vy + sz1*vz)
 	local hoV = (hx1*vx + hy1*vy + hz1*vz)
+
+	if not noclamp then
+		noV = math.max(0.1, math.abs(noV))
+	end
 
 	-- Update direction
 	vx = -(nx2*noV + sx2*soV + hx2*hoV)

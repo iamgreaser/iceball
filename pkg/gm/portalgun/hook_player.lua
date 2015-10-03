@@ -54,12 +54,12 @@ do
 
 			-- Apply to camera
 			_, _, _, fwx, fwy, fwz = trace_portal_transform(
-				tf, 0, 0, 0, fwx, fwy, fwz)
+				tf, 0, 0, 0, fwx, fwy, fwz, true)
 
 			-- Apply roll
 			this.sx, this.sy, this.sz = sxa*sya, -cxa, sxa*cya
 			_, _, _, this.sx, this.sy, this.sz = trace_portal_transform(
-				tf, 0, 0, 0, this.sx, this.sy, this.sz)
+				tf, 0, 0, 0, this.sx, this.sy, this.sz, true)
 			local ds = math.sqrt(this.sx*this.sx + this.sy*this.sy + this.sz*this.sz)
 			this.sx = this.sx / ds
 			this.sy = this.sy / ds
