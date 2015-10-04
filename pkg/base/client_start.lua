@@ -45,6 +45,9 @@ end
 -- yeah this really should happen ASAP so we can boot people who suck
 dofile("pkg/base/lib_util.lua")
 
+-- Get the clientside VM up
+dofile("pkg/base/lib_cside.lua")
+
 --dofile("pkg/base/serpent.lua") -- serpent.block is a great debugging aid
 
 local loose, user_toggles, user_settings = parse_commandline_options({...})
@@ -528,6 +531,9 @@ function h_tick_main(sec_current, sec_delta)
 		-- WHY THE FUCK IS SEC_DELTA <= 0?!?
 		sec_delta = 0.000001
 	end
+	if _CSIDE_G.hooks and _CSIDE_G.hooks.tick_pre then
+		_CSIDE_G.hooks.tick_pre(sec_current, sec_delta)
+	end
 	render_sec_current = sec_current
 	if bone_ctr_reset then
 		bone_ctr_reset()
@@ -649,6 +655,9 @@ function h_tick_main(sec_current, sec_delta)
 	
 	-- wait a bit
 	local d = math.max(0.00001, frame_delay_ctr - delta_last)
+	if _CSIDE_G.hooks and _CSIDE_G.hooks.tick_post then
+		_CSIDE_G.hooks.tick_post(sec_current, sec_delta)
+	end
 	return d
 end
 
