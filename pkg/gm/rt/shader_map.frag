@@ -1,5 +1,5 @@
 const int TRACE_MAX = 1000;
-const float REFLECT_THRES = 0.02; //0.1; //0.02;
+const float REFLECT_THRES = 0.1; //0.1; //0.02;
 const int SHADOW_COUNT = 2;
 
 uniform sampler2D tex0;
@@ -64,6 +64,17 @@ vec2 lut_coord_xz(vec2 v)
 	return vec2(floor(c.y*256.0 + c.x + 0.2) + 0.2,
 		floor(floor(v.y)*2.0 + c.z+0.2) + 0.2) * tex0_isiz;
 
+}
+
+float lut_skip(vec2 loc_lutc)
+{
+	vec4 v4 = floor(texture2D(tex0, loc_lutc)*255.0+0.2);
+	vec2 v2 = vec2(
+		aremsign.x >= 0.0 ? v4.g : v4.r,
+		aremsign.z >= 0.0 ? v4.a : v4.b);
+	
+	//return 0.0;
+	return dot(last_agap.xz, v2)*lutstep.x;
 }
 
 void do_reflect(vec3 ncol)
@@ -279,7 +290,8 @@ void main()
 			// We've hit the ceiling, set that colour if not sky
 			if(!is_first_y)
 			{
-				vec3 ncol = texture2D(tex0, lutc + lutstep*(cell.y-tgap.w)).rgb;
+				//vec3 ncol = texture2D(tex0, lutc + lutstep*(cell.y-tgap.w)).rgb;
+				vec3 ncol = texture2D(tex0, lutc + lutstep*(cell.y-tgap.w-1.0)).rgb;
 				do_reflect(ncol);
 				lutc = lut_coord_xz(cell.xz);
 				continue;
@@ -319,6 +331,7 @@ void main()
 		// Add remainder
 		float rtime = dot(ttime, agap);
 		atime += rtime;
+		vec3 old_cell = cell;
 		vec3 old_arem = arem;
 		arem -= rtime*adir;
 		wpos += rtime*wdir;
@@ -336,10 +349,14 @@ void main()
 
 		// Compensate for extgap
 		// FIXME: This tends to break when you look down the corners of x=-z.
-		vec3 old_cell = cell;
-		//cell += aremsign*mix(ceil(old_arem) - ceil(max(vec3(0.0),new_arem)), extgap, agap);
-		cell += aremsign*mix(floor(min(extgap, extgap+1.0-new_arem)), extgap, agap);
-		cell = floor(cell+0.1);
+		arem = max(vec3(0.0), arem);
+
+		// these are both as broken as each other
+		//cell += aremsign*mix(ceil(old_arem) - ceil(max(vec3(0.0),arem)), extgap, agap);
+		cell += aremsign*mix(floor(min(extgap, extgap+1.0-arem)), extgap, agap);
+
+		cell = floor(cell+0.001);
+
 		arem = mix(fract(max(vec3(0.0), arem)), vec3(1.0), agap);
 
 		// Shift Y depending on result
@@ -354,8 +371,13 @@ void main()
 			arem.y = fract(arem.y);
 			*/
 
-			is_first_y = true;
-			lutc = lut_coord_xz(cell.xz);
+			if(old_cell.x != cell.x || old_cell.z != cell.z)
+			{
+				float skip_val = lut_skip(lutc - lutstep);
+				is_first_y = (skip_val == 0.0);
+				lutc = lut_coord_xz(cell.xz) + vec2(skip_val, 0.0);
+				if(!is_first_y) lutc_gap = 0.0;
+			}
 		} else {
 			//cell.y += aremsign.y*(extgap.y-2.0);
 
@@ -370,7 +392,8 @@ void main()
 			if(wdir.y > 0.0)
 				ncol = texture2D(tex0, lutc + lutstep).rgb;
 			else if(!is_first_y)
-				ncol = texture2D(tex0, lutc - lutstep).rgb;
+				//ncol = texture2D(tex0, lutc - lutstep).rgb;
+				ncol = texture2D(tex0, lutc - lutstep*2.0).rgb;
 			else
 				//tcol = gl_Fog.color.rgb;
 				break;

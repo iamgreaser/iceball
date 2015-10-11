@@ -151,7 +151,16 @@ local function rt_update_map_ring(px, pz)
 	return rs
 end
 
-local function rt_update_map_sweep(px, pz, xsweep_range, zsweep_range)
+local function rt_gap_count(l)
+	local i = 1
+	local c = 1
+
+	while l[i] ~= 0 do
+		i = i + 4*l[i]
+		c = c + 1
+	end
+
+	return c + (#l)/4
 end
 
 local function rt_update_map_z(pz, do_sweep)
@@ -160,6 +169,24 @@ local function rt_update_map_z(pz, do_sweep)
 	local xoffs1 = xlen
 	local x, y, z
 	z = pz
+
+	local function skip_to_y(px, pz, ty)
+		if ty == 0 then return 0 end
+		if px < 0 or pz < 0 or px >= xlen or pz >= zlen then return 0 end
+
+		local l = common.map_pillar_get(px, pz)
+		local i = 0
+		local iadd = 0
+
+		while true do
+			if l[i+1] == 0 then break end
+			if ty <= l[i+3] then break end
+			i = i + l[i+1]*4
+			iadd = iadd + 1
+		end
+
+		return math.floor(i/4) + iadd
+	end
 
 	for x=0,xlen-1 do
 		local l = common.map_pillar_get(x, z)
@@ -178,21 +205,42 @@ local function rt_update_map_z(pz, do_sweep)
 			sx = x
 			sz = z
 			if sz >= 0 and sz < zlen then
-				local pdata = xoffs + (zoffs*0x010000)
+				local pdata = xoffs + 1 + (zoffs*0x010000)
 				common.img_pixel_set(rt_tex, sx, sz, pdata
 					+ ((do_sweep and 0x01000000*rt_update_map_ring(sx, sz)) or 0))
 			end
 		end
 
 		--common.img_pixel_set(rt_tex, xoffs, z*2 + zoffs, 0)
+		local time_to_gap = 0
 		for y=0,#l-1,4 do
 			assert(xoffs < rt_xsi)
+			local ninc = 0
+			if time_to_gap == 0 then
+				-- Calculate accel structure
+				local ty = (y == 0 and 0) or l[y+4]
+				common.img_pixel_set(rt_tex, xoffs, z*2 + zoffs,
+					0
+					+ skip_to_y(x-1, z, ty)*0x00010000
+					+ skip_to_y(x+1, z, ty)*0x00000100
+					+ skip_to_y(x, z-1, ty)*0x00000001
+					+ skip_to_y(x, z+1, ty)*0x01000000
+					)
+
+				-- Advance
+				time_to_gap = l[y+1]
+				xoffs = xoffs + 1
+				ninc = 1
+			end
+
+			time_to_gap = time_to_gap - 1
+
 			common.img_pixel_set(rt_tex, xoffs, z*2 + zoffs,
 				0
-				+ (l[y+1])
-				+ (l[y+2])*(256)
-				+ (l[y+3])*(65536)
-				+ (l[y+4])*(65536*256)
+				+ (l[y+1]+ninc)*0x00000001
+				+ (l[y+2])*0x00000100
+				+ (l[y+3])*0x00010000
+				+ (l[y+4])*0x01000000
 			)
 			xoffs = xoffs + 1
 		end
@@ -221,15 +269,15 @@ local function rt_update_map_full()
 
 		for x=0,xlen-1 do
 			if xsum0 <= xsum1 then
-				xsum0 = xsum0 + #(common.map_pillar_get(x, z)) + 1
+				xsum0 = xsum0 + rt_gap_count(common.map_pillar_get(x, z))
 			else
-				xsum1 = xsum1 + #(common.map_pillar_get(x, z)) + 1
+				xsum1 = xsum1 + rt_gap_count(common.map_pillar_get(x, z))
 			end
 		end
 
 		local xsum = math.max(xsum0, xsum1)
 
-		xmax = math.max(xmax, xsum/4)
+		xmax = math.max(xmax, xsum)
 	end
 
 	while rt_xsi < xmax+xlen+256 do -- allow extra space
@@ -256,13 +304,12 @@ local function rt_update_map_full()
 	rt_force_update_full = false
 end
 
-local function rt_update_map_check(px, pz, nl)
+local function rt_update_map_check(px, pz, ol, nl)
 	if rt_force_update_full then
 		return rt_update_map_full()
 	end
 
 	local i
-	local ol = common.map_pillar_get(px, pz)
 	local same = false and (#nl == #ol) -- TODO: use this optimisation
 
 	if same then
@@ -279,7 +326,9 @@ local function rt_update_map_check(px, pz, nl)
 	local xlen, ylen, zlen = common.map_get_dims()
 	rt_update_map_height(pz)
 
+	if pz-1 >= 0 then rt_update_map_z(pz-1, false) end
 	rt_update_map_z(pz, false)
+	if pz+1 < zlen then rt_update_map_z(pz+1, false) end
 
 	local x,z
 	for z=pz-rt_sweepdist,pz+rt_sweepdist do
@@ -310,8 +359,10 @@ do
 	}, nil, "2v")
 	local s_map_pillar_set = common.map_pillar_set
 	function common.map_pillar_set(px, py, pl, ...)
-		rt_update_map_check(px, py, pl)
-		return s_map_pillar_set(px, py, pl, ...)
+		local ol = common.map_pillar_get(px, py)
+		local ret = {s_map_pillar_set(px, py, pl, ...)}
+		rt_update_map_check(px, py, ol, pl)
+		return unpack(ret)
 	end
 
 	local s_map_render = client.map_render
@@ -334,7 +385,7 @@ do
 		shader_rt_map.set_uniform_f("light0_diff", 0.5)
 		--shader_rt_map.set_uniform_f("light0_diff", 1.0)
 		shader_rt_map.set_uniform_f("light1_pos", px + dist*vx, py + dist*vy, pz + dist*vz)
-		shader_rt_map.set_uniform_f("light1_diff", 2.0)
+		shader_rt_map.set_uniform_f("light1_diff", 1.1)
 
 		-- TODO: track old FBOs
 		client.gfx_depth_test(false);
