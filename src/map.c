@@ -121,7 +121,7 @@ map_t *map_parse_aos(int len, const char *data)
 	const char *p = data;
 	const char *dend = data + len;
 
-	map_t *map = (map_t*)malloc(sizeof(map_t));
+	map_t *map = (map_t*)calloc(1, sizeof(map_t));
 	if(map == NULL)
 	{
 		error_perror("map_parse_aos: malloc");
