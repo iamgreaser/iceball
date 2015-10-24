@@ -19,6 +19,27 @@
 int map_parse_root(map_t *map, const char *dend, const char *data, int xlen, int ylen, int zlen, int wipe_lighting)
 {
 	// TODO: refactor a bit
+	// TODO: Check ylen
+	// TODO: Do we need the power of 2 check?
+
+	// (x & (x - 1)) == 0 == power of 2
+	if (xlen <= 0 || (xlen & (xlen - 1)) != 0)
+	{
+		fprintf(stderr, "map_parse_root: Invalid xlen\n");
+		return 0;
+	}
+
+	if (zlen <= 0 || (zlen & (zlen - 1)) != 0)
+	{
+		fprintf(stderr, "map_parse_root: Invalid zlen\n");
+		return 0;
+	}
+
+	if (ylen <= 0 || ylen > 255)
+	{
+		fprintf(stderr, "map_parse_root: Invalid ylen\n");
+		return 0;
+	}
 
 	const int PILLAR_SIZE = (256+1)*4;
 	uint8_t pillar_temp[PILLAR_SIZE];
@@ -34,7 +55,7 @@ int map_parse_root(map_t *map, const char *dend, const char *data, int xlen, int
 
 	int max_y = 0;
 
-	map->pillars = (uint8_t**)malloc(map->xlen*map->zlen*sizeof(uint8_t *));
+	map->pillars = (uint8_t**)calloc(1, map->xlen*map->zlen*sizeof(uint8_t *));
 	if(map->pillars == NULL)
 	{
 		error_perror("map_parse_root: malloc(map->pillars)");
@@ -101,7 +122,7 @@ int map_parse_root(map_t *map, const char *dend, const char *data, int xlen, int
 		}
 
 		pillar_temp[0] = (ti>>2)-2;
-		map->pillars[pi] = (uint8_t*)malloc(ti);
+		map->pillars[pi] = (uint8_t*)calloc(1, ti);
 		// TODO: check if NULL
 		memcpy(map->pillars[pi], pillar_temp, ti);
 	}
