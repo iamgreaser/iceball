@@ -64,7 +64,7 @@ int icelua_fn_common_map_new(lua_State *L)
 	map->xlen = xlen;
 	map->ylen = ylen;
 	map->zlen = zlen;
-	map->pillars = (uint8_t**)malloc(xlen*zlen*sizeof(uint8_t *));
+	map->pillars = (uint8_t**)calloc(1, xlen*zlen*sizeof(uint8_t *));
 	if(map->pillars == NULL)
 	{
 		int err = errno;
@@ -77,7 +77,7 @@ int icelua_fn_common_map_new(lua_State *L)
 	for(z = 0, pi = 0; z < map->zlen; z++)
 	for(x = 0; x < map->xlen; x++, pi++)
 	{
-		uint8_t *p = map->pillars[pi] = (uint8_t*)malloc(16);
+		uint8_t *p = map->pillars[pi] = (uint8_t*)calloc(1, 16);
 		// TODO: check if NULL
 		uint8_t v = (uint8_t)(x^z);
 		*(p++) = 1; *(p++) = 0; *(p++) = 0; *(p++) = 0;

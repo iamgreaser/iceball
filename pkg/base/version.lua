@@ -20,9 +20,9 @@
 -- Thanks. --GM
 
 VERSION_ENGINE = {
-	cmp={0,2,1,0,31},
-	num=8421376+31,
-	str="0.2.1-31",
+	cmp={0,2,1,0,32},
+	num=8421376+32,
+	str="0.2.1-32",
 }
 
 --error(""..common.version.num)
@@ -173,5 +173,6 @@ VERSION_BUGS = {
 {intro=nil, fix=8421376+30, msg="string mode bugged in net_unpack"},
 {intro=nil, fix=nil, msg="string mode bugged in net_pack, net_*_array"},
 {intro=8421376+4, fix=8421376+31, msg="Possible crash when loading VXL maps"},
+{intro=nil, fix=8421376+32, msg="Possible crash when loading invalid maps"},
 }
 
