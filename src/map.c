@@ -20,7 +20,8 @@ int map_parse_root(map_t *map, const char *dend, const char *data, int xlen, int
 {
 	// TODO: refactor a bit
 
-	uint8_t pillar_temp[(256+1)*4];
+	const int PILLAR_SIZE = (256+1)*4;
+	uint8_t pillar_temp[PILLAR_SIZE];
 	int i,x,z,pi;
 
 	int taglen = (int)(dend-data);
@@ -53,6 +54,12 @@ int map_parse_root(map_t *map, const char *dend, const char *data, int xlen, int
 		// TODO: check if someone's trying to blow the size
 		for(;;)
 		{
+			if (ti + 4 >= PILLAR_SIZE)
+			{
+				fprintf(stderr, "map_parse_root: too many control entries in pillar\n");
+				return 0;
+			}
+
 			uint8_t n = (uint8_t)*(data++);
 			uint8_t s = (uint8_t)*(data++);
 			uint8_t e = (uint8_t)*(data++);
@@ -70,6 +77,12 @@ int map_parse_root(map_t *map, const char *dend, const char *data, int xlen, int
 
 			for(i = 0; i < qlen; i++)
 			{
+				if (ti + 4 >= PILLAR_SIZE)
+				{
+					fprintf(stderr, "map_parse_root: too many colour entries in pillar\n");
+					return 0;
+				}
+
 				uint8_t b = (uint8_t)*(data++);
 				uint8_t g = (uint8_t)*(data++);
 				uint8_t r = (uint8_t)*(data++);
