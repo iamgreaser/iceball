@@ -23,9 +23,16 @@ int icelua_fn_client_mouse_lock_set(lua_State *L)
 #ifdef DEDI
 	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
 #else
-	SDL_WM_GrabInput(lua_toboolean(L, 1)
-		? SDL_GRAB_ON
-		: SDL_GRAB_OFF);
+    // workaround for SDL2 not properly resetting state when
+    // alt-tabbing
+    SDL_SetWindowGrab(window, SDL_FALSE);
+    SDL_SetRelativeMouseMode(SDL_FALSE);
+
+    int lock = lua_toboolean(L, 1);
+    if (lock) {
+        SDL_SetWindowGrab(window, SDL_TRUE);
+        SDL_SetRelativeMouseMode(SDL_TRUE);
+    }
 #endif
 	
 	return 0;
@@ -51,7 +58,7 @@ int icelua_fn_client_mouse_warp(lua_State *L)
 #ifdef DEDI
 	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
 #else
-	SDL_WarpMouse(lua_tonumber(L, 1), lua_tonumber(L, 2));
+    SDL_WarpMouseInWindow(window, lua_tonumber(L, 1), lua_tonumber(L, 2));
 #endif
 	
 	return 0;

@@ -82,7 +82,7 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 		return;
 	}
 	
-	if(screen == NULL || pixels != screen->pixels)
+	if(pixels != NULL)
 	{
 		if(src->udtype != UD_IMG)
 		{

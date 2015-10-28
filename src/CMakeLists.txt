@@ -12,7 +12,7 @@ source_group(lua FILES ${LUA_FILES})
 
 # iceball target
 add_executable(iceball ${MAIN_FILES} ${LUA_FILES} ${GL_FILES})
-target_link_libraries(iceball ${PNG_LIBRARIES} ${ENet_LIBRARIES} sackit ${LUA_LIBRARIES} ${SDL_LIBRARY} ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES})
+target_link_libraries(iceball ${PNG_LIBRARIES} ${ENet_LIBRARIES} sackit ${LUA_LIBRARIES} ${SDL2_LIBRARY} ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES})
 set_target_properties(iceball PROPERTIES COMPILE_DEFINITIONS "USE_OPENGL")
 
 # iceball-dedi target

@@ -42,7 +42,7 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/xlibinc")
 # find the hidden treasures
 find_package(ENet REQUIRED)
 find_package(PNG REQUIRED)
-find_package(SDL REQUIRED)
+find_package(SDL2 REQUIRED)
 find_package(zlib REQUIRED)
 find_package(Lua REQUIRED)
 find_package(GLEW REQUIRED)
@@ -55,7 +55,7 @@ include_directories(
     ${SACKIT_INCLUDE_DIR}
     ${ZLIB_INCLUDE_DIRS}
     ${GLEW_INCLUDE_DIRS}
-    ${SDL_INCLUDE_DIR}
+    ${SDL2_INCLUDE_DIR}
     ${LUA_INCLUDE_DIR}
 )
 
