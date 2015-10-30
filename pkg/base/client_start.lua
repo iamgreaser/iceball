@@ -716,6 +716,7 @@ function enter_typing_state()
 	chat_text.scrollback = true
 	chat_text.cam.start = math.max(1, #chat_text.list - chat_text.cam.height)
 	mouse_released = true
+	client.text_input_start()
 	client.mouse_lock_set(false)
 	client.mouse_visible_set(true)
 	if client.mouse_warp ~= nil then
@@ -728,6 +729,7 @@ function discard_typing_state(widget)
 	if widget.clear_keyrepeat then widget.clear_keyrepeat() end
 	chat_text.scrollback = false
 	mouse_released = false
+	client.text_input_stop()
 	client.mouse_lock_set(true)
 	client.mouse_visible_set(false)
 	if client.mouse_warp ~= nil then
@@ -740,7 +742,6 @@ end
 
 function h_key(sym, state, modif, uni)
 	local key = sym
-
 
 	-- grab screenshot
 	if state and key == BTSK_SCREENSHOT then
@@ -797,6 +798,10 @@ function h_key(sym, state, modif, uni)
 	end
 end
 
+local function push_text(text)
+	table.insert(input_events, {GE_TEXT, text})
+end
+
 local function push_mouse_button(button, state)
 	table.insert(input_events, {GE_MOUSE_BUTTON, {button=button,down=state}})
 end
@@ -827,6 +832,10 @@ end
 
 mouse_poll = {false,false,false,false,false}
 mouse_xy = {x=0,y=0,dx=0,dy=0}
+
+function h_text(text)
+	push_text(text)
+end
 
 function h_mouse_button(button, state)
 	
@@ -1220,6 +1229,7 @@ end
 
 client.hook_tick = h_tick_init
 client.hook_key = h_key
+client.hook_text = h_text
 client.hook_mouse_button = h_mouse_button
 client.hook_mouse_motion = h_mouse_motion
 client.hook_window_activate = h_window_activate

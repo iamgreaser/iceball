@@ -16,6 +16,28 @@
 */
 
 // client functions
+int icelua_fn_client_text_input_start(lua_State *L)
+{
+#ifdef DEDI
+    return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
+#else
+    SDL_StartTextInput();
+#endif
+
+    return 0;
+}
+
+int icelua_fn_client_text_input_stop(lua_State *L)
+{
+#ifdef DEDI
+    return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
+#else
+    SDL_StopTextInput();
+#endif
+
+    return 0;
+}
+
 int icelua_fn_client_mouse_lock_set(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 1, 1);

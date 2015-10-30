@@ -429,6 +429,31 @@ function gui_string_edit(str, insert_position, maxlen, key, modif, uni)
 	return str
 end
 
+function gui_string_delete(str, position)
+	if position <= 1 then
+		str = string.sub(str, 2, #str)
+	else
+		str = 	string.sub(str, 1, position - 2) ..
+				string.sub(str, position, #str)
+	end
+
+	return str
+end
+
+function gui_string_append(str, other, position)
+	if position == 1 then
+		return other .. str
+	elseif position == #str then
+		return str .. other
+	else
+		str_len = #str
+		str = 	string.sub(str, 1, position - 1) ..
+				other ..
+				string.sub(str, position, str_len)
+		return str
+	end
+end
+
 --[[Create a new scene. 
 Each scene contains its own displaylist, buffers, and listeners.]]
 function gui_create_scene(width, height, shared_rate)
@@ -929,78 +954,47 @@ function gui_create_scene(width, height, shared_rate)
 			discard_typing_state(this)
 		end
 
-		this.repeating_key = nil
-		this.repeating_modif = nil
-		this.repeating_uni = nil
-
-		function this.key_repeated()
-			local state = true
-			local key = this.repeating_key
-			local modif = this.repeating_modif
-			local uni = this.repeating_uni
-			if key == SDLK_ESCAPE then
-				this.done_typing()
-			elseif key == SDLK_RETURN then
-				if #this.text>0 then this.buffer_register_new() end
-				this.on_return(key, state, modif)
-			elseif key == SDLK_LEFT then
-				this.cursor_backwards()
-			elseif key == SDLK_RIGHT then
-				this.cursor_forwards()
-			elseif key == SDLK_UP then
-				this.buffer_backwards()
-			elseif key == SDLK_DOWN then
-				this.buffer_forwards()
-			elseif key == SDLK_HOME then
-				this.cursor_to_text_start()
-			elseif key == SDLK_END then
-				this.cursor_to_text_end()
-			else
-				local text_len = #this.text
-				this.text = gui_string_edit(
-					this.text, 
-					this.cursor_position, 
-					MODE_CHAT_STRMAX, 
-					key, 
-					modif,
-					uni)
-				if key ~= SDLK_DELETE then
-					this.cursor_position = math.max(
-						1, 
-						this.cursor_position + (#this.text - text_len))
-				else
-					this.cursor_position = math.max(1,
-						this.cursor_position)
-				end
-				this.input_buffer.edit(this.text)
-			end
-		end
-
 		function this.on_key(key, state, modif, uni, dicks)
 			if this.take_input then
 				if state then
-					this.repeating_key = key
-					this.repeating_uni = uni
-					this.repeating_modif = modif
-					this.static_alarm{name='key_waitbuf', time=0.45,on_trigger=function()
-						if this.repeating_key ~= nil then
-							this.key_repeated()
-							this.static_alarms['key_repeat'] = 
-							alarm{time=0.035, loop=true, preserve_accumulator=false, on_trigger=function()
-								if this.repeating_key ~= nil then
-									this.key_repeated()
-								end
-							end}
-						end
-					end}
-					this.key_repeated()
-				elseif state == false then -- this is specifically the key up. there are other key events...
-					this.clear_keyrepeat()
+					if key == SDLK_ESCAPE then
+						this.done_typing()
+					elseif key == SDLK_RETURN then
+						if #this.text>0 then this.buffer_register_new() end
+						this.on_return(key, state, modif)
+					elseif key == SDLK_LEFT then
+						this.cursor_backwards()
+					elseif key == SDLK_RIGHT then
+						this.cursor_forwards()
+					elseif key == SDLK_UP then
+						this.buffer_backwards()
+					elseif key == SDLK_DOWN then
+						this.buffer_forwards()
+					elseif key == SDLK_HOME then
+						this.cursor_to_text_start()
+					elseif key == SDLK_END then
+						this.cursor_to_text_end()
+					elseif key == SDLK_BACKSPACE then
+						this.text = gui_string_delete(this.text, this.cursor_position)
+						this.cursor_position = math.max(1, this.cursor_position - 1)
+						this.input_buffer.edit(this.text)
+					end
 				end
 			end
 		end
 
 		this.add_listener(GE_KEY, this.on_key)
+
+		function this.on_text(text)
+			if this.take_input then
+				this.text = gui_string_append(this.text, text, this.cursor_position)
+
+				this.cursor_position = math.max(1, this.cursor_position + #text)
+				this.input_buffer.edit(this.text)
+			end
+		end
+
+		this.add_listener(GE_TEXT, this.on_text)
 
 		this.cursor_position = 1
 		this.input_buffer = collect_new_history_buf()

@@ -114,7 +114,6 @@ int platform_init(void)
 
 int video_init(void)
 {
-
 	SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
@@ -130,7 +129,6 @@ int video_init(void)
 		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, screen_antialiasing_level);
 	}
 
-
 	window = SDL_CreateWindow("iceball",
 							  SDL_WINDOWPOS_UNDEFINED,
 							  SDL_WINDOWPOS_UNDEFINED,
@@ -138,6 +136,8 @@ int video_init(void)
 							  screen_height, SDL_WINDOW_OPENGL | (screen_fullscreen ? SDL_WINDOW_FULLSCREEN : 0));
 	if(window == NULL)
 		return error_sdl("SDL_CreateWindow");
+
+	SDL_StopTextInput();
 
 	gl_context = SDL_GL_CreateContext(window);
 
@@ -265,8 +265,6 @@ static int ib_client_render_hook(void) {
 }
 
 static int ib_client_key_hook(SDL_Event ev) {
-
-	// inform Lua client
 	lua_getglobal(lstate_client, "client");
 	lua_getfield(lstate_client, -1, "hook_key");
 	lua_remove(lstate_client, -2);
@@ -276,17 +274,40 @@ static int ib_client_key_hook(SDL_Event ev) {
 		return 0;
 	}
 
-	char ch = ev.key.keysym.sym;
+	int ch = ev.key.keysym.scancode;
 	//if ((ev.key.keysym.unicode & 0xFF80) == 0)
 	//	ch = ev.key.keysym.unicode & 0x1FF;
 
-	lua_pushinteger(lstate_client, ev.key.keysym.sym);
+	lua_pushinteger(lstate_client, ch);
 	lua_pushboolean(lstate_client, (ev.type == SDL_KEYDOWN));
 	lua_pushinteger(lstate_client, (int) (ev.key.keysym.mod));
 	lua_pushinteger(lstate_client, ch);
 
 	if (lua_pcall(lstate_client, 4, 0, 0) != 0) {
 		printf("Lua Client Error (key): %s\n", lua_tostring(lstate_client, -1));
+		lua_pop(lstate_client, 1);
+		return 1;
+	}
+
+	return 0;
+}
+
+static int ib_client_text_hook(SDL_Event ev) {
+	lua_getglobal(lstate_client, "client");
+	lua_getfield(lstate_client, -1, "hook_text");
+	lua_remove(lstate_client, -2);
+	if (lua_isnil(lstate_client, -1)) {
+		// not hooked? ignore!
+		lua_pop(lstate_client, 1);
+		return 0;
+	}
+
+	char *str = ev.text.text;
+
+	lua_pushstring(lstate_client, str);
+
+	if (lua_pcall(lstate_client, 1, 0, 0) != 0) {
+		printf("Lua Client Error (text): %s\n", lua_tostring(lstate_client, -1));
 		lua_pop(lstate_client, 1);
 		return 1;
 	}
@@ -460,6 +481,9 @@ int poll_events(void)
 			case SDL_KEYUP:
 			case SDL_KEYDOWN:
 				quitflag = ib_client_key_hook(ev);
+				break;
+			case SDL_TEXTINPUT:
+				quitflag = ib_client_text_hook(ev);
 				break;
 			case SDL_MOUSEBUTTONUP:
 			case SDL_MOUSEBUTTONDOWN:

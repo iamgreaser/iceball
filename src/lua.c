@@ -213,8 +213,9 @@ struct icelua_entry icelua_client[] = {
 	{icelua_fn_client_mk_set_title, "mk_set_title"},
 	{icelua_fn_client_mk_sys_execv, "mk_sys_execv"},
 
+	{icelua_fn_client_text_input_start, "text_input_start"},
+	{icelua_fn_client_text_input_stop, "text_input_stop"},
 	{icelua_fn_client_mouse_lock_set, "mouse_lock_set"},
-	{icelua_fn_client_mouse_visible_set, "mouse_visible_set"},
 	{icelua_fn_client_mouse_visible_set, "mouse_visible_set"},
 	{icelua_fn_client_mouse_warp, "mouse_warp"},
 	{icelua_fn_client_map_enable_autorender, "map_enable_autorender"},
