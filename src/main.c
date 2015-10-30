@@ -70,6 +70,19 @@ char *main_argv0;
 char *main_oldcwd;
 int main_largstart = -1;
 
+int64_t frame_prev = 0;
+int64_t frame_now = 0;
+int fps = 0;
+
+double sec_curtime = 0.0;
+double sec_lasttime = 0.0;
+double sec_wait = 0.0;
+double sec_serv_wait = 0.0;
+
+float ompx = -M_PI, ompy = -M_PI, ompz = -M_PI;
+
+int64_t usec_basetime;
+
 #ifndef DEDI
 int error_sdl(char *msg)
 {
@@ -168,7 +181,6 @@ void platform_deinit(void)
 }
 #endif
 
-
 #if defined(DEDI) && defined(WIN32)
 int64_t ms_now()
 {
@@ -183,7 +195,6 @@ int64_t ms_now()
 	}
 }
 #endif
-
 
 int64_t platform_get_time_usec(void)
 {
@@ -207,21 +218,147 @@ int64_t platform_get_time_usec(void)
 #endif
 }
 
-int64_t frame_prev = 0;
-int64_t frame_now = 0;
-int fps = 0;
+static int ib_client_tick_hook(void) {
+	lua_getglobal(lstate_client, "client");
+	lua_getfield(lstate_client, -1, "hook_tick");
+	lua_remove(lstate_client, -2);
+	if(lua_isnil(lstate_client, -1))
+	{
+		lua_pop(lstate_client, 1);
+		return 1;
+	}
 
-double sec_curtime = 0.0;
-double sec_lasttime = 0.0;
-double sec_wait = 0.0;
-double sec_serv_wait = 0.0;
+	double sec_delta = sec_curtime - sec_lasttime;
+	if (sec_delta <= 0) {
+		sec_delta = 0.00000001;
+	}
+	lua_pushnumber(lstate_client, sec_curtime);
+	lua_pushnumber(lstate_client, sec_delta);
+	if(lua_pcall(lstate_client, 2, 1, 0) != 0)
+	{
+		printf("Lua Client Error (tick): %s\n", lua_tostring(lstate_client, -1));
+		lua_pop(lstate_client, 1);
+		return 1;
+	}
+	//if(!(boot_mode & 2))
+	sec_wait += lua_tonumber(lstate_client, -1);
+	lua_pop(lstate_client, 1);
 
-float ompx = -M_PI, ompy = -M_PI, ompz = -M_PI;
+	return 0;
+}
 
-int64_t usec_basetime;
+static int ib_client_render_hook(void) {
+	lua_getglobal(lstate_client, "client");
+	lua_getfield(lstate_client, -1, "hook_render");
+	lua_remove(lstate_client, -2);
+	if(!lua_isnil(lstate_client, -1))
+	{
+		if(lua_pcall(lstate_client, 0, 0, 0) != 0)
+		{
+			printf("Lua Client Error (render): %s\n", lua_tostring(lstate_client, -1));
+			lua_pop(lstate_client, 1);
+			return 1;
+		}
+	}
 
+	return 0;
+}
+
+static int ib_client_key_hook(SDL_Event ev) {
+
+	// inform Lua client
+	lua_getglobal(lstate_client, "client");
+	lua_getfield(lstate_client, -1, "hook_key");
+	lua_remove(lstate_client, -2);
+	if (lua_isnil(lstate_client, -1)) {
+		// not hooked? ignore!
+		lua_pop(lstate_client, 1);
+		return 0;
+	}
+
+	char ch = ev.key.keysym.sym;
+	//if ((ev.key.keysym.unicode & 0xFF80) == 0)
+	//	ch = ev.key.keysym.unicode & 0x1FF;
+
+	lua_pushinteger(lstate_client, ev.key.keysym.sym);
+	lua_pushboolean(lstate_client, (ev.type == SDL_KEYDOWN));
+	lua_pushinteger(lstate_client, (int) (ev.key.keysym.mod));
+	lua_pushinteger(lstate_client, ch);
+
+	if (lua_pcall(lstate_client, 4, 0, 0) != 0) {
+		printf("Lua Client Error (key): %s\n", lua_tostring(lstate_client, -1));
+		lua_pop(lstate_client, 1);
+		return 1;
+	}
+
+	return 0;
+}
+
+static int ib_client_mouse_press_hook(SDL_Event ev) {
+	lua_getglobal(lstate_client, "client");
+	lua_getfield(lstate_client, -1, "hook_mouse_button");
+	lua_remove(lstate_client, -2);
+	if (lua_isnil(lstate_client, -1)) {
+		// not hooked? ignore!
+		lua_pop(lstate_client, 1);
+		return 0;
+	}
+
+	lua_pushinteger(lstate_client, ev.button.button);
+	lua_pushboolean(lstate_client, (ev.type == SDL_MOUSEBUTTONDOWN));
+	if (lua_pcall(lstate_client, 2, 0, 0) != 0) {
+		printf("Lua Client Error (mouse_button): %s\n", lua_tostring(lstate_client, -1));
+		lua_pop(lstate_client, 1);
+		return 1;
+	}
+
+	return 0;
+}
+
+static int ib_client_mouse_motion_hook(SDL_Event ev) {
+	lua_getglobal(lstate_client, "client");
+	lua_getfield(lstate_client, -1, "hook_mouse_motion");
+	lua_remove(lstate_client, -2);
+	if (lua_isnil(lstate_client, -1)) {
+		// not hooked? ignore!
+		lua_pop(lstate_client, 1);
+		return 0;
+	}
+
+	lua_pushinteger(lstate_client, ev.motion.x);
+	lua_pushinteger(lstate_client, ev.motion.y);
+	lua_pushinteger(lstate_client, ev.motion.xrel);
+	lua_pushinteger(lstate_client, ev.motion.yrel);
+	if (lua_pcall(lstate_client, 4, 0, 0) != 0) {
+		printf("Lua Client Error (mouse_motion): %s\n", lua_tostring(lstate_client, -1));
+		lua_pop(lstate_client, 1);
+		return 1;
+	}
+
+	return 0;
+}
+
+static int ib_client_window_focus_hook(SDL_Event ev) {
+	lua_getglobal(lstate_client, "client");
+	lua_getfield(lstate_client, -1, "hook_window_activate");
+	lua_remove(lstate_client, -2);
+	if (lua_isnil(lstate_client, -1)) {
+		// not hooked? ignore!
+		lua_pop(lstate_client, 1);
+		return 0;
+	}
+
+	lua_pushboolean(lstate_client, ev.window.event == SDL_WINDOWEVENT_FOCUS_GAINED);
+	if (lua_pcall(lstate_client, 1, 0, 0) != 0) {
+		printf("Lua Client Error (window_activate): %s\n", lua_tostring(lstate_client, -1));
+		lua_pop(lstate_client, 1);
+		return 1;
+	}
+
+	return 0;
+}
 #ifndef DEDI
-int update_client_contpre1(void)
+int update_fps_counter(void)
 {
 	int quitflag = 0;
 
@@ -241,7 +378,7 @@ int update_client_contpre1(void)
 	return quitflag;
 }
 
-int update_client_cont1(void)
+int render_client(void)
 {
 	int quitflag = 0;
 
@@ -277,10 +414,6 @@ int update_client_cont1(void)
 #endif
 	}
 
-	//printf("%.2f",);
-	// draw scene to cubemap
-
-	//memset(screen->pixels, 0x51, screen->h*screen->pitch);
 	render_clear(&tcam);
 	if(map_enable_autorender)
 	{
@@ -291,18 +424,7 @@ int update_client_cont1(void)
 	}
 
 	// apply Lua HUD / model stuff
-	lua_getglobal(lstate_client, "client");
-	lua_getfield(lstate_client, -1, "hook_render");
-	lua_remove(lstate_client, -2);
-	if(!lua_isnil(lstate_client, -1))
-	{
-		if(lua_pcall(lstate_client, 0, 0, 0) != 0)
-		{
-			printf("Lua Client Error (render): %s\n", lua_tostring(lstate_client, -1));
-			lua_pop(lstate_client, 1);
-			return 1;
-		}
-	}
+	quitflag = quitflag || ib_client_render_hook();
 
 	// clean up stuff that may have happened in the scene
 	glDepthMask(GL_TRUE);
@@ -325,125 +447,54 @@ int update_client_cont1(void)
 	}
 #endif
 
+	return quitflag;
+}
+
+int poll_events(void)
+{
+	int quitflag = 0;
+
 	SDL_Event ev;
-	while(SDL_PollEvent(&ev))
-	switch(ev.type)
-	{
-		case SDL_KEYUP:
-		case SDL_KEYDOWN:
-			// inform Lua client
-			lua_getglobal(lstate_client, "client");
-			lua_getfield(lstate_client, -1, "hook_key");
-			lua_remove(lstate_client, -2);
-			if(lua_isnil(lstate_client, -1))
-			{
-				// not hooked? ignore!
-				lua_pop(lstate_client, 1);
+	while(SDL_PollEvent(&ev)) {
+		switch (ev.type) {
+			case SDL_KEYUP:
+			case SDL_KEYDOWN:
+				quitflag = ib_client_key_hook(ev);
 				break;
-			}
-			{
-				char ch = ev.key.keysym.sym;
-				//if ((ev.key.keysym.unicode & 0xFF80) == 0)
-				//	ch = ev.key.keysym.unicode & 0x1FF;
+			case SDL_MOUSEBUTTONUP:
+			case SDL_MOUSEBUTTONDOWN:
+				quitflag = ib_client_mouse_press_hook(ev);
+				break;
+			case SDL_MOUSEMOTION:
+				quitflag = ib_client_mouse_motion_hook(ev);
+				break;
+			case SDL_WINDOWEVENT:
+				switch (ev.window.event) {
+					case SDL_WINDOWEVENT_FOCUS_GAINED: {
+						// workaround for SDL2 not properly resetting state when
+						// alt-tabbing
+						SDL_bool relative = SDL_GetRelativeMouseMode();
+						if (relative) {
+							SDL_SetWindowGrab(window, SDL_FALSE);
+							SDL_SetRelativeMouseMode(SDL_FALSE);
 
-				lua_pushinteger(lstate_client, ev.key.keysym.sym);
-				lua_pushboolean(lstate_client, (ev.type == SDL_KEYDOWN));
-				lua_pushinteger(lstate_client, (int)(ev.key.keysym.mod));
-				lua_pushinteger(lstate_client, ch);
-
-				if(lua_pcall(lstate_client, 4, 0, 0) != 0)
-				{
-					printf("Lua Client Error (key): %s\n", lua_tostring(lstate_client, -1));
-					lua_pop(lstate_client, 1);
-					quitflag = 1;
-					break;
+							SDL_SetWindowGrab(window, SDL_TRUE);
+							SDL_SetRelativeMouseMode(SDL_TRUE);
+						}
+					}
+					case SDL_WINDOWEVENT_FOCUS_LOST:
+						quitflag = ib_client_window_focus_hook(ev);
+						break;
+					default:
+						break;
 				}
-			}
-			break;
-		case SDL_MOUSEBUTTONUP:
-		case SDL_MOUSEBUTTONDOWN:
-			// inform Lua client
-			lua_getglobal(lstate_client, "client");
-			lua_getfield(lstate_client, -1, "hook_mouse_button");
-			lua_remove(lstate_client, -2);
-			if(lua_isnil(lstate_client, -1))
-			{
-				// not hooked? ignore!
-				lua_pop(lstate_client, 1);
 				break;
-			}
-			lua_pushinteger(lstate_client, ev.button.button);
-			lua_pushboolean(lstate_client, (ev.type == SDL_MOUSEBUTTONDOWN));
-			if(lua_pcall(lstate_client, 2, 0, 0) != 0)
-			{
-				printf("Lua Client Error (mouse_button): %s\n", lua_tostring(lstate_client, -1));
-				lua_pop(lstate_client, 1);
+			case SDL_QUIT:
 				quitflag = 1;
 				break;
-			}
-			break;
-		case SDL_MOUSEMOTION:
-			// inform Lua client
-			lua_getglobal(lstate_client, "client");
-			lua_getfield(lstate_client, -1, "hook_mouse_motion");
-			lua_remove(lstate_client, -2);
-			if(lua_isnil(lstate_client, -1))
-			{
-				// not hooked? ignore!
-				lua_pop(lstate_client, 1);
+			default:
 				break;
-			}
-			lua_pushinteger(lstate_client, ev.motion.x);
-			lua_pushinteger(lstate_client, ev.motion.y);
-			lua_pushinteger(lstate_client, ev.motion.xrel);
-			lua_pushinteger(lstate_client, ev.motion.yrel);
-			if(lua_pcall(lstate_client, 4, 0, 0) != 0)
-			{
-				printf("Lua Client Error (mouse_motion): %s\n", lua_tostring(lstate_client, -1));
-				lua_pop(lstate_client, 1);
-				quitflag = 1;
-				break;
-			}
-			break;
-		case SDL_WINDOWEVENT:
-			switch (ev.window.event) {
-				case SDL_WINDOWEVENT_FOCUS_GAINED:
-					// workaround for SDL2 not properly resetting state when
-					// alt-tabbing
-					SDL_SetWindowGrab(window, SDL_FALSE);
-					SDL_SetRelativeMouseMode(SDL_FALSE);
-
-					SDL_SetWindowGrab(window, SDL_TRUE);
-					SDL_SetRelativeMouseMode(SDL_TRUE);
-				case SDL_WINDOWEVENT_FOCUS_LOST:
-					lua_getglobal(lstate_client, "client");
-					lua_getfield(lstate_client, -1, "hook_window_activate");
-					lua_remove(lstate_client, -2);
-					if(lua_isnil(lstate_client, -1))
-					{
-						// not hooked? ignore!
-						lua_pop(lstate_client, 1);
-						break;
-					}
-					lua_pushboolean(lstate_client, ev.window.event == SDL_WINDOWEVENT_FOCUS_GAINED);
-					if(lua_pcall(lstate_client, 1, 0, 0) != 0)
-					{
-						printf("Lua Client Error (window_activate): %s\n", lua_tostring(lstate_client, -1));
-						lua_pop(lstate_client, 1);
-						quitflag = 1;
-						break;
-					}
-					break;
-				default:
-					break;
-
-			}
-			break;
-		case SDL_QUIT:
-			quitflag = 1;
-			break;
-		default:
-			break;
+		}
 	}
 
 	return quitflag;
@@ -451,7 +502,7 @@ int update_client_cont1(void)
 
 int update_client(void)
 {
-	int quitflag = update_client_contpre1();
+	int quitflag = update_fps_counter();
 
 	if(mod_basedir == NULL)
 	{
@@ -465,33 +516,13 @@ int update_client(void)
 
 		boot_mode &= ~8;
 	} else {
-		lua_getglobal(lstate_client, "client");
-		lua_getfield(lstate_client, -1, "hook_tick");
-		lua_remove(lstate_client, -2);
-		if(lua_isnil(lstate_client, -1))
-		{
-			lua_pop(lstate_client, 1);
-			return 1;
-		}
-
-		double sec_delta = sec_curtime - sec_lasttime;
-		if (sec_delta <= 0) {
-			sec_delta = 0.00000001;
-		}
-		lua_pushnumber(lstate_client, sec_curtime);
-		lua_pushnumber(lstate_client, sec_delta);
-		if(lua_pcall(lstate_client, 2, 1, 0) != 0)
-		{
-			printf("Lua Client Error (tick): %s\n", lua_tostring(lstate_client, -1));
-			lua_pop(lstate_client, 1);
-			return 1;
-		}
-		//if(!(boot_mode & 2))
-		sec_wait += lua_tonumber(lstate_client, -1);
-		lua_pop(lstate_client, 1);
+		quitflag = quitflag || ib_client_tick_hook();
 	}
 
-	quitflag = quitflag || update_client_cont1();
+	quitflag = quitflag || render_client();
+
+	quitflag = quitflag || poll_events();
+
 	return quitflag;
 }
 #endif
@@ -543,7 +574,7 @@ int update_server(void)
 #ifndef DEDI
 int run_game_cont1(void)
 {
-	int quitflag = update_client_cont1();
+	int quitflag = render_client();
 	net_flush();
 	if(boot_mode & 2)
 		quitflag = quitflag || update_server();
@@ -555,7 +586,7 @@ int run_game_cont1(void)
 	sec_curtime = ((double)usec_curtime)/1000000.0;
 
 	// update client/server
-	quitflag = quitflag || update_client_contpre1();
+	quitflag = quitflag || update_fps_counter();
 
 	return quitflag;
 }
