@@ -53,7 +53,7 @@ end
 
 -- Some libraries
 dofile("pkg/iceball/lib/font.lua")
-dofile("pkg/iceball/lib/sdlkey.lua")
+dofile("pkg/base/lib_sdlkey.lua")
 
 -- Some other stuff that needs done early
 local page = 0

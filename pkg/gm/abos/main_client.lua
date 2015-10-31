@@ -1,7 +1,7 @@
 dofile("pkg/gm/abos/common.lua")
 dofile("pkg/gm/abos/genmap.lua")
 dofile("pkg/gm/abos/player.lua")
-dofile("pkg/iceball/lib/sdlkey.lua")
+dofile("pkg/base/lib_sdlkey.lua")
 
 client.mk_compat_disable()
 client.mk_set_title("A Buttfull Of Skateboards")

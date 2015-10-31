@@ -1,39 +1,39 @@
 {
 	"__COMMENT_000": "
-		
+
 		This is the sort of place you set up your controls.
 		It can be read by all mods, but not writeable by any.
-		
+
 		By the way, don't store anything important in this comment.
 		It is possible that a hacked server might be able to read it.
-		
+
 		READ THIS FILE: docs/setup_json.txt
 		READ THIS URL: http://wiki.libsdl.org/moin.cgi/SDLKeycodeLookup
-		
+
 		For more info on the syntax itself, see http://json.org/
 	",
-	
-	"forward": 26,
-	"back": 22,
-	"left": 4,
-	"right": 7,
-	"jump": 44,
-	"crouch": 224,
-	"sneak": 225,
-	"reload": 21,
-	"tools": [30, 31, 32, 33, 34, 35, 36, 37, 38, 39],
-	"colorleft": 92,
-	"colorright": 94,
-	"colorup": 90,
-	"colordown": 96,
-	"chat": 23,
-	"teamchat": 28,
-	"squadchat": 24,
-	"chatup": 82,
-	"chatdn": 81,
-	"scores": 43,
-	"quit": 41,
-	"map": 16,
-	"team": 54,
-	"wpn": 55
+
+	"forward": 119,
+	"back": 115,
+	"left": 97,
+	"right": 100,
+	"jump": 32,
+	"crouch": 306,
+	"sneak": 118,
+	"reload": 114,
+	"tools": [49, 50, 51, 52, 53, 54, 55, 56, 57, 48],
+	"colorleft": 276,
+	"colorright": 275,
+	"colorup": 273,
+	"colordown": 274,
+	"chat": 116,
+	"teamchat": 121,
+	"squadchat": 117,
+	"chatup": 280,
+	"chatdn": 281,
+	"scores": 9,
+	"quit": 27,
+	"map": 109,
+	"team": 44,
+	"wpn": 46
 }
