@@ -45,7 +45,7 @@ def calc_ib_version(w,x,y,a,z):
 
 HB_LIFETIME = 120
 HB_VERSION = 2
-IB_VERSION_CMP = (0,2,1,0,32)
+IB_VERSION_CMP = (0,2,1,0,33)
 IB_VERSION = calc_ib_version(*IB_VERSION_CMP)
 
 # ignore "Z" version

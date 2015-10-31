@@ -35,7 +35,7 @@ int map_parse_root(map_t *map, const char *dend, const char *data, int xlen, int
 		return 0;
 	}
 
-	if (ylen <= 0 || ylen > 255)
+	if (ylen != -1 && (ylen <= 0 || ylen > 255))
 	{
 		fprintf(stderr, "map_parse_root: Invalid ylen\n");
 		return 0;
