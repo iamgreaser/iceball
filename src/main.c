@@ -334,6 +334,7 @@ int64_t platform_get_time_usec(void)
 #endif
 }
 
+#ifndef DEDI
 static int ib_client_tick_hook(void) {
 	lua_getglobal(lstate_client, "client");
 	lua_getfield(lstate_client, -1, "hook_tick");
@@ -494,7 +495,7 @@ static int ib_client_window_focus_hook(SDL_Event ev) {
 
 	return 0;
 }
-#ifndef DEDI
+
 int update_fps_counter(void)
 {
 	int quitflag = 0;

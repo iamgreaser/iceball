@@ -6,6 +6,7 @@ project (iceball)
 set(CMAKE_SOURCE_DIR src)
 set(OUTDIR ../build)
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-strict-aliasing -g -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter")
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
