@@ -713,10 +713,11 @@ end
 stored_pointer = {x=screen_width/4, y=screen_height*3/4} -- default to around the lower-left, where the text box is
 
 function enter_typing_state()
+	in_typing_state = true
 	chat_text.scrollback = true
 	chat_text.cam.start = math.max(1, #chat_text.list - chat_text.cam.height)
 	mouse_released = true
-	client.text_input_start()
+	if client.text_input_start then client.text_input_start() end
 	client.mouse_lock_set(false)
 	client.mouse_visible_set(true)
 	if client.mouse_warp ~= nil then
@@ -725,11 +726,12 @@ function enter_typing_state()
 end
 
 function discard_typing_state(widget)
+	in_typing_state = false
 	gui_focus = nil
 	if widget.clear_keyrepeat then widget.clear_keyrepeat() end
 	chat_text.scrollback = false
 	mouse_released = false
-	client.text_input_stop()
+	if client.text_input_stop then client.text_input_stop() end
 	client.mouse_lock_set(true)
 	client.mouse_visible_set(false)
 	if client.mouse_warp ~= nil then
@@ -746,6 +748,16 @@ function h_key(sym, state, modif, uni)
 	-- grab screenshot
 	if state and key == BTSK_SCREENSHOT then
 		do_screenshot = true
+	end
+
+	-- SDL1.2 backwards compat
+	if in_typing_state and state and uni and not client.text_input_start then
+		-- not worth supporting UTF-8 in the SDL1.2 clients
+		-- we're about to chuck it out
+		if uni >= 32 and uni < 127 then
+			local uni_c = string.char(uni)
+			push_text(uni_c)
+		end
 	end
 
 	push_keypress(key, state, modif, sym, uni)
@@ -798,7 +810,7 @@ function h_key(sym, state, modif, uni)
 	end
 end
 
-local function push_text(text)
+function push_text(text)
 	table.insert(input_events, {GE_TEXT, text})
 end
 
