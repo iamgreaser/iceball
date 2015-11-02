@@ -6,6 +6,7 @@ project (iceball)
 set(CMAKE_SOURCE_DIR src)
 set(OUTDIR ../build)
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-strict-aliasing -g -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter")
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
@@ -42,7 +43,7 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/xlibinc")
 # find the hidden treasures
 find_package(ENet REQUIRED)
 find_package(PNG REQUIRED)
-find_package(SDL REQUIRED)
+find_package(SDL2 REQUIRED)
 find_package(zlib REQUIRED)
 find_package(Lua REQUIRED)
 find_package(GLEW REQUIRED)
@@ -55,7 +56,7 @@ include_directories(
     ${SACKIT_INCLUDE_DIR}
     ${ZLIB_INCLUDE_DIRS}
     ${GLEW_INCLUDE_DIRS}
-    ${SDL_INCLUDE_DIR}
+    ${SDL2_INCLUDE_DIR}
     ${LUA_INCLUDE_DIR}
 )
 

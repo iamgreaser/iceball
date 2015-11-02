@@ -31,9 +31,9 @@ dofile("pkg/iceball/lib/font.lua")
 dofile("pkg/iceball/lib/map.lua")
 dofile("pkg/iceball/lib/player.lua")
 dofile("pkg/iceball/lib/phys.lua")
-dofile("pkg/iceball/lib/sdlkey.lua")
 dofile("pkg/iceball/lib/vector.lua")
 dofile("pkg/iceball/lib/wobj.lua")
+dofile("pkg/base/lib_sdlkey.lua")
 
 -- Here's some version information while you wait for me to do everything ever.
 -- Or you could help by not making me have to do everything ever.

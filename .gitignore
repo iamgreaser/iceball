@@ -51,9 +51,11 @@ src/iceball-soft.dir
 src/iceded.dir
 ZERO_CHECK.dir
 
-#some cmake generated shit that will vs.net notify of cmake file changes.
+# some cmake generated shit that will vs.net notify of cmake file changes.
 ALL_BUILD.vcproj
 ZERO_CHECK.vcproj
 
-#idea stuff
+# idea stuff
 .idea/
+
+# clsave/vol/fastload.tmp

@@ -140,8 +140,8 @@ int icelua_fn_client_screen_get_dims(lua_State *L)
 		lua_pushinteger(L, screen_width);
 		lua_pushinteger(L, screen_height);
 	} else {
-		lua_pushinteger(L, screen->w);
-		lua_pushinteger(L, screen->h);
+		lua_pushinteger(L, screen_width);
+		lua_pushinteger(L, screen_height);
 	}
 #endif
 	

@@ -713,9 +713,11 @@ end
 stored_pointer = {x=screen_width/4, y=screen_height*3/4} -- default to around the lower-left, where the text box is
 
 function enter_typing_state()
+	in_typing_state = true
 	chat_text.scrollback = true
 	chat_text.cam.start = math.max(1, #chat_text.list - chat_text.cam.height)
 	mouse_released = true
+	if client.text_input_start then client.text_input_start() end
 	client.mouse_lock_set(false)
 	client.mouse_visible_set(true)
 	if client.mouse_warp ~= nil then
@@ -724,10 +726,12 @@ function enter_typing_state()
 end
 
 function discard_typing_state(widget)
+	in_typing_state = false
 	gui_focus = nil
 	if widget.clear_keyrepeat then widget.clear_keyrepeat() end
 	chat_text.scrollback = false
 	mouse_released = false
+	if client.text_input_stop then client.text_input_stop() end
 	client.mouse_lock_set(true)
 	client.mouse_visible_set(false)
 	if client.mouse_warp ~= nil then
@@ -741,10 +745,19 @@ end
 function h_key(sym, state, modif, uni)
 	local key = sym
 
-
 	-- grab screenshot
 	if state and key == BTSK_SCREENSHOT then
 		do_screenshot = true
+	end
+
+	-- SDL1.2 backwards compat
+	if in_typing_state and state and uni and not client.text_input_start then
+		-- not worth supporting UTF-8 in the SDL1.2 clients
+		-- we're about to chuck it out
+		if uni >= 32 and uni < 127 then
+			local uni_c = string.char(uni)
+			push_text(uni_c)
+		end
 	end
 
 	push_keypress(key, state, modif, sym, uni)
@@ -797,6 +810,10 @@ function h_key(sym, state, modif, uni)
 	end
 end
 
+function push_text(text)
+	table.insert(input_events, {GE_TEXT, text})
+end
+
 local function push_mouse_button(button, state)
 	table.insert(input_events, {GE_MOUSE_BUTTON, {button=button,down=state}})
 end
@@ -827,6 +844,10 @@ end
 
 mouse_poll = {false,false,false,false,false}
 mouse_xy = {x=0,y=0,dx=0,dy=0}
+
+function h_text(text)
+	push_text(text)
+end
 
 function h_mouse_button(button, state)
 	
@@ -1220,6 +1241,7 @@ end
 
 client.hook_tick = h_tick_init
 client.hook_key = h_key
+client.hook_text = h_text
 client.hook_mouse_button = h_mouse_button
 client.hook_mouse_motion = h_mouse_motion
 client.hook_window_activate = h_window_activate

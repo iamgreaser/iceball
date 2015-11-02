@@ -197,6 +197,17 @@ if client then
 		sb_ctl.gfx_api_prerender()
 	end
 
+	function client.hook_text(...)
+		if not sb_list[sb_ctl.gfx_select] then return end
+		local f = sb_list[sb_ctl.gfx_select].client.hook_text
+		if f then
+			sb_ctl.gfx_api_push(sb_ctl.gfx_select)
+			f(...)
+			sb_ctl.gfx_api_pop()
+		end
+		sb_ctl.gfx_api_prerender()
+	end
+
 	function client.hook_mouse_button(...)
 		if not sb_list[sb_ctl.gfx_select] then return end
 		local f = sb_list[sb_ctl.gfx_select].client.hook_mouse_button
