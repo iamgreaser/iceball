@@ -137,6 +137,7 @@ function fastload_analyse_client()
 	state.e.pcall = pcall
 	state.e.pairs = pairs
 	state.e.ipairs = ipairs
+	state.e.unpack = unpack
 	
 	-- Tell it there's a sandbox
 	state.e.sandbox = {}
