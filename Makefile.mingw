@@ -14,7 +14,7 @@
 CFLAGS = -O2 -fno-strict-aliasing -g -Wall -Wextra \
 	-Wno-unused-variable -Wno-unused-parameter \
 	-Wno-unused-but-set-variable \
-	-Iwinlibs -Iwinlibs/SDL \
+	-Iwinlibs -Iwinlibs/SDL2 \
 	-DGL_BGRA=0x80E1 \
 	$(CFLAGS_EXTRA) \
 	-I $(INCDIR)

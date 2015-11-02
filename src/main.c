@@ -120,8 +120,6 @@ int video_init(void)
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
 	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-	if(!gl_vsync)
-		SDL_GL_SetSwapInterval(1);
 
 	if (screen_antialiasing_level > 0)
 	{
@@ -145,6 +143,11 @@ int video_init(void)
 		return error_sdl("SDL_GL_CreateContext");
 
 	SDL_GL_MakeCurrent(window, gl_context);
+
+	if(gl_vsync)
+		SDL_GL_SetSwapInterval(1);
+	else
+		SDL_GL_SetSwapInterval(0);
 
 	//screen = SDL_GetWindowSurface(window);
 
@@ -453,7 +456,17 @@ static int ib_client_mouse_press_hook(SDL_Event ev) {
 	return 0;
 }
 
-static int ib_client_mouse_motion_hook(SDL_Event ev) {
+static int ib_client_mouse_motion_hook(SDL_Event ev)
+{
+#ifdef WIN32
+	// THANKS FUCKDOWS
+	// TODO: make fuckdows behave
+	//printf("%i %i %i %i\n", ev.motion.xrel, ev.motion.yrel, ev.motion.x, ev.motion.y);
+	if(ev.motion.xrel < -screen_width/4) return 0;
+	if(ev.motion.xrel >  screen_width/4) return 0;
+	if(ev.motion.yrel < -screen_height/4) return 0;
+	if(ev.motion.yrel >  screen_height/4) return 0;
+#endif
 	lua_getglobal(lstate_client, "client");
 	lua_getfield(lstate_client, -1, "hook_mouse_motion");
 	lua_remove(lstate_client, -2);
