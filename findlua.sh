@@ -16,4 +16,3 @@ else
 	echo Lua 5.1 not found - tweak findlua.sh to suit your liking. 1>&2
 	echo Note, Iceball does not support Lua 5.2. 1>&2
 fi
-

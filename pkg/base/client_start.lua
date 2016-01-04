@@ -45,6 +45,9 @@ end
 -- yeah this really should happen ASAP so we can boot people who suck
 dofile("pkg/base/lib_util.lua")
 
+-- Get the clientside VM up
+dofile("pkg/base/lib_cside.lua")
+
 --dofile("pkg/base/serpent.lua") -- serpent.block is a great debugging aid
 
 local loose, user_toggles, user_settings = parse_commandline_options({...})
@@ -406,11 +409,14 @@ texa_overview_hmap = {}
 -- load/make models
 mdl_test = model_load({pmf={bdir=DIR_PKG_PMF, name="test.pmf"}},{"pmf"})
 mdl_cube = model_load({pmf={bdir=DIR_PKG_PMF, name="cube.pmf"}},{"pmf"})
-mdl_block = model_load({pmf={bdir=DIR_PKG_PMF, name="block.pmf"}},{"pmf"})
 mdl_piano = model_load({pmf={bdir=DIR_PKG_PMF, name="piano.pmf"}},{"pmf"})
 mdl_marker = model_load({pmf={bdir=DIR_PKG_PMF, name="marker.pmf"}},{"pmf"})
 mdl_tracer = model_load({pmf={bdir=DIR_PKG_PMF, name="tracer.pmf"}},{"pmf"})
 
+mdl_block = model_load({
+	kv6={bdir=DIR_PKG_KV6, name="block.kv6", scale=1.0/22.0},
+	pmf={bdir=DIR_PKG_PMF, name="block.pmf"},
+},{"kv6","pmf"})
 mdl_spade = model_load({
 	kv6={bdir=DIR_PKG_KV6, name="spade.kv6", scale=1.0/24.0},
 	pmf={bdir=DIR_PKG_PMF, name="spade.pmf"},
@@ -525,6 +531,9 @@ function h_tick_main(sec_current, sec_delta)
 		-- WHY THE FUCK IS SEC_DELTA <= 0?!?
 		sec_delta = 0.000001
 	end
+	if _CSIDE_G.hooks and _CSIDE_G.hooks.tick_pre then
+		_CSIDE_G.hooks.tick_pre(sec_current, sec_delta)
+	end
 	render_sec_current = sec_current
 	if bone_ctr_reset then
 		bone_ctr_reset()
@@ -606,10 +615,7 @@ function h_tick_main(sec_current, sec_delta)
 		for i=1,#miscents do
 			miscents[i].tick(moment, tickrate)
 		end
-		local derp = client_tick_accum
 		client_tick_accum = client_tick_accum - tickrate
-		local herp = derp - client_tick_accum
-		local boop = client_tick_accum - client_tick_accum
 	end
 	
 	if players.current and players[players.current] then
@@ -649,6 +655,9 @@ function h_tick_main(sec_current, sec_delta)
 	
 	-- wait a bit
 	local d = math.max(0.00001, frame_delay_ctr - delta_last)
+	if _CSIDE_G.hooks and _CSIDE_G.hooks.tick_post then
+		_CSIDE_G.hooks.tick_post(sec_current, sec_delta)
+	end
 	return d
 end
 
@@ -704,9 +713,11 @@ end
 stored_pointer = {x=screen_width/4, y=screen_height*3/4} -- default to around the lower-left, where the text box is
 
 function enter_typing_state()
+	in_typing_state = true
 	chat_text.scrollback = true
 	chat_text.cam.start = math.max(1, #chat_text.list - chat_text.cam.height)
 	mouse_released = true
+	if client.text_input_start then client.text_input_start() end
 	client.mouse_lock_set(false)
 	client.mouse_visible_set(true)
 	if client.mouse_warp ~= nil then
@@ -715,10 +726,12 @@ function enter_typing_state()
 end
 
 function discard_typing_state(widget)
+	in_typing_state = false
 	gui_focus = nil
 	if widget.clear_keyrepeat then widget.clear_keyrepeat() end
 	chat_text.scrollback = false
 	mouse_released = false
+	if client.text_input_stop then client.text_input_stop() end
 	client.mouse_lock_set(true)
 	client.mouse_visible_set(false)
 	if client.mouse_warp ~= nil then
@@ -732,10 +745,19 @@ end
 function h_key(sym, state, modif, uni)
 	local key = sym
 
-
 	-- grab screenshot
 	if state and key == BTSK_SCREENSHOT then
 		do_screenshot = true
+	end
+
+	-- SDL1.2 backwards compat
+	if in_typing_state and state and uni and not client.text_input_start then
+		-- not worth supporting UTF-8 in the SDL1.2 clients
+		-- we're about to chuck it out
+		if uni >= 32 and uni < 127 then
+			local uni_c = string.char(uni)
+			push_text(uni_c)
+		end
 	end
 
 	push_keypress(key, state, modif, sym, uni)
@@ -788,6 +810,10 @@ function h_key(sym, state, modif, uni)
 	end
 end
 
+function push_text(text)
+	table.insert(input_events, {GE_TEXT, text})
+end
+
 local function push_mouse_button(button, state)
 	table.insert(input_events, {GE_MOUSE_BUTTON, {button=button,down=state}})
 end
@@ -818,6 +844,10 @@ end
 
 mouse_poll = {false,false,false,false,false}
 mouse_xy = {x=0,y=0,dx=0,dy=0}
+
+function h_text(text)
+	push_text(text)
+end
 
 function h_mouse_button(button, state)
 	
@@ -1211,6 +1241,7 @@ end
 
 client.hook_tick = h_tick_init
 client.hook_key = h_key
+client.hook_text = h_text
 client.hook_mouse_button = h_mouse_button
 client.hook_mouse_motion = h_mouse_motion
 client.hook_window_activate = h_window_activate
@@ -1223,7 +1254,7 @@ function client.hook_kick(reason)
 		return 0.01
 	end
 	function client.hook_key(sym, state, modif, uni)
-		if state and key == BTSK_QUIT then
+		if state and sym == BTSK_QUIT then
 			client.hook_tick = nil
 		end
 	end

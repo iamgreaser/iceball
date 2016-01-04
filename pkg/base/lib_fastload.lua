@@ -66,6 +66,7 @@ function fastload_analyse_client()
 			common = {
 				version = copytab(common.version)
 			},
+			coroutine = {},
 			math = {},
 			string = {},
 			table = {},
@@ -102,6 +103,7 @@ function fastload_analyse_client()
 	}) do state.e[v] = function(...) end end
 
 	-- Function tables we need to copy
+	for k,v in pairs(coroutine) do state.e.coroutine[k] = v end
 	for k,v in pairs(math) do state.e.math[k] = v end
 	for k,v in pairs(string) do state.e.string[k] = v end
 	for k,v in pairs(table) do state.e.table[k] = v end
@@ -135,6 +137,7 @@ function fastload_analyse_client()
 	state.e.pcall = pcall
 	state.e.pairs = pairs
 	state.e.ipairs = ipairs
+	state.e.unpack = unpack
 	
 	-- Tell it there's a sandbox
 	state.e.sandbox = {}

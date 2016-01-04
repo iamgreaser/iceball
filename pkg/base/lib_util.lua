@@ -301,17 +301,22 @@ GE_SHARED_ALARM = 2
 -- callback passes in {key(int), state(bool), modif(int bitmask)}
 GE_KEY = 3
 
+-- TEXT:
+-- User submitted text to the OS by pressing key(s).
+-- callback passes in {text(string)}
+GE_TEXT = 4
+
 -- BUTTON:
 -- User pressed or released a mapped button.
 -- callback passes in {key(int), button{name(string), desc(string)}, state(bool), modif(int bitmask)}
-GE_BUTTON = 4
+GE_BUTTON = 5
 
 -- MOUSE:
 -- Mouse movement: x, y, dx, dy.
 -- callback passes in {x(number), y(number), dx(number), dy(number)}
-GE_MOUSE = 5
+GE_MOUSE = 6
 
 -- MOUSE_BUTTON:
 -- Mouse button is pressed or released.
 -- callback passes in {button(int), down(bool)}
-GE_MOUSE_BUTTON = 6
+GE_MOUSE_BUTTON = 7

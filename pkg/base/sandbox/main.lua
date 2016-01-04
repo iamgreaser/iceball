@@ -72,6 +72,7 @@ function sandbox.new(name, fname, ...)
 	sb_aux[name].tick_enabled = true
 
 	-- Copy some builtins
+	SG.coroutine = coroutine
 	SG.string = string
 	SG.math = math
 	SG.table = table
@@ -79,7 +80,6 @@ function sandbox.new(name, fname, ...)
 	SG.assert = assert
 	SG.collectgarbage = collectgarbage
 	SG.error = error
-	SG.getfenv = getfenv
 	SG.getmetatable = getmetatable
 	SG.ipairs = ipairs
 	SG.next = next
@@ -119,6 +119,16 @@ function sandbox.new(name, fname, ...)
 	sb_wrap_fetch(sb_list, sb_aux, sb_ctl, name)
 	sb_wrap_audio(sb_list, sb_aux, sb_ctl, name)
 	sb_wrap_gfx(sb_list, sb_aux, sb_ctl, name)
+
+	function SG.getfenv(f)
+		local ret = getfenv(f)
+
+		if ret == _G then
+			ret = SG
+		end
+
+		return ret
+	end
 
 	function SG.sandbox.this()
 		return name
@@ -179,6 +189,17 @@ if client then
 	function client.hook_key(...)
 		if not sb_list[sb_ctl.gfx_select] then return end
 		local f = sb_list[sb_ctl.gfx_select].client.hook_key
+		if f then
+			sb_ctl.gfx_api_push(sb_ctl.gfx_select)
+			f(...)
+			sb_ctl.gfx_api_pop()
+		end
+		sb_ctl.gfx_api_prerender()
+	end
+
+	function client.hook_text(...)
+		if not sb_list[sb_ctl.gfx_select] then return end
+		local f = sb_list[sb_ctl.gfx_select].client.hook_text
 		if f then
 			sb_ctl.gfx_api_push(sb_ctl.gfx_select)
 			f(...)

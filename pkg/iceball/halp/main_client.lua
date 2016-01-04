@@ -15,7 +15,7 @@
     along with Ice Lua Components.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
-dofile("pkg/iceball/halp/lib_sdlkey.lua")
+dofile("pkg/base/lib_sdlkey.lua")
 
 function string.split(s, sep, plain)
 	local start = 1

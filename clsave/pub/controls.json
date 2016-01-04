@@ -1,18 +1,18 @@
 {
 	"__COMMENT_000": "
-		
+
 		This is the sort of place you set up your controls.
 		It can be read by all mods, but not writeable by any.
-		
+
 		By the way, don't store anything important in this comment.
 		It is possible that a hacked server might be able to read it.
-		
+
 		READ THIS FILE: docs/setup_json.txt
 		READ THIS URL: http://wiki.libsdl.org/moin.cgi/SDLKeycodeLookup
-		
+
 		For more info on the syntax itself, see http://json.org/
 	",
-	
+
 	"forward": 119,
 	"back": 115,
 	"left": 97,

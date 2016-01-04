@@ -20,9 +20,9 @@
 -- Thanks. --GM
 
 VERSION_ENGINE = {
-	cmp={0,2,1,0,28},
-	num=8421376+28,
-	str="0.2.1-28",
+	cmp={0,2,1,0,34},
+	num=8421376+34,
+	str="0.2.1-34",
 }
 
 --error(""..common.version.num)
@@ -167,5 +167,13 @@ VERSION_BUGS = {
 {intro=nil, fix=8421376+26, msg="IMA ADPCM samples not supported"},
 {intro=nil, fix=8421376+27, msg=".it module music plays at wrong frequency when mixing freq not 44100Hz"},
 {intro=nil, fix=8421376+28, msg="Potential infinite loop due to zero time delta"},
+{intro=nil, fix=8421376+29, msg="B-format audio system not supported"},
+{intro=8421376+29, fix=nil, msg="B-format audio system incomplete"},
+{intro=nil, fix=8421376+30, msg="net_pack/unpack_array not supported"},
+{intro=nil, fix=8421376+30, msg="string mode bugged in net_unpack"},
+{intro=nil, fix=nil, msg="string mode bugged in net_pack, net_*_array"},
+{intro=8421376+4, fix=8421376+31, msg="Possible crash when loading VXL maps"},
+{intro=nil, fix=8421376+32, msg="Possible crash when loading invalid maps"},
+{intro=8421376+32, fix=8421376+33, msg="VXL height autodetection fails on ylen assertion"},
 }
 

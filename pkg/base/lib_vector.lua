@@ -75,7 +75,7 @@ function trace_gap(x,y,z)
 	xlen,ylen,zlen = common.map_get_dims()
 
 	local l = common.map_pillar_get(math.floor(x), math.floor(z))
-	i = 1
+	local i = 1
 	local h1,h2
 	h1 = nil
 	while true do

@@ -77,6 +77,8 @@ function new_player(settings)
 	this.zooming = false
 	this.inwater = false
 	this.mode = settings.mode or PLM_NORMAL
+	this.spectateindex = 0
+	this.spectateplr = this
 
 	function teamfilt(tr, tg, tb)
 		return (function (r,g,b)
@@ -178,6 +180,8 @@ function new_player(settings)
 
 		this.grounded = false
 		this.crouching = false
+		this.spectateindex = 0
+		this.spectateplr = this
 
 		this.arm_rest_right = 0.0
 		this.arm_rest_left = 1.0
@@ -830,7 +834,8 @@ function new_player(settings)
 			this.vz = this.vz * alt_a
 
 			if this.mode == PLM_NORMAL then
-				this.vy = (this.vy + 2.0*MODE_GRAVITY*sec_delta) * alt_a
+				--this.vy = (this.vy + 2.0*MODE_GRAVITY*sec_delta) * alt_a
+				this.vy = (this.vy + 2.0*MODE_GRAVITY*sec_delta)
 			else
 				this.vy = (this.vy + mvy*mmul) * alt_a
 			end
@@ -1131,6 +1136,15 @@ function new_player(settings)
 		local tx1,ty1,tz1
 		ox, oy, oz = this.x, this.y, this.z
 		nx, ny, nz = this.x + this.vx*sec_delta, this.y + this.vy*sec_delta, this.z + this.vz*sec_delta
+		if this.mode == PLM_NORMAL then
+			-- mostly correct gravity
+			-- FIXME: physics is still a bit of a hack
+			-- FIXME: need to incorporate air friction properly
+			local alt_a = math.exp(-sec_delta*mvchange*MODE_PSPEED_CONV_BRAKES)
+			local accel_grav = 2.0*MODE_GRAVITY
+			ny = ny + accel_grav/2.0*sec_delta*sec_delta
+		end
+
 		local wasgrounded = this.grounded
 		tx1, ty1, tz1 = this.calc_motion_trace(sec_current, sec_delta, ox, oy, oz, nx, ny, nz)
 		this.x, this.y, this.z = tx1, ty1, tz1
@@ -1204,7 +1218,11 @@ function new_player(settings)
 				this.crosshairhit.y = this.crosshair.y
 			end
 		else
-			client.camera_move_to(this.dead_x, this.dead_y, this.dead_z)
+			if this.spectateplr.alive then
+				client.camera_move_to(this.spectateplr.x , this.spectateplr.y , this.spectateplr.z)
+			else
+				client.camera_move_to(this.spectateplr.dead_x , this.spectateplr.dead_y , this.spectateplr.dead_z)
+			end
 		end
 
 		local angy, angx
@@ -1258,8 +1276,13 @@ function new_player(settings)
 			-- move camera back as far as it can sanely go
 			local dc = 10
 			local df = 0.101
-			local dt = trace_map_ray_dist(this.dead_x , this.dead_y , this.dead_z ,
-				-fwx, -fwy, -fwz, dc, true)
+			if this.spectateplr.alive then
+				local dt = trace_map_ray_dist(this.spectateplr.x , this.spectateplr.y , this.spectateplr.z ,
+					-fwx, -fwy, -fwz, dc, true)
+			else
+				local dt = trace_map_ray_dist(this.spectateplr.dead_x , this.spectateplr.dead_y , this.spectateplr.dead_z ,
+					-fwx, -fwy, -fwz, dc, true)
+			end
 			dt = dt or dc
 
 			local offs = dt - df
@@ -2067,8 +2090,35 @@ function new_player(settings)
 		if this.mode == PLM_SPECTATE then
 			return
 		end
+
 		if this.alive then
 			this.tools[this.tool+1].click(button, state)
+		elseif not state and (button == 1 or button == 3) and MODE_SPECTATE then
+			local teamplayers = {}
+			for i, v in ipairs(team_players(this.team)) do
+				if v ~= this then
+					table.insert(teamplayers, v)
+				end
+			end
+
+			if button == 1 then
+				this.spectateindex = this.spectateindex + 1
+				if this.spectateindex > #teamplayers then
+					this.spectateindex = 0
+				end
+			elseif button == 3 then
+				this.spectateindex = this.spectateindex - 1
+				if this.spectateindex < 0 then
+					this.spectateindex = #teamplayers
+				end
+			end
+
+			if this.spectateindex == 0 then
+				this.spectateplr = this
+			else
+				this.spectateplr = teamplayers[this.spectateindex]
+			end
+
 		end
 		if button == 1 then
 			-- LMB
@@ -2219,7 +2269,8 @@ function new_player(settings)
 		for i=1,players.max do
 			local plr = players[i]
 			if plr and plr ~= this then
-				if client.gfx_stencil_test and plr.team == this.team then
+				-- FIXME PORTAL GUN IS FUCKED WHEN THIS IS ENABLED
+				if false and client.gfx_stencil_test and plr.team == this.team then
 					client.gfx_stencil_test(true)
 
 					-- PASS 1: set to 1 for enlarged model
@@ -2232,7 +2283,7 @@ function new_player(settings)
 						scale = scale * 1.4
 						return s_va_render_global(va, px, py, pz, ry, rx, ry2, scale, ...)
 					end
-					plr.render()
+					plr.render("stencil")
 					client.va_render_global = s_va_render_global
 					client.gfx_depth_mask(true)
 

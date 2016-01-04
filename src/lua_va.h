@@ -95,7 +95,7 @@ int icelua_fn_client_va_render_global(lua_State *L)
 #ifdef DEDI
 	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
 #else
-	render_vertex_array((uint32_t*)screen->pixels, screen->w, screen->h, screen->pitch/4, &tcam,
+	render_vertex_array((uint32_t*)NULL, screen_width, screen_height, 0/4, &tcam,
 		va, 0, px, py, pz, ry, rx, ry2, scale, img, (bmode != NULL), sfactor, dfactor, alpha,
 		img_count);
 #endif
@@ -165,7 +165,7 @@ int icelua_fn_client_va_render_local(lua_State *L)
 #ifdef DEDI
 	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
 #else
-	render_vertex_array((uint32_t*)screen->pixels, screen->w, screen->h, screen->pitch/4, &tcam,
+	render_vertex_array((uint32_t*)NULL, screen_width, screen_height, 0/4, &tcam,
 		va, 1, px, py, pz, ry, rx, ry2, scale, img, (bmode != NULL), sfactor, dfactor, alpha,
 		img_count);
 #endif

@@ -17,7 +17,7 @@ cp osx-package-files/Info.plist Iceball.app/Contents
 sed -e "s/@long_version@/${VERSION}/" -e "s/@short_version@/${VERSION_SHORT}/" < osx-package-files/Info.plist > Iceball.app/Contents/Info.plist
 mv osx-package-files/Iceball.icns Iceball.app/Contents/Resources
 cp -Rv clsave dlcache docs pkg svsave tools Iceball.app/Contents/MacOS/
-dylibbundler -x Iceball.app/Contents/MacOS/iceball-gl -b -d Iceball.app/Contents/libs
+dylibbundler -x Iceball.app/Contents/MacOS/iceball -b -d Iceball.app/Contents/libs
 chmod -R 755 Iceball.app/Contents/MacOS/*
 chmod -R 755 Iceball.app/Contents/libs/*
 
