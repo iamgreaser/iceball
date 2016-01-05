@@ -15,7 +15,9 @@
     along with Iceball.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifndef _MSC_VER
 #include <unistd.h> //fixes some warning, some POSIX shit ~Dany0
+#endif
 
 int whitelist_validate(const char *name, int port);
 

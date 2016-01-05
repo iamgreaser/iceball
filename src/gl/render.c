@@ -1730,7 +1730,7 @@ void render_vertex_array(uint32_t *pixels, int width, int height, int pitch, cam
 		{
 			glClientActiveTexture(GL_TEXTURE0 + i);
 			glActiveTexture(GL_TEXTURE0 + i);
-			glTexCoordPointer(va->texcoord_size[i%va->texcoord_count], GL_FLOAT, sizeof(float)*va->stride, ((void *)0+sizeof(float)*va->texcoord_offs[i%va->texcoord_count]));
+			glTexCoordPointer(va->texcoord_size[i%va->texcoord_count], GL_FLOAT, sizeof(float)*va->stride, (void *)(sizeof(float)*va->texcoord_offs[i%va->texcoord_count]));
 		}
 
 		if(gl_shaders)

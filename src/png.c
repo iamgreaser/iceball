@@ -17,10 +17,12 @@
 
 #include "common.h"
 
+#pragma pack(push, 1)
 typedef struct pngheader {
 	uint32_t width, height;
 	uint8_t bpc, ctyp, cmpr, filt, inter;
-} __attribute__((__packed__)) pngheader_t;
+} pngheader_t;
+#pragma pack(pop)
 
 #ifndef DEDI
 void expandtex_gl(int *iw, int *ih);
@@ -524,8 +526,14 @@ void img_write_png(const char *fname, img_t *img)
 	size_t img_size = row_size * img->head.height;
 	size_t img_uncomp_len = (row_size - (gap-1)) * img->head.height;
 	uint8_t *img_uncomp = malloc(img_uncomp_len);
+#ifdef _MSC_VER
+	// TODO: broken?
+	uint8_t **rowP = alloca(row_size * 1);
+	uint8_t **rowC = alloca(row_size * 5);
+#else
 	uint8_t rowP[1][row_size];
 	uint8_t rowC[5][row_size];
+#endif
 	uint8_t *src_pixels = (uint8_t *)(img->pixels);
 	int rowsel = 0;
 

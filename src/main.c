@@ -112,14 +112,61 @@ int platform_init(void)
 	return 0;
 }
 
+static const char* get_gl_debug_type_name(GLenum type)
+{
+	switch (type) {
+	case GL_DEBUG_TYPE_ERROR:
+		return "ERROR";
+	case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+		return "DEPRECATED_BEHAVIOR";
+	case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+		return "UNDEFINED_BEHAVIOR";
+	case GL_DEBUG_TYPE_PORTABILITY:
+		return "PORTABILITY";
+	case GL_DEBUG_TYPE_PERFORMANCE:
+		return "PERFORMANCE";
+	case GL_DEBUG_TYPE_OTHER:
+		return "OTHER";
+	default:
+		return "<UNKNOWN>";
+	}
+}
+
+static const char* get_gl_debug_severity_name(GLenum severity)
+{
+	switch (severity) {
+	case GL_DEBUG_SEVERITY_LOW:
+		return "LOW";
+	case GL_DEBUG_SEVERITY_MEDIUM:
+		return "MEDIUM";
+	case GL_DEBUG_SEVERITY_HIGH:
+		return "HIGH";
+	default:
+		return "<UNKNOWN>";
+	}
+}
+
+void APIENTRY opengl_cb_fun(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, void* userParam)
+{
+	printf("---------------------opengl-callback-start------------\n");
+	printf("message: %s\n", message);
+	printf("type: %s\n", get_gl_debug_type_name(type));
+	printf("id: %d\n", id);
+	printf("severity: %s\n", get_gl_debug_severity_name(severity));
+	printf("---------------------opengl-callback-end--------------\n");
+}
+
 int video_init(void)
 {
 	SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-
 	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+
+#ifndef NDEBUG
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
+#endif
 
 	if (screen_antialiasing_level > 0)
 	{
@@ -128,10 +175,10 @@ int video_init(void)
 	}
 
 	window = SDL_CreateWindow("iceball",
-							  SDL_WINDOWPOS_UNDEFINED,
-							  SDL_WINDOWPOS_UNDEFINED,
-							  screen_width,
-							  screen_height, SDL_WINDOW_OPENGL | (screen_fullscreen ? SDL_WINDOW_FULLSCREEN : 0));
+		  SDL_WINDOWPOS_UNDEFINED,
+		  SDL_WINDOWPOS_UNDEFINED,
+		  screen_width,
+		  screen_height, SDL_WINDOW_OPENGL | (screen_fullscreen ? SDL_WINDOW_FULLSCREEN : 0));
 	if(window == NULL)
 		return error_sdl("SDL_CreateWindow");
 
@@ -154,6 +201,7 @@ int video_init(void)
 	//if(screen == NULL)
 	//	return error_sdl("SDL_GetWindowSurface");
 
+	glewExperimental = 1;
 	GLenum err_glew = glewInit();
 	if(err_glew != GLEW_OK)
 	{
@@ -168,6 +216,25 @@ int video_init(void)
 	}
 
 	glGetIntegerv(GL_MAX_TEXTURE_UNITS_ARB, &gl_max_texunits);
+
+#ifndef NDEBUG
+	if (glDebugMessageCallbackARB != NULL) {
+		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+		glDebugMessageCallback(opengl_cb_fun, NULL);
+		GLuint unusedIds = 0;
+		glDebugMessageControl(GL_DONT_CARE,
+			GL_DONT_CARE,
+			GL_DONT_CARE,
+			0,
+			&unusedIds,
+			1);
+
+		fprintf(stdout, "Registered ARB_debug_output callback\n");
+	}
+	else {
+		fprintf(stderr, "WARNING: Could not register ARB_debug_output callback\n");
+	}
+#endif
 
 	return 0;
 }
@@ -862,6 +929,7 @@ int main_dbghelper(int argc, char *argv[])
 	main_argv0 = argv[0];
 	main_oldcwd = NULL;
 
+/*
 #ifdef WIN32
 	// necessary for the server list to work, apparently
 	{
@@ -888,6 +956,7 @@ int main_dbghelper(int argc, char *argv[])
 		}
 	}
 #endif
+*/
 
 #ifdef DEDI
 	if(argc <= 1)

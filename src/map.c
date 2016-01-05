@@ -16,6 +16,9 @@
 */
 
 #include "common.h"
+
+#define PILLAR_SIZE 1028 // (256 + 1) * 4
+
 int map_parse_root(map_t *map, const char *dend, const char *data, int xlen, int ylen, int zlen, int wipe_lighting)
 {
 	// TODO: refactor a bit
@@ -41,7 +44,6 @@ int map_parse_root(map_t *map, const char *dend, const char *data, int xlen, int
 		return 0;
 	}
 
-	const int PILLAR_SIZE = (256+1)*4;
 	uint8_t pillar_temp[PILLAR_SIZE];
 	int i,x,z,pi;
 

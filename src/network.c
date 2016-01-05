@@ -19,18 +19,6 @@
 
 #ifdef WIN32
 WSADATA wsaStartup;
-#define close(x)	closesocket(x)
-#if _MSC_VER
-int bind( SOCKET s, void* name, int namelen )
-{
-	return bind( s, (const sockaddr*)name, namelen );
-}
-int setsockopt( SOCKET s, int level, int optname,  void* optval, int optlen )
-{
-	return setsockopt( s, level, optname, (const char*)optval, optlen );
-}
-
-#endif
 #endif
 
 int server_sockfd_ipv4 = SOCKFD_NONE;

@@ -432,9 +432,13 @@ void render_blit_img_toimg(uint32_t *pixels, int width, int height, int pitch,
 				__m128i xmm_src1_alpha0 = _mm_unpackhi_epi16(xmm_src1_alpha,xmm_src1_alpha);
 				__m128i xmm_src1_alpha1 = _mm_unpacklo_epi16(xmm_src1_alpha,xmm_src1_alpha);
 				
+#ifdef _MSC_VER
+				xmm_src0_alpha = _mm_castps_si128(_mm_shuffle_ps(_mm_castsi128_ps(xmm_src0_alpha1),_mm_castsi128_ps(xmm_src0_alpha0),0xFF));
+				xmm_src1_alpha = _mm_castps_si128(_mm_shuffle_ps(_mm_castsi128_ps(xmm_src1_alpha1),_mm_castsi128_ps(xmm_src1_alpha0),0xFF));
+#else
 				xmm_src0_alpha = (__m128i)_mm_shuffle_ps((__m128)xmm_src0_alpha1,(__m128)xmm_src0_alpha0,0xFF);
 				xmm_src1_alpha = (__m128i)_mm_shuffle_ps((__m128)xmm_src1_alpha1,(__m128)xmm_src1_alpha0,0xFF);
-				
+#endif				
 				
 				// Found some instructions which should speed this up.
 				// NOTE: actually runs at the same damn speed... maybe even worse.
