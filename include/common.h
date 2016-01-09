@@ -121,7 +121,9 @@ extern "C" {
 #undef stderr
 #endif
 #define stderr stdout
+#ifdef _MSC_VER
 #define close(x) closesocket(x)
+#endif
 #endif
 
 #ifndef DEDI
