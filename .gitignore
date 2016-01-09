@@ -12,6 +12,7 @@
 
 # windows build crap
 winlibs/
+dist/
 *.dll
 
 # windows crap i mean why the hell does it do this crap

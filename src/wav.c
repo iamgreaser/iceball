@@ -25,12 +25,14 @@ sackit_playback_t *icesackit_pb = NULL;
 float icesackit_vol = 1.0f;
 float icesackit_mvol = 1.0f;
 
+#pragma pack(push, 1)
 typedef struct wavfmt {
 	uint16_t codec, chns;
 	uint32_t freq;
 	uint32_t bytes_sec;
 	uint16_t blkalign, bps;
-} __attribute__((__packed__)) wavfmt_t;
+} wavfmt_t;
+#pragma pack(pop)
 
 // These 2 tables are from here: http://wiki.multimedia.cx/index.php?title=IMA_ADPCM
 int ima_index_table[16] = {

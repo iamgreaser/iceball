@@ -44,6 +44,23 @@
 
 //define RENDER_FACE_COUNT 2
 
+#ifdef WIN32
+//#define close(x) closesocket(x)
+
+// TODO: remove?
+#if _MSC_VER_
+int bind(SOCKET s, void* name, int namelen)
+{
+	return bind(s, (const sockaddr*)name, namelen);
+}
+int setsockopt(SOCKET s, int level, int optname, void* optval, int optlen)
+{
+	return setsockopt(s, level, optname, (const char*)optval, optlen);
+}
+
+#endif
+#endif
+
 #ifndef _MSC_VER
 #define PACK_START
 #define PACK_END
@@ -58,7 +75,6 @@
 #endif
 #include <stdint.h>
 #else
-#define __attribute__(x)
 #define PACK_START __pragma( pack(push, 1) )
 #define PACK_END __pragma( pack(pop) )
 typedef signed __int8		int8_t;
@@ -69,10 +85,22 @@ typedef signed __int32		int32_t;
 typedef unsigned __int32	uint32_t;
 typedef signed __int64		int64_t;
 typedef unsigned __int64	uint64_t;
+#if (_MSC_VER != 1900)
 #define snprintf	sprintf_s
+#endif
 #define _USE_MATH_DEFINES	//M_PI and whatnot from math.h
 #pragma warning( disable: 4200 4244 4996)
 #endif
+
+#if defined(_MSC_VER)
+#define ALIGNED_(x) __declspec(align(x))
+#else
+#if defined(__GNUC__)
+#define ALIGNED_(x) __attribute__ ((aligned(x)))
+#endif
+#endif
+
+#define ALIGNED_TYPE_(t,x) typedef t ALIGNED_(x)
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -183,28 +211,24 @@ enum
 #define SCREEN_BSWAP_32_ENDIAN
 #endif
 
-#ifdef __SSE__
-__attribute__((aligned(16)))
-#endif
-PACK_START
-typedef union vec4f
+#pragma pack(push, 1)
+ALIGNED_TYPE_(union, 16) vec4f
 {
-	struct { float x,y,z,w; } __attribute__((__packed__)) p;
+	struct { float x,y,z,w; } p;
 	float a[4];
-#ifdef __SSE__
+#if defined(__SSE__) && !defined(_MSC_VER)
 	float __attribute__ ((vector_size (16))) m;
 #endif
-} __attribute__((__packed__)) vec4f_t;
+} vec4f_t;
+#pragma pack(pop)
 
-#ifdef __SSE__
-__attribute__((aligned(16)))
-#endif
-typedef struct matrix
+#pragma pack(push, 1)
+ALIGNED_TYPE_(struct, 16) matrix
 {
 	//column-major!
 	vec4f_t c[4];
-} __attribute__((__packed__)) matrix_t;
-PACK_END
+} matrix_t;
+#pragma pack(pop)
 
 typedef struct camera
 {
@@ -215,14 +239,14 @@ typedef struct camera
 	float mpx,mpy,mpz,mppad;
 } camera_t;
 
-PACK_START
+#pragma pack(push, 1)
 typedef struct model_point
 {
 	uint16_t radius;
 	int16_t x,y,z;
 	uint8_t b,g,r,resv1;
-} __attribute__((__packed__)) model_point_t;
-PACK_END
+} model_point_t;
+#pragma pack(pop)
 
 typedef struct model model_t;
 typedef struct model_bone
@@ -293,8 +317,8 @@ typedef struct fbo
 } fbo_t;
 
 
-PACK_START
 // source: http://paulbourke.net/dataformats/tga/
+#pragma pack(push, 1)
 typedef struct img_tgahead
 {
 	uint8_t idlen;
@@ -309,8 +333,8 @@ typedef struct img_tgahead
 	uint16_t height;
 	uint8_t bpp;
 	uint8_t flags;
-} __attribute__((__packed__)) img_tgahead_t;
-PACK_END
+} img_tgahead_t;
+#pragma pack(pop)
 
 typedef struct img
 {
@@ -509,7 +533,7 @@ enum
 // dsp.c
 float interp_linear(float y0, float y1, float x);
 float interp_cubic(float y0, float y1, float y2, float y3, float x);
-float interp_hermite6p(float y0, float y1, float y2, float y3, 
+float interp_hermite6p(float y0, float y1, float y2, float y3,
 		float y4, float y5, float x);
 float frequency2wavelength(int rate, float frequency);
 float wavelength2frequency(int rate, float wavelength);

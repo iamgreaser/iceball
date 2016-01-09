@@ -21,7 +21,7 @@ vec4f_t mtx_apply_vec(matrix_t *mtx, vec4f_t *vec)
 {
 	int i,j;
 
-#ifndef __SSE__
+#if !defined(__SSE__) || defined(_MSC_VER)
 
 	vec4f_t ret;
 
