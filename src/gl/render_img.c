@@ -174,10 +174,9 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 		sx2, sy2, dx2, dy2, 1.0f,
 
 	};
-	if(vbo_img == 0 && GL_ARB_vertex_buffer_object && gl_use_vbo)
+	if(vbo_img == 0)
 	{
 		glGenBuffers(1, &(vbo_img));
-
 	}
 
 	if(vbo_img != 0)

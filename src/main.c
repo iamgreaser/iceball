@@ -46,7 +46,6 @@ int gl_frustum_cull = 1;
 int gl_occlusion_cull = 1;
 int gl_flip_quads = 0;
 int gl_expand_quads = 0;
-int gl_max_texunits = 1;
 int gl_shaders = 1;
 int map_enable_autorender = 1;
 int map_enable_ao = 1;
@@ -201,24 +200,24 @@ int video_init(void)
 	//if(screen == NULL)
 	//	return error_sdl("SDL_GetWindowSurface");
 
-	glewExperimental = 1;
-	GLenum err_glew = glewInit();
-	if(err_glew != GLEW_OK)
+	int err_glad = gladLoadGLLoader(SDL_GL_GetProcAddress);
+	if(!err_glad)
 	{
-		fprintf(stderr, "GLEW failed to init: %s\n", glewGetErrorString(err_glew));
+		fprintf(stderr, "Glad failed to init\n");
 		return 1;
 	}
 
-	if(!(GL_VERSION_1_3))
+	if(!GLAD_GL_VERSION_2_0)
 	{
-		fprintf(stderr, "ERROR: OpenGL 1.3 required (we sometimes use multitexturing). Get a better GPU.\n");
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
+			"Bad GPU",
+			"OpenGL 2.0 is required for Iceball to run. Install the latest drivers for your GPU if you can.",
+			NULL);
 		return 1;
 	}
-
-	glGetIntegerv(GL_MAX_TEXTURE_UNITS_ARB, &gl_max_texunits);
 
 #ifndef NDEBUG
-	if (glDebugMessageCallbackARB != NULL) {
+	if (GLAD_GL_ARB_debug_output) {
 		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 		glDebugMessageCallback(opengl_cb_fun, NULL);
 		GLuint unusedIds = 0;

@@ -668,9 +668,9 @@ void render_map_tesselate_visible_chunks(map_t *map, int camx, int camz)
 
 			//printf("ocull1 (%i,%i) %i %i %i\n", chunk->cx, chunk->cz, chunk->ytmin, chunk->ytmax, chunk->ybmax);
 
-			if(chunk->vbo == 0 && GL_ARB_vertex_buffer_object && gl_use_vbo)
+			if(chunk->vbo == 0)
 				glGenBuffers(1, &(chunk->vbo));
-			if(chunk->oq == 0 && GL_ARB_occlusion_query && gl_occlusion_cull >= 1)
+			if(chunk->oq == 0 && GLAD_GL_ARB_occlusion_query && gl_occlusion_cull >= 1)
 				glGenQueries(1, &(chunk->oq));
 
 			if(chunk->vbo != 0)
@@ -1534,7 +1534,7 @@ void render_pmf_bone(uint32_t *pixels, int width, int height, int pitch, camera_
 		
 		bone->vbo_dirty = 0;
 		
-		if(bone->vbo == 0 && GL_ARB_vertex_buffer_object && gl_use_vbo)
+		if(bone->vbo == 0)
 			glGenBuffers(1, &(bone->vbo));
 
 		if(bone->vbo != 0)
@@ -1602,7 +1602,7 @@ void render_vertex_array(uint32_t *pixels, int width, int height, int pitch, cam
 	{
 		va->vbo_dirty = 0;
 		
-		if(va->vbo == 0 && GL_ARB_vertex_buffer_object && gl_use_vbo)
+		if(va->vbo == 0)
 			glGenBuffers(1, &(va->vbo));
 
 		if(va->vbo != 0)

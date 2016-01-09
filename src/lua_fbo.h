@@ -44,7 +44,8 @@ int icelua_fn_client_gfx_fbo_available(lua_State *L)
 #else
 	// XXX: We will only cover the EXT version if someone needs it.
 	// I suspect GLEW ends up wrapping it to the ARB version anyway.
-	lua_pushboolean(L, gl_use_fbo && (GL_ARB_framebuffer_object));
+
+	lua_pushboolean(L, gl_use_fbo && (GLAD_GL_ARB_framebuffer_object));
 
 	return 1;
 #endif
@@ -62,7 +63,7 @@ int icelua_fn_client_fbo_create(lua_State *L)
 #else
 	if(!gl_use_fbo)
 		return luaL_error(L, "FBOs not enabled!");
-	if(!(GL_ARB_framebuffer_object))
+	if(!(GLAD_GL_ARB_framebuffer_object))
 		return luaL_error(L, "FBOs not supported by this GPU!");
 
 	// Generate object handles
@@ -145,7 +146,7 @@ int icelua_fn_client_fbo_use(lua_State *L)
 #else
 	if(!gl_use_fbo)
 		return luaL_error(L, "FBOs not enabled!");
-	if(!(GL_ARB_framebuffer_object))
+	if(!(GLAD_GL_ARB_framebuffer_object))
 		return luaL_error(L, "FBOs not supported by this GPU!");
 
 	if(lua_isnil(L, 1))
