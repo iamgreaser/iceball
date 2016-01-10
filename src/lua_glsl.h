@@ -39,9 +39,9 @@ int icelua_fn_client_gfx_glsl_available(lua_State *L)
 	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
 #else
 	// we could possibly be a bit more accurate with this?
-	if(gl_shaders && (GL_VERSION_2_1))
+	if(gl_shaders && GLAD_GL_VERSION_2_1)
 		lua_pushstring(L, "2.1");
-	else if(gl_shaders && (GL_VERSION_2_0))
+	else if(gl_shaders && GLAD_GL_VERSION_2_0)
 		lua_pushstring(L, "2.0");
 	else
 		lua_pushnil(L);
@@ -64,8 +64,6 @@ int icelua_fn_client_glsl_create(lua_State *L)
 
 	if(!gl_shaders)
 		return luaL_error(L, "shaders disabled in config!");
-	if(!(GL_VERSION_2_0))
-		return luaL_error(L, "shaders not supported on your GPU!");
 
 	const char *srcv = lua_tostring(L, 1);
 	const char *srcf = lua_tostring(L, 2);
@@ -175,8 +173,6 @@ int icelua_fn_client_glsl_use(lua_State *L)
 	
 	if(!gl_shaders)
 		return luaL_error(L, "shaders disabled in config!");
-	if(!(GL_VERSION_2_0))
-		return luaL_error(L, "shaders not supported on your GPU!");
 
 	if(lua_isnil(L, 1))
 	{
@@ -204,8 +200,6 @@ int icelua_fn_client_glsl_get_uniform_loc(lua_State *L)
 	
 	if(!gl_shaders)
 		return luaL_error(L, "shaders disabled in config!");
-	if(!(GL_VERSION_2_0))
-		return luaL_error(L, "shaders not supported on your GPU!");
 
 	shader_t *shader = lua_touserdata(L, 1);
 	if(shader == NULL || shader->udtype != UD_SHADER)
@@ -234,8 +228,6 @@ int icelua_fn_client_glsl_set_uniform_f(lua_State *L)
 	
 	if(!gl_shaders)
 		return luaL_error(L, "shaders disabled in config!");
-	if(!(GL_VERSION_2_0))
-		return luaL_error(L, "shaders not supported on your GPU!");
 
 	// Fail silently if nil
 	// It's nicer that way if you have several shaders that don't take all the same uniforms
@@ -279,8 +271,6 @@ int icelua_fn_client_glsl_set_uniform_i(lua_State *L)
 	
 	if(!gl_shaders)
 		return luaL_error(L, "shaders disabled in config!");
-	if(!(GL_VERSION_2_0))
-		return luaL_error(L, "shaders not supported on your GPU!");
 
 	// Fail silently if nil
 	// It's nicer that way if you have several shaders that don't take all the same uniforms
@@ -324,8 +314,6 @@ int icelua_fn_client_glsl_set_uniform_ui(lua_State *L)
 	
 	if(!gl_shaders)
 		return luaL_error(L, "shaders disabled in config!");
-	if(!(GL_VERSION_2_0))
-		return luaL_error(L, "shaders not supported on your GPU!");
 
 	// Fail silently if nil
 	// It's nicer that way if you have several shaders that don't take all the same uniforms

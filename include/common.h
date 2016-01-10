@@ -44,23 +44,6 @@
 
 //define RENDER_FACE_COUNT 2
 
-#ifdef WIN32
-//#define close(x) closesocket(x)
-
-// TODO: remove?
-#if _MSC_VER_
-int bind(SOCKET s, void* name, int namelen)
-{
-	return bind(s, (const sockaddr*)name, namelen);
-}
-int setsockopt(SOCKET s, int level, int optname, void* optval, int optlen)
-{
-	return setsockopt(s, level, optname, (const char*)optval, optlen);
-}
-
-#endif
-#endif
-
 #ifndef _MSC_VER
 #define PACK_START
 #define PACK_END
@@ -138,12 +121,14 @@ extern "C" {
 #undef stderr
 #endif
 #define stderr stdout
+#ifdef _MSC_VER
+#define close(x) closesocket(x)
 #endif
-
+#endif
 
 #ifndef DEDI
 #include <SDL.h>
-#include <GL/glew.h>
+#include <glad/glad.h>
 #endif
 
 #ifndef DEDI
@@ -579,7 +564,6 @@ extern int map_enable_autorender;
 extern int map_enable_ao;
 extern int map_enable_side_shading;
 extern int gl_expand_textures;
-extern int gl_use_vbo;
 extern int gl_use_fbo;
 extern int gl_quality;
 extern int gl_vsync;
@@ -590,7 +574,6 @@ extern int gl_chunk_size;
 extern int gl_visible_chunks;
 extern int gl_chunks_tesselated_per_frame;
 extern int gl_occlusion_cull;
-extern int gl_max_texunits;
 extern int gl_shaders;
 #endif
 extern int mk_compat_mode;

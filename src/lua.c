@@ -554,7 +554,9 @@ int icelua_init(void)
 			lua_pop(Lc, 1);
 
 			// backwards compatibility
-			lua_getfield(Lc, -1, "vbo");
+			// we ignore vbo option completely now. it is assumed the user
+			// has opengl 2.0
+			/*lua_getfield(Lc, -1, "vbo");
 			v = lua_toboolean(Lc, -1);
 			if(!lua_isnil(Lc, -1)) {
 				gl_use_vbo = v;
@@ -566,6 +568,7 @@ int icelua_init(void)
 			v = lua_toboolean(Lc, -1);
 			if(!lua_isnil(Lc, -1)) gl_use_vbo = v;
 			lua_pop(Lc, 1);
+			*/
 
 
 			lua_getfield(Lc, -1, "gl_fbo");

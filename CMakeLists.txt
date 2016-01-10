@@ -1,4 +1,3 @@
-#/CMakeLists.txt
 cmake_minimum_required (VERSION 2.8.4)
 project (iceball)
 
@@ -18,9 +17,9 @@ if (WIN32)
 endif (WIN32)
 
 if (MINGW)
-	set(CMAKE_PREFIX_PATH "dist/mingw/enet;dist/mingw/sdl2;dist/mingw/lua51;dist/mingw/sackit;dist/mingw/zlib;dist/mingw/glew" CACHE PATH "" FORCE)
+	set(CMAKE_PREFIX_PATH "dist/mingw/enet;dist/mingw/sdl2;dist/mingw/lua51;dist/mingw/sackit;dist/mingw/zlib" CACHE PATH "" FORCE)
 elseif (MSVC)
-	set(CMAKE_PREFIX_PATH "dist/msvc/enet;dist/msvc/sdl2;dist/msvc/lua51;dist/msvc/sackit;dist/msvc/zlib;dist/msvc/glew" CACHE PATH "" FORCE)
+	set(CMAKE_PREFIX_PATH "dist/msvc/enet;dist/msvc/sdl2;dist/msvc/lua51;dist/msvc/sackit;dist/msvc/zlib" CACHE PATH "" FORCE)
 endif ()
 
 find_package(ENet REQUIRED)
@@ -28,14 +27,12 @@ find_package(SDL2 REQUIRED)
 find_package(zlib REQUIRED)
 find_package(Lua REQUIRED)
 find_package(sackit REQUIRED)
-find_package(GLEW REQUIRED)
 find_package(OpenGL REQUIRED)
 
 include_directories(
 	${ENet_INCLUDE_DIRS}
 	${sackit_INCLUDE_DIRS}
 	${ZLIB_INCLUDE_DIRS}
-	${GLEW_INCLUDE_DIRS}
 	${SDL2_INCLUDE_DIR}
 	${LUA_INCLUDE_DIR}
 )
@@ -57,25 +54,17 @@ set(MAIN_FILES
 )
 
 set(GL_FILES
+	src/gl/glad.c
 	src/gl/render.c
 	src/gl/render_img.c
 )
 
 source_group(gl FILES ${GL_FILES})
-
 source_group(lua FILES ${LUA_FILES})
-
-add_custom_command(TARGET iceball POST_BUILD           # Adds a post-build event to MyTest
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake - E copy_if_different..."
-	"${LUA_LIBRARY}"      # <--this is in-file
-	$<TARGET_FILE_DIR:MyTest>)                 # <--this is out-file path
 
 # iceball target
 add_executable(iceball ${MAIN_FILES} ${LUA_FILES} ${GL_FILES})
-message("${ENet_LIBRARIES}\n${sackit_LIBRARY}\n${LUA_LIBRARIES}\n${OPENGL_LIBRARIES}\n${GLEW_LIBRARIES}\n${SDL2_LIBRARIES}")
-target_link_libraries(iceball ${ENet_LIBRARIES} ${ZLIB_LIBRARIES} ${sackit_LIBRARY} ${LUA_LIBRARIES} ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES})
-
-set_target_properties(iceball PROPERTIES COMPILE_DEFINITIONS "USE_OPENGL")
+target_link_libraries(iceball ${ENet_LIBRARIES} ${ZLIB_LIBRARIES} ${sackit_LIBRARY} ${LUA_LIBRARIES} ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES})
 
 # iceball-dedi target
 add_executable(iceball-dedi EXCLUDE_FROM_ALL ${MAIN_FILES} ${LUA_FILES})
