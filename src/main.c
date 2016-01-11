@@ -207,6 +207,7 @@ int video_init(void)
 		return 1;
 	}
 
+	printf("OpenGL %s, GLSL %s\n", glGetString(GL_VERSION), glGetString(GL_SHADING_LANGUAGE_VERSION));
 	if(!GLAD_GL_VERSION_2_0)
 	{
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
