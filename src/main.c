@@ -219,9 +219,9 @@ int video_init(void)
 #ifndef NDEBUG
 	if (GLAD_GL_ARB_debug_output) {
 		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-		glDebugMessageCallback(opengl_cb_fun, NULL);
+		glDebugMessageCallbackARB(opengl_cb_fun, NULL);
 		GLuint unusedIds = 0;
-		glDebugMessageControl(GL_DONT_CARE,
+		glDebugMessageControlARB(GL_DONT_CARE,
 			GL_DONT_CARE,
 			GL_DONT_CARE,
 			0,
