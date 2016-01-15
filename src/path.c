@@ -115,7 +115,7 @@ int path_type_client_writable(int type)
 	return type == PATH_CLSAVE_BASEDIR_VOLATILE
 		|| type == PATH_CLSAVE_VOLATILE
 		|| (type == PATH_CLSAVE_PUBLIC
-			&& (boot_mode & 3) == 3 && net_port == 0);
+			&& (boot_mode & (IB_CLIENT | IB_SERVER)) == (IB_CLIENT | IB_SERVER) && net_port == 0);
 }
 
 int path_type_server_readable(int type)

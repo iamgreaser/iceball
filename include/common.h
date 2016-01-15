@@ -29,6 +29,15 @@
 // Remember to document API changes in a new version!
 // Z can only be 0 for official releases!
 
+#define NET_HOST_SIZE 256
+#define NET_PATH_SIZE 256
+
+#define IB_CLIENT 0x1
+#define IB_SERVER 0x2
+#define IB_MAIN_LOADED 0x4
+#define IB_MAIN_LOADING 0x8
+#define IB_ENET 0x10
+
 #define MODEL_BONE_MAX  256
 #define MODEL_POINT_MAX 4096
 #define PACKET_LEN_MAX 2560
@@ -580,10 +589,11 @@ extern int mk_compat_mode;
 extern int force_redraw;
 
 extern int net_port;
-extern char *net_addr;
-extern char net_addr_xbuf[];
-extern int boot_mode;
+extern char *net_address;
+extern char *net_path;
+
 extern char *mod_basedir;
+extern int boot_mode;
 
 extern int main_argc;
 extern char **main_argv;

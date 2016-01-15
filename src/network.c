@@ -782,7 +782,7 @@ int net_eat_s2c_packet(client_t *cli, client_t *other, int neth, int len, const 
 				fprintf(stderr, "ERROR: string not zero-terminated!\n");
 			} else if(mod_basedir == NULL) {
 				mod_basedir = strdup(2+data);
-				boot_mode |= 8;
+				boot_mode |= IB_MAIN_LOADING;
 				printf("base dir = \"%s\"\n", mod_basedir);
 			} else {
 				fprintf(stderr, "ERROR: base dir already defined!\n");
@@ -1332,7 +1332,7 @@ void net_flush_snr(client_t *cli)
 	
 	if(cli == &to_client_local)
 	{
-		if(boot_mode & 2)
+		if(boot_mode & IB_SERVER)
 		{
 			// don't do anything, it's already in the buffer
 			return;
@@ -1456,7 +1456,7 @@ void net_flush(void)
 	int err;
 	ENetEvent ev;
 	
-	if(boot_mode & 2)
+	if(boot_mode & IB_SERVER)
 	{
 		net_flush_accept();
 
@@ -1540,9 +1540,9 @@ void net_flush(void)
 		net_flush_parse_c2s(&to_client_local);
 	}
 	
-	if(boot_mode & 1)
+	if(boot_mode & IB_CLIENT)
 	{
-		if(boot_mode & 16)
+		if(boot_mode & IB_ENET)
 		{
 			// parse ENet crap
 			for(;;)
@@ -1596,9 +1596,9 @@ void net_flush(void)
 		}
 	}
 	
-	if(boot_mode & 2)
+	if(boot_mode & IB_SERVER)
 		net_eat_c2s(&to_server);
-	if(boot_mode & 1)
+	if(boot_mode & IB_CLIENT)
 		net_eat_s2c(&to_client_local);
 }
 
@@ -1661,11 +1661,11 @@ int net_gethost(char *name, int port, struct sockaddr *sa, size_t alen)
 
 int net_connect(void)
 {
-	switch(boot_mode & 3)
+	switch(boot_mode & (IB_CLIENT | IB_SERVER))
 	{
 		case 1: {
 			// client only
-			if(boot_mode & 16)
+			if(boot_mode & IB_ENET)
 			{
 				// ENet
 				ENetHost *host = enet_host_create(NULL, 1, 2, 0, 0);
@@ -1682,7 +1682,7 @@ int net_connect(void)
 
 				ENetAddress caddr;
 				caddr.port = net_port;
-				if(enet_address_set_host(&caddr, net_addr) < 0)
+				if(enet_address_set_host(&caddr, net_address) < 0)
 				{
 					fprintf(stderr, "net_connect(enet_address_set_host): failed\n");
 					return 1;
@@ -1710,7 +1710,7 @@ int net_connect(void)
 			} else {
 				// TCP
 				struct sockaddr_storage sa;
-				if(net_gethost(net_addr, net_port, (struct sockaddr *)&sa, sizeof(sa)))
+				if(net_gethost(net_address, net_port, (struct sockaddr *)&sa, sizeof(sa)))
 					return 1;
 				
 				int sockfd = socket(sa.ss_family, SOCK_STREAM, 0);
@@ -1932,7 +1932,7 @@ int net_init(void)
 	
 #ifdef WIN32
 	// complete hackjob
-	if(!((boot_mode & 16) || (boot_mode & 2)))
+	if(!((boot_mode & IB_ENET) || (boot_mode & IB_SERVER)))
 	if(WSAStartup(MAKEWORD(2,0), &wsaStartup) != 0)
 	{
 		fprintf(stderr, "net_init: WSAStartup failed\n");
@@ -1941,7 +1941,7 @@ int net_init(void)
 #endif
 	
 	// start ENet unless running a TCP-only client
-	if((boot_mode & 16) || (boot_mode & 2))
+	if((boot_mode & IB_ENET) || (boot_mode & IB_SERVER))
 	{
 		if(enet_initialize() != 0)
 		{
