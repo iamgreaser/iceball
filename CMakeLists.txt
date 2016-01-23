@@ -48,9 +48,10 @@ set(MAIN_FILES
 	src/model.c
 	src/network.c
 	src/path.c
+	src/png.c
+	src/random.c
 	src/vecmath.c
 	src/wav.c
-	src/png.c
 )
 
 set(GL_FILES

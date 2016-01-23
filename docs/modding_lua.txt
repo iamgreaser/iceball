@@ -726,6 +726,20 @@ common.json_write(fname, value) @
 	
 	to tell the difference between tables and arrays it checks for the existence of the key "1"
 
+common.prng_new(seed, stream) @
+	creates a new pseudo-random number generator instance
+
+	seed and stream are both optional
+
+	returns a table of the following functions:
+	- seed(seed, stream)
+		- allows reseeding of the RNG, both arguments are optional
+	- random()
+	- random(max)
+	- random(min, max)
+		- returns a random number between min and max, defaulting to values of 0 and 1
+
+
 str = common.net_pack(fmt, ...) @
 	packs data into a string
 

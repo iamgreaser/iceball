@@ -449,6 +449,11 @@ enum
 	BT_MAX
 };
 
+typedef struct prng {
+	uint64_t state;
+	uint64_t stream;
+} prng_t;
+
 typedef struct packet packet_t;
 struct packet
 {
@@ -687,6 +692,12 @@ int render_map_visible_chunks_count_dirty(map_t *map);
 img_t *img_parse_png(int len, const char *data, lua_State *L);
 img_t *img_load_png(const char *fname, lua_State *L);
 void img_write_png(const char *fname, img_t *img);
+
+// random.c
+void prng_seed(prng_t *rng, uint64_t seed, uint64_t stream);
+uint32_t prng_random(prng_t *rng);
+double prng_random_double(prng_t *rng);
+double prng_random_double_range(prng_t *rng, double minimum, double maximum);
 
 // vecmath.c
 vec4f_t mtx_apply_vec(matrix_t *mtx, vec4f_t *vec);

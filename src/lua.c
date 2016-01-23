@@ -193,6 +193,7 @@ int icelua_fn_client_mk_set_title(lua_State *L)
 #include "lua_mus.h"
 #include "lua_model.h"
 #include "lua_net.h"
+#include "lua_random.h"
 #include "lua_tcp.h"
 #include "lua_udp.h"
 #include "lua_util.h"
@@ -319,6 +320,7 @@ struct icelua_entry icelua_common[] = {
 	{icelua_fn_common_net_unpack_array, "net_unpack_array"},
 	{icelua_fn_common_net_send, "net_send"},
 	{icelua_fn_common_net_recv, "net_recv"},
+	{icelua_fn_common_prng_new, "prng_new"},
 	{icelua_fn_common_tcp_connect, "tcp_connect"},
 	{icelua_fn_common_tcp_send, "tcp_send"},
 	{icelua_fn_common_tcp_recv, "tcp_recv"},
