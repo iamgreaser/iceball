@@ -738,6 +738,8 @@ common.prng_new(seed, stream) @
 	- random(max)
 	- random(min, max)
 		- returns a random number between min and max, defaulting to values of 0 and 1
+	- jump(step)
+		- jump ahead by step amount, can be negative
 
 
 str = common.net_pack(fmt, ...) @

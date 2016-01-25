@@ -21,6 +21,12 @@
 //   taken, but without a way to take arbitrary steps, this is pretty useless.
 //   It would also require storing more state, but it's only 128 bits at the
 //   moment, which is already pretty small for a PRNG.
+// * We have jump now, but if we allow seeding with strings, then we could get
+//   initial seeds that can't fit in Lua anyway.
+// * We could return a hex string or something, but that would require us to
+//   accept hex strings only. How would we deal with non-hex strings? Separate
+//   function for hex strings? get_state/set_state, but allow arbitrary strings
+//   (and hash them somehow) in seed?
 // * We could add a clone function that creates a new one with the same state.
 //   Useless for networking though.
 
@@ -67,6 +73,15 @@ int icelua_fn_cl_prng_random(lua_State *L)
 	return 1;
 }
 
+int icelua_fn_cl_prng_jump(lua_State *L)
+{
+	int top = icelua_assert_stack(L, 1, 1);
+	prng_t *rng = lua_touserdata(L, lua_upvalueindex(1));
+	uint64_t step = (uint64_t)lua_tonumber(L, 1);
+	prng_jump(rng, step);
+	return 0;
+}
+
 int icelua_fn_common_prng_new(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 0, 2);
@@ -94,6 +109,11 @@ int icelua_fn_common_prng_new(lua_State *L)
 	lua_pushstring(L, "random");  // Function name
 	lua_pushvalue(L, -2);  // Duplicate RNG reference to top of stack
 	lua_pushcclosure(L, &icelua_fn_cl_prng_random, 1);  // Create closure, 1 upvalue (the RNG state)
+	lua_settable(L, -4);  // Insert closure into table
+
+	lua_pushstring(L, "jump");  // Function name
+	lua_pushvalue(L, -2);  // Duplicate RNG reference to top of stack
+	lua_pushcclosure(L, &icelua_fn_cl_prng_jump, 1);  // Create closure, 1 upvalue (the RNG state)
 	lua_settable(L, -4);  // Insert closure into table
 
 	// Pop the RNG state off the stack.

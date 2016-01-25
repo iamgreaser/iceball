@@ -698,6 +698,7 @@ void prng_seed(prng_t *rng, uint64_t seed, uint64_t stream);
 uint32_t prng_random(prng_t *rng);
 double prng_random_double(prng_t *rng);
 double prng_random_double_range(prng_t *rng, double minimum, double maximum);
+void prng_jump(prng_t *rng, uint64_t step);
 
 // vecmath.c
 vec4f_t mtx_apply_vec(matrix_t *mtx, vec4f_t *vec);

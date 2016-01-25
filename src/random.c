@@ -20,8 +20,9 @@
 // Basic implementation of the PCG psuedorandom number generator.
 // Specifically, PCG-XSH-RR, as that's what the paper recommends for general use.
 // This may diverge from the official implementations, but I wanted to give credit.
-// TODO: We could drop the stream part and use a set value. We have no real use
-// for it, and it complicates the API. It does give us more possible sequences though.
+// TODO: We could drop the stream part and use a set value. It's useful for seeding
+// a new PRNG from an existing one's output, but if people just want random seeds,
+// we can seed from time.
 // On the other hand, using a set value does allow us to ensure that a relatively
 // good value is chosen (co-primes, etc.).
 
@@ -63,4 +64,22 @@ double prng_random_double_range(prng_t *rng, double minimum, double maximum) {
 	uint32_t random = prng_random(rng);
 	double d = (double)random / UINT32_MAX;
 	return minimum + d * (maximum - minimum);
+}
+
+// Magical maths thanks to Forrest B. Brown, "Random number Generation with Arbitrary Strides"
+void prng_jump(prng_t *rng, uint64_t step) {
+	uint64_t m_result = 1;
+	uint64_t c_result = 0;
+	uint64_t stream = rng->stream;
+	uint64_t multiplier = PRNG_MULTIPLIER;
+	while (step > 0) {
+		if (step & 1) {
+			m_result *= multiplier;
+			c_result = c_result * multiplier + stream;
+		}
+		stream = (multiplier + 1) * stream;
+		multiplier *= multiplier;
+		step >>= 1;
+	}
+	rng->state = m_result * rng->state + c_result;
 }
