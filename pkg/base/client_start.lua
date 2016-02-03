@@ -628,7 +628,7 @@ function h_tick_main(sec_current, sec_delta)
 			local x,y,z
 			local vx,vy,vz
 			x,y,z = plr.get_pos()
-			vx,vy,vz = plr.get_vel
+			vx,vy,vz = plr.get_vel()
 			net_send(nil, common.net_pack("BBffffff"
 				, PKT_PLR_POS, 0x00, x, y, z, vx, vy, vz))
 		end
