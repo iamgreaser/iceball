@@ -143,7 +143,7 @@ common.img_fill(img_button_bkg_transparent, 0x22111111)
 
 local img_splash = common.img_load("pkg/iceball/gfx/splash_logo.png", "png")
 local img_splash_width, img_splash_height
-local img_splash_width, img_splash_height_scaled
+local img_splash_width_scaled, img_splash_height_scaled
 
 local splashtweenprogress_scale = 0.9
 local splashtweenprogress_y = 1.0
@@ -199,7 +199,7 @@ function client.hook_render()
 		if common.version.num < latest_version then
 			version_string = "Update available! ("..common.version.str..")"
 			version_colour = 0xFFE81515
-			download_text = "Download the latest version at http://iceball.build"
+			local download_text = "Download the latest version at http://iceball.build"
 			font.render(
 				screen_width - font.string_width(download_text) - text_offset,
 				ch * 1,
