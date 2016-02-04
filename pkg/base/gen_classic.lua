@@ -18,7 +18,7 @@
 do
 	local loose, user_toggles, user_settings
 	loose, user_toggles, user_settings = ...
-	local mw,mh,mt
+	local mw,mh,mt,mwater
 	mw = user_settings["mw"] or 512 -- width
 	mh = user_settings["mh"] or 512 -- height
 	mt = user_settings["mt"] or 1.0 -- turbulence

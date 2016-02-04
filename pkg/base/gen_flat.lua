@@ -31,7 +31,7 @@ do
 	common.map_set(ret)
 	for x=0,mx-1 do
 		for z=0,mz-1 do
-			l = {0, my - depth, my - depth, 0, b, g, r, 1}
+			local l = {0, my - depth, my - depth, 0, b, g, r, 1}
 			common.map_pillar_set(x, z, l)
 		end
 	end

@@ -98,6 +98,7 @@ function slot_add(neth, tidx, wpn, name)
 				-- TODO: actually balance this properly!
 				tidx = (i-1) % 2
 			end
+			local _wpn
 			if MODE_TEAM_GUNS then
 				_wpn = tidx + 1
 			else

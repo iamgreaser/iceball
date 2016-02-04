@@ -353,12 +353,12 @@ function new_player(settings)
 	end
 
 	function this.tool_switch_next()
-		new_tool = (this.tool + 1) % #this.tools
+		local new_tool = (this.tool + 1) % #this.tools
 		this.tool_switch(new_tool)
 	end
 
 	function this.tool_switch_prev()
-		new_tool = (this.tool - 1) % #this.tools
+		local new_tool = (this.tool - 1) % #this.tools
 		this.tool_switch(new_tool)
 	end
 
@@ -559,7 +559,7 @@ function new_player(settings)
 	function this.fall_damage(amt)
 		--print("damage",this.name,part,amt)
 		local l = teams[this.team].color_chat
-		r,g,b = l[1],l[2],l[3]
+		local r,g,b = l[1],l[2],l[3]
 
 		local c = argb_split_to_merged(r,g,b)
 
@@ -873,6 +873,7 @@ function new_player(settings)
 			end
 		end
 
+		local tx1,ty1,tz1
 		if this.alive then
 			tx1,ty1,tz1 = trace_map_box(
 				ox, oy, oz,
