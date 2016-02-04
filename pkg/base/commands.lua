@@ -63,7 +63,7 @@ end
 
 function command_handle(player, plrid, neth, params, msg)
 	local status, emsg = pcall(function()
-		cmd = string.lower(params[1])
+		local cmd = string.lower(params[1])
 		if commands[cmd] ~= nil then
 			table.remove(params, 1)
 			commands[cmd].exec(player, plrid, neth, params, msg)
@@ -115,6 +115,7 @@ command_register({
 	usage = "/kick <player>",
 	func = function(plr, plrid, neth, prms, msg)
 		if table.getn(prms) == 1 then
+			local target
 			prms[1] = tostring(prms[1])
 			if prms[1]:sub(0, 1) == "#" then
 				target = players[tonumber(prms[1]:sub(2))]
@@ -300,6 +301,7 @@ command_register({
 	usage = "/piano <player>",
 	func = function(plr, plrid, neth, prms, msg)
 		if table.getn(prms) == 1 then
+			local target
 			prms[1] = tostring(prms[1])
 			if prms[1]:sub(0, 1) == "#" then
 				target = players[tonumber(prms[1]:sub(2))]
@@ -326,6 +328,7 @@ command_register({
 	usage = "/teleport <player>|<x y z>",
 	func = function(plr, plrid, neth, prms, msg)
 		if table.getn(prms) == 1 then
+			local target
 			prms[1] = tostring(prms[1])
 			if prms[1]:sub(0, 1) == "#" then
 				target = players[tonumber(prms[1]:sub(2))]
@@ -337,7 +340,7 @@ command_register({
 				end
 			end
 			if target then
-				x, y, z = target.x, target.y, target.z
+				local x, y, z = target.x, target.y, target.z
 				plr.set_pos_recv(x, y, z)
 				net_broadcast(nil, common.net_pack("BBffffff",
 					PKT_PLR_POS, plrid, x, y, z, 0.0, 0.0, 0.0))
@@ -346,7 +349,7 @@ command_register({
 			end
 		elseif table.getn(prms) == 3 then
 			--NOTE: I protest that y is down/same way AoS was
-			x, y, z = tonumber(prms[1]), tonumber(prms[2]), tonumber(prms[3])
+			local x, y, z = tonumber(prms[1]), tonumber(prms[2]), tonumber(prms[3])
 			plr.set_pos_recv(x, y, z)
 			net_broadcast(nil, common.net_pack("BBffffff",
 				PKT_PLR_POS, plrid, x, y, z, 0.0, 0.0, 0.0))
@@ -463,6 +466,7 @@ command_register({
 	usage = "/permissions <player> [add/remove] <permission>",
 	func = function(plr, plrid, neth, prms, msg)
 		if table.getn(prms) == 3 then
+			local target
 			prms[1] = tostring(prms[1])
 			if prms[1]:sub(0, 1) == "#" then
 				target = players[tonumber(prms[1]:sub(2))]
@@ -477,6 +481,7 @@ command_register({
 				command_msg("error", neth, "Error: Player not found")
 				return
 			end
+			local add_perm
 			prms[2] = tostring(prms[2])
 			if prms[2] == "add" or prms[2] == "a" or prms[2] == "+" then
 				add_perm = true

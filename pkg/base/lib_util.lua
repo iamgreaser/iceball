@@ -219,7 +219,7 @@ preserve_accumulator: Whether looping transfers overflow dT from the previous ru
 ]]
 function alarm(options)
 	
-	this = {}
+	local this = {}
 	
 	this.time = options.time or 1
 	this.progress = options.progress or 0
