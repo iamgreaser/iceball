@@ -14,10 +14,13 @@ OBJS = \
 	$(OBJDIR)/vecmath.o \
 	$(OBJDIR)/dsp.o \
 	$(OBJDIR)/map.o $(OBJDIR)/model.o \
-	$(OBJDIR)/img.o $(OBJDIR)/$(RENDERER)/render.o $(OBJDIR)/$(RENDERER)/render_img.o \
+	$(OBJDIR)/img.o \
+	$(OBJDIR)/$(RENDERER)/render.o $(OBJDIR)/$(RENDERER)/render_img.o \
+	$(OBJDIR)/$(RENDERER)/glad.o \
 	$(OBJDIR)/png.o \
 	$(OBJDIR)/lua.o $(OBJDIR)/network.o \
 	$(OBJDIR)/path.o $(OBJDIR)/json.o \
+	$(OBJDIR)/random.o \
 	$(OBJDIR)/wav.o
 
 # TODO: make the renderer part not depend on, say, render_img.o

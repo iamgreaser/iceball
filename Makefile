@@ -22,7 +22,7 @@ LIBS_Lua = `./findlua.sh --libs`
 # Lua is not an acronym. Get used to typing it with lower case u/a.
 LIBS_zlib = -lz
 LIBS_sackit = xlibinc/libsackit.a
-LIBS = -Lxlibinc -lm $(LIBS_Lua) $(LIBS_SDL) $(LIBS_zlib) $(LIBS_sackit) -lGL -lGLEW $(LIBS_ENet)
+LIBS = -Lxlibinc -lm $(LIBS_Lua) $(LIBS_SDL) $(LIBS_zlib) $(LIBS_sackit) -lGL -lGLEW $(LIBS_ENet) -ldl
 
 BINNAME = iceball
 
