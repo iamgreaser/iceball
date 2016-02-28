@@ -13,7 +13,7 @@ import json
 ### Load Lua shared library
 for lib_name in ["../liblua", "liblua", "liblua.so"]:
     try:
-        lua = ctypes.CDLL("../liblua")
+        lua = ctypes.CDLL(lib_name)
         break
     except Exception:
         continue
