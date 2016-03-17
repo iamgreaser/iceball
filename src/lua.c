@@ -395,6 +395,9 @@ void icelua_loadbasefuncs(lua_State *L)
 	lua_setglobal(L, "loadfile");
 	lua_pushcfunction(L, icelua_fn_base_dofile);
 	lua_setglobal(L, "dofile");
+	lua_pushcfunction(L, icelua_fn_base_require);
+	lua_setglobal(L, "require");
+	icelua_openpackage(L);
 }
 
 int icelua_initfetch(void)

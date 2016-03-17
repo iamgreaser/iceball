@@ -20,9 +20,9 @@
 -- Thanks. --GM
 
 VERSION_ENGINE = {
-	cmp={0,2,1,0,35},
-	num=8421376+35,
-	str="0.2.1-35",
+	cmp={0,2,1,0,36},
+	num=8421376+36,
+	str="0.2.1-36",
 }
 
 --error(""..common.version.num)
@@ -176,5 +176,6 @@ VERSION_BUGS = {
 {intro=nil, fix=8421376+32, msg="Possible crash when loading invalid maps"},
 {intro=8421376+32, fix=8421376+33, msg="VXL height autodetection fails on ylen assertion"},
 {intro=nil, fix=8421376+35, msg="PRNG not supported"},
+{intro=nil, fix=8421376+36, msg="require not supported"},
 }
 

@@ -28,6 +28,7 @@ lua base library stuff:
 	loadstring @
 	loadfile @
 	dofile @
+	require @
 	_G @
 	
 	nothing else yet
@@ -47,6 +48,8 @@ lua base library stuff:
 		  if obj ~= false then return obj end
 		  yield()
 		end
+	- require(x) uses loadfile() with a predefined list of paths and caches result
+		- that means don't expect full "package" support
 	- just about every "load" function is based on common.fetch_block
 
 common.base_dir @
