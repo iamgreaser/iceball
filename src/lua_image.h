@@ -80,7 +80,7 @@ int icelua_fn_client_img_blit(lua_State *L)
 	bh = (top < 5 ? height : lua_tointeger(L, 5));
 	sx = (top < 6 ? 0 : lua_tointeger(L, 6));
 	sy = (top < 7 ? 0 : lua_tointeger(L, 7));
-	color = (top < 8 ? 0xFFFFFFFF : (uint32_t)lua_tointeger(L, 8));
+	color = (top < 8 ? 0xFFFFFFFF : (uint32_t)lua_tonumber(L, 8));
 	scalex = (top < 9 ? 1 : lua_tonumber(L, 9));
 	scaley = (top < 10 ? 1 : lua_tonumber(L, 10));
 	
@@ -121,7 +121,7 @@ int icelua_fn_client_img_blit_to(lua_State *L)
 	bh = (top < 6 ? source->head.height : lua_tointeger(L, 6));
 	sx = (top < 7 ? 0 : lua_tointeger(L, 7));
 	sy = (top < 8 ? 0 : lua_tointeger(L, 8));
-	color = (top < 9 ? 0xFFFFFFFF : (uint32_t)lua_tointeger(L, 9));
+	color = (top < 9 ? 0xFFFFFFFF : (uint32_t)lua_tonumber(L, 9));
 	scalex = (top < 10 ? 1 : lua_tonumber(L, 10));
 	scaley = (top < 11 ? 1 : lua_tonumber(L, 11));
 	
@@ -233,7 +233,7 @@ int icelua_fn_common_img_pixel_set(lua_State *L)
 		return luaL_error(L, "not an image");
 	int x = lua_tointeger(L, 2);
 	int y = lua_tointeger(L, 3);
-	uint32_t color = lua_tointeger(L, 4);
+	uint32_t color = (uint32_t)lua_tonumber(L, 4);
 	
 	if(x < 0 || y < 0 || x >= img->head.width || y >= img->head.height)
 		return 0;

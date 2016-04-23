@@ -19,7 +19,7 @@ int icelua_fn_common_argb_split_to_merged(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 3, 4);
 	
-	lua_pushnumber(L, (double)(
+	lua_pushnumber(L, (double)(uint32_t)(
 		((lua_tointeger(L, 1) & 0xFF) << 16) |
 		((lua_tointeger(L, 2) & 0xFF) << 8) |
 		((lua_tointeger(L, 3) & 0xFF)) |
@@ -32,7 +32,7 @@ int icelua_fn_common_argb_merged_to_split(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 1, 1);
 	
-	uint32_t c = lua_tointeger(L, 1);
+	uint32_t c = (uint32_t)lua_tonumber(L, 1);
 	
 	lua_pushinteger(L, (c >> 24));
 	lua_pushinteger(L, (c >> 16) & 0xFF);

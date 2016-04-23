@@ -68,7 +68,8 @@ static int icelua_fn_base_require_helper(lua_State *L)
 	// paths = stack[3] = ICELUA_REQUIRE_PATH
 	lua_getfield(L, LUA_REGISTRYINDEX, "ICELUA_REQUIRE_PATH");
 
-	for (int i = 1;; i++) {
+	int i;
+	for (i = 1;; i++) {
 		// path_template = stack[4]
 		lua_rawgeti(L, 3, i);
 		if (lua_isnil(L, -1)) {

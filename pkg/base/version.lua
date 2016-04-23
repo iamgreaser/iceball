@@ -20,9 +20,9 @@
 -- Thanks. --GM
 
 VERSION_ENGINE = {
-	cmp={0,2,1,0,36},
-	num=8421376+36,
-	str="0.2.1-36",
+	cmp={0,2,1,0,37},
+	num=8421376+37,
+	str="0.2.1-37",
 }
 
 --error(""..common.version.num)
@@ -177,5 +177,6 @@ VERSION_BUGS = {
 {intro=8421376+32, fix=8421376+33, msg="VXL height autodetection fails on ylen assertion"},
 {intro=nil, fix=8421376+35, msg="PRNG not supported"},
 {intro=nil, fix=8421376+36, msg="require not supported"},
+{intro=nil, fix=8421376+37, msg="[ARM] Colours in many functions will be erroneously clamped to 0x7FFFFFFF"},
 }
 
