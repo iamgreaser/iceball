@@ -8,7 +8,7 @@
 /iceball
 /iceball-gl
 /iceball-dedi
-/Iceball.app
+deploy/Iceball.app
 
 # windows build crap
 winlibs/
