@@ -83,7 +83,7 @@ int icelua_fn_common_mk_compat_disable(lua_State *L)
 #ifndef DEDI
 int icelua_fn_client_mk_sys_execv(lua_State *L)
 {
-	if((boot_mode & 3) != 3 || net_port != 0)
+	if((boot_mode & (IB_CLIENT | IB_SERVER)) != (IB_CLIENT | IB_SERVER) || net_port != 0)
 		return luaL_error(L, "mk_sys_execv called when not in -s 0 mode");
 
 	int top = lua_gettop(L);
@@ -441,9 +441,9 @@ int icelua_initfetch(void)
 	printf("Client loaded! Initialising...\n");
 	for(i = 0; i < argct; i++)
 		lua_pushstring(lstate_client, main_argv[i+main_largstart]);
-	if((boot_mode & 1) && net_addr_xbuf[1] != '\x00')
+	if((boot_mode & IB_CLIENT) && net_path[1] != '\x00')
 	{
-		lua_pushstring(lstate_client, net_addr_xbuf);
+		lua_pushstring(lstate_client, net_path);
 		argct++;
 	}
 	if(lua_pcall(lstate_client, argct, 0, 0) != 0)
@@ -454,7 +454,7 @@ int icelua_initfetch(void)
 	}
 
 	printf("Done!\n");
-	boot_mode |= 4;
+	boot_mode |= IB_MAIN_LOADED;
 
 	return 0;
 }
@@ -509,7 +509,7 @@ int icelua_init(void)
 	int i, argct;
 
 	// create states
-	if(boot_mode & 1)
+	if(boot_mode & IB_CLIENT)
 	{
 		// create temp state for loading config
 		lua_State *Lc = luaL_newstate();
@@ -731,8 +731,8 @@ int icelua_init(void)
 #endif
 	}
 
-	lstate_client = (boot_mode & 1 ? luaL_newstate() : NULL);
-	lstate_server = (boot_mode & 2 ? luaL_newstate() : NULL);
+	lstate_client = (boot_mode & IB_CLIENT ? luaL_newstate() : NULL);
+	lstate_server = (boot_mode & IB_SERVER ? luaL_newstate() : NULL);
 
 	// create tables
 	if(lstate_client != NULL)
