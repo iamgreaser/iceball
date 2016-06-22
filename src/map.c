@@ -253,7 +253,7 @@ map_t *map_parse_icemap(int len, const char *data)
 			}
 			p += taglen-6;
 		} else if(!memcmp(tag,"MetaInf",7)) {
-			// TODO!
+			// TODO: Store MetaInf
 			if(taglen > 0)
 				p += taglen;
 		} else if(!memcmp(tag,"MapEnts",7)) {
@@ -360,7 +360,11 @@ char *map_serialise_icemap(map_t *map, int *len)
 		+8;
 
 	char *buf = (char*)malloc(buflen);
-	// TODO check if NULL
+
+	if (buf == NULL) {
+		fprintf(stderr, "map_serialise_icemap: buf is NULL!\n");
+		return NULL;
+	}
 
 	memcpy(buf, "IceMap\x1A\x01MapData\xFF", 16);
 
