@@ -40,6 +40,9 @@ Ice Lua Components contains some content from libSDL,
   which is licensed under the LGPL version 2.1.
 It is marked accordingly.
 
+Code in src/external is licensed under their respective licenses,
+  which are listed in LICENCE-others.txt.
+
 The manual is in the public domain, except where otherwise specified.
 
 Copyright (C) 2012-2015, Iceball contributors

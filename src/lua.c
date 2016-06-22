@@ -390,6 +390,9 @@ void icelua_loadbasefuncs(lua_State *L)
 	lua_pushcfunction(L, luaopen_table);
 	lua_call(L, 0, 0);
 
+	// additional libraries
+	luaopen_bit(L);
+
 	// overwrite dofile/loadfile.
 	lua_pushcfunction(L, icelua_fn_base_loadfile);
 	lua_setglobal(L, "loadfile");
