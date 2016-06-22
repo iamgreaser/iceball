@@ -418,7 +418,7 @@ int icelua_fn_common_fetch_poll(lua_State *L)
 #ifdef DEDI
 	return luaL_error(L, "EDOOFUS: why the hell is this being called in the dedi version?");
 #else
-	if((boot_mode & 4) ? run_game_cont1() : run_game_cont2())
+	if((boot_mode & IB_MAIN_LOADED) ? run_game_cont1() : run_game_cont2())
 		return luaL_error(L, "quit flag asserted!");
 #endif
 
