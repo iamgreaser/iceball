@@ -38,7 +38,6 @@ int gl_expand_textures = 0;
 int gl_chunk_size = 16;
 int gl_visible_chunks = 49;
 int gl_chunks_tesselated_per_frame = 2;
-int gl_use_vbo = 1;
 int gl_use_fbo = 1;
 int gl_quality = 1;
 int gl_vsync = 1;
@@ -58,9 +57,8 @@ int force_redraw = 1;
 int boot_mode = 0;
 
 char *mod_basedir = NULL;
-char *net_addr;
-char net_addr_buf[1024];
-char net_addr_xbuf[1024];
+char *net_address;
+char *net_path;
 int net_port;
 
 int main_argc;
@@ -99,7 +97,6 @@ int error_perror(char *msg)
 #ifndef DEDI
 int platform_init(void)
 {
-	//if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_NOPARACHUTE))
 	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE))
 		return error_sdl("SDL_Init");
 
@@ -195,11 +192,6 @@ int video_init(void)
 	else
 		SDL_GL_SetSwapInterval(0);
 
-	//screen = SDL_GetWindowSurface(window);
-
-	//if(screen == NULL)
-	//	return error_sdl("SDL_GetWindowSurface");
-
 	int err_glad = gladLoadGLLoader(SDL_GL_GetProcAddress);
 	if(!err_glad)
 	{
@@ -245,8 +237,10 @@ int video_init(void)
 
 void video_deinit(void)
 {
-	SDL_GL_DeleteContext(gl_context);
-	SDL_DestroyWindow(window);
+	if (gl_context)
+		SDL_GL_DeleteContext(gl_context);
+	if (window)
+		SDL_DestroyWindow(window);
 }
 
 void platform_deinit(void)
@@ -431,7 +425,7 @@ static int ib_client_tick_hook(void) {
 		lua_pop(lstate_client, 1);
 		return 1;
 	}
-	//if(!(boot_mode & 2))
+	//if(!(boot_mode & IB_SERVER))
 	sec_wait += lua_tonumber(lstate_client, -1);
 	lua_pop(lstate_client, 1);
 
@@ -605,7 +599,7 @@ int render_client(void)
 	int quitflag = 0;
 
 	// skip while still loading
-	if(mod_basedir == NULL || (boot_mode & 8))
+	if(mod_basedir == NULL || (boot_mode & IB_MAIN_LOADING))
 		return 0;
 
 	if(map_enable_autorender)
@@ -732,14 +726,14 @@ int update_client(void)
 	if(mod_basedir == NULL)
 	{
 		// do nothing
-	} else if(boot_mode & 8) {
+	} else if(boot_mode & IB_MAIN_LOADING) {
 		printf("boot mode flag 8!\n");
 		//abort();
 
 		if(icelua_initfetch())
 			return 1;
 
-		boot_mode &= ~8;
+		boot_mode &= ~IB_MAIN_LOADING;
 	} else {
 		quitflag = quitflag || ib_client_tick_hook();
 	}
@@ -776,7 +770,7 @@ int update_server(void)
 	}
 
 #ifndef WIN32
-	if(!(boot_mode & 1))
+	if(!(boot_mode & IB_CLIENT))
 	{
 		//printf("waity. %f\n", lua_tonumber(lstate_server, -1));
 		sec_wait += lua_tonumber(lstate_server, -1);
@@ -785,6 +779,8 @@ int update_server(void)
 		if(usec_wait > 0)
 		{
 			sec_wait -= ((double)usec_wait)/1000000.0;
+
+			// TODO: broken? condition is not updated inside loop
 			while(usec_wait > 1000000)
 				sleep(1);
 			usleep(usec_wait);
@@ -801,7 +797,7 @@ int run_game_cont1(void)
 {
 	int quitflag = render_client();
 	net_flush();
-	if(boot_mode & 2)
+	if(boot_mode & IB_SERVER)
 		quitflag = quitflag || update_server();
 	net_flush();
 
@@ -819,7 +815,7 @@ int run_game_cont1(void)
 int run_game_cont2(void)
 {
 	int quitflag = 0;
-	if(boot_mode & 2)
+	if(boot_mode & IB_SERVER)
 		quitflag = quitflag || update_server();
 	net_flush();
 
@@ -832,7 +828,7 @@ int run_game_cont2(void)
 }
 #endif
 
-void run_game(void)
+static void run_game(void)
 {
 	//clmap = map_load_aos(fnmap);
 
@@ -866,11 +862,11 @@ void run_game(void)
 
 		// update client/server
 #ifndef DEDI
-		if(boot_mode & 1)
+		if(boot_mode & IB_CLIENT)
 			quitflag = quitflag || update_client();
 		net_flush();
 #endif
-		if(boot_mode & 2)
+		if(boot_mode & IB_SERVER)
 			quitflag = quitflag || update_server();
 		net_flush();
 	}
@@ -878,7 +874,7 @@ void run_game(void)
 	clmap = NULL;
 }
 
-int print_usage(char *rname)
+static int print_usage(char *rname)
 {
 	fprintf(stderr, "usage:\n"
 #ifndef DEDI
@@ -926,189 +922,218 @@ int print_usage(char *rname)
 	return 99;
 }
 
-int main_dbghelper(int argc, char *argv[])
+struct cli_args {
+	int net_port;
+	char *net_host;
+	char *net_path;
+
+	char *basedir;
+	int boot_mode;
+	int used_args;
+};
+
+static int parse_args(int argc, char *argv[], struct cli_args *args) {
+	args->net_host = malloc(NET_HOST_SIZE);
+	args->net_path = malloc(NET_PATH_SIZE);
+
+	// we set the initial value to a leading slash in order to play nice with
+	// sscanf later on
+	args->net_path[0] = '/';
+	args->net_path[1] = '\0';
+
+#ifdef DEDI
+	if (argc <= 1)
+		return 1;
+#else
+	if (argc <= 1) {
+		args->net_port = 0;
+		args->basedir = "pkg/iceball/launch";
+		args->boot_mode = IB_CLIENT | IB_SERVER;
+		args->used_args = 4;
+	} else
+#endif
+
+#ifndef DEDI
+	if (!strcmp(argv[1], "-h") || !strcmp(argv[1], "--help")) {
+		return 1;
+	} else if (!strcmp(argv[1], "-c")) {
+		if (argc <= 2 || (argc <= 3 && memcmp(argv[2], "iceball://", 10))) {
+			return 1;
+		}
+
+		args->net_port = 20737;
+		args->used_args = 3;
+
+		if (sscanf(argv[2], "iceball://%[^:]:%i/%s", args->net_host, &args->net_port, &args->net_path[1]) < 1) {
+			if (argc <= 3) {
+				return 1;
+			}
+
+			args->net_host = strncpy(args->net_host, argv[2], NET_HOST_SIZE);
+			args->net_port = atoi(argv[3]);
+			args->used_args = 4;
+		}
+
+		args->basedir = NULL;
+		args->boot_mode = IB_CLIENT | IB_ENET;
+
+		printf("Connecting to \"%s\" port %i (ENet mode)\n", args->net_host, args->net_port);
+	} else if (!strcmp(argv[1], "-C")) {
+		if (argc <= 2 || (argc <= 3 && memcmp(argv[2], "iceball://", 10))) {
+			return 1;
+		}
+
+		args->net_port = 20737;
+		args->used_args = 3;
+
+		if (sscanf(argv[2], "iceball://%[^:]:%i/%s", args->net_host, &args->net_port, &args->net_path[1]) < 1) {
+			if (argc <= 3) {
+				return 1;
+			}
+
+			args->net_host = strncpy(args->net_host, argv[2], NET_HOST_SIZE);
+			args->net_port = atoi(argv[3]);
+			args->used_args = 4;
+		}
+
+		args->basedir = NULL;
+		args->boot_mode = IB_CLIENT;
+
+		printf("Connecting to \"%s\" port %i (TCP mode)\n", args->net_host, args->net_port);
+	} else if (!strcmp(argv[1], "-s")) {
+		if (argc <= 3) {
+			return 1;
+		}
+
+		args->net_port = atoi(argv[2]);
+		args->basedir = argv[3];
+		args->boot_mode = IB_CLIENT | IB_SERVER;
+		args->used_args = 4;
+
+		printf("Starting server on port %i, mod \"%s\" (local mode client)\n", args->net_port, args->basedir);
+	} else
+#endif
+	if (!strcmp(argv[1], "-d")) {
+		if (argc <= 3) {
+			return 1;
+		}
+
+		args->net_port = atoi(argv[2]);
+		args->basedir = argv[3];
+		args->boot_mode = IB_SERVER;
+		args->used_args = 4;
+
+		printf("Starting headless/dedicated server on port %i, mod \"%s\"\n", args->net_port, args->basedir);
+	} else {
+		return 1;
+	}
+
+	if (boot_mode & IB_SERVER) {
+		if (memcmp(args->basedir, "pkg/", 4)) {
+			fprintf(stderr, "ERROR: package base dir must start with \"pkg/\"!\n");
+
+			return 1;
+		}
+
+		if (strlen(args->basedir) < 5) {
+			fprintf(stderr, "ERROR: package base dir can't actually be \"pkg/\"!\n");
+
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+static void free_args(struct cli_args *args)
 {
+	free(args->net_host);
+	free(args->net_path);
+}
+
+int main(int argc, char *argv[])
+{
+	struct cli_args args = {0};
+	int parse_status = parse_args(argc, argv, &args);
+
+	if (parse_status) {
+		print_usage(argv[0]);
+
+		free_args(&args);
+		return 1;
+	}
+
+	// TODO: minimize usage of globals
 	main_argc = argc;
 	main_argv = argv;
 	main_argv0 = argv[0];
 	main_oldcwd = NULL;
 
-/*
-#ifdef WIN32
-	// necessary for the server list to work, apparently
-	{
-		char cwd[2048] = "";
-		GetModuleFileName(NULL, cwd, 2047);
-		char *v = cwd + strlen(cwd) - 1;
-		//main_argv0 = strdup(cwd);
-		while(v >= cwd)
-		{
-			if(*v == '\\')
-			{
-				*(v+1) = '\x00';
-				break;
-			}
-			v--;
-		}
-		printf("path: [%s]\n", cwd);
+	net_address = args.net_host;
+	net_port = args.net_port;
+	net_path = args.net_path;
 
-		main_oldcwd = getcwd(NULL, 2048);
-		if(_chdir(cwd) != 0)
-		{
-			MessageBox(NULL, "Failed to change directory.", "Iceball", MB_ICONSTOP);
-			return 1;
-		}
-	}
-#endif
-*/
+	boot_mode = args.boot_mode;
+	mod_basedir = args.basedir;
+	main_largstart = args.used_args;
 
 #ifdef DEDI
-	if(argc <= 1)
-		return print_usage(argv[0]);
+	if (net_init()) goto cleanup;
+	if (icelua_init()) goto cleanup;
+
+	if (boot_mode & IB_SERVER)
+		if (net_bind()) goto cleanup;
+
+	run_game();
+
+cleanup:
+	if (boot_mode & IB_SERVER)
+		net_unbind();
+
+	icelua_deinit();
+	net_deinit();
+
 #else
-	if(argc <= 1)
-	{
-		//print_usage(argv[0]);
-		net_port = 0;
-		//mod_basedir = "pkg/iceball/halp";
-		mod_basedir = "pkg/iceball/launch";
-		printf("Starting server on port %i, mod \"%s\"\n", net_port, mod_basedir);
-		main_largstart = 4;
+	if (boot_mode & IB_CLIENT)
+		if (platform_init()) goto cleanup;
 
-		boot_mode = 3;
-	} else
-#endif
+	if (net_init()) goto cleanup;
+	if (icelua_init()) goto cleanup;
 
-#ifndef DEDI
-	if((!strcmp(argv[1], "-h")) || (!strcmp(argv[1], "/?")) || (!strcmp(argv[1], "-?")) || (!strcmp(argv[1], "--help"))) {
-		return print_usage(argv[0]);
-	} else if(!strcmp(argv[1], "-c")) {
-		if(argc <= 2 || (argc <= 3 && memcmp(argv[2], "iceball://", 10)))
-			return print_usage(argv[0]);
+	if (boot_mode & IB_SERVER)
+		if (net_bind()) goto cleanup;
 
-		net_port = 20737;
-		main_largstart = 3;
-		net_addr = net_addr_buf;
-		net_addr_xbuf[0] = '/';
-		net_addr_xbuf[1] = '\x00';
-		if(sscanf(argv[2], "iceball://%[^:]:%i/%s", net_addr, &net_port, &net_addr_xbuf[1]) < 1)
-		{
-			if(argc <= 3)
-				return print_usage(argv[0]);
-			net_addr = argv[2];
-			net_port = atoi(argv[3]);
-			main_largstart = 4;
-		}
-		printf("Connecting to \"%s\" port %i (ENet mode)\n", net_addr, net_port);
-		mod_basedir = NULL;
-
-		boot_mode = 1 | 16;
-	} else if(!strcmp(argv[1], "-C")) {
-		if(argc <= 2 || (argc <= 3 && memcmp(argv[2], "iceball://", 10)))
-			return print_usage(argv[0]);
-
-		net_port = 20737;
-		main_largstart = 3;
-		net_addr = net_addr_buf;
-		net_addr_xbuf[0] = '/';
-		net_addr_xbuf[1] = '\x00';
-		if(sscanf(argv[2], "iceball://%[^:]:%i/%s", net_addr, &net_port, &net_addr_xbuf[1]) < 1)
-		{
-			if(argc <= 3)
-				return print_usage(argv[0]);
-			net_addr = argv[2];
-			net_port = atoi(argv[3]);
-			main_largstart = 4;
-		}
-		printf("Connecting to \"%s\" port %i (TCP mode)\n", net_addr, net_port);
-		mod_basedir = NULL;
-
-		boot_mode = 1;
-		//return 101;
-	} else if(!strcmp(argv[1], "-s")) {
-		if(argc <= 3)
-			return print_usage(argv[0]);
-
-		net_port = atoi(argv[2]);
-		mod_basedir = argv[3];
-		printf("Starting server on port %i, mod \"%s\" (local mode client)\n", net_port, mod_basedir);
-		main_largstart = 4;
-
-		boot_mode = 3;
-	} else
-#endif
-	if(!strcmp(argv[1], "-d")) {
-		if(argc <= 3)
-			return print_usage(argv[0]);
-
-		net_port = atoi(argv[2]);
-		mod_basedir = argv[3];
-		printf("Starting headless/dedicated server on port %i, mod \"%s\"\n", net_port, mod_basedir);
-		main_largstart = 4;
-
-		boot_mode = 2;
-		//return 101;
-	} else {
-		return print_usage(argv[0]);
+	if (boot_mode & IB_CLIENT) {
+		if (net_connect()
+				|| video_init()
+				|| wav_init()
+				|| render_init(screen_width, screen_height)) goto cleanup;
 	}
 
-	if(boot_mode & 2)
-	{
-		if(memcmp(mod_basedir,"pkg/",4))
-		{
-			fprintf(stderr, "ERROR: package base dir must start with \"pkg/\"!\n");
-			return 109;
-		}
+	run_game();
 
-		if(strlen(mod_basedir) < 5)
-		{
-			fprintf(stderr, "ERROR: package base dir can't actually be \"pkg/\"!\n");
-			return 109;
-		}
+cleanup:
+	if (boot_mode & IB_CLIENT) {
+		render_deinit();
+		wav_deinit();
+		video_deinit();
+		net_disconnect();
 	}
 
-#ifndef DEDI
-	if((!(boot_mode & 1)) || !platform_init()) {
-#endif
-	if(!net_init()) {
-	if(!icelua_init()) {
-	if((!(boot_mode & 2)) || !net_bind()) {
-#ifndef DEDI
-	if((!(boot_mode & 1)) || !net_connect()) {
-	if((!(boot_mode & 1)) || !video_init()) {
-	if((!(boot_mode & 1)) || !wav_init()) {
-	if((!(boot_mode & 1)) || !render_init(screen_width, screen_height)) {
-#endif
-		run_game();
-#ifndef DEDI
-		if(boot_mode & 1) render_deinit();
-	} if(boot_mode & 1) wav_deinit();
-	} if(boot_mode & 1) video_deinit();
-	} if(boot_mode & 1) net_disconnect();
-#endif
-	} if(boot_mode & 2) net_unbind();
-	} icelua_deinit();
-	} net_deinit();
-#ifndef DEDI
-	} if(boot_mode & 1) platform_deinit();
-	}
+	if (boot_mode & IB_SERVER)
+		net_unbind();
+
+	icelua_deinit();
+	net_deinit();
+
+	if (boot_mode & IB_CLIENT)
+		platform_deinit();
 #endif
 
 	fflush(stdout);
 	fflush(stderr);
-	return 0;
-}
 
-#ifdef __cplusplus
-extern "C"
-#endif
-int main(int argc, char *argv[])
-{
-	int iRet = main_dbghelper( argc, argv );
-#if _DEBUG && _WIN32
-	if( iRet != 0 && IsDebuggerPresent() ) {	//we didnt exit successfully, and there is a debugger attached.
-		DebugBreak();		//break!
-	}
-#endif
-	return iRet;
+	free_args(&args);
+
+	return 0;
 }
