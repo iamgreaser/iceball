@@ -112,12 +112,23 @@ void render_blit_img(uint32_t *pixels, int width, int height, int pitch,
 	if(src->udtype == UD_IMG && src->tex_dirty)
 	{
 		if(src->tex == 0)
+		{
 			glGenTextures(1, &(src->tex));
-		
-		glBindTexture(GL_TEXTURE_2D, src->tex);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iw, ih, 0, GL_BGRA, GL_UNSIGNED_BYTE, src->pixels);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glBindTexture(GL_TEXTURE_2D, src->tex);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			if(GLAD_GL_ARB_texture_storage)
+			{
+				glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, iw, ih);
+			} else {
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iw, ih, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+			}
+		} else {
+			glBindTexture(GL_TEXTURE_2D, src->tex);
+		}
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, iw, ih, GL_BGRA, GL_UNSIGNED_BYTE, src->pixels);
 
 		src->tex_dirty = 0;
 	} else {
