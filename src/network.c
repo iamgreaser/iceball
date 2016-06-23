@@ -491,6 +491,8 @@ const char *net_aux_gettype_str(int ftype)
 			return "bin";
 		case UD_IMG_PNG:
 			return "png";
+		case UD_FNT_TTF:
+			return "ttf";
 	}
 	
 	return NULL;

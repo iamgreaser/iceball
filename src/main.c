@@ -1107,7 +1107,7 @@ cleanup:
 
 #else
 	if (boot_mode & IB_CLIENT)
-		if (platform_init()) goto cleanup;
+		if (platform_init() || video_init()) goto cleanup;
 
 	if (net_init()) goto cleanup;
 	if (icelua_init()) goto cleanup;
@@ -1117,7 +1117,6 @@ cleanup:
 
 	if (boot_mode & IB_CLIENT) {
 		if (net_connect()
-				|| video_init()
 				|| wav_init()
 				|| render_init(screen_width, screen_height)) goto cleanup;
 	}
@@ -1128,7 +1127,6 @@ cleanup:
 	if (boot_mode & IB_CLIENT) {
 		render_deinit();
 		wav_deinit();
-		video_deinit();
 		net_disconnect();
 	}
 
@@ -1138,8 +1136,10 @@ cleanup:
 	icelua_deinit();
 	net_deinit();
 
-	if (boot_mode & IB_CLIENT)
+	if (boot_mode & IB_CLIENT) {
+		video_deinit();
 		platform_deinit();
+	}
 #endif
 
 	fflush(stdout);
