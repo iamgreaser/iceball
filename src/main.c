@@ -409,6 +409,26 @@ int64_t platform_get_time_usec(void)
 }
 
 #ifndef DEDI
+void ib_create_launcher(int port, const char *pkg)
+{
+	if (net_address) {
+		free(net_address);
+	}
+
+	net_address = NULL;
+	net_port = port;
+
+	if (mod_basedir) {
+		free(mod_basedir);
+	}
+
+	mod_basedir = malloc(PATH_LEN_MAX);
+	mod_basedir = strncpy(mod_basedir, pkg, PATH_LEN_MAX);
+
+	restart_boot_mode = IB_LAUNCHER | IB_CLIENT | IB_SERVER;
+	quitflag |= IB_QUIT_RESTART;
+}
+
 void ib_create_server(int port, const char *pkg)
 {
 	if (net_address) {
@@ -425,7 +445,7 @@ void ib_create_server(int port, const char *pkg)
 	mod_basedir = malloc(PATH_LEN_MAX);
 	mod_basedir = strncpy(mod_basedir, pkg, PATH_LEN_MAX);
 
-	restart_boot_mode = IB_LAUNCHER;
+	restart_boot_mode = IB_CLIENT | IB_SERVER;
 	quitflag |= IB_QUIT_RESTART;
 }
 
@@ -986,7 +1006,7 @@ static int parse_args(int argc, char *argv[], struct cli_args *args) {
 	if (argc <= 1) {
 		args->net_port = 0;
 		args->basedir = strncpy(args->basedir, "pkg/iceball/launch", PATH_LEN_MAX);
-		args->boot_mode = IB_LAUNCHER;
+		args->boot_mode = IB_CLIENT | IB_SERVER | IB_LAUNCHER;
 		args->used_args = 4;
 	} else
 #endif
@@ -997,7 +1017,7 @@ static int parse_args(int argc, char *argv[], struct cli_args *args) {
 	} else if (!strcmp(argv[1], "-l")) {
 		// TODO: Merge this with the argc <= 1 thing above
 		args->net_port = 0;
-		args->boot_mode = IB_LAUNCHER;
+		args->boot_mode = IB_CLIENT | IB_SERVER | IB_LAUNCHER;
 		// TODO: Ensure used_args values are correct
 		args->used_args = 2;
 		if (argc >= 3) {

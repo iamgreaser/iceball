@@ -96,7 +96,7 @@ function client.hook_key(key, state, modif, uni)
 			client.create_server(20737, "pkg/base")
 			-- client.mk_sys_execv("-s", "20737", "pkg/base", arg_closure(argv))
 		elseif key == SDLK_c then
-			client.create_server(0, "pkg/iceball/config")
+			client.create_launcher(0, "pkg/iceball/config")
 			-- client.mk_sys_execv("-l", "pkg/iceball/config")
 		elseif key == SDLK_ESCAPE then
 			client.hook_tick = nil

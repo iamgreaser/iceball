@@ -34,10 +34,10 @@
 
 #define IB_CLIENT       (0x1 << 0)
 #define IB_SERVER       (0x1 << 1)
-#define IB_LAUNCHER     (IB_CLIENT | IB_SERVER)
-#define IB_MAIN_LOADED  (0x1 << 2)
-#define IB_MAIN_LOADING (0x1 << 3)
-#define IB_ENET         (0x1 << 4)
+#define IB_LAUNCHER     (0x1 << 2)
+#define IB_MAIN_LOADED  (0x1 << 3)
+#define IB_MAIN_LOADING (0x1 << 4)
+#define IB_ENET         (0x1 << 5)
 
 #define IB_QUIT_SHUTDOWN (0x1 << 0)
 #define IB_QUIT_RESTART  (0x1 << 1)
@@ -621,6 +621,7 @@ int error_sdl(char *msg);
 int error_perror(char *msg);
 
 #ifndef DEDI
+void ib_create_launcher(int port, const char *pkg);
 void ib_create_server(int port, const char *pkg);
 void ib_join_server(const char *address, int port);
 #endif

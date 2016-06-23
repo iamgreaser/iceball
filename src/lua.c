@@ -99,7 +99,7 @@ int icelua_fn_client_join_server(lua_State *L)
 int icelua_fn_client_create_server(lua_State *L)
 {
 	if (!(boot_mode & IB_LAUNCHER))
-		return luaL_error(L, "join_server called when not in -l mode");
+		return luaL_error(L, "create_server called when not in -l mode");
 
 	int top = lua_gettop(L);
 
@@ -107,6 +107,21 @@ int icelua_fn_client_create_server(lua_State *L)
 	const char *pkg = lua_tostring(L, -1);
 
 	ib_create_server(port, pkg);
+
+	return 2;
+}
+
+int icelua_fn_client_create_launcher(lua_State *L)
+{
+	if (!(boot_mode & IB_LAUNCHER))
+		return luaL_error(L, "create_launcher called when not in -l mode");
+
+	int top = lua_gettop(L);
+
+	int port = lua_tonumber(L, -2);
+	const char *pkg = lua_tostring(L, -1);
+
+	ib_create_launcher(port, pkg);
 
 	return 2;
 }
@@ -238,6 +253,7 @@ int icelua_fn_client_mk_set_title(lua_State *L)
 
 #ifndef DEDI
 struct icelua_entry icelua_client[] = {
+	{icelua_fn_client_create_launcher, "create_launcher"},
 	{icelua_fn_client_create_server, "create_server"},
 	{icelua_fn_client_join_server, "join_server"},
 	{icelua_fn_client_mk_set_title, "mk_set_title"},
