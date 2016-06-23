@@ -81,6 +81,36 @@ int icelua_fn_common_mk_compat_disable(lua_State *L)
 	return 0;
 }
 #ifndef DEDI
+int icelua_fn_client_join_server(lua_State *L)
+{
+	if (!(boot_mode & IB_LAUNCHER))
+		return luaL_error(L, "join_server called when not in -l mode");
+
+	int top = lua_gettop(L);
+
+	const char *address = lua_tostring(L, -2);
+	int port = lua_tonumber(L, -1);
+
+	ib_join_server(address, port);
+
+	return 2;
+}
+
+int icelua_fn_client_create_server(lua_State *L)
+{
+	if (!(boot_mode & IB_LAUNCHER))
+		return luaL_error(L, "join_server called when not in -l mode");
+
+	int top = lua_gettop(L);
+
+	int port = lua_tonumber(L, -2);
+	const char *pkg = lua_tostring(L, -1);
+
+	ib_create_server(port, pkg);
+
+	return 2;
+}
+
 int icelua_fn_client_mk_sys_execv(lua_State *L)
 {
 	if(!(boot_mode & IB_LAUNCHER))
@@ -208,6 +238,8 @@ int icelua_fn_client_mk_set_title(lua_State *L)
 
 #ifndef DEDI
 struct icelua_entry icelua_client[] = {
+	{icelua_fn_client_create_server, "create_server"},
+	{icelua_fn_client_join_server, "join_server"},
 	{icelua_fn_client_mk_set_title, "mk_set_title"},
 	{icelua_fn_client_mk_sys_execv, "mk_sys_execv"},
 
@@ -441,7 +473,7 @@ int icelua_initfetch(void)
 	printf("Client loaded! Initialising...\n");
 	for(i = 0; i < argct; i++)
 		lua_pushstring(lstate_client, main_argv[i+main_largstart]);
-	if((boot_mode & IB_CLIENT) && net_path[1] != '\x00')
+	if((boot_mode & IB_CLIENT) && (net_path && net_path[1] != '\x00'))
 	{
 		lua_pushstring(lstate_client, net_path);
 		argct++;
@@ -870,6 +902,11 @@ int icelua_init(void)
 
 void icelua_deinit(void)
 {
+	if (lstate_client)
+		lua_close(lstate_client);
+
+	if (lstate_server)
+		lua_close(lstate_server);
 	// TODO!
 }
 

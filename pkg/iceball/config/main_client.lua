@@ -318,9 +318,11 @@ function client.hook_key(key, state, modif, uni)
 			if field[4] == "action_save" then
 				common.json_write("clsave/pub/user.json", profile)
 				common.json_write("clsave/config.json", config)
-				client.mk_sys_execv()
+				client.create_launcher(0, "pkg/iceball/launch")
+				-- client.mk_sys_execv()
 			elseif field[4] == "action_exit" then
-				client.mk_sys_execv()
+				client.create_launcher(0, "pkg/iceball/launch")
+				-- client.mk_sys_execv()
 			end
 		elseif key == SDLK_UP then
 			selected = selected - 1

@@ -32,12 +32,15 @@
 #define NET_HOST_SIZE 256
 #define NET_PATH_SIZE 256
 
-#define IB_CLIENT 0x1
-#define IB_SERVER 0x2
-#define IB_LAUNCHER 0x4
-#define IB_MAIN_LOADED 0x10
-#define IB_MAIN_LOADING 0x20
-#define IB_ENET 0x80
+#define IB_CLIENT       (0x1 << 0)
+#define IB_SERVER       (0x1 << 1)
+#define IB_LAUNCHER     (IB_CLIENT | IB_SERVER)
+#define IB_MAIN_LOADED  (0x1 << 2)
+#define IB_MAIN_LOADING (0x1 << 3)
+#define IB_ENET         (0x1 << 4)
+
+#define IB_QUIT_SHUTDOWN (0x1 << 0)
+#define IB_QUIT_RESTART  (0x1 << 1)
 
 #define MODEL_BONE_MAX  256
 #define MODEL_POINT_MAX 4096
@@ -601,7 +604,9 @@ extern char *net_address;
 extern char *net_path;
 
 extern char *mod_basedir;
+extern int restart_boot_mode;
 extern int boot_mode;
+extern int quitflag;
 
 extern int main_argc;
 extern char **main_argv;
@@ -614,6 +619,11 @@ int run_game_cont2(void);
 
 int error_sdl(char *msg);
 int error_perror(char *msg);
+
+#ifndef DEDI
+void ib_create_server(int port, const char *pkg);
+void ib_join_server(const char *address, int port);
+#endif
 
 // map.c
 map_t *map_parse_aos(int len, const char *data);

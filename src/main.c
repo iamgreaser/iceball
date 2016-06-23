@@ -54,7 +54,9 @@ int force_redraw = 1;
 
 // bit 0 = client, bit 1 = server, bit 2 = main_client.lua has been loaded,
 // bit 3 = currently loading main_client.lua and co, bit 4 == use ENet for client
+int restart_boot_mode = 0;
 int boot_mode = 0;
+int quitflag = 0;
 
 char *mod_basedir = NULL;
 char *net_address;
@@ -237,10 +239,14 @@ int video_init(void)
 
 void video_deinit(void)
 {
-	if (gl_context)
+	if (gl_context) {
 		SDL_GL_DeleteContext(gl_context);
-	if (window)
+		gl_context = NULL;
+	}
+	if (window) {
 		SDL_DestroyWindow(window);
+		window = NULL;
+	}
 }
 
 void platform_deinit(void)
@@ -403,6 +409,45 @@ int64_t platform_get_time_usec(void)
 }
 
 #ifndef DEDI
+void ib_create_server(int port, const char *pkg)
+{
+	if (net_address) {
+		free(net_address);
+	}
+
+	net_address = NULL;
+	net_port = port;
+
+	if (mod_basedir) {
+		free(mod_basedir);
+	}
+
+	mod_basedir = malloc(PATH_LEN_MAX);
+	mod_basedir = strncpy(mod_basedir, pkg, PATH_LEN_MAX);
+
+	restart_boot_mode = IB_LAUNCHER;
+	quitflag |= IB_QUIT_RESTART;
+}
+
+void ib_join_server(const char *address, int port)
+{
+	if (mod_basedir)
+		free(mod_basedir);
+
+	if (!net_address)
+		net_address = malloc(NET_HOST_SIZE);
+
+	mod_basedir = NULL;
+	net_address[0] = '\0';
+	net_path[0] = '/';
+	net_path[1] = '\0';
+	net_port = port;
+
+	net_address = strncpy(net_address, address, NET_HOST_SIZE);
+	restart_boot_mode = IB_CLIENT | IB_ENET;
+	quitflag |= IB_QUIT_RESTART;
+}
+
 static int ib_client_tick_hook(void) {
 	lua_getglobal(lstate_client, "client");
 	lua_getfield(lstate_client, -1, "hook_tick");
@@ -423,7 +468,7 @@ static int ib_client_tick_hook(void) {
 	{
 		printf("Lua Client Error (tick): %s\n", lua_tostring(lstate_client, -1));
 		lua_pop(lstate_client, 1);
-		return 1;
+		return IB_QUIT_SHUTDOWN;
 	}
 	//if(!(boot_mode & IB_SERVER))
 	sec_wait += lua_tonumber(lstate_client, -1);
@@ -442,7 +487,7 @@ static int ib_client_render_hook(void) {
 		{
 			printf("Lua Client Error (render): %s\n", lua_tostring(lstate_client, -1));
 			lua_pop(lstate_client, 1);
-			return 1;
+			return IB_QUIT_SHUTDOWN;
 		}
 	}
 
@@ -471,7 +516,7 @@ static int ib_client_key_hook(SDL_Event ev) {
 	if (lua_pcall(lstate_client, 4, 0, 0) != 0) {
 		printf("Lua Client Error (key): %s\n", lua_tostring(lstate_client, -1));
 		lua_pop(lstate_client, 1);
-		return 1;
+		return IB_QUIT_SHUTDOWN;
 	}
 
 	return 0;
@@ -494,7 +539,7 @@ static int ib_client_text_hook(SDL_Event ev) {
 	if (lua_pcall(lstate_client, 1, 0, 0) != 0) {
 		printf("Lua Client Error (text): %s\n", lua_tostring(lstate_client, -1));
 		lua_pop(lstate_client, 1);
-		return 1;
+		return IB_QUIT_SHUTDOWN;
 	}
 
 	return 0;
@@ -515,7 +560,7 @@ static int ib_client_mouse_press_hook(SDL_Event ev) {
 	if (lua_pcall(lstate_client, 2, 0, 0) != 0) {
 		printf("Lua Client Error (mouse_button): %s\n", lua_tostring(lstate_client, -1));
 		lua_pop(lstate_client, 1);
-		return 1;
+		return IB_QUIT_SHUTDOWN;
 	}
 
 	return 0;
@@ -548,7 +593,7 @@ static int ib_client_mouse_motion_hook(SDL_Event ev)
 	if (lua_pcall(lstate_client, 4, 0, 0) != 0) {
 		printf("Lua Client Error (mouse_motion): %s\n", lua_tostring(lstate_client, -1));
 		lua_pop(lstate_client, 1);
-		return 1;
+		return IB_QUIT_SHUTDOWN;
 	}
 
 	return 0;
@@ -568,16 +613,14 @@ static int ib_client_window_focus_hook(SDL_Event ev) {
 	if (lua_pcall(lstate_client, 1, 0, 0) != 0) {
 		printf("Lua Client Error (window_activate): %s\n", lua_tostring(lstate_client, -1));
 		lua_pop(lstate_client, 1);
-		return 1;
+		return IB_QUIT_SHUTDOWN;
 	}
 
 	return 0;
 }
 
-int update_fps_counter(void)
+void update_fps_counter(void)
 {
-	int quitflag = 0;
-
 	// update FPS counter
 	frame_now = platform_get_time_usec();
 	fps++;
@@ -590,14 +633,11 @@ int update_fps_counter(void)
 		fps = 0;
 		frame_prev = platform_get_time_usec();
 	}
-
-	return quitflag;
 }
 
 int render_client(void)
 {
-	int quitflag = 0;
-
+	int quit = 0;
 	// skip while still loading
 	if(mod_basedir == NULL || (boot_mode & IB_MAIN_LOADING))
 		return 0;
@@ -640,7 +680,7 @@ int render_client(void)
 	}
 
 	// apply Lua HUD / model stuff
-	quitflag = quitflag || ib_client_render_hook();
+	quit = ib_client_render_hook();
 
 	// clean up stuff that may have happened in the scene
 	glDepthMask(GL_TRUE);
@@ -663,29 +703,29 @@ int render_client(void)
 	}
 #endif
 
-	return quitflag;
+	return quit;
 }
 
 int poll_events(void)
 {
-	int quitflag = 0;
+	int quit = 0;
 
 	SDL_Event ev;
-	while(SDL_PollEvent(&ev)) {
+	while(SDL_PollEvent(&ev) && !quit) {
 		switch (ev.type) {
 			case SDL_KEYUP:
 			case SDL_KEYDOWN:
-				quitflag = ib_client_key_hook(ev);
+				quit |= ib_client_key_hook(ev);
 				break;
 			case SDL_TEXTINPUT:
-				quitflag = ib_client_text_hook(ev);
+				quit |= ib_client_text_hook(ev);
 				break;
 			case SDL_MOUSEBUTTONUP:
 			case SDL_MOUSEBUTTONDOWN:
-				quitflag = ib_client_mouse_press_hook(ev);
+				quit |= ib_client_mouse_press_hook(ev);
 				break;
 			case SDL_MOUSEMOTION:
-				quitflag = ib_client_mouse_motion_hook(ev);
+				quit |= ib_client_mouse_motion_hook(ev);
 				break;
 			case SDL_WINDOWEVENT:
 				switch (ev.window.event) {
@@ -702,26 +742,27 @@ int poll_events(void)
 						}
 					}
 					case SDL_WINDOWEVENT_FOCUS_LOST:
-						quitflag = ib_client_window_focus_hook(ev);
+						quit |= ib_client_window_focus_hook(ev);
 						break;
 					default:
 						break;
 				}
 				break;
 			case SDL_QUIT:
-				quitflag = 1;
+				quit |= IB_QUIT_SHUTDOWN;
 				break;
 			default:
 				break;
 		}
 	}
 
-	return quitflag;
+	return quit;
 }
 
 int update_client(void)
 {
-	int quitflag = update_fps_counter();
+	int quit = 0;
+	update_fps_counter();
 
 	if(mod_basedir == NULL)
 	{
@@ -735,21 +776,19 @@ int update_client(void)
 
 		boot_mode &= ~IB_MAIN_LOADING;
 	} else {
-		quitflag = quitflag || ib_client_tick_hook();
+		quit |= ib_client_tick_hook();
 	}
 
-	quitflag = quitflag || render_client();
+	quit |= render_client();
+	quit |= poll_events();
 
-	quitflag = quitflag || poll_events();
-
-	return quitflag;
+	return quit;
 }
 #endif
 
 int update_server(void)
 {
 	// TODO: respect time returned
-	int quitflag = 0;
 
 	lua_getglobal(lstate_server, "server");
 	lua_getfield(lstate_server, -1, "hook_tick");
@@ -757,7 +796,7 @@ int update_server(void)
 	if(lua_isnil(lstate_server, -1))
 	{
 		lua_pop(lstate_server, 1);
-		return 1;
+		return IB_QUIT_SHUTDOWN;
 	}
 
 	lua_pushnumber(lstate_server, sec_curtime);
@@ -766,7 +805,7 @@ int update_server(void)
 	{
 		printf("Lua Server Error (tick): %s\n", lua_tostring(lstate_server, -1));
 		lua_pop(lstate_server, 1);
-		return 1;
+		return IB_QUIT_SHUTDOWN;
 	}
 
 #ifndef WIN32
@@ -795,10 +834,10 @@ int update_server(void)
 #ifndef DEDI
 int run_game_cont1(void)
 {
-	int quitflag = render_client();
+	int quit = render_client();
 	net_flush();
 	if(boot_mode & IB_SERVER)
-		quitflag = quitflag || update_server();
+		quit |= update_server();
 	net_flush();
 
 	// update time
@@ -807,16 +846,16 @@ int run_game_cont1(void)
 	sec_curtime = ((double)usec_curtime)/1000000.0;
 
 	// update client/server
-	quitflag = quitflag || update_fps_counter();
+	update_fps_counter();
 
-	return quitflag;
+	return quit;
 }
 
 int run_game_cont2(void)
 {
-	int quitflag = 0;
+	int quit = 0;
 	if(boot_mode & IB_SERVER)
-		quitflag = quitflag || update_server();
+		quit |= update_server();
 	net_flush();
 
 	// update time
@@ -824,7 +863,7 @@ int run_game_cont2(void)
 	int64_t usec_curtime = platform_get_time_usec() - usec_basetime;
 	sec_curtime = ((double)usec_curtime)/1000000.0;
 
-	return quitflag;
+	return quit;
 }
 #endif
 
@@ -849,8 +888,6 @@ static void run_game(void)
 
 	//render_vxl_redraw(&tcam, clmap);
 
-	int quitflag = 0;
-
 	usec_basetime = platform_get_time_usec();
 
 	while(!quitflag)
@@ -863,11 +900,11 @@ static void run_game(void)
 		// update client/server
 #ifndef DEDI
 		if(boot_mode & IB_CLIENT)
-			quitflag = quitflag || update_client();
+			quitflag |= update_client();
 		net_flush();
 #endif
 		if(boot_mode & IB_SERVER)
-			quitflag = quitflag || update_server();
+			quitflag |= update_server();
 		net_flush();
 	}
 	map_free(clmap);
@@ -935,6 +972,7 @@ struct cli_args {
 static int parse_args(int argc, char *argv[], struct cli_args *args) {
 	args->net_host = malloc(NET_HOST_SIZE);
 	args->net_path = malloc(NET_PATH_SIZE);
+	args->basedir  = malloc(PATH_LEN_MAX);
 
 	// we set the initial value to a leading slash in order to play nice with
 	// sscanf later on
@@ -947,10 +985,8 @@ static int parse_args(int argc, char *argv[], struct cli_args *args) {
 #else
 	if (argc <= 1) {
 		args->net_port = 0;
-		args->basedir = "pkg/iceball/launch";
-		// TODO: Just make IB_LAUNCHER == IB_LAUNCHER | IB_CLIENT | IB_SERVER? It piggybacks on the existing
-		// (client | server) setup stuff anyway, so IB_LAUNCHER without (IB_CLIENT | IB_SERVER) doesn't make sense.
-		args->boot_mode = IB_LAUNCHER | IB_CLIENT | IB_SERVER;
+		args->basedir = strncpy(args->basedir, "pkg/iceball/launch", PATH_LEN_MAX);
+		args->boot_mode = IB_LAUNCHER;
 		args->used_args = 4;
 	} else
 #endif
@@ -961,11 +997,11 @@ static int parse_args(int argc, char *argv[], struct cli_args *args) {
 	} else if (!strcmp(argv[1], "-l")) {
 		// TODO: Merge this with the argc <= 1 thing above
 		args->net_port = 0;
-		args->boot_mode = IB_LAUNCHER | IB_CLIENT | IB_SERVER;
+		args->boot_mode = IB_LAUNCHER;
 		// TODO: Ensure used_args values are correct
 		args->used_args = 2;
 		if (argc >= 3) {
-			args->basedir = argv[2];
+			args->basedir = strncpy(args->basedir, argv[2], PATH_LEN_MAX);
 			args->used_args = 3;
 		}
 	} else if (!strcmp(argv[1], "-c")) {
@@ -986,7 +1022,7 @@ static int parse_args(int argc, char *argv[], struct cli_args *args) {
 			args->used_args = 4;
 		}
 
-		args->basedir = NULL;
+		args->basedir[0] = '\0';
 		args->boot_mode = IB_CLIENT | IB_ENET;
 
 		printf("Connecting to \"%s\" port %i (ENet mode)\n", args->net_host, args->net_port);
@@ -1008,7 +1044,7 @@ static int parse_args(int argc, char *argv[], struct cli_args *args) {
 			args->used_args = 4;
 		}
 
-		args->basedir = NULL;
+		args->basedir[0] = '\0';
 		args->boot_mode = IB_CLIENT;
 
 		printf("Connecting to \"%s\" port %i (TCP mode)\n", args->net_host, args->net_port);
@@ -1018,7 +1054,7 @@ static int parse_args(int argc, char *argv[], struct cli_args *args) {
 		}
 
 		args->net_port = atoi(argv[2]);
-		args->basedir = argv[3];
+		args->basedir = strncpy(args->basedir, argv[3], PATH_LEN_MAX);
 		args->boot_mode = IB_CLIENT | IB_SERVER;
 		args->used_args = 4;
 
@@ -1031,7 +1067,7 @@ static int parse_args(int argc, char *argv[], struct cli_args *args) {
 		}
 
 		args->net_port = atoi(argv[2]);
-		args->basedir = argv[3];
+		args->basedir = strncpy(args->basedir, argv[3], PATH_LEN_MAX);
 		args->boot_mode = IB_SERVER;
 		args->used_args = 4;
 
@@ -1061,34 +1097,11 @@ static void free_args(struct cli_args *args)
 {
 	free(args->net_host);
 	free(args->net_path);
+	free(args->basedir);
 }
 
-int main(int argc, char *argv[])
+int start_game()
 {
-	struct cli_args args = {0};
-	int parse_status = parse_args(argc, argv, &args);
-
-	if (parse_status) {
-		print_usage(argv[0]);
-
-		free_args(&args);
-		return 1;
-	}
-
-	// TODO: minimize usage of globals
-	main_argc = argc;
-	main_argv = argv;
-	main_argv0 = argv[0];
-	main_oldcwd = NULL;
-
-	net_address = args.net_host;
-	net_port = args.net_port;
-	net_path = args.net_path;
-
-	boot_mode = args.boot_mode;
-	mod_basedir = args.basedir;
-	main_largstart = args.used_args;
-
 #ifdef DEDI
 	if (net_init()) goto cleanup;
 	if (icelua_init()) goto cleanup;
@@ -1106,9 +1119,6 @@ cleanup:
 	net_deinit();
 
 #else
-	if (boot_mode & IB_CLIENT)
-		if (platform_init()) goto cleanup;
-
 	if (net_init()) goto cleanup;
 	if (icelua_init()) goto cleanup;
 
@@ -1137,15 +1147,55 @@ cleanup:
 
 	icelua_deinit();
 	net_deinit();
+#endif
 
+	boot_mode = restart_boot_mode;
+
+	return quitflag;
+}
+
+int main(int argc, char *argv[])
+{
+	struct cli_args args = {0};
+	int parse_status = parse_args(argc, argv, &args);
+
+	if (parse_status) {
+		print_usage(argv[0]);
+
+		free_args(&args);
+		return 1;
+	}
+
+	// TODO: minimize usage of globals
+	main_argc = argc;
+	main_argv = argv;
+	main_argv0 = argv[0];
+	main_oldcwd = NULL;
+
+	net_address = args.net_host;
+	net_port = args.net_port;
+	net_path = args.net_path;
+
+	boot_mode = args.boot_mode;
+	mod_basedir = args.basedir;
+	main_largstart = args.used_args;
+
+#ifndef DEDI
+	if (boot_mode & IB_CLIENT)
+		if (platform_init()) goto cleanup;
+#endif
+
+	while (start_game() != IB_QUIT_SHUTDOWN)
+		quitflag = 0;
+
+#ifndef DEDI
+cleanup:
 	if (boot_mode & IB_CLIENT)
 		platform_deinit();
 #endif
 
 	fflush(stdout);
 	fflush(stderr);
-
-	free_args(&args);
 
 	return 0;
 }

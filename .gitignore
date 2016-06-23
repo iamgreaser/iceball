@@ -59,4 +59,7 @@ ZERO_CHECK.vcproj
 # idea stuff
 .idea/
 
+# vim stuff
+.vimrc
+
 # clsave/vol/fastload.tmp
