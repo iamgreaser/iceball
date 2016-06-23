@@ -16,22 +16,23 @@
 ]]
 
 local thisid = ...
+DIR_SNIPER_RIFLE = "pkg/iceball/sniper_rifle/"
 
 if client then
 	weapon_models[thisid] = model_load({
 		kv6 = {
-			bdir = DIR_PKG_KV6,
+			bdir = DIR_SNIPER_RIFLE,
 			name = "leerifle.kv6",
 			scale = 1.0/128.0,
 		},
 		pmf = {
-			bdir = DIR_PKG_PMF,
+			bdir = DIR_SNIPER_RIFLE,
 			name = "leerifle.pmf",
 		},
 	}, {"kv6", "pmf"})
 end
 
-weapon_names[thisid] = "Lee-Enfield"
+weapon_names[thisid] = "Sniper Rifle"
 
 return function (plr)
 	local this = tpl_gun(plr, {
@@ -53,7 +54,7 @@ return function (plr)
 
 		model = client and (weapon_models[thisid] {}),
 		
-		name = "Lee-Enfield Rifle",
+		name = "Sniper Rifle",
 	})
 	
 	this.reset()

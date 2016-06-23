@@ -244,7 +244,6 @@ tpl_gun = loadfile(DIR_PKG_ROOT.."/ent/tpl_gun.lua")()
 
 weapon_resetlist()
 WPN_RIFLE = weapon_add(DIR_PKG_ROOT.."/ent/gun_rifle.lua")
-WPN_LEERIFLE = weapon_add(DIR_PKG_ROOT.."/ent/gun_leerifle.lua")
 
 tools = {
 	[TOOL_SPADE] = loadfile(DIR_PKG_ROOT.."/ent/tool_spade.lua")(),
@@ -253,7 +252,6 @@ tools = {
 }
 
 weapons_enabled[WPN_RIFLE] = true
-weapons_enabled[WPN_LEERIFLE] = true
 
 -- explosives
 EXPL_GRENADE = 1
