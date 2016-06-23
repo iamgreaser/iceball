@@ -94,7 +94,7 @@ function client.hook_key(key, state, modif, uni)
 		if key == SDLK_l then
 			client.mk_sys_execv("-s", "20737", "pkg/base", arg_closure(argv))
 		elseif key == SDLK_c then
-			client.mk_sys_execv("-s", "0", "pkg/iceball/config")
+			client.mk_sys_execv("-l", "pkg/iceball/config")
 		elseif key == SDLK_ESCAPE then
 			client.hook_tick = nil
 		elseif key >= SDLK_1 and key <= SDLK_9 then

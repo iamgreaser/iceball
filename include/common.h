@@ -34,9 +34,10 @@
 
 #define IB_CLIENT 0x1
 #define IB_SERVER 0x2
-#define IB_MAIN_LOADED 0x4
-#define IB_MAIN_LOADING 0x8
-#define IB_ENET 0x10
+#define IB_LAUNCHER 0x4
+#define IB_MAIN_LOADED 0x10
+#define IB_MAIN_LOADING 0x20
+#define IB_ENET 0x80
 
 #define MODEL_BONE_MAX  256
 #define MODEL_POINT_MAX 4096
@@ -512,10 +513,12 @@ enum
 {
 	PATH_INVALID_ENUM = 0, // don't use this!
 
+	PATH_CLSAVE,
 	PATH_CLSAVE_BASEDIR,
 	PATH_CLSAVE_BASEDIR_VOLATILE,
 	PATH_CLSAVE_PUBLIC,
 	PATH_CLSAVE_VOLATILE,
+	PATH_SVSAVE,
 	PATH_SVSAVE_BASEDIR,
 	PATH_SVSAVE_BASEDIR_VOLATILE,
 	PATH_SVSAVE_PUBLIC,
@@ -658,6 +661,7 @@ void net_deinit(void);
 // path.c
 char *path_filter(const char *path);
 int path_get_type(const char *path);
+int path_type_valid(int type);
 int path_type_client_local(int type);
 int path_type_client_readable(int type);
 int path_type_client_writable(int type);

@@ -948,7 +948,9 @@ static int parse_args(int argc, char *argv[], struct cli_args *args) {
 	if (argc <= 1) {
 		args->net_port = 0;
 		args->basedir = "pkg/iceball/launch";
-		args->boot_mode = IB_CLIENT | IB_SERVER;
+		// TODO: Just make IB_LAUNCHER == IB_LAUNCHER | IB_CLIENT | IB_SERVER? It piggybacks on the existing
+		// (client | server) setup stuff anyway, so IB_LAUNCHER without (IB_CLIENT | IB_SERVER) doesn't make sense.
+		args->boot_mode = IB_LAUNCHER | IB_CLIENT | IB_SERVER;
 		args->used_args = 4;
 	} else
 #endif
@@ -956,6 +958,16 @@ static int parse_args(int argc, char *argv[], struct cli_args *args) {
 #ifndef DEDI
 	if (!strcmp(argv[1], "-h") || !strcmp(argv[1], "--help")) {
 		return 1;
+	} else if (!strcmp(argv[1], "-l")) {
+		// TODO: Merge this with the argc <= 1 thing above
+		args->net_port = 0;
+		args->boot_mode = IB_LAUNCHER | IB_CLIENT | IB_SERVER;
+		// TODO: Ensure used_args values are correct
+		args->used_args = 2;
+		if (argc >= 3) {
+			args->basedir = argv[2];
+			args->used_args = 3;
+		}
 	} else if (!strcmp(argv[1], "-c")) {
 		if (argc <= 2 || (argc <= 3 && memcmp(argv[2], "iceball://", 10))) {
 			return 1;

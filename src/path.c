@@ -75,6 +75,8 @@ int path_get_type(const char *path)
 		else
 			return PATH_CLSAVE_BASEDIR;
 	}
+	if(!memcmp(path,"clsave/",7))
+		return PATH_CLSAVE;
 	
 	if(!memcmp(path,"svsave/pub/",11))
 		return PATH_SVSAVE_PUBLIC;
@@ -91,8 +93,26 @@ int path_get_type(const char *path)
 		else
 			return PATH_SVSAVE_BASEDIR;
 	}
+	if(!memcmp(path,"svsave/",7))
+		return PATH_SVSAVE;
 	
 	return PATH_ERROR_ACCDENIED;
+}
+
+int path_type_valid(int type)
+{
+	return type == PATH_CLSAVE
+		|| type == PATH_CLSAVE_BASEDIR
+		|| type == PATH_CLSAVE_BASEDIR_VOLATILE
+		|| type == PATH_CLSAVE_PUBLIC
+		|| type == PATH_CLSAVE_VOLATILE
+		|| type == PATH_SVSAVE
+		|| type == PATH_SVSAVE_BASEDIR
+		|| type == PATH_SVSAVE_BASEDIR_VOLATILE
+		|| type == PATH_SVSAVE_PUBLIC
+		|| type == PATH_SVSAVE_VOLATILE
+		|| type == PATH_PKG_BASEDIR
+		|| type == PATH_PKG;
 }
 
 int path_type_client_local(int type)
@@ -100,22 +120,23 @@ int path_type_client_local(int type)
 	return type == PATH_CLSAVE_BASEDIR
 		|| type == PATH_CLSAVE_PUBLIC
 		|| type == PATH_CLSAVE_VOLATILE
-		|| type == PATH_CLSAVE_BASEDIR_VOLATILE;
+		|| type == PATH_CLSAVE_BASEDIR_VOLATILE
+		|| ((boot_mode & IB_LAUNCHER) && type == PATH_CLSAVE);
 }
 
 int path_type_client_readable(int type)
 {
 	return path_type_client_local(type)
 		|| type == PATH_PKG
-		|| type == PATH_PKG_BASEDIR;
+		|| type == PATH_PKG_BASEDIR
+		|| ((boot_mode & IB_LAUNCHER) && path_type_valid(type));
 }
 
 int path_type_client_writable(int type)
 {
 	return type == PATH_CLSAVE_BASEDIR_VOLATILE
 		|| type == PATH_CLSAVE_VOLATILE
-		|| (type == PATH_CLSAVE_PUBLIC
-			&& (boot_mode & (IB_CLIENT | IB_SERVER)) == (IB_CLIENT | IB_SERVER) && net_port == 0);
+		|| ((boot_mode & IB_LAUNCHER) && path_type_valid(type));
 }
 
 int path_type_server_readable(int type)

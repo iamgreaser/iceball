@@ -119,9 +119,9 @@ do
 		end
 	else
 		print("usage:")
-		print("  iceball -s 0 pkg/iceball/mapedit loadmap.vxl/icemap savemap.icemap")
-		print("  iceball -s 0 pkg/iceball/mapedit loadandsavemap.icemap")
-		print("  iceball -s 0 pkg/iceball/mapedit xlen ylen zlen savemap.icemap")
+		print("  iceball -l pkg/iceball/mapedit loadmap.vxl/icemap savemap.icemap")
+		print("  iceball -l pkg/iceball/mapedit loadandsavemap.icemap")
+		print("  iceball -l pkg/iceball/mapedit xlen ylen zlen savemap.icemap")
 		error("check stdout for usage!")
 	end
 end

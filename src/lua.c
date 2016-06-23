@@ -83,8 +83,8 @@ int icelua_fn_common_mk_compat_disable(lua_State *L)
 #ifndef DEDI
 int icelua_fn_client_mk_sys_execv(lua_State *L)
 {
-	if((boot_mode & (IB_CLIENT | IB_SERVER)) != (IB_CLIENT | IB_SERVER) || net_port != 0)
-		return luaL_error(L, "mk_sys_execv called when not in -s 0 mode");
+	if(!(boot_mode & IB_LAUNCHER))
+		return luaL_error(L, "mk_sys_execv called when not in -l mode");
 
 	int top = lua_gettop(L);
 	char **arglist = malloc(sizeof(char *) * (top+2));
