@@ -63,11 +63,8 @@ char *net_address;
 char *net_path;
 int net_port;
 
-int main_argc;
-char **main_argv;
-char *main_argv0;
-char *main_oldcwd;
-int main_largstart = -1;
+char **lua_args;
+int lua_args_len;
 
 int64_t frame_prev = 0;
 int64_t frame_now = 0;
@@ -409,14 +406,14 @@ int64_t platform_get_time_usec(void)
 }
 
 #ifndef DEDI
-void ib_create_launcher(int port, const char *pkg)
+void ib_create_launcher(const char *pkg)
 {
 	if (net_address) {
 		free(net_address);
 	}
 
 	net_address = NULL;
-	net_port = port;
+	net_port = 0;
 
 	if (mod_basedir) {
 		free(mod_basedir);
@@ -986,6 +983,9 @@ struct cli_args {
 
 	char *basedir;
 	int boot_mode;
+
+	char **extra_args;
+	int extra_args_len;
 	int used_args;
 };
 
@@ -999,6 +999,8 @@ static int parse_args(int argc, char *argv[], struct cli_args *args) {
 	args->net_path[0] = '/';
 	args->net_path[1] = '\0';
 
+	int used_args = 0;
+
 #ifdef DEDI
 	if (argc <= 1)
 		return 1;
@@ -1007,7 +1009,8 @@ static int parse_args(int argc, char *argv[], struct cli_args *args) {
 		args->net_port = 0;
 		args->basedir = strncpy(args->basedir, "pkg/iceball/launch", PATH_LEN_MAX);
 		args->boot_mode = IB_CLIENT | IB_SERVER | IB_LAUNCHER;
-		args->used_args = 4;
+
+		used_args = 1;
 	} else
 #endif
 
@@ -1017,12 +1020,12 @@ static int parse_args(int argc, char *argv[], struct cli_args *args) {
 	} else if (!strcmp(argv[1], "-l")) {
 		// TODO: Merge this with the argc <= 1 thing above
 		args->net_port = 0;
-		args->boot_mode = IB_CLIENT | IB_SERVER | IB_LAUNCHER;
+		args->boot_mode = IB_LAUNCHER | IB_CLIENT | IB_SERVER;
 		// TODO: Ensure used_args values are correct
-		args->used_args = 2;
+		used_args = 2;
 		if (argc >= 3) {
 			args->basedir = strncpy(args->basedir, argv[2], PATH_LEN_MAX);
-			args->used_args = 3;
+			used_args = 3;
 		}
 	} else if (!strcmp(argv[1], "-c")) {
 		if (argc <= 2 || (argc <= 3 && memcmp(argv[2], "iceball://", 10))) {
@@ -1030,7 +1033,7 @@ static int parse_args(int argc, char *argv[], struct cli_args *args) {
 		}
 
 		args->net_port = 20737;
-		args->used_args = 3;
+		used_args = 3;
 
 		if (sscanf(argv[2], "iceball://%[^:]:%i/%s", args->net_host, &args->net_port, &args->net_path[1]) < 1) {
 			if (argc <= 3) {
@@ -1039,7 +1042,7 @@ static int parse_args(int argc, char *argv[], struct cli_args *args) {
 
 			args->net_host = strncpy(args->net_host, argv[2], NET_HOST_SIZE);
 			args->net_port = atoi(argv[3]);
-			args->used_args = 4;
+			used_args = 4;
 		}
 
 		args->basedir[0] = '\0';
@@ -1052,7 +1055,7 @@ static int parse_args(int argc, char *argv[], struct cli_args *args) {
 		}
 
 		args->net_port = 20737;
-		args->used_args = 3;
+		used_args = 3;
 
 		if (sscanf(argv[2], "iceball://%[^:]:%i/%s", args->net_host, &args->net_port, &args->net_path[1]) < 1) {
 			if (argc <= 3) {
@@ -1061,7 +1064,7 @@ static int parse_args(int argc, char *argv[], struct cli_args *args) {
 
 			args->net_host = strncpy(args->net_host, argv[2], NET_HOST_SIZE);
 			args->net_port = atoi(argv[3]);
-			args->used_args = 4;
+			used_args = 4;
 		}
 
 		args->basedir[0] = '\0';
@@ -1076,7 +1079,7 @@ static int parse_args(int argc, char *argv[], struct cli_args *args) {
 		args->net_port = atoi(argv[2]);
 		args->basedir = strncpy(args->basedir, argv[3], PATH_LEN_MAX);
 		args->boot_mode = IB_CLIENT | IB_SERVER;
-		args->used_args = 4;
+		used_args = 4;
 
 		printf("Starting server on port %i, mod \"%s\" (local mode client)\n", args->net_port, args->basedir);
 	} else
@@ -1089,7 +1092,7 @@ static int parse_args(int argc, char *argv[], struct cli_args *args) {
 		args->net_port = atoi(argv[2]);
 		args->basedir = strncpy(args->basedir, argv[3], PATH_LEN_MAX);
 		args->boot_mode = IB_SERVER;
-		args->used_args = 4;
+		used_args = 4;
 
 		printf("Starting headless/dedicated server on port %i, mod \"%s\"\n", args->net_port, args->basedir);
 	} else {
@@ -1108,6 +1111,12 @@ static int parse_args(int argc, char *argv[], struct cli_args *args) {
 
 			return 1;
 		}
+	}
+
+	args->extra_args_len = argc - used_args;
+	args->extra_args = malloc(sizeof(*args->extra_args) * args->extra_args_len);
+	for (int i = 0; i < args->extra_args_len; ++i) {
+		args->extra_args[i] = strdup(argv[used_args + i]);
 	}
 
 	return 0;
@@ -1187,18 +1196,22 @@ int main(int argc, char *argv[])
 	}
 
 	// TODO: minimize usage of globals
-	main_argc = argc;
-	main_argv = argv;
-	main_argv0 = argv[0];
-	main_oldcwd = NULL;
+
+	lua_args = args.extra_args;
+	lua_args_len = args.extra_args_len;
 
 	net_address = args.net_host;
 	net_port = args.net_port;
 	net_path = args.net_path;
 
 	boot_mode = args.boot_mode;
+
+	if (args.basedir && *args.basedir == '\0') {
+		free(args.basedir);
+		args.basedir = NULL;
+	}
+	
 	mod_basedir = args.basedir;
-	main_largstart = args.used_args;
 
 #ifndef DEDI
 	if (boot_mode & IB_CLIENT)

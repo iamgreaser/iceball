@@ -608,11 +608,8 @@ extern int restart_boot_mode;
 extern int boot_mode;
 extern int quitflag;
 
-extern int main_argc;
-extern char **main_argv;
-extern char *main_argv0;
-extern char *main_oldcwd;
-extern int main_largstart;
+extern char **lua_args;
+extern int lua_args_len;
 
 int run_game_cont1(void);
 int run_game_cont2(void);
@@ -621,7 +618,7 @@ int error_sdl(char *msg);
 int error_perror(char *msg);
 
 #ifndef DEDI
-void ib_create_launcher(int port, const char *pkg);
+void ib_create_launcher(const char *pkg);
 void ib_create_server(int port, const char *pkg);
 void ib_join_server(const char *address, int port);
 #endif

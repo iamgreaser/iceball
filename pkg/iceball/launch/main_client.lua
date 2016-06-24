@@ -84,7 +84,7 @@ local function join_server(sid)
 	local idx = (page * 9) + sid
 	if idx <= #server_list then
 		local sv = server_list[idx]
-		client.join_server(sv.address, sv.port)
+		client.join_server(sv.address, sv.port, arg_closure(argv))
 		-- client.mk_sys_execv("-c", sv.address, sv.port, arg_closure(argv))
 	end
 end
@@ -93,10 +93,10 @@ end
 function client.hook_key(key, state, modif, uni)
 	if not state then
 		if key == SDLK_l then
-			client.create_server(20737, "pkg/base")
+			client.create_server(20737, "pkg/base", arg_closure(argv))
 			-- client.mk_sys_execv("-s", "20737", "pkg/base", arg_closure(argv))
 		elseif key == SDLK_c then
-			client.create_launcher(0, "pkg/iceball/config")
+			client.create_launcher("pkg/iceball/config")
 			-- client.mk_sys_execv("-l", "pkg/iceball/config")
 		elseif key == SDLK_ESCAPE then
 			client.hook_tick = nil

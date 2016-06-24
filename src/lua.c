@@ -81,19 +81,41 @@ int icelua_fn_common_mk_compat_disable(lua_State *L)
 	return 0;
 }
 #ifndef DEDI
+static void update_lua_args(lua_State *L)
+{
+	int top = lua_gettop(L);
+
+	if (lua_args) {
+		for (int i = 0; i < lua_args_len; ++i) {
+			free(lua_args[i]);
+		}
+
+		free(lua_args);
+		lua_args = NULL;
+	}
+
+	if (top > 2) {
+		lua_args = malloc(sizeof(*lua_args) * (top - 3));
+
+		for(int i = 3; i <= top; i++) {
+			lua_args[i - 3] = strdup(lua_tostring(L, i));
+		}
+	}
+}
+
 int icelua_fn_client_join_server(lua_State *L)
 {
 	if (!(boot_mode & IB_LAUNCHER))
 		return luaL_error(L, "join_server called when not in -l mode");
 
-	int top = lua_gettop(L);
+	update_lua_args(L);
 
-	const char *address = lua_tostring(L, -2);
-	int port = lua_tonumber(L, -1);
+	const char *address = lua_tostring(L, 1);
+	int port = lua_tonumber(L, 2);
 
 	ib_join_server(address, port);
 
-	return 2;
+	return 0;
 }
 
 int icelua_fn_client_create_server(lua_State *L)
@@ -101,14 +123,14 @@ int icelua_fn_client_create_server(lua_State *L)
 	if (!(boot_mode & IB_LAUNCHER))
 		return luaL_error(L, "create_server called when not in -l mode");
 
-	int top = lua_gettop(L);
+	update_lua_args(L);
 
-	int port = lua_tonumber(L, -2);
-	const char *pkg = lua_tostring(L, -1);
+	int port = lua_tonumber(L, 1);
+	const char *pkg = lua_tostring(L, 2);
 
 	ib_create_server(port, pkg);
 
-	return 2;
+	return 0;
 }
 
 int icelua_fn_client_create_launcher(lua_State *L)
@@ -118,95 +140,10 @@ int icelua_fn_client_create_launcher(lua_State *L)
 
 	int top = lua_gettop(L);
 
-	int port = lua_tonumber(L, -2);
 	const char *pkg = lua_tostring(L, -1);
 
-	ib_create_launcher(port, pkg);
+	ib_create_launcher(pkg);
 
-	return 2;
-}
-
-int icelua_fn_client_mk_sys_execv(lua_State *L)
-{
-	if(!(boot_mode & IB_LAUNCHER))
-		return luaL_error(L, "mk_sys_execv called when not in -l mode");
-
-	int top = lua_gettop(L);
-	char **arglist = malloc(sizeof(char *) * (top+2));
-	int i;
-
-	for(i = 1; i <= top; i++)
-		arglist[i] = strdup(lua_tostring(L, i));
-
-	arglist[0] = strdup(main_argv0);
-	arglist[top+1] = NULL;
-
-	SDL_Quit();
-#ifdef WIN32
-#if 1
-	//if(main_oldcwd != NULL)
-	//	_chdir(main_oldcwd);
-	
-	char cwd[2048] = "";
-	GetModuleFileName(NULL, cwd, 2047);
-	char *v = cwd + strlen(cwd) - 1;
-	while (v >= cwd)
-	{
-		if (*v == '\\')
-		{
-			v++;
-			break;
-		}
-		v--;
-	}
-	arglist[0] = v;
-	
-	for (i = 0; i <= top; i++)
-	{
-		int new_size = strlen(arglist[i]) + 3;
-		int j;
-		for (j = 0; j < strlen(arglist[i]); j++)
-		{
-			if (arglist[i][j] == '"' || arglist[i][j] == '\\')
-				new_size++;
-		}
-		char *new_arg = malloc(new_size);
-		char *k = new_arg;
-		char *l = arglist[i];
-		*(k++) = '"';
-		while (*l != 0)
-		{
-			if (*l == '"' || *l == '\\')
-				*(k++) = '\\';
-			*(k++) = *(l++);
-		}
-		*(k++) = '"';
-		*(k++) = 0;
-		arglist[i] = new_arg;
-	}
-	/*FILE *fp = fopen("FUCK.txt", "w");
-	for (i = 0; i <= top; i++)
-	{
-		fprintf(fp, "%s ", arglist[i]);
-		fflush(fp);
-	}*/
-#else
-	char *v = strdup("iceball.exe");
-	arglist[0] = v;
-#endif
-#endif
-	printf("argv0: [%s]\n", main_argv0);
-	fflush(stdout);
-
-	execv(main_argv0, arglist);
-
-	printf("WORK YOU FUCKASS: %s\n", strerror(errno));
-	fflush(stdout);
-
-	// DOES NOT RETURN.
-	fprintf(stderr, "ABORT: sys_execv must not return!\n");
-	fflush(stderr);
-	abort();
 	return 0;
 }
 
@@ -257,7 +194,6 @@ struct icelua_entry icelua_client[] = {
 	{icelua_fn_client_create_server, "create_server"},
 	{icelua_fn_client_join_server, "join_server"},
 	{icelua_fn_client_mk_set_title, "mk_set_title"},
-	{icelua_fn_client_mk_sys_execv, "mk_sys_execv"},
 
 	{icelua_fn_client_text_input_start, "text_input_start"},
 	{icelua_fn_client_text_input_stop, "text_input_stop"},
@@ -450,11 +386,7 @@ void icelua_loadbasefuncs(lua_State *L)
 
 int icelua_initfetch(void)
 {
-	int i;
 	char xpath[128+1];
-	int argct = (main_largstart == -1 || (main_largstart >= main_argc)
-		? 0
-		: main_argc - main_largstart);
 
 	if(to_client_local.sockfd == -1)
 		to_client_local.sockfd = SOCKFD_LOCAL;
@@ -487,9 +419,11 @@ int icelua_initfetch(void)
 	}
 
 	printf("Client loaded! Initialising...\n");
-	for(i = 0; i < argct; i++)
-		lua_pushstring(lstate_client, main_argv[i+main_largstart]);
-	if((boot_mode & IB_CLIENT) && (net_path && net_path[1] != '\x00'))
+	for(int i = 0; i < lua_args_len; i++)
+		lua_pushstring(lstate_client, lua_args[i]);
+
+	int argct = lua_args_len;
+	if((boot_mode & IB_CLIENT) && net_path[1] != '\x00')
 	{
 		lua_pushstring(lstate_client, net_path);
 		argct++;
@@ -554,8 +488,6 @@ void icelua_pushversion(lua_State *L, const char *tabname)
 
 int icelua_init(void)
 {
-	int i, argct;
-
 	// create states
 	if(boot_mode & IB_CLIENT)
 	{
@@ -729,7 +661,7 @@ int icelua_init(void)
 				raw_whitelist = malloc(sizeof(struct icelua_whitelist)*raw_whitelist_len);
 
 				// read each entry
-				for(i = 0; i < raw_whitelist_len; i++)
+				for(int i = 0; i < raw_whitelist_len; i++)
 				{
 					printf("entry %i/%i\n", i+1, raw_whitelist_len);
 					// get entry
@@ -866,15 +798,12 @@ int icelua_init(void)
 		return 1;
 	}
 
-	argct = (main_largstart == -1 || (main_largstart >= main_argc)
-		? 0
-		: main_argc - main_largstart);
-
 	if(lstate_server != NULL)
 	{
-		for(i = 0; i < argct; i++)
-			lua_pushstring(lstate_server, main_argv[i+main_largstart]);
-		if(lua_pcall(lstate_server, argct, 0, 0) != 0)
+		for(int i = 0; i < lua_args_len; i++)
+			lua_pushstring(lstate_server, lua_args[i]);
+
+		if(lua_pcall(lstate_server, lua_args_len, 0, 0) != 0)
 		{
 			printf("ERROR running server Lua: %s\n", lua_tostring(lstate_server, -1));
 			lua_pop(lstate_server, 1);
