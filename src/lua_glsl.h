@@ -85,21 +85,23 @@ int icelua_fn_client_glsl_create(lua_State *L)
 
 	glGetShaderiv(sh_v, GL_INFO_LOG_LENGTH, &len);
 	if (len > 0) {
-		char *info = alloca(len);
+		char *info = malloc(len);
 		glGetShaderInfoLog(sh_v, len, NULL, info);
 		luaL_addstring(&b, "Vertex shader compile error:\n");
 		luaL_addstring(&b, info);
 		luaL_addstring(&b, "\n");
+		free(info);
 	}
 	glCompileShader(sh_f);
 
 	glGetShaderiv(sh_f, GL_INFO_LOG_LENGTH, &len);
 	if (len > 0) {
-		char *info = alloca(len);
+		char *info = malloc(len);
 		glGetShaderInfoLog(sh_f, len, NULL, info);
 		luaL_addstring(&b, "Fragment shader compile error:\n");
 		luaL_addstring(&b, info);
 		luaL_addstring(&b, "\n");
+		free(info);
 	}
 	prog = glCreateProgram();
 	glAttachShader(prog, sh_v);
@@ -124,11 +126,12 @@ int icelua_fn_client_glsl_create(lua_State *L)
 
 	glGetProgramiv(prog, GL_INFO_LOG_LENGTH, &len);
 	if (len > 0) {
-		char *info = alloca(len);
+		char *info = malloc(len);
 		glGetProgramInfoLog(prog, len, NULL, info);
 		luaL_addstring(&b, "Link error:\n");
 		luaL_addstring(&b, info);
 		luaL_addstring(&b, "\n");
+		free(info);
 	}
 
 	if(sh_v != 0) glDeleteShader(sh_v);
