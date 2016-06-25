@@ -72,3 +72,19 @@ add_executable(iceball-dedi EXCLUDE_FROM_ALL ${MAIN_FILES} ${LUA_FILES})
 target_link_libraries(iceball-dedi ${ENet_LIBRARIES} ${ZLIB_LIBRARIES} ${LUA_LIBRARIES} ${SDL_LIBRARY})
 set_target_properties(iceball-dedi PROPERTIES COMPILE_DEFINITIONS "DEDI")
 
+function(copy_run_dep arg1)
+	add_custom_command(TARGET iceball POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different
+			"${PROJECT_SOURCE_DIR}/${arg1}"
+			$<TARGET_FILE_DIR:iceball>)
+endfunction()
+
+if (MINGW)
+	copy_run_dep(dist/mingw/sdl2/bin/sdl2.dll)
+	copy_run_dep(dist/mingw/lua51/bin/lua.dll)
+	copy_run_dep(dist/mingw/zlib/bin/zlib.dll)
+elseif (MSVC)
+	copy_run_dep(dist/msvc/sdl2/bin/sdl2.dll)
+	copy_run_dep(dist/msvc/lua51/bin/lua.dll)
+	copy_run_dep(dist/msvc/zlib/bin/zlib.dll)
+endif ()
