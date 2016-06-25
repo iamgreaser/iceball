@@ -92,9 +92,11 @@ typedef unsigned __int64	uint64_t;
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <errno.h>
 #include <time.h>
 #include <ctype.h>
+#include <malloc.h>
 
 #ifndef WIN32
 #include <sys/time.h>

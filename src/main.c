@@ -375,7 +375,7 @@ int remap_scancodes(int scancode) {
 int64_t ms_now()
 {
 	static LARGE_INTEGER baseFreq;
-	static BOOL qpc_Avail = QueryPerformanceFrequency( &baseFreq );
+	BOOL qpc_Avail = QueryPerformanceFrequency( &baseFreq );
 	if( qpc_Avail ) {
 		LARGE_INTEGER now;
 		QueryPerformanceCounter( &now );
