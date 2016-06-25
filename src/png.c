@@ -526,14 +526,18 @@ void img_write_png(const char *fname, img_t *img)
 	size_t img_size = row_size * img->head.height;
 	size_t img_uncomp_len = (row_size - (gap-1)) * img->head.height;
 	uint8_t *img_uncomp = malloc(img_uncomp_len);
-#ifdef _MSC_VER
-	// TODO: broken?
-	uint8_t **rowP = alloca(row_size * 1);
-	uint8_t **rowC = alloca(row_size * 5);
-#else
-	uint8_t rowP[1][row_size];
-	uint8_t rowC[5][row_size];
-#endif
+
+	uint8_t *rowPbuf = malloc(row_size * 1);
+	uint8_t *rowCbuf = malloc(row_size * 5);
+	uint8_t *rowP[1];
+	uint8_t *rowC[5];
+
+	rowP[0] = rowPbuf;
+	for(i = 0; i < 5; i++)
+	{
+		rowC[i] = &rowCbuf[row_size*i];
+	}
+
 	uint8_t *src_pixels = (uint8_t *)(img->pixels);
 	int rowsel = 0;
 
@@ -549,7 +553,7 @@ void img_write_png(const char *fname, img_t *img)
 			rowC[0][x] = 0;
 
 		// Copy to last
-		memcpy(rowP, rowC[0], row_size);
+		memcpy(rowP[0], rowC[0], row_size);
 
 		// Grab current pixel run
 		memcpy(rowC[0] + gap,
@@ -648,6 +652,10 @@ void img_write_png(const char *fname, img_t *img)
 		memcpy(img_uncomp + (row_size - (gap-1))*y,
 			rowC[rbest] + (gap-1), row_size - (gap-1));
 	}
+
+	// Free buffers
+	free(rowCbuf);
+	free(rowPbuf);
 
 	// Compress image
 	uLongf cbound = compressBound(img_size);
