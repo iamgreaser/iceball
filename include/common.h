@@ -66,7 +66,6 @@
 #ifdef __SSE2__
 #include <emmintrin.h>
 #endif
-#include <stdint.h>
 #else
 #define PACK_START __pragma( pack(push, 1) )
 #define PACK_END __pragma( pack(pop) )
@@ -102,6 +101,7 @@ typedef unsigned __int64	uint64_t;
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <errno.h>
 #include <time.h>
 #include <ctype.h>
