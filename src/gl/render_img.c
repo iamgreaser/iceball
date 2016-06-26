@@ -50,7 +50,7 @@ void render_blit_img_toimg(uint32_t *pixels, int width, int height, int pitch,
 	float scalex, float scaley);
 
 img_t *render_dump_img(int width, int height, int sx, int sy) {
-	size_t img_size = (width - sx) * (height - sy) * 3;
+	size_t img_size = width * height * 3;
 	img_t *img = malloc(sizeof(img_t) + img_size);
 	img->head.idlen = 0; // no ID
 	img->head.cmtype = 0; // no colourmap
@@ -60,8 +60,8 @@ img_t *render_dump_img(int width, int height, int sx, int sy) {
 	img->head.cmbpp = 0;
 	img->head.xstart = 0;
 	img->head.ystart = height - sy;
-	img->head.width = width - sx;
-	img->head.height = height - sy;
+	img->head.width = width;
+	img->head.height = height;
 	img->head.bpp = 24;
 	img->head.flags = 0x0;
 	img->udtype = UD_IMG;
