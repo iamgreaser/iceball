@@ -250,7 +250,7 @@ int adpcm_predict(int v, int *pred, int *step)
 	return *pred;
 }
 
-void adpcm_load_block(int16_t **wptr, int *pred, int *step, uint8_t **dbase, uint8_t *dbend)
+int adpcm_load_block(int16_t **wptr, int *pred, int *step, uint8_t **dbase, uint8_t *dbend)
 {
 	int i;
 	int v;
@@ -260,8 +260,7 @@ void adpcm_load_block(int16_t **wptr, int *pred, int *step, uint8_t **dbase, uin
 		if(((*dbase)+1) > dbend)
 		{
 			fprintf(stderr, "adpcm_load_block: block ended too early!\n");
-			fflush(stderr);
-			abort();
+			return 1;
 		}
 
 		v = *((*dbase)++);
@@ -269,11 +268,13 @@ void adpcm_load_block(int16_t **wptr, int *pred, int *step, uint8_t **dbase, uin
 		*((*wptr)++) = adpcm_predict((v>>4)&15, pred, step);
 	}
 
+	return 0;
 }
 
 wav_t *wav_parse(char *buf, int len)
 {
 	int i, j;
+	char *end = buf + len;
 
 	if(len < 28+16)
 	{
@@ -299,8 +300,8 @@ wav_t *wav_parse(char *buf, int len)
 		return NULL;
 	}
 
-	int rifflen = (int)*(uint32_t *)(buf+4);
-	int fmtlen = (int)*(uint32_t *)(buf+16);
+	uint32_t rifflen = *(uint32_t *)(buf+4);
+	uint32_t fmtlen = *(uint32_t *)(buf+16);
 
 	if(fmtlen < 16)
 	{
@@ -363,31 +364,40 @@ wav_t *wav_parse(char *buf, int len)
 		fprintf(stderr, "wav_parse: bytes per second is inconsistent\n");
 		return NULL;
 	}
-
-	// now attempt to load data
-	int factlen = 0;
-	if(!memcmp(buf+20+fmtlen, "fact", 4))
+	if(fmt.blkalign == 0)
 	{
-		// skip this crap
-		factlen = (int)*(uint32_t *)(buf+20+fmtlen+4);
-		factlen += 8;
-	}
-
-	if(len < 28+factlen+fmtlen)
-	{
-		fprintf(stderr, "wav_parse: file too short\n");
+		fprintf(stderr, "wav_parse: invalid block alignment\n");
 		return NULL;
 	}
 
-	if(memcmp(buf+20+factlen+fmtlen, "data", 4))
+	// now attempt to load data
+	uint32_t factlen = 0;
+	char *next_chunk = buf + 20 + fmtlen;
+	if (next_chunk + 8 > end || next_chunk + 8 < buf) {
+		fprintf(stderr, "wav_parse: file too short\n");
+		return NULL;
+	}
+	if(!memcmp(next_chunk, "fact", 4))
+	{
+		// skip this crap
+		factlen = *(uint32_t *)(next_chunk + 4);
+		factlen += 8;
+	}
+
+	next_chunk = buf + 20 + factlen + fmtlen;
+	if (next_chunk + 8 > end || next_chunk + 8 < buf) {
+		fprintf(stderr, "wav_parse: file too short\n");
+		return NULL;
+	}
+	if(memcmp(next_chunk, "data", 4))
 	{
 		fprintf(stderr, "wav_parse: expected \"data\" tag\n");
 		return NULL;
 	}
 
-	int datalen = (int)*(uint32_t *)(buf+24+factlen+fmtlen);
+	uint32_t datalen = *(uint32_t *)(buf+24+factlen+fmtlen);
 	void *data_void = buf+28+factlen+fmtlen;
-	if(len < datalen+28+factlen+fmtlen)
+	if(data_void + datalen > end || data_void + datalen < buf)
 	{
 		fprintf(stderr, "wav_parse: file too short for \"data\" section\n");
 		return NULL;
@@ -399,20 +409,27 @@ wav_t *wav_parse(char *buf, int len)
 		return NULL;
 	}
 
-	int datalen_smps = datalen/fmt.blkalign;
+	uint32_t datalen_smps = datalen/fmt.blkalign;
 	if(fmt.codec == 0x0011)
 	{
 		// Technically you're supposed to use the fact chunk
 		datalen_smps *= (fmt.blkalign-4)*2;
 	}
 
-	wav_t *wav = (wav_t*)malloc(sizeof(wav_t)*datalen_smps);
+	wav_t *wav = (wav_t*)malloc(sizeof(wav_t) + sizeof(((wav_t*)0)->data[0]) * datalen_smps);
+
+	if (wav == NULL)
+	{
+		fprintf(stderr, "wav_parse: malloc failed - weird file or out of memory\n");
+		return NULL;
+	}
+
 	wav->udtype = UD_WAV;
 	wav->refcount = 1;
 	wav->len = datalen_smps;
 	wav->freq = fmt.freq;
 
-	if(fmt.codec == 17 && fmt.bps == 4)
+	if(fmt.codec == 0x0011 && fmt.bps == 4)
 	{
 		int16_t *wptr1 = wav->data;
 		int lpred, lstep;
@@ -426,8 +443,8 @@ wav_t *wav_parse(char *buf, int len)
 			if(((*dbase)+4) > dbend)
 			{
 				fprintf(stderr, "adpcm_load_block: block ended too early!\n");
-				fflush(stderr);
-				abort();
+				free(wav);
+				return NULL;
 			}
 
 			lpred = (*dbase)[1];
@@ -441,8 +458,12 @@ wav_t *wav_parse(char *buf, int len)
 			//printf("pred %i %i\n", lpred, lstep);
 
 			// Actually predict things
-			for(j = 0; j < (fmt.blkalign/(4*fmt.chns))-1; j++)
-				adpcm_load_block(&wptr1, &lpred, &lstep, dbase, dbend);
+			for(j = 0; j < (fmt.blkalign/(4*fmt.chns))-1; j++) {
+				if (adpcm_load_block(&wptr1, &lpred, &lstep, dbase, dbend)) {
+					free(wav);
+					return NULL;
+				}
+			}
 
 		}
 
@@ -450,14 +471,27 @@ wav_t *wav_parse(char *buf, int len)
 		int16_t *d = wav->data;
 		uint8_t *s = (uint8_t *)data_void;
 
+		if (s + datalen_smps > (uint8_t *)end) {
+			fprintf(stderr, "wav_parse: file too short\n");
+			free(wav);
+			return NULL;
+		}
+
 		for(i = 0; i < datalen_smps; i++)
 			*(d++) = (((int16_t)(*s++))-0x80)<<8;
 	} else if(fmt.bps == 16) {
-		memcpy(wav->data, data_void, datalen_smps*2);
+		uint32_t size = datalen_smps * 2;
+		if (data_void + size > end) {
+			fprintf(stderr, "wav_parse: file too short\n");
+			free(wav);
+			return NULL;
+		}
+
+		memcpy(wav->data, data_void, size);
 	} else {
-		fprintf(stderr, "EDOOFUS: should never reach this point!\n");
-		fflush(stderr);
-		abort();
+		fprintf(stderr, "wav_parse: Unknown codec/bps\n");
+		free(wav);
+		return NULL;
 	}
 
 	return wav;
