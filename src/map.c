@@ -359,7 +359,7 @@ char *map_serialise_icemap(map_t *map, int *len)
 	int buflen = 8
 		+8+4+6+maplen
 		+8;
-	if (map->entities_size) {
+	if (map->entities != NULL) {
 		// chunk header + data
 		buflen += 8 + 4 + map->entities_size;
 	}
@@ -405,18 +405,25 @@ char *map_serialise_icemap(map_t *map, int *len)
 	}
 
 	// MapEnts
-	if (map->entities_size) {
-		memcpy(zf, "MapEnts\xFF", 8);
-		*(uint32_t *)&zf[8] = map->entities_size;
-		zf += 12;
+	if (map->entities != NULL) {
+		memcpy(zf, "MapEnts", 7);
+		if (map->entities_size < 255) {
+			zf[7] = (uint8_t)map->entities_size;
+			zf += 8;
+		} else {
+			zf[7] = (char)'\xFF';
+			*(uint32_t *)&zf[8] = (uint32_t)map->entities_size;
+			zf += 12;
+		}
 		memcpy(zf, map->entities, map->entities_size);
+		zf += map->entities_size;
 	}
 
 	// MetaInf
 	// TODO:
 
 	// Terminator
-	memcpy(buf+buflen-8, "       \x00", 8);
+	memcpy(zf, "       \x00", 8);
 
 	//printf("derp!\n");
 	*len = buflen;
