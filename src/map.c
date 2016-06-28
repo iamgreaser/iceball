@@ -436,10 +436,7 @@ int map_save_icemap(map_t *map, const char *fname)
 	int len;
 	char *buf = map_serialise_icemap(map, &len);
 
-	// write end
 	fwrite(buf, sizeof(char), (size_t)len, fp);
-
-	// close
 	fclose(fp);
 
 	return 0;
