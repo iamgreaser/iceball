@@ -371,32 +371,29 @@ wav_t *wav_parse(char *buf, int len)
 	}
 
 	// now attempt to load data
-	uint32_t factlen = 0;
+	uint32_t last_chunk_len = 0;
 	char *next_chunk = buf + 20 + fmtlen;
-	if (next_chunk + 8 > end || next_chunk + 8 < buf) {
-		fprintf(stderr, "wav_parse: file too short\n");
-		return NULL;
-	}
-	if(!memcmp(next_chunk, "fact", 4))
-	{
-		// skip this crap
-		factlen = *(uint32_t *)(next_chunk + 4);
-		factlen += 8;
+
+	while (1) {
+		// Check there's enough data for the chunk header
+		if (next_chunk + 8 > end || next_chunk + 8 < buf) {
+			fprintf(stderr, "wav_parse: file too short\n");
+			return NULL;
+		}
+
+		// Check if chunk is one we want
+		if (!memcmp(next_chunk, "data", 4)) {
+			break;
+		}
+
+		// Skip unwanted chunk
+		printf("wav_parse: skipping \"%.4s\" chunk\n", next_chunk);
+		last_chunk_len = (*(uint32_t *)(next_chunk + 4)) + 8;
+		next_chunk += last_chunk_len;
 	}
 
-	next_chunk = buf + 20 + factlen + fmtlen;
-	if (next_chunk + 8 > end || next_chunk + 8 < buf) {
-		fprintf(stderr, "wav_parse: file too short\n");
-		return NULL;
-	}
-	if(memcmp(next_chunk, "data", 4))
-	{
-		fprintf(stderr, "wav_parse: expected \"data\" tag\n");
-		return NULL;
-	}
-
-	uint32_t datalen = *(uint32_t *)(buf+24+factlen+fmtlen);
-	void *data_void = buf+28+factlen+fmtlen;
+	uint32_t datalen = *(uint32_t *)(next_chunk + 4);
+	void *data_void = next_chunk + 8;
 	if(data_void + datalen > end || data_void + datalen < buf)
 	{
 		fprintf(stderr, "wav_parse: file too short for \"data\" section\n");
