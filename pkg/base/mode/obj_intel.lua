@@ -27,8 +27,11 @@ if client then
 			name = "intel.pmf",
 		},
 	}, {"kv6", "pmf"})
-end
 
+	wav_intelup = skin_load("wav", "intelup.wav", DIR_PKG_WAV)
+	wav_inteldown = skin_load("wav", "inteldown.wav", DIR_PKG_WAV)
+end
+	
 function new_intel(settings)
 	local this = {} this.this = this
 
