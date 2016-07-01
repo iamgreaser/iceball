@@ -46,7 +46,15 @@ return function (plr)
 		recoil_x = 0.0001,
 		recoil_y = -0.05,
 
-		model = client and (weapon_models[thisid] {}),
+		model = client and (weapon_models[thisid] {
+			filt = function(r,g,b)
+				if r == 0 and g == 0 and b == 0 then
+					return 0, 92, 172
+				else
+					return r, g, b
+				end
+			end
+		}),
 
 		name = "Portal Gun",
 	})
@@ -70,8 +78,7 @@ return function (plr)
 	end
 
 	function this.textgen()
-		local cols
-		col = 0xFFC0C0C0
+		local col = 0xFFC0C0C0
 		return col, ((plr.portal_list[1] and "0") or "-")..
 			" "..((plr.portal_list[2] and "0") or "-")
 	end
@@ -79,6 +86,11 @@ return function (plr)
 	function this.click(button, state)
 		if button == 1 or button == 3 then
 			-- LMB
+			if button == 1 then
+				this.set_color(0, 92, 172)
+			else
+				this.set_color(240, 92, 28)
+			end
 			if this.ammo_clip > 0 then
 				if state then
 					this.portal_select = (button==1 and 1) or 2
@@ -276,6 +288,18 @@ return function (plr)
 		-- apply recoil
 		-- attempting to emulate classic behaviour provided i have it right
 		plr.recoil(sec_current, this.cfg.recoil_y, this.cfg.recoil_x)
+	end
+
+	function this.set_color(new_r, new_g, new_b)
+		this.cfg.model = client and (weapon_models[thisid] {
+			filt = function(r,g,b)
+				if r == 0 and g == 0 and b == 0 then
+					return new_r, new_g, new_b
+				else
+					return r, g, b
+				end
+			end
+		})
 	end
 
 	return this
