@@ -42,3 +42,7 @@ woosh.wav
 Are licensed by Creative Commons BY-SA 3.0 and were created by KiLlEr10312
 Rifle and shotgun sounds by Aeyon
 SMG sounds by BanananaHead
+
+intelup.wav
+inteldown.wav
+Are licensed by Creative Commons BY-SA 3.0 and were created by Adrian Tschira <notafile@gmail.com>
