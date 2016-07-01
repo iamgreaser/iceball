@@ -17,14 +17,28 @@
 
 local thisid = ...
 
+local function set_color(new_r, new_g, new_b)
+	return function(r,g,b)
+		if r == 0 and g == 0 and b == 0 then
+			return new_r, new_g, new_b
+		else
+			return r, g, b
+		end
+	end
+end
+
 if client then
-	weapon_models[thisid] = model_load({
+	local base_model = model_load({
 		kv6 = {
 			bdir = DIR_PORTALGUN,
 			name = "portalgun.kv6",
 			scale = 1.0/128.0,
 		},
 	}, {"kv6"})
+	weapon_models[thisid] = {
+		base_model({filt = set_color(0, 92, 172)}),
+		base_model({filt = set_color(240, 92, 28)})
+	}
 end
 
 weapon_names[thisid] = "Portal Gun"
@@ -46,15 +60,7 @@ return function (plr)
 		recoil_x = 0.0001,
 		recoil_y = -0.05,
 
-		model = client and (weapon_models[thisid] {
-			filt = function(r,g,b)
-				if r == 0 and g == 0 and b == 0 then
-					return 0, 92, 172
-				else
-					return r, g, b
-				end
-			end
-		}),
+		model = client and weapon_models[thisid][1],
 
 		name = "Portal Gun",
 	})
@@ -87,9 +93,9 @@ return function (plr)
 		if button == 1 or button == 3 then
 			-- LMB
 			if button == 1 then
-				this.set_color(0, 92, 172)
+				this.cfg.model = client and weapon_models[thisid][1]
 			else
-				this.set_color(240, 92, 28)
+				this.cfg.model = client and weapon_models[thisid][2]
 			end
 			if this.ammo_clip > 0 then
 				if state then
@@ -288,18 +294,6 @@ return function (plr)
 		-- apply recoil
 		-- attempting to emulate classic behaviour provided i have it right
 		plr.recoil(sec_current, this.cfg.recoil_y, this.cfg.recoil_x)
-	end
-
-	function this.set_color(new_r, new_g, new_b)
-		this.cfg.model = client and (weapon_models[thisid] {
-			filt = function(r,g,b)
-				if r == 0 and g == 0 and b == 0 then
-					return new_r, new_g, new_b
-				else
-					return r, g, b
-				end
-			end
-		})
 	end
 
 	return this
