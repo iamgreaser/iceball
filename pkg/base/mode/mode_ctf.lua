@@ -219,6 +219,13 @@ function new_player(...)
 		local ret = s_item_add(item, ...)
 		if item.type == "intel" then
 			this.has_intel = item
+
+			-- the following is a hack, ideally we would do this in intel.intel_pickup,
+			-- but that currently never gets called by the client. The current gamemode
+			-- system will hopefully rewritten soon anyway
+			if client then
+				client.wav_play_local(wav_intelup, 0, 0, 0, 3, 1)
+			end
 		end
 		return ret
 	end
@@ -228,6 +235,15 @@ function new_player(...)
 		local ret = s_item_remove(item, ...)
 		if this.has_intel == item then
 			this.has_intel = nil
+
+			-- the following is a hack, ideally we would do this in intel.intel_drop,
+			-- but that currently never gets called by the client. The current gamemode
+			-- system will hopefully rewritten soon anyway
+			-- also, there is currently no intel capture sound because the client
+			-- never actually gets notified about that
+			if client then
+				client.wav_play_local(wav_inteldown, 0, 0, 0, 3, 1)
+			end
 		end
 		return ret
 	end
