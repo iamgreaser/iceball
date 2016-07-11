@@ -65,6 +65,7 @@ void wav_fn_mixer_s16he_stereo(void *buf, int len)
 {
 	int i,j;
 
+	assert((len & 3) == 0);
 	len /= 4;
 
 	// clear buffer
@@ -78,7 +79,6 @@ void wav_fn_mixer_s16he_stereo(void *buf, int len)
 	}
 
 	// do the sackity thing
-	// TODO: handle freeing correctly
 	sackit_playback_t *sackit = icesackit_pb;
 	if(sackit != NULL)
 	{
@@ -93,8 +93,8 @@ void wav_fn_mixer_s16he_stereo(void *buf, int len)
 				sackit_playback_update(sackit);
 			}
 			int sirem = 4096 - icesackit_bufoffs;
-			if(sirem > len)
-				sirem = len;
+			if(sirem > len-j)
+				sirem = len-j;
 
 			for(i = 0; i < sirem*2; i++)
 			{
@@ -102,14 +102,20 @@ void wav_fn_mixer_s16he_stereo(void *buf, int len)
 				q = (icesackit_mvol*icesackit_vol*q);
 				if(q > 0x7FFF) q = 0x7FFF;
 				if(q < -0x8000) q = -0x8000;
-				*(v++) = (int16_t)q;
+				v[i+j*2] = (int16_t)q;
 			}
-			v += sirem*2;
 
 			j += sirem;
 			icesackit_bufoffs += sirem;
+			assert(j <= len);
+			assert(icesackit_bufoffs <= 4096);
 		}
 	}
+
+	// calculate LPF coefficient
+	float lpf_coeff = 200.0f/(float)wav_mfreq;
+	if(lpf_coeff > 0.5f)
+		lpf_coeff = 0.5f;
 
 	// now for the wav mixing
 	for(i = 0; i < WAV_CHN_COUNT; i++)
@@ -120,114 +126,160 @@ void wav_fn_mixer_s16he_stereo(void *buf, int len)
 		if((!(wc->flags & WCF_ACTIVE)) || wc->src == NULL)
 			continue;
 
-		// determine pos in 3D space
-		float dx = wc->x;
-		float dy = wc->y;
-		float dz = wc->z;
+		// determine output values in 3D space per speaker
+		// TODO: make this work on more than just stereo
+		float vol[2];
+		float delay[2];
+		for(j = 0; j < 2; j++) {
+			float dx = wc->x;
+			float dy = wc->y;
+			float dz = wc->z;
 
-		if(wc->flags & WCF_GLOBAL)
-		{
-			float odx = dx - tcam.mpx;
-			float ody = dy - tcam.mpy;
-			float odz = dz - tcam.mpz;
+			// perform global transform if necessary
+			if(wc->flags & WCF_GLOBAL)
+			{
+				float odx = dx - tcam.mpx;
+				float ody = dy - tcam.mpy;
+				float odz = dz - tcam.mpz;
 
-			dx = odx*tcam.mxx + ody*tcam.mxy + odz*tcam.mxz;
-			dy = odx*tcam.myx + ody*tcam.myy + odz*tcam.myz;
-			dz = odx*tcam.mzx + ody*tcam.mzy + odz*tcam.mzz;
+				dx = odx*tcam.mxx + ody*tcam.mxy + odz*tcam.mxz;
+				dy = odx*tcam.myx + ody*tcam.myy + odz*tcam.myz;
+				dz = odx*tcam.mzx + ody*tcam.mzy + odz*tcam.mzz;
 
-			dx = -dx;
-			dy = -dy;
-			dz = -dz;
+				dx = -dx;
+				dy = -dy;
+				dz = -dz;
 
-			//printf("%.3f %.3f %.3f\n", dx, dy, dz);
+				//printf("%.3f %.3f %.3f\n", dx, dy, dz);
+			}
+
+			// apply speaker positioning
+			// TODO: config option - this is for headphones
+			const float speaker_sep = 0.3f;
+
+			float dotx, doty, dotz;
+			if(j == 0)
+			{
+				dx -= speaker_sep/2.0f/wav_cube_size;
+				dotx = -0.866f;
+				doty =  0.000f;
+				dotz = -0.500f;
+			} else {
+				dx += speaker_sep/2.0f/wav_cube_size;
+				dotx =  0.866f;
+				doty =  0.000f;
+				dotz = -0.500f;
+			}
+
+			// work out distance
+			float dist2 = dx*dx + dy*dy + dz*dz;
+			float dist = sqrtf(dist2);
+			if(dist < 0.00001f)
+				dist = 0.00001f;
+
+			// normalise dxyz
+			dx /= dist;
+			dy /= dist;
+			dz /= dist;
+
+			// calculate distance in metres
+			float distm = dist*wav_cube_size;
+			distm /= 10.0f;
+			float att = 1.0f/(distm*distm);
+			if(att > 1.0f)
+				att = 1.0f;
+
+			// apply attenuation
+			att *= wc->vol;
+			att *= wav_gvol;
+			// TODO: work out how to apply vol_spread? or do we just scrap it?
+
+			// calculate delay
+			delay[j] = dist*wav_cube_size/330.0f;
+
+			// get volume
+			const float ambient = 0.33f;
+			vol[j] = (dotx*dx + doty*dy + dotz*dz);
+			vol[j] = (1.0-ambient)*vol[j] + ambient;
+			vol[j] *= att;
 		}
 
-		float dist2 = dx*dx + dy*dy + dz*dz;
-		float dist = sqrtf(dist2);
-		if(dist < 0.00001f)
-			dist = 0.00001f;
-
-		dx /= dist;
-		dy /= dist;
-		dz /= dist;
-
-		float distm = dist*wav_cube_size;
-		distm /= 10.0f;
-		float att = 1.0f/(distm*distm);
-		if(att > 1.0f)
-			att = 1.0f;
-
-		att *= wc->vol;
-		att *= wav_gvol;
-		// TODO: work out how to apply vol_spread? or do we just scrap it?
-
-		// determine speaker volumes
-		// apply b-format
-		float bw = att*0.707f;
-		float bx = att*-dz;
-		float by = att*-dx;
-		float bz = att*dy;
-
-		// TODO: load these configs from somewhere
-		// TODO: not assume balanced stereo
-		float mw = 1.5f;
-		float mx = 0.5f;
-		float my = 1.0f;
-		float mz = 0.0f;
-		float mg = 0.7f;
-
-		// convert b-format to speaker space
-		// TODO: genericise this!
-		float vol[2];
-		vol[0] = (mw*bw + my*by + mx*bx)*mg;
-		vol[1] = (mw*bw - my*by + mx*bx)*mg;
-
-		// get the speed
-		uint32_t freq = (uint32_t)(wc->src->freq*wc->freq_mod+0.5f);
-		uint32_t speed = (uint32_t)((((uint64_t)freq)<<16)/((uint64_t)wav_mfreq));
+		// get the base speed
+		float freq = wc->src->freq*wc->freq_mod;
+		float speed = ((float)freq)/((float)wav_mfreq);
 
 		// get the other stuff too
 		int16_t *data = wc->src->data;
 		uint32_t slen = wc->src->len;
 		int16_t *data_end = data+slen;
 
+		// apply delays
+		float cspeed[2];
+		float delay_scale = (float)wav_mfreq/(float)len;
+		cspeed[0] = speed * (1.0f + (wc->ldelay[0]-delay[0])*delay_scale);
+		cspeed[1] = speed * (1.0f + (wc->ldelay[1]-delay[1])*delay_scale);
+		wc->ldelay[0] = delay[0];
+		wc->ldelay[1] = delay[1];
+
+		// avoid going backwards through the sample
+		if(cspeed[0] < 0.0f) { cspeed[0] = 0.0f; }
+		if(cspeed[1] < 0.0f) { cspeed[1] = 0.0f; }
+
 		// move stuff into registers
-		uint32_t offs = wc->offs;
-		uint32_t suboffs = wc->suboffs;
+		float offs[2];
+		float lpf_charge[2];
+		offs[0] = wc->offs[0];
+		offs[1] = wc->offs[1];
+		lpf_charge[0] = wc->lpf_charge[0];
+		lpf_charge[1] = wc->lpf_charge[1];
 		int16_t *v = (int16_t *)buf;
 
-		//printf("%i %i %i %.5f %.5f\n", speed, offs, len, vol[0], vol[1]);
-
+		// mix it all
 		for(j = 0; j < len; j++)
 		{
-			if(offs >= slen)
+			if(((uint32_t)offs[0]) >= slen && ((uint32_t)offs[1]) >= slen)
 			{
 				wav_chn_kill(wc);
 				break;
 			}
 
-			int16_t d = data[offs];
-			int32_t v0 = (int32_t)(*v) + (int32_t)(vol[0]*d);
-			int32_t v1 = (int32_t)(*(v+1)) + (int32_t)(vol[1]*d);
+			// get inputs
+			float d[2];
+			d[0] = ((uint32_t)offs[0] >= slen ? 0.0f : (float)data[(int)offs[0]]);
+			d[1] = ((uint32_t)offs[1] >= slen ? 0.0f : (float)data[(int)offs[1]]);
+
+			// apply LPF/HPF split
+			lpf_charge[0] += (d[0] - lpf_charge[0])*lpf_coeff;
+			lpf_charge[1] += (d[1] - lpf_charge[1])*lpf_coeff;
+			d[0] -= lpf_charge[0];
+			d[1] -= lpf_charge[1];
+			float lpf_base = lpf_charge[0];
+			//d[0] = d[1] = 0.0f;
+
+			// float to int with clamp
+			int32_t v0 = (int32_t)(v[0] + vol[0]*d[0] + lpf_base);
+			int32_t v1 = (int32_t)(v[1] + vol[1]*d[1] + lpf_base);
 			if(v0 >  0x7FFF) v0 =  0x7FFF;
 			if(v0 < -0x7FFF) v0 = -0x7FFF;
 			if(v1 >  0x7FFF) v1 =  0x7FFF;
 			if(v1 < -0x7FFF) v1 = -0x7FFF;
 
+			// output
 			*(v++) = (int16_t)v0;
 			*(v++) = (int16_t)v1;
 
-			suboffs += speed;
-			uint32_t ofinc = suboffs>>16;
-			offs += ofinc;
-			suboffs &= 0xFFFF;
+			// advance
+			offs[0] += cspeed[0];
+			offs[1] += cspeed[1];
 		}
 
 		if(wc->flags & WCF_ACTIVE)
 		{
 			// move stuff back
-			wc->offs = offs;
-			wc->suboffs = suboffs;
+			wc->offs[0] = offs[0];
+			wc->offs[1] = offs[1];
+			wc->lpf_charge[0] = lpf_charge[0];
+			wc->lpf_charge[1] = lpf_charge[1];
 		}
 	}
 }
@@ -309,7 +361,7 @@ wav_t *wav_parse(char *buf, int len)
 		return NULL;
 	}
 
-	if(len < 28+fmtlen)
+	if(len < 28+(int)fmtlen)
 	{
 		fprintf(stderr, "wav_parse: file too short\n");
 		return NULL;
@@ -394,7 +446,8 @@ wav_t *wav_parse(char *buf, int len)
 
 	uint32_t datalen = *(uint32_t *)(next_chunk + 4);
 	void *data_void = next_chunk + 8;
-	if(data_void + datalen > end || data_void + datalen < buf)
+	char *data_char = (char *)data_void;
+	if(data_char + datalen > end || data_char + datalen < buf)
 	{
 		fprintf(stderr, "wav_parse: file too short for \"data\" section\n");
 		return NULL;
@@ -474,11 +527,11 @@ wav_t *wav_parse(char *buf, int len)
 			return NULL;
 		}
 
-		for(i = 0; i < datalen_smps; i++)
+		for(i = 0; i < (int)datalen_smps; i++)
 			*(d++) = (((int16_t)(*s++))-0x80)<<8;
 	} else if(fmt.bps == 16) {
 		uint32_t size = datalen_smps * 2;
-		if (data_void + size > end) {
+		if (data_char + size > end) {
 			fprintf(stderr, "wav_parse: file too short\n");
 			free(wav);
 			return NULL;
@@ -542,8 +595,12 @@ wavchn_t *wav_chn_alloc(int flags, wav_t *wav, float x, float y, float z, float 
 	wc->freq_mod = freq_mod;
 	wc->vol_spread = vol_spread;
 
-	wc->offs = 0;
-	wc->suboffs = 0;
+	for(i = 0; i < WAV_MAX_OUTPUTS; i++)
+	{
+		wc->offs[i] = 0.0f;
+		wc->ldelay[i] = 0.0f;
+		wc->lpf_charge[i] = 0.0f;
+	}
 
 	return wc;
 }

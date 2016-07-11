@@ -232,6 +232,12 @@ do
 			if chn_mus and not client.wav_chn_exists(chn_mus) then
 				chn_mus = client.wav_play_local(wav_mus)
 			end
+
+			-- stress test for race condition
+			if false and mus_main then
+				client.mus_stop()
+				client.mus_play(mus_main)
+			end
 			
 			local i
 			local koffs = math.max(#fnlist-10,1)
@@ -343,7 +349,7 @@ function client.hook_tick()
 	if mus_main then
 		client.mus_stop()
 		-- disabled until we fix that race condition that causes a crash
-		--client.mus_free(mus_main)
+		client.mus_free(mus_main)
 	end
 	return 0.005
 end

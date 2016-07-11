@@ -342,6 +342,7 @@ typedef struct img
 	uint32_t pixels[];
 } img_t;
 
+#define WAV_MAX_OUTPUTS 8
 typedef struct wav
 {
 	int udtype;
@@ -353,13 +354,15 @@ typedef struct wav
 
 typedef struct wavchn
 {
+	float offs[WAV_MAX_OUTPUTS];
+	float ldelay[WAV_MAX_OUTPUTS];
+	float lpf_charge[WAV_MAX_OUTPUTS];
 	wav_t *src;
 	int idx;
 	int flags;
 	float freq_mod;
 	float vol, vol_spread;
 	float x,y,z;
-	uint32_t offs, suboffs;
 } wavchn_t;
 #define WCF_ACTIVE   0x00000001
 #define WCF_GLOBAL   0x00000002

@@ -32,6 +32,8 @@ int icelua_fn_client_mus_play(lua_State *L)
 	int order = (top >= 2 ? lua_tointeger(L, 2) : 0);
 	int row = (top >= 3 ? lua_tointeger(L, 3) : 0);
 
+	SDL_LockAudio();
+
 	// XXX: i should probably add a proper API to sackit for this
 	// ^ why did I write this?
 	if(icesackit_pb != NULL)
@@ -46,6 +48,7 @@ int icelua_fn_client_mus_play(lua_State *L)
 	icesackit_pb->process_order = order-1;
 	icesackit_pb->break_row = row;
 	icesackit_bufoffs = 4096;
+	SDL_UnlockAudio();
 
 	lua_pushboolean(L, 1);
 	return 1;
@@ -59,10 +62,14 @@ int icelua_fn_client_mus_stop(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 0, 0);
 
+	SDL_LockAudio();
+
 	if(icesackit_pb != NULL)
 		sackit_playback_free(icesackit_pb);
 	
 	icesackit_pb = NULL;
+
+	SDL_UnlockAudio();
 
 	return 0;
 }
@@ -75,8 +82,12 @@ int icelua_fn_client_mus_vol_set(lua_State *L)
 {
 	int top = icelua_assert_stack(L, 1, 1);
 
+	SDL_LockAudio();
+
 	float vol = lua_tonumber(L, 1);
 	icesackit_vol = vol;
+
+	SDL_UnlockAudio();
 
 	return 0;
 }
