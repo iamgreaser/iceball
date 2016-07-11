@@ -356,6 +356,7 @@ typedef struct wavchn
 {
 	float offs[WAV_MAX_OUTPUTS];
 	float ldelay[WAV_MAX_OUTPUTS];
+	float lpf_charge[WAV_MAX_OUTPUTS];
 	wav_t *src;
 	int idx;
 	int flags;

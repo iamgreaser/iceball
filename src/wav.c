@@ -79,7 +79,6 @@ void wav_fn_mixer_s16he_stereo(void *buf, int len)
 	}
 
 	// do the sackity thing
-	// TODO: handle freeing correctly
 	sackit_playback_t *sackit = icesackit_pb;
 	if(sackit != NULL)
 	{
@@ -112,6 +111,11 @@ void wav_fn_mixer_s16he_stereo(void *buf, int len)
 			assert(icesackit_bufoffs <= 4096);
 		}
 	}
+
+	// calculate LPF coefficient
+	float lpf_coeff = 200.0f/(float)wav_mfreq;
+	if(lpf_coeff > 0.5f)
+		lpf_coeff = 0.5f;
 
 	// now for the wav mixing
 	for(i = 0; i < WAV_CHN_COUNT; i++)
@@ -223,10 +227,14 @@ void wav_fn_mixer_s16he_stereo(void *buf, int len)
 
 		// move stuff into registers
 		float offs[2];
+		float lpf_charge[2];
 		offs[0] = wc->offs[0];
 		offs[1] = wc->offs[1];
+		lpf_charge[0] = wc->lpf_charge[0];
+		lpf_charge[1] = wc->lpf_charge[1];
 		int16_t *v = (int16_t *)buf;
 
+		// mix it all
 		for(j = 0; j < len; j++)
 		{
 			if(((int)offs[0]) >= slen && ((int)offs[1]) >= slen)
@@ -235,19 +243,32 @@ void wav_fn_mixer_s16he_stereo(void *buf, int len)
 				break;
 			}
 
-			int16_t d[2];
-			d[0] = ((int)offs[0] >= slen ? 0.0f : data[(int)offs[0]]);
-			d[1] = ((int)offs[1] >= slen ? 0.0f : data[(int)offs[1]]);
-			int32_t v0 = (int32_t)(*v) + (int32_t)(vol[0]*d[0]);
-			int32_t v1 = (int32_t)(*(v+1)) + (int32_t)(vol[1]*d[1]);
+			// get inputs
+			float d[2];
+			d[0] = ((int)offs[0] >= slen ? 0.0f : (float)data[(int)offs[0]]);
+			d[1] = ((int)offs[1] >= slen ? 0.0f : (float)data[(int)offs[1]]);
+
+			// apply LPF/HPF split
+			lpf_charge[0] += (d[0] - lpf_charge[0])*lpf_coeff;
+			lpf_charge[1] += (d[1] - lpf_charge[1])*lpf_coeff;
+			d[0] -= lpf_charge[0];
+			d[1] -= lpf_charge[1];
+			float lpf_base = lpf_charge[0];
+			//d[0] = d[1] = 0.0f;
+
+			// float to int with clamp
+			int32_t v0 = (int32_t)(v[0] + vol[0]*d[0] + lpf_base);
+			int32_t v1 = (int32_t)(v[1] + vol[1]*d[1] + lpf_base);
 			if(v0 >  0x7FFF) v0 =  0x7FFF;
 			if(v0 < -0x7FFF) v0 = -0x7FFF;
 			if(v1 >  0x7FFF) v1 =  0x7FFF;
 			if(v1 < -0x7FFF) v1 = -0x7FFF;
 
+			// output
 			*(v++) = (int16_t)v0;
 			*(v++) = (int16_t)v1;
 
+			// advance
 			offs[0] += cspeed[0];
 			offs[1] += cspeed[1];
 		}
@@ -257,6 +278,8 @@ void wav_fn_mixer_s16he_stereo(void *buf, int len)
 			// move stuff back
 			wc->offs[0] = offs[0];
 			wc->offs[1] = offs[1];
+			wc->lpf_charge[0] = lpf_charge[0];
+			wc->lpf_charge[1] = lpf_charge[1];
 		}
 	}
 }
@@ -575,6 +598,7 @@ wavchn_t *wav_chn_alloc(int flags, wav_t *wav, float x, float y, float z, float 
 	{
 		wc->offs[i] = 0.0f;
 		wc->ldelay[i] = 0.0f;
+		wc->lpf_charge[i] = 0.0f;
 	}
 
 	return wc;
