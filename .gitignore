@@ -58,5 +58,8 @@ ZERO_CHECK.vcproj
 
 # idea stuff
 .idea/
+*.iml
+*.ipr
+*.iws
 
 # clsave/vol/fastload.tmp
