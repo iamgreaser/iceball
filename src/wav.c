@@ -237,7 +237,7 @@ void wav_fn_mixer_s16he_stereo(void *buf, int len)
 		// mix it all
 		for(j = 0; j < len; j++)
 		{
-			if(((int)offs[0]) >= slen && ((int)offs[1]) >= slen)
+			if(((uint32_t)offs[0]) >= slen && ((uint32_t)offs[1]) >= slen)
 			{
 				wav_chn_kill(wc);
 				break;
@@ -245,8 +245,8 @@ void wav_fn_mixer_s16he_stereo(void *buf, int len)
 
 			// get inputs
 			float d[2];
-			d[0] = ((int)offs[0] >= slen ? 0.0f : (float)data[(int)offs[0]]);
-			d[1] = ((int)offs[1] >= slen ? 0.0f : (float)data[(int)offs[1]]);
+			d[0] = ((uint32_t)offs[0] >= slen ? 0.0f : (float)data[(int)offs[0]]);
+			d[1] = ((uint32_t)offs[1] >= slen ? 0.0f : (float)data[(int)offs[1]]);
 
 			// apply LPF/HPF split
 			lpf_charge[0] += (d[0] - lpf_charge[0])*lpf_coeff;
@@ -361,7 +361,7 @@ wav_t *wav_parse(char *buf, int len)
 		return NULL;
 	}
 
-	if(len < 28+fmtlen)
+	if(len < 28+(int)fmtlen)
 	{
 		fprintf(stderr, "wav_parse: file too short\n");
 		return NULL;
@@ -446,7 +446,8 @@ wav_t *wav_parse(char *buf, int len)
 
 	uint32_t datalen = *(uint32_t *)(next_chunk + 4);
 	void *data_void = next_chunk + 8;
-	if(data_void + datalen > end || data_void + datalen < buf)
+	char *data_char = (char *)data_void;
+	if(data_char + datalen > end || data_char + datalen < buf)
 	{
 		fprintf(stderr, "wav_parse: file too short for \"data\" section\n");
 		return NULL;
@@ -526,11 +527,11 @@ wav_t *wav_parse(char *buf, int len)
 			return NULL;
 		}
 
-		for(i = 0; i < datalen_smps; i++)
+		for(i = 0; i < (int)datalen_smps; i++)
 			*(d++) = (((int16_t)(*s++))-0x80)<<8;
 	} else if(fmt.bps == 16) {
 		uint32_t size = datalen_smps * 2;
-		if (data_void + size > end) {
+		if (data_char + size > end) {
 			fprintf(stderr, "wav_parse: file too short\n");
 			free(wav);
 			return NULL;
