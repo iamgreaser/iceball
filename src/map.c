@@ -361,7 +361,10 @@ char *map_serialise_icemap(map_t *map, int *len)
 		+8;
 	if (map->entities != NULL) {
 		// chunk header + data
-		buflen += 8 + 4 + map->entities_size;
+		buflen += 8 + map->entities_size;
+		if (map->entities_size >= 255) {
+			buflen += 4;
+		}
 	}
 
 	char *buf = (char*)malloc(buflen);
@@ -443,8 +446,16 @@ int map_save_icemap(map_t *map, const char *fname)
 	int len;
 	char *buf = map_serialise_icemap(map, &len);
 
+	if (buf == NULL)
+	{
+		error_perror("map_save_icemap: could not serialise map");
+		return 1;
+	}
+
 	fwrite(buf, sizeof(char), (size_t)len, fp);
 	fclose(fp);
+
+	free(buf);
 
 	return 0;
 }
