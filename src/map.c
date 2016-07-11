@@ -436,19 +436,20 @@ char *map_serialise_icemap(map_t *map, int *len)
 
 int map_save_icemap(map_t *map, const char *fname)
 {
-	FILE *fp = fopen(fname, "wb");
-	if(fp == NULL)
-	{
-		error_perror("map_save_icemap: could not open file");
-		return 1;
-	}
-
 	int len;
 	char *buf = map_serialise_icemap(map, &len);
 
 	if (buf == NULL)
 	{
 		error_perror("map_save_icemap: could not serialise map");
+		return 1;
+	}
+
+	FILE *fp = fopen(fname, "wb");
+	if(fp == NULL)
+	{
+		error_perror("map_save_icemap: could not open file");
+		free(buf);
 		return 1;
 	}
 
