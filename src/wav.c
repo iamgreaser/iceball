@@ -65,6 +65,7 @@ void wav_fn_mixer_s16he_stereo(void *buf, int len)
 {
 	int i,j;
 
+	assert((len & 3) == 0);
 	len /= 4;
 
 	// clear buffer
@@ -93,8 +94,8 @@ void wav_fn_mixer_s16he_stereo(void *buf, int len)
 				sackit_playback_update(sackit);
 			}
 			int sirem = 4096 - icesackit_bufoffs;
-			if(sirem > len)
-				sirem = len;
+			if(sirem > len-j)
+				sirem = len-j;
 
 			for(i = 0; i < sirem*2; i++)
 			{
@@ -102,12 +103,13 @@ void wav_fn_mixer_s16he_stereo(void *buf, int len)
 				q = (icesackit_mvol*icesackit_vol*q);
 				if(q > 0x7FFF) q = 0x7FFF;
 				if(q < -0x8000) q = -0x8000;
-				*(v++) = (int16_t)q;
+				v[i+j*2] = (int16_t)q;
 			}
-			v += sirem*2;
 
 			j += sirem;
 			icesackit_bufoffs += sirem;
+			assert(j <= len);
+			assert(icesackit_bufoffs <= 4096);
 		}
 	}
 
@@ -189,7 +191,7 @@ void wav_fn_mixer_s16he_stereo(void *buf, int len)
 			// TODO: work out how to apply vol_spread? or do we just scrap it?
 
 			// calculate delay
-			delay[j] = distm/330.0f;
+			delay[j] = dist*wav_cube_size/330.0f;
 
 			// get volume
 			const float ambient = 0.33f;
@@ -212,6 +214,8 @@ void wav_fn_mixer_s16he_stereo(void *buf, int len)
 		float delay_scale = (float)wav_mfreq/(float)len;
 		cspeed[0] = speed * (1.0f + (wc->ldelay[0]-delay[0])*delay_scale);
 		cspeed[1] = speed * (1.0f + (wc->ldelay[1]-delay[1])*delay_scale);
+		wc->ldelay[0] = delay[0];
+		wc->ldelay[1] = delay[1];
 
 		// avoid going backwards through the sample
 		if(cspeed[0] < 0.0f) { cspeed[0] = 0.0f; }
