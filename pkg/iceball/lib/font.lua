@@ -77,6 +77,44 @@ function font_mono_new(settings)
 	return this
 end
 
+function font_ttf_new(name)
+	local this = {
+		fnt = client.font_ttf_load(name)
+	}
+
+	function this.draw_native(x, y, size, string)
+		return client.font_ttf_draw(this.fnt, x, y, size, string)
+	end
+
+	function this.draw(x, y, size, string, color)
+		local nx = x
+		local ny = y
+		local gw, gh
+		local prev = -1
+
+		for pos, code in utf8.next, string do
+			if code == 10 then
+				ny = ny + client.font_ttf_lineheight(this.fnt, size)
+				nx = x
+			end
+
+			gw, gh, prev = client.font_ttf_draw_glyph(this.fnt, nx, ny, size, code, color, prev)
+
+			nx = nx + gw
+		end
+
+		client.font_ttf_flush(this.fnt)
+
+	    return x
+	end
+
+	function this.line_height(size)
+		return client.font_ttf_lineheight(this.fnt, size)
+	end
+
+	return this
+end
+
 font_dejavu_bold = {
 	[18] = font_mono_new {
 		fname = "pkg/iceball/gfx/dejavu-18-bold.png",
@@ -84,3 +122,4 @@ font_dejavu_bold = {
 	},
 }
 
+--font_droid_sans = font_droid_sans or font_ttf_new("pkg/iceball/gfx/DroidSansFallback.ttf")

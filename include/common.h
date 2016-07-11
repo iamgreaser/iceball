@@ -15,6 +15,9 @@
     along with Iceball.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifndef ICEBALL_COMMON_H
+#define ICEBALL_COMMON_H
+
 // Features from the MK fork. Do not bump this unless you are syncing with it.
 #define MK_REVISION 11
 
@@ -100,6 +103,7 @@ typedef unsigned __int64	uint64_t;
 
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <errno.h>
@@ -139,7 +143,15 @@ extern "C" {
 #ifndef DEDI
 #include <SDL.h>
 #include <glad/glad.h>
+
+#ifdef USE_FREETYPE
+#include <ft2build.h>
+#include FT_FREETYPE_H
 #endif
+#endif
+
+#include "stb_rect_pack.h"
+#include "stb_truetype.h"
 
 #ifndef DEDI
 #include <sackit.h>
@@ -187,6 +199,7 @@ enum
 	UD_MUS_IT,
 	UD_BIN,
 	UD_IMG_PNG,
+	UD_FNT_TTF,
 
 	UD_MAX_SUPPORTED,
 
@@ -341,6 +354,54 @@ typedef struct img
 	img_tgahead_t head;
 	uint32_t pixels[];
 } img_t;
+
+typedef struct font_page {
+	// rect packing context
+	stbrp_context *pack_cxt;
+	// in-place storage for packing
+	stbrp_node *nodes;
+	// handle to a greyscale texture
+	uint32_t texture;
+	// next entry in chain
+	struct font_page *next;
+} font_page_t;
+
+typedef struct font_glyph {
+	font_page_t *page;
+
+	int glyph_idx;
+	uint32_t codepoint;
+	uint16_t size;
+
+	uint16_t x, y, width, height;
+	int lsb;
+	float x_advance, x_offset, y_offset;
+} font_glyph_t;
+
+typedef struct font {
+	int udtype;
+	// font file data
+	 unsigned char *data;
+#ifdef USE_FREETYPE
+    // font info
+	FT_Face face;
+#else
+	// font info
+	stbtt_fontinfo info;
+#endif
+	// normalized font metrics
+	float ascent, descent, line_height;
+
+	// singly-linked list of font pages
+	font_page_t *page_chain;
+
+	// array used as a double-hashed table
+	font_glyph_t *glyphs;
+	uint32_t glyph_count, glyph_capacity;
+
+	uint32_t glyph_data_buf_len;
+	unsigned char *glyph_data_buf;
+} font_t;
 
 typedef struct wav
 {
@@ -565,6 +626,9 @@ int icelua_initfetch(void);
 int icelua_init(void);
 void icelua_deinit(void);
 
+// lutf8lib.c
+int luaopen_utf8(lua_State *L);
+
 // main.c
 extern camera_t tcam;
 extern map_t *clmap, *svmap;
@@ -636,6 +700,17 @@ void model_gc_set(lua_State *L);
 model_t *model_parse_pmf(int len, const char *data);
 model_t *model_load_pmf(const char *fname);
 int model_save_pmf(model_t *pmf, const char *fname);
+
+#ifndef DEDI
+// font.c
+bool font_parse_ttf(font_t *fnt, const char *buf, int len);
+bool font_load_ttf(font_t *fnt, const char *fname);
+int font_get_glyph(font_t *fnt, uint32_t codepoint, uint16_t size, font_glyph_t *out);
+void font_draw_glyph(font_t *fnt, float x, float y, uint32_t color, font_glyph_t glyph);
+float font_draw(font_t *fnt, float x, float y, int size, uint32_t color, const char *str);
+void font_flush(font_t *fnt);
+void font_free(font_t *fnt);
+#endif
 
 // network.c
 extern client_t to_server;
@@ -742,4 +817,6 @@ void wav_chn_kill(wavchn_t *chn);
 int wav_init(void);
 void wav_deinit(void);
 #endif
+
+#endif // ICEBALL_COMMON_H
 

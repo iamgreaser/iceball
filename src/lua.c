@@ -200,6 +200,10 @@ int icelua_fn_client_mk_set_title(lua_State *L)
 #include "lua_wav.h"
 #include "lua_va.h"
 
+#ifndef DEDI
+#include "lua_font.h"
+#endif
+
 // common functions
 
 // client functions
@@ -210,7 +214,12 @@ int icelua_fn_client_mk_set_title(lua_State *L)
 struct icelua_entry icelua_client[] = {
 	{icelua_fn_client_mk_set_title, "mk_set_title"},
 	{icelua_fn_client_mk_sys_execv, "mk_sys_execv"},
-
+	
+	{icelua_fn_client_font_ttf_load, "font_ttf_load"},
+	{icelua_fn_client_font_ttf_lineheight, "font_ttf_lineheight"},
+	{icelua_fn_client_font_ttf_flush, "font_ttf_flush"},
+	{icelua_fn_client_font_ttf_draw, "font_ttf_draw"},
+	{icelua_fn_client_font_ttf_draw_glyph, "font_ttf_draw_glyph"},
 	{icelua_fn_client_text_input_start, "text_input_start"},
 	{icelua_fn_client_text_input_stop, "text_input_stop"},
 	{icelua_fn_client_mouse_lock_set, "mouse_lock_set"},
@@ -382,12 +391,15 @@ void icelua_loadbasefuncs(lua_State *L)
 	lua_pushcfunction(L, luaopen_base);
 	lua_call(L, 0, 0);
 
-	// here's the other three
+	// here's the other four
 	lua_pushcfunction(L, luaopen_string);
 	lua_call(L, 0, 0);
 	lua_pushcfunction(L, luaopen_math);
 	lua_call(L, 0, 0);
 	lua_pushcfunction(L, luaopen_table);
+	lua_call(L, 0, 0);
+
+	lua_pushcfunction(L, luaopen_utf8);
 	lua_call(L, 0, 0);
 
 	// overwrite dofile/loadfile.

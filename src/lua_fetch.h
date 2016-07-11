@@ -43,6 +43,8 @@ int icelua_fnaux_fetch_gettype(lua_State *L, const char *ftype)
 		return UD_BIN;
 	else if(!strcmp(ftype, "png"))
 		return UD_IMG_PNG;
+	else if(!strcmp(ftype, "ttf"))
+		return UD_FNT_TTF;
 	else if(!strcmp(ftype, "log")) {
 		// TODO!
 		return luaL_error(L, "format not supported yet!");
@@ -144,6 +146,14 @@ int icelua_fnaux_fetch_immediate(lua_State *L, const char *ftype, const char *fn
 		}
 	} else if(!strcmp(ftype, "json")) {
 		return (json_load(L, fname) ? 0 : 1);
+	} else if(!strcmp(ftype, "ttf")) {
+		font_t *fnt = malloc(sizeof(*fnt));
+		if (font_load_ttf(fnt, fname)) {
+			lua_pushlightuserdata(L, fnt);
+			return 1;
+		} else {
+			return 0;
+		}
 	} else if(!strcmp(ftype, "log")) {
 		// TODO!
 		return luaL_error(L, "format not supported yet!");
@@ -330,6 +340,23 @@ int icelua_fn_common_fetch_poll(lua_State *L)
 
 				//*(img_t **)lua_newuserdata(L, sizeof(void *)) = img;
 				img_gc_set(L);
+				ret = 1;
+			} break;
+
+			case UD_FNT_TTF: {
+				font_t *fnt = lua_newuserdata(L, sizeof(*fnt));
+				void *fnt_data = malloc(to_client_local.cfetch_ulen);
+				memcpy(fnt_data, to_client_local.cfetch_ubuf, to_client_local.cfetch_ulen);
+
+				if (!font_parse_ttf(
+						fnt,
+						fnt_data,
+						to_client_local.cfetch_ulen)) {
+					free(fnt_data);
+					ret = 0;
+					break;
+				}
+
 				ret = 1;
 			} break;
 

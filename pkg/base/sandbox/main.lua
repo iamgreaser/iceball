@@ -76,6 +76,7 @@ function sandbox.new(name, fname, ...)
 	SG.string = string
 	SG.math = math
 	SG.table = table
+	SG.utf8 = utf8
 
 	SG.assert = assert
 	SG.collectgarbage = collectgarbage

@@ -28,6 +28,7 @@ find_package(zlib REQUIRED)
 find_package(Lua REQUIRED)
 find_package(sackit REQUIRED)
 find_package(OpenGL REQUIRED)
+find_package(FreeType)
 
 include_directories(
 	${ENet_INCLUDE_DIRS}
@@ -35,10 +36,40 @@ include_directories(
 	${ZLIB_INCLUDE_DIRS}
 	${SDL2_INCLUDE_DIR}
 	${LUA_INCLUDE_DIR}
+	${FREETYPE_INCLUDE_DIRS}
+	"${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
 
-file(GLOB LUA_FILES src/lua*)
-set(MAIN_FILES
+set(LUA_BINDINGS 
+	src/lua_base.h
+	src/lua_bin.h
+	src/lua_camera.h
+	src/lua_fbo.h
+	src/lua_fetch.h
+	src/lua_font.h
+	src/lua_gfx.h
+	src/lua_glsl.h
+	src/lua_image.h
+	src/lua_input.h
+	src/lua_json.h
+	src/lua_map.h
+	src/lua_model.h
+	src/lua_mus.h
+	src/lua_net.h
+	src/lua_random.h
+	src/lua_tcp.h
+	src/lua_udp.h
+	src/lua_util.h
+	src/lua_va.h
+	src/lua_wav.h
+)
+
+set(COMMON_FILES
+	include/common.h
+
+    ${LUA_BINDINGS}
+	src/lua.c
+
 	src/dsp.c
 	src/img.c
 	src/json.c
@@ -52,23 +83,47 @@ set(MAIN_FILES
 	src/random.c
 	src/vecmath.c
 	src/wav.c
+	src/font.c
+
+	src/unidata.h
+	src/lutf8lib.c
 )
 
-set(GL_FILES
+set(CLIENT_FILES
 	src/gl/glad.c
 	src/gl/render.c
 	src/gl/render_img.c
 )
 
-source_group(gl FILES ${GL_FILES})
-source_group(lua FILES ${LUA_FILES})
+file(GLOB_RECURSE PKG_FILES
+         RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/
+         ${CMAKE_CURRENT_SOURCE_DIR}/pkg/*)
+
+foreach(source IN LISTS PKG_FILES)
+    get_filename_component(source_path "${source}" PATH)
+    string(REPLACE "/" "\\" source_path_msvc "${source_path}")
+    source_group("${source_path_msvc}" FILES "${source}")
+endforeach()
 
 # iceball target
-add_executable(iceball ${MAIN_FILES} ${LUA_FILES} ${GL_FILES})
-target_link_libraries(iceball ${ENet_LIBRARIES} ${ZLIB_LIBRARIES} ${sackit_LIBRARY} ${LUA_LIBRARIES} ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES})
+add_executable(iceball ${COMMON_FILES} ${CLIENT_FILES} ${PKG_FILES})
+
+if (FREETYPE_FOUND)
+	target_compile_definitions(iceball PRIVATE USE_FREETYPE=1)
+endif ()
+
+target_link_libraries(iceball
+	${ENet_LIBRARIES}
+	${ZLIB_LIBRARIES}
+	${sackit_LIBRARY}
+	${LUA_LIBRARIES}
+	${SDL2_LIBRARIES}
+	${OPENGL_LIBRARIES}
+	${FREETYPE_LIBRARIES}
+)
 
 # iceball-dedi target
-add_executable(iceball-dedi EXCLUDE_FROM_ALL ${MAIN_FILES} ${LUA_FILES})
+add_executable(iceball-dedi EXCLUDE_FROM_ALL ${COMMON_FILES} ${PKG_FILES})
 target_link_libraries(iceball-dedi ${ENet_LIBRARIES} ${ZLIB_LIBRARIES} ${LUA_LIBRARIES} ${SDL_LIBRARY})
 set_target_properties(iceball-dedi PROPERTIES COMPILE_DEFINITIONS "DEDI")
 
