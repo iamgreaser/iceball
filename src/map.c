@@ -355,9 +355,17 @@ char *map_serialise_icemap(map_t *map, int *len)
 		}
 	}
 
+	// icemap header + chunk header + map size + map + terminator chunk
 	int buflen = 8
 		+8+4+6+maplen
 		+8;
+	if (map->entities != NULL) {
+		// chunk header + data
+		buflen += 8 + map->entities_size;
+		if (map->entities_size >= 255) {
+			buflen += 4;
+		}
+	}
 
 	char *buf = (char*)malloc(buflen);
 
@@ -366,6 +374,7 @@ char *map_serialise_icemap(map_t *map, int *len)
 		return NULL;
 	}
 
+	// Header and MapData chunk
 	memcpy(buf, "IceMap\x1A\x01MapData\xFF", 16);
 
 	*(uint32_t *)&buf[16] = 6+maplen;
@@ -397,7 +406,27 @@ char *map_serialise_icemap(map_t *map, int *len)
 		memcpy(zf, pb, p-pb);
 		zf += p-pb;
 	}
-	memcpy(buf+buflen-8, "       \x00", 8);
+
+	// MapEnts
+	if (map->entities != NULL) {
+		memcpy(zf, "MapEnts", 7);
+		if (map->entities_size < 255) {
+			zf[7] = (uint8_t)map->entities_size;
+			zf += 8;
+		} else {
+			zf[7] = (char)'\xFF';
+			*(uint32_t *)&zf[8] = (uint32_t)map->entities_size;
+			zf += 12;
+		}
+		memcpy(zf, map->entities, map->entities_size);
+		zf += map->entities_size;
+	}
+
+	// MetaInf
+	// TODO:
+
+	// Terminator
+	memcpy(zf, "       \x00", 8);
 
 	//printf("derp!\n");
 	*len = buflen;
@@ -407,97 +436,27 @@ char *map_serialise_icemap(map_t *map, int *len)
 
 int map_save_icemap(map_t *map, const char *fname)
 {
-	int x,z,pi;
+	int len;
+	char *buf = map_serialise_icemap(map, &len);
+
+	if (buf == NULL)
+	{
+		error_perror("map_save_icemap: could not serialise map");
+		return 1;
+	}
 
 	FILE *fp = fopen(fname, "wb");
 	if(fp == NULL)
 	{
-		error_perror("map_save_icemap");
+		error_perror("map_save_icemap: could not open file");
+		free(buf);
 		return 1;
 	}
 
-	fwrite("IceMap\x1A\x01", 8, 1, fp);
-
-	// TODO: meta info
-
-	fwrite("MapData\xFF", 8, 1, fp);
-
-	// calculate map length
-	int32_t maplen = 6;
-	for(z = 0, pi = 0; z < map->zlen; z++)
-	for(x = 0; x < map->xlen; x++, pi++)
-	{
-		uint8_t *p = map->pillars[pi];
-
-		p += 4;
-
-		for(;;)
-		{
-			int n = (int)p[0];
-
-			if(n == 0)
-			{
-				maplen += 4*((((int)p[2])-(int)p[1])+1);
-				maplen += 4;
-				break;
-			} else {
-				maplen += 4*n;
-				p += 4*n;
-			}
-		}
-	}
-
-	// write map data
-	uint16_t xlen = map->xlen;
-	uint16_t ylen = map->ylen;
-	uint16_t zlen = map->zlen;
-	fwrite(&maplen, 4, 1, fp);
-	fwrite(&xlen, 2, 1, fp);
-	fwrite(&ylen, 2, 1, fp);
-	fwrite(&zlen, 2, 1, fp);
-	for(z = 0, pi = 0; z < map->zlen; z++)
-	for(x = 0; x < map->xlen; x++, pi++)
-	{
-		uint8_t *pb = (map->pillars[pi])+4;
-		uint8_t *p = pb;
-
-		for(;;)
-		{
-			int n = (int)p[0];
-
-			if(n == 0)
-			{
-				p += 4*(((int)p[2])-((int)p[1])+1);
-				p += 4;
-				break;
-			} else {
-				p += 4*n;
-			}
-		}
-
-		fwrite(pb, p-pb, 1, fp);
-	}
-	
-	// write MapEnts
-	if (map->entities != NULL)
-	{
-		fwrite("MapEnts", 7, 1, fp);
-		if (map->entities_size < 255) {
-			uint8_t mapents_size = (uint8_t)map->entities_size;
-			fwrite(&mapents_size, 1, 1, fp);
-		} else {
-			fwrite("\xFF", 1, 1, fp);
-			uint32_t mapents_size = (uint32_t)map->entities_size;
-			fwrite(&mapents_size, 4, 1, fp);
-		}
-		fwrite(map->entities, map->entities_size, 1, fp);
-	}
-
-	// write end
-	fwrite("       \x00", 8, 1, fp);
-
-	// close
+	fwrite(buf, sizeof(char), (size_t)len, fp);
 	fclose(fp);
+
+	free(buf);
 
 	return 0;
 }
