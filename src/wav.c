@@ -253,7 +253,7 @@ void wav_fn_mixer_s16he_stereo(void *buf, int len)
 			lpf_charge[1] += (d[1] - lpf_charge[1])*lpf_coeff;
 			d[0] -= lpf_charge[0];
 			d[1] -= lpf_charge[1];
-			float lpf_base = lpf_charge[0];
+			float lpf_base = lpf_charge[0]*((vol[0]+vol[1])/2.0f);
 			//d[0] = d[1] = 0.0f;
 
 			// float to int with clamp
