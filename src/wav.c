@@ -113,9 +113,9 @@ void wav_fn_mixer_s16he_stereo(void *buf, int len)
 	}
 
 	// calculate LPF coefficient
-	float lpf_coeff = 200.0f/(float)wav_mfreq;
-	if(lpf_coeff > 0.5f)
-		lpf_coeff = 0.5f;
+	double lpf_coeff = 200.0/(double)wav_mfreq;
+	if(lpf_coeff > 0.5)
+		lpf_coeff = 0.5;
 
 	// now for the wav mixing
 	for(i = 0; i < WAV_CHN_COUNT; i++)
@@ -128,19 +128,19 @@ void wav_fn_mixer_s16he_stereo(void *buf, int len)
 
 		// determine output values in 3D space per speaker
 		// TODO: make this work on more than just stereo
-		float vol[2];
-		float delay[2];
+		double vol[2];
+		double delay[2];
 		for(j = 0; j < 2; j++) {
-			float dx = wc->x;
-			float dy = wc->y;
-			float dz = wc->z;
+			double dx = wc->x;
+			double dy = wc->y;
+			double dz = wc->z;
 
 			// perform global transform if necessary
 			if(wc->flags & WCF_GLOBAL)
 			{
-				float odx = dx - tcam.mpx;
-				float ody = dy - tcam.mpy;
-				float odz = dz - tcam.mpz;
+				double odx = dx - tcam.mpx;
+				double ody = dy - tcam.mpy;
+				double odz = dz - tcam.mpz;
 
 				dx = odx*tcam.mxx + ody*tcam.mxy + odz*tcam.mxz;
 				dy = odx*tcam.myx + ody*tcam.myy + odz*tcam.myz;
@@ -155,27 +155,27 @@ void wav_fn_mixer_s16he_stereo(void *buf, int len)
 
 			// apply speaker positioning
 			// TODO: config option - this is for headphones
-			const float speaker_sep = 0.3f;
+			const double speaker_sep = 0.3;
 
-			float dotx, doty, dotz;
+			double dotx, doty, dotz;
 			if(j == 0)
 			{
-				dx -= speaker_sep/2.0f/wav_cube_size;
-				dotx = -0.866f;
-				doty =  0.000f;
-				dotz = -0.500f;
+				dx -= speaker_sep/2.0/wav_cube_size;
+				dotx = -0.866;
+				doty =  0.000;
+				dotz = -0.500;
 			} else {
-				dx += speaker_sep/2.0f/wav_cube_size;
-				dotx =  0.866f;
-				doty =  0.000f;
-				dotz = -0.500f;
+				dx += speaker_sep/2.0/wav_cube_size;
+				dotx =  0.866;
+				doty =  0.000;
+				dotz = -0.500;
 			}
 
 			// work out distance
-			float dist2 = dx*dx + dy*dy + dz*dz;
-			float dist = sqrtf(dist2);
-			if(dist < 0.00001f)
-				dist = 0.00001f;
+			double dist2 = dx*dx + dy*dy + dz*dz;
+			double dist = sqrt(dist2);
+			if(dist < 0.00001)
+				dist = 0.00001;
 
 			// normalise dxyz
 			dx /= dist;
@@ -183,11 +183,11 @@ void wav_fn_mixer_s16he_stereo(void *buf, int len)
 			dz /= dist;
 
 			// calculate distance in metres
-			float distm = dist*wav_cube_size;
-			distm /= 10.0f;
-			float att = 1.0f/(distm*distm);
-			if(att > 1.0f)
-				att = 1.0f;
+			double distm = dist*wav_cube_size;
+			distm /= 10.0;
+			double att = 1.0/(distm*distm);
+			if(att > 1.0)
+				att = 1.0;
 
 			// apply attenuation
 			att *= wc->vol;
@@ -195,18 +195,18 @@ void wav_fn_mixer_s16he_stereo(void *buf, int len)
 			// TODO: work out how to apply vol_spread? or do we just scrap it?
 
 			// calculate delay
-			delay[j] = dist*wav_cube_size/330.0f;
+			delay[j] = dist*wav_cube_size/330.0;
 
 			// get volume
-			const float ambient = 0.33f;
+			const double ambient = 0.33;
 			vol[j] = (dotx*dx + doty*dy + dotz*dz);
 			vol[j] = (1.0-ambient)*vol[j] + ambient;
 			vol[j] *= att;
 		}
 
 		// get the base speed
-		float freq = wc->src->freq*wc->freq_mod;
-		float speed = ((float)freq)/((float)wav_mfreq);
+		double freq = wc->src->freq*wc->freq_mod;
+		double speed = ((double)freq)/((double)wav_mfreq);
 
 		// get the other stuff too
 		int16_t *data = wc->src->data;
@@ -214,20 +214,20 @@ void wav_fn_mixer_s16he_stereo(void *buf, int len)
 		int16_t *data_end = data+slen;
 
 		// apply delays
-		float cspeed[2];
-		float delay_scale = (float)wav_mfreq/(float)len;
-		cspeed[0] = speed * (1.0f + (wc->ldelay[0]-delay[0])*delay_scale);
-		cspeed[1] = speed * (1.0f + (wc->ldelay[1]-delay[1])*delay_scale);
+		double cspeed[2];
+		double delay_scale = (double)wav_mfreq/(double)len;
+		cspeed[0] = speed * (1.0 + (wc->ldelay[0]-delay[0])*delay_scale);
+		cspeed[1] = speed * (1.0 + (wc->ldelay[1]-delay[1])*delay_scale);
 		wc->ldelay[0] = delay[0];
 		wc->ldelay[1] = delay[1];
 
 		// avoid going backwards through the sample
-		if(cspeed[0] < 0.0f) { cspeed[0] = 0.0f; }
-		if(cspeed[1] < 0.0f) { cspeed[1] = 0.0f; }
+		if(cspeed[0] < 0.0) { cspeed[0] = 0.0; }
+		if(cspeed[1] < 0.0) { cspeed[1] = 0.0; }
 
 		// move stuff into registers
-		float offs[2];
-		float lpf_charge[2];
+		double offs[2];
+		double lpf_charge[2];
 		offs[0] = wc->offs[0];
 		offs[1] = wc->offs[1];
 		lpf_charge[0] = wc->lpf_charge[0];
@@ -256,7 +256,7 @@ void wav_fn_mixer_s16he_stereo(void *buf, int len)
 			float lpf_base = lpf_charge[0]*((vol[0]+vol[1])/2.0f);
 			//d[0] = d[1] = 0.0f;
 
-			// float to int with clamp
+			// double to int with clamp
 			int32_t v0 = (int32_t)(v[0] + vol[0]*d[0] + lpf_base);
 			int32_t v1 = (int32_t)(v[1] + vol[1]*d[1] + lpf_base);
 			if(v0 >  0x7FFF) v0 =  0x7FFF;
