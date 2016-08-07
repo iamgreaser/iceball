@@ -3,6 +3,7 @@
 	"motd": "Welcome to Iceball",
 	"mode": "pkg/base/mode/mode_ctf.lua",
 	"mod_config": "svsave/pub/mods.json",
+	"hostname": "",
 	"heartbeat_send": false,
 	"heartbeat": [
 		["magicannon.com", 27790]

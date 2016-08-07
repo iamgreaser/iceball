@@ -118,6 +118,7 @@ function heartbeat_update(sec_current, sec_delta)
 		msg = msg .. pad_nul(30, server_config.name)
 		msg = msg .. pad_nul(10, game_hb_mode)
 		msg = msg .. pad_nul(30, map_name)
+		msg = msg .. pad_nul(253, server_config.hostname)
 
 		--print("HEARTBEAT MESSAGE")
 

@@ -430,6 +430,7 @@ class HClient:
 		self.ibdata_queued = None
 		self.ibdata_cookie = None
 		self.not_dead(ct)
+		self.hostname = None
 	
 	def get_fields(self):
 		return self.ibdata 
@@ -439,6 +440,12 @@ class HClient:
 	
 	def not_dead(self, ct):
 		self.last_msg = ct
+		
+	def resolve_host(self, host):
+		try:
+			return socket.gethostbyname(host)
+		except(socket.timeout, socket.error):
+			return None
 
 	def send_delayed(self, t, msg):
 		self.reactor.push(lambda et, ct : self.send(msg))
@@ -461,7 +468,7 @@ class HClient:
 			if hbver != HB_VERSION or ((ibver^IB_VERSION)&IB_VERSION_MASK) != 0:
 				# version is incorrect
 				self.send("BADV" + struct.pack("<HI", HB_VERSION, IB_VERSION))
-			elif len(msg) != (2+2+2+30+10+30):
+			elif len(msg) != (2+2+2+30+10+30+253):
 				# bad format
 				print "BADF", len(msg)
 				self.send("BADF")
@@ -476,7 +483,20 @@ class HClient:
 				d["mode"] = stripnul(msg[:10])
 				msg = msg[10:]
 				d["map"] = stripnul(msg[:30])
-
+				msg = msg[30:]		
+					
+				hostname_field = stripnul(msg[:253])
+				
+				# only resolve new hosts
+				if self.hostname != hostname_field:
+					hostname_ip = self.resolve_host(hostname_field)
+					if not hostname_ip:
+						self.hostname = None
+					elif hostname_ip == self.addr:
+						self.hostname = hostname_field
+				if self.hostname:
+					d["hostname"] = self.hostname
+				
 				d["version"] = ib_version_str(ibver)
 
 				host_port = "%s:%s" % (d["address"], d["port"])
