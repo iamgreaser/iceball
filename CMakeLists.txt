@@ -24,7 +24,7 @@ endif ()
 
 find_package(ENet REQUIRED)
 find_package(SDL2 REQUIRED)
-find_package(zlib REQUIRED)
+find_package(ZLIB REQUIRED)
 find_package(Lua REQUIRED)
 find_package(sackit REQUIRED)
 find_package(OpenGL REQUIRED)
@@ -65,11 +65,11 @@ source_group(lua FILES ${LUA_FILES})
 
 # iceball target
 add_executable(iceball ${MAIN_FILES} ${LUA_FILES} ${GL_FILES})
-target_link_libraries(iceball ${ENet_LIBRARIES} ${ZLIB_LIBRARIES} ${sackit_LIBRARY} ${LUA_LIBRARIES} ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES})
+target_link_libraries(iceball ${CMAKE_DL_LIBS} ${ENet_LIBRARIES} ${ZLIB_LIBRARIES} ${sackit_LIBRARY} ${LUA_LIBRARIES} ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES})
 
 # iceball-dedi target
 add_executable(iceball-dedi EXCLUDE_FROM_ALL ${MAIN_FILES} ${LUA_FILES})
-target_link_libraries(iceball-dedi ${ENet_LIBRARIES} ${ZLIB_LIBRARIES} ${LUA_LIBRARIES} ${SDL_LIBRARY})
+target_link_libraries(iceball-dedi ${CMAKE_DL_LIBS} ${ENet_LIBRARIES} ${ZLIB_LIBRARIES} ${LUA_LIBRARIES} ${SDL_LIBRARY})
 set_target_properties(iceball-dedi PROPERTIES COMPILE_DEFINITIONS "DEDI")
 
 function(copy_run_dep arg1)
