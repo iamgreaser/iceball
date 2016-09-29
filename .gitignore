@@ -62,4 +62,7 @@ ZERO_CHECK.vcproj
 *.ipr
 *.iws
 
+# vim stuff
+.vimrc
+
 # clsave/vol/fastload.tmp
