@@ -25,7 +25,13 @@ endif ()
 find_package(ENet REQUIRED)
 find_package(SDL2 REQUIRED)
 find_package(ZLIB REQUIRED)
-find_package(Lua REQUIRED)
+find_package(LuaJIT)
+if (LUAJIT_FOUND)
+	add_definitions(-DUSE_LUAJIT)
+	set(LUA_LIBRARIES ${LUA_LIBRARY} m)
+else ()
+	find_package(Lua REQUIRED)
+endif ()
 find_package(sackit REQUIRED)
 find_package(OpenGL REQUIRED)
 
@@ -37,7 +43,7 @@ include_directories(
 	${LUA_INCLUDE_DIR}
 )
 
-file(GLOB LUA_FILES src/lua*)
+file(GLOB LUA_FILES src/lua* src/external/bit.c)
 set(MAIN_FILES
 	src/dsp.c
 	src/img.c
@@ -66,10 +72,12 @@ source_group(lua FILES ${LUA_FILES})
 # iceball target
 add_executable(iceball ${MAIN_FILES} ${LUA_FILES} ${GL_FILES})
 target_link_libraries(iceball ${CMAKE_DL_LIBS} ${ENet_LIBRARIES} ${ZLIB_LIBRARIES} ${sackit_LIBRARY} ${LUA_LIBRARIES} ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES})
+set_target_properties(iceball PROPERTIES C_STANDARD 99)
 
 # iceball-dedi target
 add_executable(iceball-dedi EXCLUDE_FROM_ALL ${MAIN_FILES} ${LUA_FILES})
 target_link_libraries(iceball-dedi ${CMAKE_DL_LIBS} ${ENet_LIBRARIES} ${ZLIB_LIBRARIES} ${LUA_LIBRARIES} ${SDL_LIBRARY})
+set_target_properties(iceball-dedi PROPERTIES C_STANDARD 99)
 set_target_properties(iceball-dedi PROPERTIES COMPILE_DEFINITIONS "DEDI")
 
 function(copy_run_dep arg1)
