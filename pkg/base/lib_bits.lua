@@ -65,3 +65,9 @@ function bit_and(a,b)
 	end
 	return v
 end
+
+if bit then
+	bit_xor = bit.bxor
+	bit_or = bit.bor
+	bit_and = bit.band
+end

@@ -21,7 +21,8 @@ OBJS = \
 	$(OBJDIR)/lua.o $(OBJDIR)/network.o \
 	$(OBJDIR)/path.o $(OBJDIR)/json.o \
 	$(OBJDIR)/random.o \
-	$(OBJDIR)/wav.o
+	$(OBJDIR)/wav.o \
+	$(OBJDIR)/external/bit.o
 
 # TODO: make the renderer part not depend on, say, render_img.o
 
@@ -36,7 +37,10 @@ $(OBJDIR):
 $(OBJDIR)/$(RENDERER):
 	mkdir -p $(OBJDIR)/$(RENDERER)
 
-$(BINNAME): $(OBJDIR) $(OBJDIR)/$(RENDERER) $(OBJS)
+$(OBJDIR)/external:
+	mkdir -p $(OBJDIR)/external
+
+$(BINNAME): $(OBJDIR) $(OBJDIR)/$(RENDERER) $(OBJDIR)/external $(OBJS)
 	$(CC) -o $(BINNAME) $(LDFLAGS) $(OBJS) $(LIBS)
 
 $(OBJDIR)/lua.o: $(SRCDIR)/lua.c $(SRCDIR)/lua_*.h $(INCLUDES)

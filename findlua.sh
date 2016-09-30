@@ -3,7 +3,9 @@
 # Because EVERY DISTRO JUST HAS TO INSIST ON DOING IT DIFFERENTLY
 # IT'S LIKE THESE MORONS DON'T KNOW WHAT STANDARDS ARE
 
-if pkg-config lua-5.1 ; then
+if pkg-config luajit ; then
+	pkg-config luajit $@
+elif pkg-config lua-5.1 ; then
 	# FreeBSD
 	pkg-config lua-5.1 $@
 elif pkg-config lua5.1 ; then

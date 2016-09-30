@@ -39,9 +39,7 @@ int whitelist_validate(const char *name, int port)
 	if(name == NULL || port == 0 || port == -1)
 		return 0;
 
-	int i;
-
-	for(i = 0; i < raw_whitelist_len; i++)
+	for(int i = 0; i < raw_whitelist_len; i++)
 		if(!strcmp(raw_whitelist[i].addr, name) && (raw_whitelist[i].port == -1 || port == raw_whitelist[i].port))
 			return 1;
 
@@ -373,6 +371,9 @@ void icelua_loadbasefuncs(lua_State *L)
 	lua_call(L, 0, 0);
 	lua_pushcfunction(L, luaopen_table);
 	lua_call(L, 0, 0);
+
+	// additional libraries
+	luaopen_bit(L);
 
 	// overwrite dofile/loadfile.
 	lua_pushcfunction(L, icelua_fn_base_loadfile);

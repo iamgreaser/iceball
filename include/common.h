@@ -754,3 +754,5 @@ int wav_init(void);
 void wav_deinit(void);
 #endif
 
+// external/bit.c
+extern int luaopen_bit(lua_State *L);
