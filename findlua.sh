@@ -11,6 +11,9 @@ elif pkg-config lua-5.1 ; then
 elif pkg-config lua5.1 ; then
 	# Debian
 	pkg-config lua5.1 $@
+elif pkg-config lua51 ; then
+	# Arch
+	pkg-config lua51 $@
 elif pkg-config lua --atleast-version 5.1 --max-version 5.1.9999 ; then
 	# Slackware?
 	pkg-config lua $@
