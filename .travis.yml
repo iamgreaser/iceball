@@ -1,0 +1,15 @@
+language: c
+dist: trusty
+sudo: required
+before_install:
+  sudo apt-get install cmake
+before_script:
+  git clone https://github.com/iamgreaser/sackit && cd sackit && cmake . -Bbuild && sudo cmake --build build/ --target install && cd ..
+addons:
+  apt:
+    packages:
+      libsdl2-dev
+      liblua5.1-0-dev
+      libenet-dev
+      libluajit-5.1-dev
+script: cmake . && cmake --build .

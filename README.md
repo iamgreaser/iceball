@@ -1,4 +1,6 @@
 ![Iceball logo](https://raw.githubusercontent.com/iamgreaser/iceball/master/pkg/iceball/gfx/splash_logo.png)
+[![Build Status](https://travis-ci.org/arsdragonfly/iceball.svg?branch=master)](https://travis-ci.org/arsdragonfly/iceball)
+
 Iceball is both a highly-extensible engine on top of which people can do anything they want, and a game that builds upon the classic version of [Ace of Spades](http://en.wikipedia.org/wiki/Ace_of_Spades_(video_game)) experience.
 
 # Getting started
@@ -15,7 +17,7 @@ If you're planning on contributing to the Iceball project, please check out [con
   * BnS subforum: [buildandshoot.com](http://www.buildandshoot.com/viewforum.php?f=84)
 
 # Feedback
-If you have some thoughts on how to improve this project, please use the subreddit to start a discussion about it. If the feature you want added is both clearly defined and plausible, you can open a issue in the [issue tracker](https://github.com/iamgreaser/iceball/issues) instead. 
+If you have some thoughts on how to improve this project, please use the subreddit to start a discussion about it. If the feature you want added is both clearly defined and plausible, you can open a issue in the [issue tracker](https://github.com/iamgreaser/iceball/issues) instead.
 
 You should also use the [issue tracker](https://github.com/iamgreaser/iceball/issues) for reporting any bugs you find. Make sure they aren't already reported though!
 
@@ -32,7 +34,7 @@ All assets are released under Creative Commons 3.0 BY-SA:
 
 These are, unless otherwise marked:
   Copyright (C) 2012-2015, Iceball contributors.
-  
+
 The credits list is almost always out of date,
 so check the git log for a list of contributors.
 
