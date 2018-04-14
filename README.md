@@ -1,5 +1,5 @@
 ![Iceball logo](https://raw.githubusercontent.com/iamgreaser/iceball/master/pkg/iceball/gfx/splash_logo.png)
-[![Build Status](https://travis-ci.org/arsdragonfly/iceball.svg?branch=master)](https://travis-ci.org/arsdragonfly/iceball)
+[![Build Status](https://travis-ci.org/iamgreaser/iceball.svg?branch=master)](https://travis-ci.org/iamgreaser/iceball)
 
 Iceball is both a highly-extensible engine on top of which people can do anything they want, and a game that builds upon the classic version of [Ace of Spades](http://en.wikipedia.org/wiki/Ace_of_Spades_(video_game)) experience.
 
