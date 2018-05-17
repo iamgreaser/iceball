@@ -15,13 +15,15 @@
     along with Iceball.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#if !defined(_MSC_VER) || (_MSC_VER <= 1900)
 const char *inet_ntop(int af, const void *src, char *dst, socklen_t cnt);
+#endif
 
 int whitelist_validate(const char *name, int port);
 
 int icelua_fn_common_udp_open(lua_State *L) {
 	int top = icelua_assert_stack(L, 0, 0);
-	
+
 	int ret, sockfd;
 	const char *host;
 	char port_ch[18];
@@ -46,7 +48,7 @@ int icelua_fn_common_udp_open(lua_State *L) {
 
 int icelua_fn_common_udp_recvfrom(lua_State *L) {
 	int top = icelua_assert_stack(L, 1, 1);
-	
+
 	int sockfd;
 	int n = 0;
 
@@ -92,9 +94,9 @@ int icelua_fn_common_udp_recvfrom(lua_State *L) {
 		lua_pushnil(L);
 	else
 		lua_pushstring(L, astr);
-	
+
 	lua_pushinteger(L, ntohs(saddr.sin_port));
-	
+
 	return 3;
 }
 
@@ -138,7 +140,7 @@ int icelua_fn_common_udp_sendto(lua_State *L) {
 
 	if(L == lstate_client && !whitelist_validate(host, port))
 		return luaL_error(L, "address/port not on whitelist!");
-	
+
 	// FIXME: the host lookup result should ideally be cached
 	// FIXME: make note of the address family used / socktype
 	// TODO: support IPv6
@@ -199,5 +201,3 @@ int icelua_fn_common_udp_close(lua_State *L) {
 	close(sockfd);
 	return 0;
 }
-
-

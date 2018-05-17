@@ -1,0 +1,150 @@
+#
+# STUFF THAT CAN WRECK THE MIXER
+#
+
+IT203 changelog states:
+	Interpolated mixing options.
+
+IT203-IT210 driver info has lots of good stuff:
+	Disk Writer
+	
+	This WAV file writer is NOT available for public distribution.
+	Contact me if you wish to obtain this - it will NOT be made
+	available without some sort of (monetary) agreement.
+	
+	Details
+	* 16 bit Stereo/Mono output
+	* 22kHz to 64kHz output frequency
+	* 16 bit interpolation (65536x 'oversampling')
+	* 32 bit mixing
+	* Software volume ramping (set at 500th of a second or less)
+	
+	The disk writer also uses volumes ranging between 0 and 32768
+	instead of 0 to 128.
+
+IT204 changelog states:
+	To all mixed devices which supported interpolation, some samples
+	could have caused errors.
+	<ZaStaR>
+
+IT206 is the first version with a PUBLIC ITWAV.DRV.
+It spits out a RAW file.
+(It's available in the PAID version of IT203.)
+
+IT211 changelog states:
+	The ITWAV.DRV file now writes proper .WAV files instead of .RAW
+
+^ This is probably the easiest to get working accurately that actually spits out a .wav.
+
+IT212 changelog states:
+	Inserted a new algorithm into the direct-to-disk writer to remove
+	clicks at the end of samples in cases of Note Cut commands, Note Cut NNA
+	and instantaneous sample changes in sample mode. For those who have
+	sent me money and would like to receive the upgrade, EMail me.
+
+IT213 changelog states:
+	Direct to Disk writer now uses logarithmic volume ramping
+	and quadratic spline interpolation
+
+IT214 changelog states:
+	Diskwriter interpolation changed from quadratic spline
+	to cubic spline. (Requires a FPU)
+
+IT214 patch 3 changelog states:
+	Driver news: Updated driver format (incompatible with previous ITs)
+		Resonant filters - check FILTERS.TXT for information.
+		This stuff has been released basically so that contributors
+		can distribute their songs that use filters..
+	MMX drivers implemented.
+	WAV driver - time accuracy improved
+		- can specify destination directory (on shift-F5)
+		- handles resonant filters
+IT214 patch 4 changelog states:
+	4-band EQ in diskwriter
+
+List of things that'll piss me off, by version:
+IT206:
+	Volume ramping. At least we have a number here :)
+	Oversampling, perhaps?
+
+#
+# DIFFS FROM IT211
+#
+
+Currently going with IT211.
+Stuff that might screw us up:
+IT212:
+  - Bug fix: Default sample pan will override instrument pan whether "Old
+             Effects" is on or off. [IRRELEVANT, SEE IT213 BELOW]
+
+  - Soundcard Driver news
+    - Inserted a new algorithm into the direct-to-disk writer to remove
+      clicks at the end of samples in cases of Note Cut commands, Note Cut NNA
+      and instantaneous sample changes in sample mode. For those who have
+      sent me money and would like to receive the upgrade, EMail me.
+
+IT213:
+  - Modification: Sample panning reset to override instrument panning due to
+                  demand.
+
+  - Update: Several miscellaneous changes
+
+  - Update: If old effects is *ON*, then a looped volume envelope will NOT
+            include the last node (for XM compat)
+
+  - Automatic MIDI Pitch wheel handling. Vibrato, pitch slides, portamentos
+    all handled.
+    <Note: REQUIRES a FPU.. the program will hang if you enable this on
+           Shift-F1 and you don't have a FPU (486DX+ chips have FPUs)>
+
+  - MIDI Configuration can be embedded into .IT files.
+    (Option is on Shift-F1)
+
+IT214:
+  - Driver news: Diskwriter interpolation changed from quadratic spline
+                 to cubic spline. (Requires a FPU)
+
+IT214 Patch 1:
+  - Bug fix: Volume envelopes were skipping some ticks (sounded too fast)
+  - Bug fix: Slight problems with the wav writer fixed
+  - Other miscellaneous fixups
+
+IT214 Patch 2:
+  - Bug fix: MIDI Macros (unparameterised) were somehow disabled somewhere
+             after IT212.. now reenabled
+
+IT214 Patch 3:
+  - Driver news: Updated driver format (incompatible with previous ITs)
+                 Resonant filters - check FILTERS.TXT for information.
+                 This stuff has been released basically so that contributors
+                 can distribute their songs that use filters..
+    - MMX drivers implemented.
+    - WAV driver - time accuracy improved
+                 - handles resonant filters
+
+IT214 Patch 4:
+  - Bug fix: SCx and Qxx commands and will work with MIDI Out instruments
+
+  - Driver news: 4-band EQ in diskwriter
+                 Minor miscellaneous upgrades
+                 Fixes to MMX drivers that clicked on 0 volume (oops)
+
+IT214 Patch 5:
+  - Rewrite of all MMX routines for stability when networked. Non MMX drivers
+    have not been changed.
+
+#
+#
+#
+From ITTECH.TXT:
+	Bit 5: On = Link Effect G's memory with Effect E/F. Also
+		Gxx with an instrument present will cause the
+		envelopes to be retriggered. If you change a
+		sample on a row with Gxx, it'll adjust the
+		frequency of the current note according to:
+
+		NewFrequency = OldFrequency * NewC5 / OldC5;
+
+This is complete bullshit - the sample just doesn't change.
+Suprising how such an accurate document has such a big mistake in it.
+(No really, ITTECH.TXT is suprisingly accurate.)

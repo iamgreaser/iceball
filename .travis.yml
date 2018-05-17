@@ -12,4 +12,4 @@ addons:
       liblua5.1-0-dev
       libenet-dev
       libluajit-5.1-dev
-script: cmake . && cmake --build .
+script: cmake . && make iceball iceball-dedi
