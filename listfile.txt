@@ -1,0 +1,14 @@
+clsave/*
+deploy/*
+dlcache/*
+docs/*
+heart/*
+pkg/*
+svsave/*
+tools/*
+CREDITS.txt
+LICENCE-*.txt
+README.md
+opencmd.bat
+version.md
+*.exe

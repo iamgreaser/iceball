@@ -1,0 +1,73 @@
+environment:
+  matrix:
+    - GENERATOR: "MinGW Makefiles"
+      HUNTER: "ON"
+
+    - GENERATOR: "MSYS Makefiles"
+      HUNTER: "OFF"
+      MSYS2_ARCH: x86_64
+      MSYSTEM: MINGW64
+
+    - GENERATOR: "MSYS Makefiles"
+      HUNTER: "OFF"
+      MSYS2_ARCH: i686
+      MSYSTEM: MINGW32
+
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      GENERATOR: "Visual Studio 15 2017 Win64"
+      HUNTER: "ON"
+
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+      GENERATOR: "Visual Studio 14 2015 Win64"
+      HUNTER: "ON"
+
+before_build:
+  # Stupid cmd always fails me!!!!!!!!!!
+  - ps: $env:CMAKE_SCRIPT = "cmake -G \`"$env:GENERATOR\`" -DHUNTER_ENABLED=$env:HUNTER . && cmake --build . --target iceball && cmake --build . --target iceball-dedi";
+
+  # Workaround for CMake complaining about sh.exe being in PATH
+  - ps: $env:PATH = ($env:PATH.Split(";") | Where-Object { $_ -ne "C:\Program Files\Git\usr\bin" }) -join ";";
+  - ps: $env:PATH = "C:\MinGW\bin;$env:PATH";
+  # Set up MSYS2
+  # Unused toolchains are removed to speed up update.
+  - ps: |
+      if ($env:GENERATOR -eq "MSYS Makefiles")
+      {
+        $env:PATH = "C:\msys64\$env:MSYSTEM\bin;C:\msys64\usr\bin;$env:PATH";
+        $env:PACMAN = "pacman --noconfirm --noprogressbar";
+        $env:MINGW_PACKAGE_PREFIX = "mingw-w64-$env:MSYS2_ARCH";
+        if ($env:MSYS2_ARCH -eq "x86_64")
+        {
+          bash -lc "$env:PACMAN -Rs mingw-w64-i686-toolchain";
+        }
+        if ($env:MSYS2_ARCH -eq "i686")
+        {
+          bash -lc "$env:PACMAN -Rs mingw-w64-x86_64-toolchain";
+        }
+        bash -lc "$env:PACMAN -Syu";
+        bash -lc "$env:PACMAN -Su";
+        bash -lc "$env:PACMAN -S $env:MINGW_PACKAGE_PREFIX-cmake";
+        bash -lc "$env:PACMAN -S $env:MINGW_PACKAGE_PREFIX-SDL2";
+        bash -lc "$env:PACMAN -S $env:MINGW_PACKAGE_PREFIX-luajit-git";
+        bash -lc "$env:PACMAN -S $env:MINGW_PACKAGE_PREFIX-enet";
+      }
+
+build_script:
+  #Use a seperate script file so that warnings on stderr won't fail the build
+  - powershell .\appveyor_build.ps1
+  - ps: |
+      if ($env:GENERATOR -eq "MinGW Makefiles")
+      {
+        $env:ICEBALL_ZIP_FILENAME = "iceball-$env:APPVEYOR_REPO_COMMIT.zip";
+        7z a $env:ICEBALL_ZIP_FILENAME `@listfile.txt;
+        Push-AppveyorArtifact $env:ICEBALL_ZIP_FILENAME;
+      }
+
+deploy:
+  description: $(APPVEYOR_REPO_COMMIT)
+  provider: GitHub
+  auth_token:
+    secure: tMJF/Nc5vz1iNTuX94v3fdoToy+RDykn8cfehVok1el8s2ZgD9GSi/fLfbVsSv5M
+  force_update: true
+  on:
+    appveyor_repo_tag: true
